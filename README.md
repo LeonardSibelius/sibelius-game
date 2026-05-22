@@ -14,16 +14,34 @@ Full specification: [`docs/mvp-spec.md`](docs/mvp-spec.md). Linear: **SIB-1**.
 |---|---|
 | Engine | Unreal Engine **5.7** (macOS, Apple Silicon / M2 Pro) |
 | Branch | `feat/v0.1-mvp` |
-| Current checkpoint | **1 — project scaffold** ✅ (this commit) |
+| Current checkpoint | **2 — office room (grey-box)** ✅ (this commit) |
 
 ### Build approach: Blueprint-first
 
-The spec describes a C++ project. **Full Xcode is required to compile a C++ Unreal
-module on macOS**, and only the Command Line Tools are installed on this machine — so
-Checkpoint 1 ships as a **Blueprint Third Person** project that boots in the editor
-today with zero Xcode dependency. The Code Vision and door mechanics will be authored
-in Blueprint and can be ported to the C++ structure in `Source/` once full Xcode is
-installed. (Xcode is also required later for the `Package → Mac` acceptance criterion.)
+The spec describes a C++ project. This MVP ships **Blueprint-first**: a Blueprint Third
+Person project that boots in the editor with no compile step. The Code Vision and door
+mechanics are authored in Blueprint and can be ported to the C++ structure in `Source/`
+later. **Full Xcode 26.5 + the Metal Toolchain component are now installed**, so the
+`CompileAllBlueprints` smoke test runs with zero `LogMetalCompilerSetup` warnings and the
+`Package → Mac` acceptance criterion is unblocked. (In Xcode 26 the Metal compiler is a
+separate download: `xcodebuild -downloadComponent MetalToolchain`.)
+
+### Checkpoint 2 — what shipped
+
+The office is a **grey-box blockout** built from engine primitives by
+[`Tools/build_office_blockout.py`](Tools/build_office_blockout.py), saved to
+`Content/Maps/L_Office_MVP`: room shell with a window opening, desk, chair, dual
+monitors, bookshelf, and the **hidden door** embedded in the wall behind the bookshelf.
+Golden-hour directional sun + sky light + atmosphere + height fog + an unbound
+post-process volume; Lumen GI is enabled project-wide in `DefaultEngine.ini`. The hidden
+door and bookshelf carry `CodeVision.*` tags and custom-depth stencil values so
+Checkpoint 3's reveal mechanic has real targets.
+
+**Megascans art is deferred, not skipped.** Free Megascans-via-Fab ended 2024-12-31, so
+photoreal props need a sourcing decision (Fab purchase, the legacy Quixel Bridge plugin
+while it lasts, or another library). The blockout is dimensioned to the real layout, so
+art swaps in without repositioning. MetaHuman Leonard is also deferred — the ThirdPerson
+mannequin remains the placeholder until Leonard is authored (interactive, Epic login).
 
 ---
 
