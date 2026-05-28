@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Investigation Board — Phase 2 (ordinary state, 1.68:1)</title>
+<!--
+  Reflowed from walt-cowork-memory/sibelius-game-investigation-board-mockup.html to the
+  SM_Board_A1 face aspect (141.6 x 84.3 cm = 1.68:1). ORDINARY STATE ONLY: 15 items pinned,
+  scribble shows "[ scribble ]", NO threads, NO dashed circle, NO scanline/overlay.
+  Render at 3x: chrome --headless --screenshot --window-size=840,500 --force-device-scale-factor=3
+  -> 2520x1500 PNG. Phase 3 will render a Code-Vision-active variant for the overlay texture.
+-->
+<style>
+  html,body{margin:0;padding:0;}
+  #board{
+    position:relative; width:840px; height:500px; overflow:hidden;
+    /* ALPHA bake (Walt, 2026-05-27): board background is TRANSPARENT so only the 15 items +
+       pushpins are opaque. The QuadArt corkboard + its vendor notes show through the gaps
+       (intentional "Leonard's items on a cluttered office board"). Render with Chrome
+       --default-background-color=00000000 to preserve the alpha channel. Material = Masked. */
+    background:transparent;
+    font-family:-apple-system,'Segoe UI',sans-serif;
+  }
+  .pin-item{position:absolute; box-sizing:border-box;}
+  .pushpin{width:9px;height:9px;border-radius:50%;position:absolute;top:5px;left:50%;transform:translateX(-50%);box-shadow:0 1px 2px rgba(0,0,0,.4);}
+  .mono{font-family:Consolas,'Courier New',monospace;}
+  .serif{font-family:Georgia,serif;font-style:italic;}
+</style>
+</head>
+<body>
+<div id="board">
+
+  <!-- 1. SUN MICRO (career/copper) -->
+  <div class="pin-item mono" style="left:40px;top:25px;width:100px;height:120px;background:#e8d9b0;border:1px solid #a08555;padding:9px;font-size:11px;color:#3a2a15;transform:rotate(-3deg);">
+    <div class="pushpin" style="background:#7a3a3a;"></div>
+    <div style="font-weight:600;border-bottom:1px solid #a08555;padding-bottom:3px;margin-bottom:5px;">SUN MICRO</div>
+    <div>Walt Parkman</div><div>JavaSoft</div>
+    <div style="margin-top:6px;color:#7a5a30;">1997</div>
+  </div>
+
+  <!-- 2. classroom 1962 / Mrs. Hall (Mrs.Hall/red) -->
+  <div class="pin-item" style="left:165px;top:30px;width:105px;height:115px;background:#d6d0c0;border:1px solid #6a6555;padding:7px;transform:rotate(2deg);">
+    <div class="pushpin" style="background:#3a3a7a;"></div>
+    <div class="serif" style="background:#4a4538;height:62px;display:flex;align-items:center;justify-content:center;color:#c8b890;font-size:11px;">classroom 1962</div>
+    <div style="font-size:10px;color:#3a3528;margin-top:5px;text-align:center;">2nd grade · Mrs. Hall</div>
+  </div>
+
+  <!-- 3. DEF CON 12 (career/copper) -->
+  <div class="pin-item mono" style="left:515px;top:25px;width:95px;height:120px;background:#1a2a3a;color:#9ac0e0;padding:9px;font-size:11px;transform:rotate(-2deg);">
+    <div class="pushpin" style="background:#9a3a3a;"></div>
+    <div style="font-weight:600;font-size:12px;">DEF CON 12</div>
+    <div style="margin-top:3px;color:#6a8aa0;">Las Vegas</div>
+    <div style="margin-top:2px;color:#6a8aa0;">2004</div>
+    <div style="margin-top:10px;padding:4px;background:#0a1a2a;text-align:center;font-size:10px;">HUMAN</div>
+  </div>
+
+  <!-- 4. bridge night (mundane) -->
+  <div class="pin-item serif" style="left:650px;top:40px;width:120px;height:80px;background:#fff89a;padding:9px;font-size:13px;color:#3a3520;transform:rotate(4deg);">
+    <div class="pushpin" style="background:#3a7a3a;"></div>
+    bridge night<br/>thursday 7pm<br/>— don't forget
+  </div>
+
+  <!-- 5. grocery list (mundane) -->
+  <div class="pin-item serif" style="left:35px;top:180px;width:105px;height:80px;background:#fff89a;padding:9px;font-size:13px;color:#3a3520;transform:rotate(-2deg);">
+    <div class="pushpin" style="background:#7a7a3a;"></div>
+    milk<br/>eggs<br/>coffee<br/>vegas trip?
+  </div>
+
+  <!-- 6. OrderProcessor.java error (Mrs.Hall/red) -->
+  <div class="pin-item mono" style="left:290px;top:165px;width:150px;height:90px;background:#f8f4e8;padding:7px;font-size:10px;color:#2a2a2a;line-height:1.35;transform:rotate(1deg);">
+    <div class="pushpin" style="background:#3a3a7a;"></div>
+    OrderProcessor.java:147<br/><span style="color:#a02828;">error:</span> cannot find symbol<br/>&nbsp;&nbsp;symbol: variable status<br/>&nbsp;&nbsp;location: class Order<br/>1 error
+  </div>
+
+  <!-- 7. Reno 2019 polaroid (mundane) -->
+  <div class="pin-item" style="left:475px;top:175px;width:110px;height:100px;background:#f5e8c8;border:7px solid #fcfbf2;border-bottom-width:26px;padding:0;transform:rotate(-4deg);">
+    <div class="pushpin" style="background:#3a3a7a;top:-5px;z-index:2;"></div>
+    <div class="serif" style="height:100%;background:#5a7090;display:flex;align-items:flex-end;justify-content:center;color:#d8e0e8;font-size:11px;padding-bottom:5px;">Reno · 2019</div>
+  </div>
+
+  <!-- 8. SYBASE ASA cert (career/copper) -->
+  <div class="pin-item" style="left:605px;top:180px;width:130px;height:90px;background:#e8d4b0;border:1px solid #8a6a3a;padding:7px;font-size:10px;color:#3a2a15;transform:rotate(3deg);">
+    <div class="pushpin" style="background:#7a3a3a;"></div>
+    <div style="font-weight:600;text-align:center;border-bottom:1px solid #8a6a3a;padding-bottom:4px;">SYBASE ASA</div>
+    <div style="text-align:center;margin-top:5px;">Certified DBA</div>
+    <div style="text-align:center;margin-top:3px;color:#6a4a20;">W. Parkman</div>
+    <div class="mono" style="text-align:center;margin-top:5px;font-size:9px;">FED-2008-1142</div>
+  </div>
+
+  <!-- 9. Lennie cathedral polaroid (leonsheet->cathedral/platinum) -->
+  <div class="pin-item" style="left:95px;top:295px;width:110px;height:100px;background:#f5e8c8;border:7px solid #fcfbf2;border-bottom-width:24px;padding:0;transform:rotate(2deg);">
+    <div class="pushpin" style="background:#7a7a3a;top:-5px;z-index:2;"></div>
+    <div style="height:100%;background:linear-gradient(180deg,#d4a850 0%,#c89540 100%);position:relative;overflow:hidden;">
+      <div style="position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:34px;height:48px;background:#e8c870;border:1px solid #8a5a20;"></div>
+    </div>
+    <div class="serif" style="position:absolute;bottom:-24px;left:0;right:0;text-align:center;font-size:10px;color:#3a2a15;padding-top:5px;">Lennie · cathedral</div>
+  </div>
+
+  <!-- 10. Google Veo policy violation (Mrs.Hall/red) -->
+  <div class="pin-item mono" style="left:245px;top:300px;width:195px;height:85px;background:#f0f0f0;padding:9px;font-size:10px;color:#2a2a2a;transform:rotate(-1deg);">
+    <div class="pushpin" style="background:#3a3a7a;"></div>
+    <div style="display:flex;gap:7px;align-items:flex-start;">
+      <div style="width:16px;height:16px;background:#e89a20;color:#2a1a00;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;flex-shrink:0;">!</div>
+      <div style="line-height:1.35;">"This prompt might violate our policies about generating harmful content."<br/><span style="color:#888;">— Google Veo · 2026-05</span></div>
+    </div>
+  </div>
+
+  <!-- 11. leonsheet dep graph (leonsheet->cathedral/platinum) -->
+  <div class="pin-item mono" style="left:470px;top:295px;width:155px;height:135px;background:#fafaf2;padding:7px;font-size:9px;color:#2a2a2a;transform:rotate(2deg);">
+    <div class="pushpin" style="background:#3a7a7a;"></div>
+    <div style="text-align:center;font-weight:600;margin-bottom:5px;">leonsheet dep graph</div>
+    <svg width="100%" height="92" viewBox="0 0 120 80">
+      <circle cx="20" cy="20" r="7" fill="#3a3a3a"/><text x="20" y="38" font-size="8" text-anchor="middle" fill="#2a2a2a">A1</text>
+      <circle cx="60" cy="20" r="7" fill="#3a3a3a"/><text x="60" y="38" font-size="8" text-anchor="middle" fill="#2a2a2a">A2</text>
+      <circle cx="40" cy="56" r="7" fill="#3a3a3a"/><text x="40" y="74" font-size="8" text-anchor="middle" fill="#2a2a2a">A3</text>
+      <circle cx="100" cy="40" r="7" fill="#3a3a3a"/><text x="100" y="58" font-size="8" text-anchor="middle" fill="#2a2a2a">B1</text>
+      <line x1="20" y1="23" x2="38" y2="49" stroke="#2a2a2a" stroke-width="1.2"/>
+      <line x1="60" y1="23" x2="42" y2="49" stroke="#2a2a2a" stroke-width="1.2"/>
+      <line x1="23" y1="20" x2="53" y2="20" stroke="#2a2a2a" stroke-width="1.2"/>
+      <line x1="62" y1="23" x2="95" y2="38" stroke="#2a2a2a" stroke-width="1.2"/>
+    </svg>
+  </div>
+
+  <!-- 12. Leonard Sibelius card (career/copper) -->
+  <div class="pin-item" style="left:650px;top:300px;width:120px;height:80px;background:#fff;padding:7px;font-size:11px;color:#2a2a2a;transform:rotate(-3deg);">
+    <div class="pushpin" style="background:#7a3a3a;"></div>
+    <div style="text-align:center;padding-top:5px;">
+      <div class="serif" style="font-weight:600;font-style:normal;">Leonard Sibelius</div>
+      <div style="font-size:9px;color:#5a5a5a;margin-top:3px;">three-part entity</div>
+      <div style="font-size:9px;color:#3a3a3a;margin-top:7px;">leonardsibelius.com</div>
+    </div>
+  </div>
+
+  <!-- 13. OUTWORK #13 (career/copper) -->
+  <div class="pin-item mono" style="left:350px;top:410px;width:100px;height:75px;background:#a83a3a;padding:7px;font-size:10px;color:#fde8e8;transform:rotate(-1deg);">
+    <div class="pushpin" style="background:#3a3a3a;"></div>
+    <div style="text-align:center;font-weight:600;">OUTWORK</div>
+    <div style="font-size:8px;text-align:center;margin-top:4px;opacity:.85;">wpoutwork<br/>.substack.com</div>
+    <div style="font-size:16px;text-align:center;margin-top:3px;">#13</div>
+  </div>
+
+  <!-- 14. Pho Saigon receipt (mundane) -->
+  <div class="pin-item serif" style="left:500px;top:415px;width:130px;height:70px;background:#fff89a;padding:7px;font-size:13px;color:#3a3520;transform:rotate(3deg);">
+    <div class="pushpin" style="background:#7a7a3a;"></div>
+    Pho Saigon<br/>delivery: $24<br/>tip: $5
+  </div>
+
+  <!-- 15. Easter egg (ordinary state shows scribble) -->
+  <div class="pin-item mono" style="left:40px;top:415px;width:95px;height:65px;background:#e8d9b0;padding:6px;font-size:9px;color:#3a2a15;transform:rotate(-8deg);opacity:.55;">
+    <div class="pushpin" style="background:#d4af37;width:7px;height:7px;top:4px;"></div>
+    <div style="margin-top:6px;text-align:center;line-height:1.4;">[ scribble ]</div>
+  </div>
+
+</div>
+</body>
+</html>
