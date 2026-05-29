@@ -23,6 +23,12 @@ public class SibeliusGame : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
 
+// SIB-19 smoke-test commandlet uses UEditorLoadingAndSavingUtils (editor-only)
+if (Target.bBuildEditor)
+{
+PrivateDependencyModuleNames.Add("UnrealEd");
+}
+
 		PublicIncludePaths.AddRange(new string[] {
 			"SibeliusGame",
 			"SibeliusGame/Variant_Horror",
@@ -42,3 +48,4 @@ public class SibeliusGame : ModuleRules
 		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
 	}
 }
+
