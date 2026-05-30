@@ -16,7 +16,9 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogRefuserSmokeTest, Log, All);
 
-namespace
+// Named (not anonymous) namespace so these helpers don't collide with the
+// identically-named ones in SibeliusSmokeTestCommandlet.cpp under a unity build.
+namespace RefuserSmokeTestNS
 {
 	const FString DefaultMapPackage = TEXT("/Game/L_RefuserTest");
 
@@ -47,6 +49,8 @@ namespace
 		return DefaultMapPackage;
 	}
 }
+
+using namespace RefuserSmokeTestNS;
 
 URefuserSmokeTestCommandlet::URefuserSmokeTestCommandlet()
 {

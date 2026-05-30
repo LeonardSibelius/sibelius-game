@@ -6,6 +6,9 @@
 ARefuserSpawner::ARefuserSpawner()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	RootComponent = SceneRoot;
 }
 
 void ARefuserSpawner::BeginPlay()

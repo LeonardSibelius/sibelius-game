@@ -12,6 +12,9 @@ class SIBELIUSGAME_API ARefuserSpawner : public AActor
 public:
 	ARefuserSpawner();
 
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> SceneRoot;
+
 	UPROPERTY(EditAnywhere, Category="Spawner")
 	TSubclassOf<APawn> RefuserClass;
 
