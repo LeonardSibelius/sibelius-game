@@ -32,6 +32,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	bool bDebugDraw = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
+	float RagdollLifetime = 4.0f;
+
 	UFUNCTION(BlueprintCallable, Category="Slap")
 	void DoSlap();
 };

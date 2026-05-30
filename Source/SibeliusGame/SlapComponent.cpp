@@ -93,6 +93,9 @@ void USlapComponent::DoSlap()
 			const FVector LaunchDir = (VictimLocation - ViewStart).GetSafeNormal();
 			const FVector Impulse = LaunchDir * LaunchSpeed + FVector::UpVector * UpwardSpeed;
 			Mesh->AddImpulse(Impulse, NAME_None, true);
+
+			// Despawn the ragdolled victim after a delay.
+			Victim->SetLifeSpan(RagdollLifetime);
 		}
 
 		if (SlapSound)
