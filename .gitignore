@@ -85,3 +85,8 @@ Content/Commissioned/
 
 # Keep folder structure visible to humans even when contents are ignored
 !**/.gitkeep
+
+# UnrealClaude plugin build artifacts (CP2)
+Plugins/UnrealClaude/Binaries/
+Plugins/UnrealClaude/Intermediate/
+Plugins/UnrealClaude/Resources/mcp-bridge/node_modules/
