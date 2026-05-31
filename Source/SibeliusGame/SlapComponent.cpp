@@ -84,7 +84,27 @@ void USlapComponent::DoSlap()
 			Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 
-		if (USkeletalMeshComponent* Mesh = Victim->GetMesh())
+		// Pick which skeletal mesh to ragdoll. Prefer the default Character mesh
+		// when it has a physics asset; otherwise find a MetaHuman body mesh (a
+		// separate skeletal mesh component, not CharacterMesh0) that has one.
+		USkeletalMeshComponent* Mesh = Victim->GetMesh();
+		if (!Mesh || Mesh->GetPhysicsAsset() == nullptr)
+		{
+			USkeletalMeshComponent* PhysicsMesh = nullptr;
+			TArray<USkeletalMeshComponent*> SkelMeshes;
+			Victim->GetComponents<USkeletalMeshComponent>(SkelMeshes);
+			for (USkeletalMeshComponent* SkelMesh : SkelMeshes)
+			{
+				if (SkelMesh && SkelMesh->GetPhysicsAsset() != nullptr)
+				{
+					PhysicsMesh = SkelMesh;
+					break;
+				}
+			}
+			Mesh = PhysicsMesh ? PhysicsMesh : Victim->GetMesh();
+		}
+
+		if (Mesh)
 		{
 			Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
 			Mesh->SetSimulatePhysics(true);

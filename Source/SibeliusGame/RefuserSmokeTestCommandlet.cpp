@@ -50,8 +50,6 @@ namespace RefuserSmokeTestNS
 	}
 }
 
-using namespace RefuserSmokeTestNS;
-
 URefuserSmokeTestCommandlet::URefuserSmokeTestCommandlet()
 {
 	IsClient = false;
@@ -62,6 +60,11 @@ URefuserSmokeTestCommandlet::URefuserSmokeTestCommandlet()
 
 int32 URefuserSmokeTestCommandlet::Main(const FString& Params)
 {
+	// Scoped here (not at file scope) so the namespace doesn't leak into other
+	// translation units under a unity build and collide with the identically-named
+	// helpers in SibeliusSmokeTestCommandlet.cpp.
+	using namespace RefuserSmokeTestNS;
+
 #if !WITH_EDITOR
 	UE_LOG(LogRefuserSmokeTest, Error, TEXT("RefuserSmokeTest requires an editor build. Use UnrealEditor-Cmd.exe."));
 	return 1;
