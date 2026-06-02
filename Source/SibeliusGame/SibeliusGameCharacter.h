@@ -12,6 +12,7 @@ class USkeletalMeshComponent;
 class UCameraComponent;
 class UInputAction;
 class UInteractorComponent;
+class UCodeVisionComponent;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -36,6 +37,10 @@ class ASibeliusGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInteractorComponent> InteractorComponent;
 
+	/** Single source of truth for Ch1 Code Vision on/off state (SIB-25) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCodeVisionComponent> CodeVisionComp;
+
 protected:
 
 	/** Jump Input Action */
@@ -57,6 +62,10 @@ protected:
 	/** Interact Input Action (E) */
 	UPROPERTY(EditAnywhere, Category ="Input")
 	class UInputAction* InteractAction;
+
+	/** Code Vision Input Action (hold) — Started activates, Completed deactivates */
+	UPROPERTY(EditAnywhere, Category ="Input")
+	class UInputAction* CodeVisionAction;
 
 public:
 	ASibeliusGameCharacter();

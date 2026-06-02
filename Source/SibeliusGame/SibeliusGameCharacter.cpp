@@ -9,6 +9,7 @@
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InteractorComponent.h"
+#include "CodeVisionComponent.h"
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -36,6 +37,9 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 
 	// Interactor: camera line-trace + E-to-Interact (input bound below)
 	InteractorComponent = CreateDefaultSubobject<UInteractorComponent>(TEXT("InteractorComponent"));
+
+	// Code Vision: single source of truth for Ch1 reveal state (SIB-25, input bound below)
+	CodeVisionComp = CreateDefaultSubobject<UCodeVisionComponent>(TEXT("CodeVisionComp"));
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(true);
@@ -68,6 +72,13 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		if (InteractAction)
 		{
 			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ASibeliusGameCharacter::DoInteract);
+		}
+
+		// Code Vision (hold) - Started reveals, Completed restores; drives the component directly
+		if (CodeVisionAction && CodeVisionComp)
+		{
+			EnhancedInputComponent->BindAction(CodeVisionAction, ETriggerEvent::Started, CodeVisionComp.Get(), &UCodeVisionComponent::ActivateCodeVision);
+			EnhancedInputComponent->BindAction(CodeVisionAction, ETriggerEvent::Completed, CodeVisionComp.Get(), &UCodeVisionComponent::DeactivateCodeVision);
 		}
 	}
 	else
