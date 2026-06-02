@@ -13,6 +13,7 @@ class UCameraComponent;
 class UInputAction;
 class UInteractorComponent;
 class UCodeVisionComponent;
+class URefactorComponent;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -41,6 +42,10 @@ class ASibeliusGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCodeVisionComponent> CodeVisionComp;
 
+	/** Ch2 Refactor: camera-traces for refactorables and toggles them (SIB-26) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<URefactorComponent> RefactorComp;
+
 protected:
 
 	/** Jump Input Action */
@@ -66,6 +71,10 @@ protected:
 	/** Code Vision Input Action (hold) — Started activates, Completed deactivates */
 	UPROPERTY(EditAnywhere, Category ="Input")
 	class UInputAction* CodeVisionAction;
+
+	/** Refactor Input Action (R) — Started toggles the targeted refactorable */
+	UPROPERTY(EditAnywhere, Category ="Input")
+	class UInputAction* RefactorAction;
 
 public:
 	ASibeliusGameCharacter();

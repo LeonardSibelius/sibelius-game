@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InteractorComponent.h"
 #include "CodeVisionComponent.h"
+#include "RefactorComponent.h"
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -40,6 +41,9 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 
 	// Code Vision: single source of truth for Ch1 reveal state (SIB-25, input bound below)
 	CodeVisionComp = CreateDefaultSubobject<UCodeVisionComponent>(TEXT("CodeVisionComp"));
+
+	// Refactor: Ch2 selection + trigger; lives on the pawn so there's no find-the-player race (SIB-26)
+	RefactorComp = CreateDefaultSubobject<URefactorComponent>(TEXT("RefactorComp"));
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(true);
@@ -79,6 +83,12 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		{
 			EnhancedInputComponent->BindAction(CodeVisionAction, ETriggerEvent::Started, CodeVisionComp.Get(), &UCodeVisionComponent::ActivateCodeVision);
 			EnhancedInputComponent->BindAction(CodeVisionAction, ETriggerEvent::Completed, CodeVisionComp.Get(), &UCodeVisionComponent::DeactivateCodeVision);
+		}
+
+		// Refactor (R) - Started toggles whatever refactorable is under the crosshair
+		if (RefactorAction && RefactorComp)
+		{
+			EnhancedInputComponent->BindAction(RefactorAction, ETriggerEvent::Started, RefactorComp.Get(), &URefactorComponent::TriggerRefactor);
 		}
 	}
 	else
