@@ -1,0 +1,64 @@
+// SlotGameModel.h
+//
+// SIB-34 / S1 — The slot machine's brain: a PURE game model. No UI, no actors,
+// no timers. Seeded RNG, real reel strips, deterministic and headlessly
+// simulatable — the par sheet made executable. The UMG screen (S2) and the
+// cabinet actor (S3) only PRESENT what this class decides.
+//
+// Game rules (parity with the live Celestial Fortune web game, Teresita-spec):
+//   • 5 reels × 3 rows, 15 fixed paylines, pays left-to-right, 3+ matching
+//   • WILD substitutes for everything except Earth
+//   • THE ONE BONUS RULE: 3+ Earths anywhere = 6 free spins, all wins ×3
+//     (retrigger adds 8 more; Earths don't pay on lines)
+//
+// Par sheet (strips + pays) lives in SlotGameModel.cpp under the PAR SHEET
+// banner — tune there, nowhere else (SL1: one source of truth).
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/Object.h"
+#include "Math/RandomStream.h"
+#include "SlotTypes.h"
+#include "SlotGameModel.generated.h"
+
+UCLASS(BlueprintType)
+class SIBELIUSGAME_API USlotGameModel : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	// Must be called before Spin(). Seed makes the whole game deterministic (SL2).
+	UFUNCTION(BlueprintCallable, Category = "Slot")
+	void Init(int32 Seed);
+
+	// One spin at TotalBet credits (multiple of 15). If free spins remain, the
+	// spin consumes one instead of a bet (caller checks bWasFreeSpin for credits).
+	UFUNCTION(BlueprintCallable, Category = "Slot")
+	FSlotSpinResult Spin(int32 TotalBet);
+
+	UFUNCTION(BlueprintPure, Category = "Slot")
+	bool IsInFreeSpins() const { return FreeSpinsRemaining > 0; }
+
+	UFUNCTION(BlueprintPure, Category = "Slot")
+	int32 GetFreeSpinsRemaining() const { return FreeSpinsRemaining; }
+
+	// Exposed for the smoke test + UI (paytable screen, line highlighting).
+	static int32 NumLines();
+	static const TArray<int8>& Line(int32 Index);          // 5 row-indices
+	static double PayFor(ESlotSymbol Symbol, int32 Count, double PerLineBet);
+	static const TArray<ESlotSymbol>& Strip(int32 Reel);
+
+	static constexpr int32 REELS = 5;
+	static constexpr int32 ROWS = 3;
+	static constexpr int32 FREE_SPINS_AWARD = 6;
+	static constexpr int32 FREE_SPIN_MULTIPLIER = 3;
+	static constexpr int32 SCATTERS_TO_TRIGGER = 3;
+
+private:
+	void EvaluateLines(const TArray<ESlotSymbol>& Grid, double PerLineBet, int32 WinMult, FSlotSpinResult& Out) const;
+
+	FRandomStream Rng;
+	int32 FreeSpinsRemaining = 0;
+	bool bInitialized = false;
+};
