@@ -14,6 +14,8 @@ class UInputAction;
 class UInteractorComponent;
 class UCodeVisionComponent;
 class URefactorComponent;
+class UInventoryComponent;
+class UBuildComponent;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -46,6 +48,14 @@ class ASibeliusGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<URefactorComponent> RefactorComp;
 
+	/** Ch3 Compile: single-authority resource inventory, lives on the pawn (SIB-27) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInventoryComponent> InventoryComp;
+
+	/** Ch3 Compile: build/dismantle driver; pawn-owned so there's no find-the-player race (SIB-27) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UBuildComponent> BuildComp;
+
 protected:
 
 	/** Jump Input Action */
@@ -75,6 +85,10 @@ protected:
 	/** Refactor Input Action (R) — Started toggles the targeted refactorable */
 	UPROPERTY(EditAnywhere, Category ="Input")
 	class UInputAction* RefactorAction;
+
+	/** Build Input Action (B) — Started builds the proximate affordable site (SIB-27) */
+	UPROPERTY(EditAnywhere, Category ="Input")
+	UInputAction* BuildAction;
 
 public:
 	ASibeliusGameCharacter();

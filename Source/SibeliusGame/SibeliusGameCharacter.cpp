@@ -11,6 +11,8 @@
 #include "InteractorComponent.h"
 #include "CodeVisionComponent.h"
 #include "RefactorComponent.h"
+#include "InventoryComponent.h"
+#include "BuildComponent.h"
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -44,6 +46,11 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 
 	// Refactor: Ch2 selection + trigger; lives on the pawn so there's no find-the-player race (SIB-26)
 	RefactorComp = CreateDefaultSubobject<URefactorComponent>(TEXT("RefactorComp"));
+
+	// Compile (Ch3): inventory is the single resource authority; build driver scans for proximate sites.
+	// Both pawn-owned so neither has to find the player (SIB-27, generalizing the Ch1/R7 lesson).
+	InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComp"));
+	BuildComp = CreateDefaultSubobject<UBuildComponent>(TEXT("BuildComp"));
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(true);
@@ -89,6 +96,12 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		if (RefactorAction && RefactorComp)
 		{
 			EnhancedInputComponent->BindAction(RefactorAction, ETriggerEvent::Started, RefactorComp.Get(), &URefactorComponent::TriggerRefactor);
+		}
+
+		// Build (B) - Started builds the proximate affordable site; .Get() on the TObjectPtr (Ch1 lesson)
+		if (BuildAction && BuildComp)
+		{
+			EnhancedInputComponent->BindAction(BuildAction, ETriggerEvent::Started, BuildComp.Get(), &UBuildComponent::TriggerBuild);
 		}
 	}
 	else

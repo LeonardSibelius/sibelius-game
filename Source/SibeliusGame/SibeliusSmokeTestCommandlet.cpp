@@ -15,7 +15,10 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogSmokeTest, Log, All);
 
-namespace
+// Named (not anonymous) namespace so these helpers (FResult / DefaultMapPackage /
+// ParseMapArg) don't collide with the identically-named ones in the sibling smoke
+// commandlets when unity-build regroups these TUs. Mirrors RefuserSmokeTestNS et al.
+namespace SibeliusSmokeTestNS
 {
 const FString DefaultMapPackage = TEXT("/Game/L_Office_v02");
 
@@ -79,6 +82,10 @@ int32 USibeliusSmokeTestCommandlet::Main(const FString& Params)
 UE_LOG(LogSmokeTest, Error, TEXT("SibeliusSmokeTest requires an editor build. Use UnrealEditor-Cmd.exe."));
 return 1;
 #else
+// Scoped here (function body, not file scope) so the namespace doesn't leak into
+// other TUs under a unity build and re-introduce the collision we just fixed.
+using namespace SibeliusSmokeTestNS;
+
 const FString MapPackage = ParseMapArg(Params);
 UE_LOG(LogSmokeTest, Display, TEXT("=== SIB-19 smoke test: %s ==="), *MapPackage);
 
