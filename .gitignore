@@ -73,7 +73,10 @@ Content/Props/Paid/
 
 # --- MetaHuman source (Epic discourages public-source redistribution) ---
 Content/Characters/Leonard/
-Content/MetaHumans/
+# Ignore the MetaHuman *source* assets but keep the reconstruction note tracked.
+# (Must ignore contents with /*, not the dir itself, so the README can be re-included.)
+Content/MetaHumans/*
+!Content/MetaHumans/README.md
 
 # --- AI-generated audio/video (vendor licenses don't authorize public source) ---
 Content/Audio/Generated/
