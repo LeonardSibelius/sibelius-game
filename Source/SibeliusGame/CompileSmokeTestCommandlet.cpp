@@ -4,6 +4,7 @@
 
 #include "BookPickup.h"
 #include "BuildSite.h"
+#include "CompileEndSubsystem.h"
 #include "CompileTypes.h"
 #include "HatchLock.h"
 #include "InventoryComponent.h"
@@ -151,6 +152,18 @@ int32 UCompileSmokeTestCommandlet::Main(const FString& Params)
 			FString::Printf(TEXT("HatchLock self-test (%s)"), *(*It)->GetName()), Err);
 	}
 	R.Check(Hatches >= 1, TEXT("At least one HatchLock present"));
+
+	// 8. Compile end-trigger present (Phase 4): overlapping it fires Ch3 completion
+	// via UCompileEndSubsystem. Headless we assert the tagged volume exists, exactly
+	// as the CodeVision bar asserts its CodeVisionEndTrigger.
+	int32 EndTriggers = 0;
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		if (It->ActorHasTag(UCompileEndSubsystem::EndTriggerTag)) { ++EndTriggers; }
+	}
+	R.Check(EndTriggers >= 1,
+		FString::Printf(TEXT("End-trigger actor tagged '%s' present"),
+			*UCompileEndSubsystem::EndTriggerTag.ToString()));
 
 	if (R.Failures == 0)
 	{
