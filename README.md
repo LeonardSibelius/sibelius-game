@@ -88,6 +88,7 @@ after a fresh clone:
 | **WASD** / **Mouse** | Move / look |
 | **Space** | Jump |
 | **E** | Interact — collect a book, unlock the hatch, dismantle a built site, read the corkboard |
+| **F** | Slap — knock a Refuser back and ragdoll it |
 | **B** | Build at the nearest affordable site |
 | **R** (hold) | Refactor the targeted object |
 | **V** (hold) | Code Vision — reveal hidden structure |
