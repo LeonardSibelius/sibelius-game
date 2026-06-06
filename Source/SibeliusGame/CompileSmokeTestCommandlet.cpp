@@ -24,7 +24,10 @@ namespace CompileSmokeTestNS
 	static const TCHAR* DefaultMapPackage = TEXT("/Game/L_Office_v02");
 	static const TCHAR* IMCPath = TEXT("/Game/Input/IMC_Default.IMC_Default");          // [ASSET PATH?]
 	static const TCHAR* BuildActionPath = TEXT("/Game/Input/IA_Build.IA_Build");        // [ASSET PATH?]
-	static const TCHAR* RemovedStairsMeshName = TEXT("SM_Stairs_D_1-2-Attic");          // C9
+	// C9: the build site replaced the ATTIC LADDER, not the staircase. NB: despite its
+	// name, SM_Stairs_D_1-2-Attic is the main floor-1->2 staircase and MUST stay (lesson
+	// banked Jun 4). The removed asset is the ladder, SM_AtticLadder_A.
+	static const TCHAR* RemovedStairsMeshName = TEXT("SM_AtticLadder_A");
 
 	static const int32 ActorBandMin = 1000;
 	static const int32 ActorBandMax = 1150;
@@ -164,6 +167,12 @@ int32 UCompileSmokeTestCommandlet::Main(const FString& Params)
 	R.Check(EndTriggers >= 1,
 		FString::Printf(TEXT("End-trigger actor tagged '%s' present"),
 			*UCompileEndSubsystem::EndTriggerTag.ToString()));
+
+	// Tear down the world we hand-initialized at the top. InitWorld() has no implicit
+	// counterpart here (the sibling commandlets get theirs free via LoadMap), so without
+	// this the engine shuts down holding a still-live orphaned world -> handled ensure
+	// -> critical error -> nonzero exit even when every assertion PASSED.
+	World->CleanupWorld();
 
 	if (R.Failures == 0)
 	{
