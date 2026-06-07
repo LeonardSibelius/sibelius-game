@@ -141,6 +141,7 @@ bool UBranchSubsystem::EnterBranch()
 	RebuildRegistry();
 	Manifest = CaptureDeclaredSet();
 	State = EBranchState::Branched;
+	SuspendPickups(); // engage while branched so collecting can't escape the declared set
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Entered: captured %d object(s) + %d ledger entr(ies)."),
 		Manifest.Objects.Num(), Manifest.Resources.Num());
@@ -155,8 +156,9 @@ bool UBranchSubsystem::DiscardBranch()
 	}
 
 	State = EBranchState::Resolving;
-	RestoreDeclaredSet(Manifest); // RAW restore
+	RestoreDeclaredSet(Manifest); // RAW restore — never replay verbs
 	Manifest.Reset();
+	ResumePickups();
 	State = EBranchState::Main;
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Discarded: declared set restored."));
@@ -174,8 +176,22 @@ bool UBranchSubsystem::MergeBranch()
 	// Merge = keep live, advance the baseline: drop the snapshot, restore nothing.
 	// (Phase 3 nesting will fold into the enclosing branch instead of Main.)
 	Manifest.Reset();
+	ResumePickups();
 	State = EBranchState::Main;
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Merged: live kept, baseline advanced."));
 	return true;
+}
+
+void UBranchSubsystem::SuspendPickups()
+{
+	// Locked product decision (SIB-28): pickups are suspended while branched.
+	// Queryable now via ArePickupsSuspended() (state-derived); ABookPickup will
+	// consult it / subscribe here when wired in a later phase.
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Pickups suspended."));
+}
+
+void UBranchSubsystem::ResumePickups()
+{
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Pickups resumed."));
 }

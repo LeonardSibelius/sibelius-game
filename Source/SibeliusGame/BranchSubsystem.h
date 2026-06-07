@@ -64,6 +64,8 @@ private:
 	void RebuildRegistry();                                   // collect IBranchable + inventory from the world
 	FBranchManifest CaptureDeclaredSet() const;
 	void RestoreDeclaredSet(const FBranchManifest& Snapshot); // RAW writes only — never replay verbs
+	void SuspendPickups();                                    // engage on enter (locked product decision)
+	void ResumePickups();                                     // release on resolve (discard/merge)
 
 	EBranchState State = EBranchState::Main;
 	FBranchManifest Manifest;
