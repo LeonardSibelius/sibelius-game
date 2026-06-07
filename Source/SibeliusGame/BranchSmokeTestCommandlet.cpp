@@ -20,7 +20,16 @@
 // [HARD] pickups suspended throughout the branch, released on discard
 // [HARD] second Discard is a no-op; Merge stays latched (can't half-fire)
 //
-// Phases 2-4 append their own blocks here. CP3 lesson #6: NAMED namespace to
+// PHASE 2 (merge for real + idempotency):
+// [HARD] degenerate merge (zero edits) changes nothing
+// [HARD] enter -> mutate every kind -> Merge -> live state KEPT (refactored stays
+//        refactored, site built, hatch unlocked, ledger keeps spent values)
+// [HARD] second Merge no-op; Discard-after-Merge no-op (can't revert a merge)
+// [HARD] baseline advanced: re-capture == merged state; discarding a post-merge
+//        branch restores to the MERGED baseline, not the original
+// [HARD] nesting still rejected
+//
+// Phases 3-4 append their own blocks here. CP3 lesson #6: NAMED namespace to
 // avoid unity-build redefinition collisions with the sibling commandlets.
 
 #include "BranchSmokeTestCommandlet.h"
@@ -253,11 +262,87 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		// Discard is a no-op from Main; Merge is latched (can't half-fire).
 		R.Check(!Branch->DiscardBranch(), TEXT("P1: second DiscardBranch is a no-op"));
 		R.Check(!Branch->MergeBranch(),   TEXT("P1: MergeBranch latched — rejected outside Branched (can't half-fire)"));
+
+		// =====================================================================
+		//  PHASE 2 — Merge for real + idempotency. Reuses the Phase-1 scene; the
+		//  world is back at its original state here (Phase 1 discarded its branch:
+		//  Refactorable not refactored, site unbuilt, hatch locked, ledger 20/3).
+		// =====================================================================
+		UE_LOG(LogBranchSmoke, Display, TEXT("--- Phase 2: merge keeps live + idempotency ---"));
+
+		// Degenerate case: merge with ZERO in-branch edits changes nothing.
+		R.Check(Branch->EnterBranch(), TEXT("P2: enter (degenerate, no edits)"));
+		const FBranchManifest CleanCapture = Branch->GetManifest();
+		R.Check(Branch->MergeBranch(), TEXT("P2: merge with zero in-branch edits succeeds"));
+		R.Check(Branch->GetState() == EBranchState::Main, TEXT("P2: Main after degenerate merge"));
+		R.Check(Branch->EnterBranch(), TEXT("P2: re-enter after degenerate merge"));
+		R.Check(ManifestsEqual(CleanCapture, Branch->GetManifest()), TEXT("P2: degenerate merge changed nothing"));
+		R.Check(Branch->DiscardBranch(), TEXT("P2: discard the degenerate check branch"));
+
+		// Pre-merge originals (to contrast with the merged baseline).
+		const bool  RefacOrig = Refac->IsRefactored();              // false
+		const int32 BookOrig  = Inv->GetCount(EResourceType::Book); // 20
+		const int32 KeyOrig   = Inv->GetCount(EResourceType::Key);  // 3
+
+		// Enter -> mutate EVERY kind via real verbs -> Merge -> assert live KEPT.
+		R.Check(Branch->EnterBranch(), TEXT("P2: enter the merge round"));
+		Refac->ToggleRefactor();
+		Inv->Spend(EResourceType::Book, 6);
+		Inv->Add(EResourceType::Key, 2);
+		const bool bBuilt2 = Site->Build(Inv);         // spends 8 Book
+		const bool bUnlocked2 = Hatch->TryUnlock(Inv); // spends 1 Key
+		R.Check(bBuilt2 && bUnlocked2, TEXT("P2: in-branch verbs applied (build + unlock)"));
+
+		// Snapshot the LIVE (about-to-merge) state for the kept-state asserts.
+		const bool  RefacLive = Refac->IsRefactored();              // true
+		const bool  SiteLive  = Site->IsBuilt();                    // true
+		const int32 BookLive  = Inv->GetCount(EResourceType::Book);
+		const int32 KeyLive   = Inv->GetCount(EResourceType::Key);
+
+		R.Check(Branch->MergeBranch(), TEXT("P2: MergeBranch keeps live + advances baseline"));
+		R.Check(Branch->GetState() == EBranchState::Main, TEXT("P2: Main after merge"));
+		R.Check(!Branch->ArePickupsSuspended(), TEXT("P2: pickups resumed after merge"));
+
+		// Live state KEPT (NOT reverted): every declared kind holds its in-branch value.
+		R.Check(Refac->IsRefactored() == RefacLive && RefacLive != RefacOrig, TEXT("P2 merged: Refactorable stays refactored"));
+		R.Check(Site->IsBuilt() == SiteLive && SiteLive,                       TEXT("P2 merged: site stays built"));
+		R.Check(!Hatch->IsLocked(),                                            TEXT("P2 merged: hatch stays unlocked"));
+		R.Check(Inv->GetCount(EResourceType::Book) == BookLive
+			&& Inv->GetCount(EResourceType::Key) == KeyLive
+			&& (BookLive != BookOrig || KeyLive != KeyOrig),                   TEXT("P2 merged: ledger keeps spent values"));
+
+		// Idempotency: second Merge no-op; Discard-after-Merge no-op (can't revert).
+		R.Check(!Branch->MergeBranch(),   TEXT("P2: second MergeBranch is a no-op"));
+		R.Check(!Branch->DiscardBranch(), TEXT("P2: Discard after Merge is a no-op (can't revert a merged branch)"));
+		R.Check(Site->IsBuilt() && !Hatch->IsLocked(), TEXT("P2: merged state intact after the no-op resolves"));
+
+		// Baseline advanced: a fresh branch off the merged world captures the MERGED
+		// state, and discarding it restores to the MERGED baseline — NOT the original.
+		R.Check(Branch->EnterBranch(), TEXT("P2: re-enter off the merged baseline"));
+		int32 CapturedBook = -1;
+		for (const FResourceEntry& E : Branch->GetManifest().Resources)
+		{
+			if (E.Resource == EResourceType::Book) { CapturedBook = E.Count; }
+		}
+		R.Check(CapturedBook == BookLive, TEXT("P2: re-capture == merged ledger (baseline advanced, not original)"));
+
+		Refac->ToggleRefactor();                  // mutate again inside this branch
+		Inv->Add(EResourceType::Book, 50);
+		R.Check(Branch->DiscardBranch(), TEXT("P2: discard the post-merge branch"));
+		R.Check(Inv->GetCount(EResourceType::Book) == BookLive && BookLive != BookOrig,
+			TEXT("P2: discard restores to the MERGED baseline ledger, not the original"));
+		R.Check(Refac->IsRefactored() == RefacLive, TEXT("P2: discard restores Refactorable to the merged baseline"));
+		R.Check(Site->IsBuilt() && !Hatch->IsLocked(), TEXT("P2: merged build/unlock survive the post-merge discard"));
+
+		// Nesting still rejected (Phase 3's job).
+		R.Check(Branch->EnterBranch(),  TEXT("P2: enter once more"));
+		R.Check(!Branch->EnterBranch(), TEXT("P2: nesting still rejected (re-enter while Branched is a no-op)"));
+		R.Check(Branch->MergeBranch(),  TEXT("P2: clean up the final branch via merge"));
 	}
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phase 0 + Phase 1 green). ==="));
+		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phase 0 + 1 + 2 green). ==="));
 		return 0;
 	}
 	UE_LOG(LogBranchSmoke, Error, TEXT("=== BRANCH SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);

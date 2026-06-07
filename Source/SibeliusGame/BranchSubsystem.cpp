@@ -167,14 +167,20 @@ bool UBranchSubsystem::DiscardBranch()
 
 bool UBranchSubsystem::MergeBranch()
 {
+	// One-resolution latch: merge/discard resolve ONLY from Branched, exactly
+	// once. After either, the other (and any repeat / UI double-fire) is a no-op
+	// until the next EnterBranch flips back to Branched. The transient Resolving
+	// state also blocks re-entrant resolves fired mid-resolve.
 	if (State != EBranchState::Branched)
 	{
-		return false; // guard
+		return false;
 	}
 
 	State = EBranchState::Resolving;
-	// Merge = keep live, advance the baseline: drop the snapshot, restore nothing.
-	// (Phase 3 nesting will fold into the enclosing branch instead of Main.)
+	// Phase 2 — full single-level merge: KEEP the live (in-branch) world and drop
+	// the snapshot, so the current state becomes the new "main" truth (restore
+	// nothing). The next EnterBranch re-captures this kept world, so the baseline
+	// has advanced. (Phase 3 nesting will fold into the enclosing branch, not Main.)
 	Manifest.Reset();
 	ResumePickups();
 	State = EBranchState::Main;
