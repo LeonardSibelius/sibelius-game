@@ -130,21 +130,35 @@ void UBranchSubsystem::RestoreDeclaredSet(const FBranchManifest& Snapshot)
 	}
 }
 
+// Max nesting depth — a defensive cap; real "test-drive within test-drive" use
+// never approaches it.
+static constexpr int32 MAX_BRANCH_DEPTH = 8;
+
 bool UBranchSubsystem::EnterBranch()
 {
-	if (State != EBranchState::Main)
+	// Allowed from Main (depth 1) or while Branched (Phase 3 nesting) — but never
+	// mid-resolve.
+	if (State == EBranchState::Resolving)
 	{
-		UE_LOG(LogSibeliusGame, Warning, TEXT("[Branch] EnterBranch ignored: state != Main (no nesting until Phase 3)."));
+		return false;
+	}
+	if (Stack.Num() >= MAX_BRANCH_DEPTH)
+	{
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Branch] EnterBranch ignored: max nesting depth %d reached."), MAX_BRANCH_DEPTH);
 		return false;
 	}
 
-	RebuildRegistry();
-	Manifest = CaptureDeclaredSet();
+	if (Stack.Num() == 0)
+	{
+		RebuildRegistry();   // build the registry once, on the outermost enter
+		SuspendPickups();    // engage suspension while any branch is open
+	}
+	Stack.Push(CaptureDeclaredSet()); // snapshot the CURRENT world (enclosing live)
 	State = EBranchState::Branched;
-	SuspendPickups(); // engage while branched so collecting can't escape the declared set
 
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Entered: captured %d object(s) + %d ledger entr(ies)."),
-		Manifest.Objects.Num(), Manifest.Resources.Num());
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Entered: depth %d, captured %d object(s) + %d ledger entr(ies)."),
+		Stack.Num(), Stack.Last().Objects.Num(), Stack.Last().Resources.Num());
+	OnBranchDepthChanged.Broadcast(Stack.Num());
 	return true;
 }
 
@@ -152,40 +166,55 @@ bool UBranchSubsystem::DiscardBranch()
 {
 	if (State != EBranchState::Branched)
 	{
-		return false; // guard: exactly one resolution, only from Branched
+		return false; // latch: resolve only from Branched, one frame at a time
 	}
 
 	State = EBranchState::Resolving;
-	RestoreDeclaredSet(Manifest); // RAW restore — never replay verbs
-	Manifest.Reset();
-	ResumePickups();
-	State = EBranchState::Main;
+	const FBranchManifest Top = Stack.Pop();
+	RestoreDeclaredSet(Top); // RAW restore to where this branch began (enclosing live / Main)
+	if (Stack.Num() == 0)
+	{
+		ResumePickups();
+		State = EBranchState::Main;
+	}
+	else
+	{
+		State = EBranchState::Branched; // still inside the enclosing branch
+	}
 
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Discarded: declared set restored."));
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Discarded: restored to depth %d."), Stack.Num());
+	OnBranchDepthChanged.Broadcast(Stack.Num());
 	return true;
 }
 
 bool UBranchSubsystem::MergeBranch()
 {
-	// One-resolution latch: merge/discard resolve ONLY from Branched, exactly
-	// once. After either, the other (and any repeat / UI double-fire) is a no-op
-	// until the next EnterBranch flips back to Branched. The transient Resolving
-	// state also blocks re-entrant resolves fired mid-resolve.
+	// One-resolution latch: merge/discard resolve ONLY from Branched, one frame
+	// per call. After resolving a frame, a repeat / UI double-fire at the same
+	// depth is a no-op until the next EnterBranch. Resolving blocks re-entrancy.
 	if (State != EBranchState::Branched)
 	{
 		return false;
 	}
 
 	State = EBranchState::Resolving;
-	// Phase 2 — full single-level merge: KEEP the live (in-branch) world and drop
-	// the snapshot, so the current state becomes the new "main" truth (restore
-	// nothing). The next EnterBranch re-captures this kept world, so the baseline
-	// has advanced. (Phase 3 nesting will fold into the enclosing branch, not Main.)
-	Manifest.Reset();
-	ResumePickups();
-	State = EBranchState::Main;
+	// Keep the live (in-branch) world; drop this frame's snapshot. The kept state
+	// folds into the enclosing branch's live (depth > 0) or becomes the new Main
+	// truth (depth 0). The enclosing frame's snapshot is untouched, so discarding
+	// the enclosing branch still rewinds to where IT began.
+	Stack.Pop();
+	if (Stack.Num() == 0)
+	{
+		ResumePickups();
+		State = EBranchState::Main;
+	}
+	else
+	{
+		State = EBranchState::Branched;
+	}
 
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Merged: live kept, baseline advanced."));
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Merged: live kept, depth %d."), Stack.Num());
+	OnBranchDepthChanged.Broadcast(Stack.Num());
 	return true;
 }
 

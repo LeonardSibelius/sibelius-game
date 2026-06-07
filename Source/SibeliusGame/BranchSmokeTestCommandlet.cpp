@@ -27,10 +27,19 @@
 // [HARD] second Merge no-op; Discard-after-Merge no-op (can't revert a merge)
 // [HARD] baseline advanced: re-capture == merged state; discarding a post-merge
 //        branch restores to the MERGED baseline, not the original
-// [HARD] nesting still rejected
 //
-// Phases 3-4 append their own blocks here. CP3 lesson #6: NAMED namespace to
-// avoid unity-build redefinition collisions with the sibling commandlets.
+// PHASE 3 (nesting + branch-state signaling):
+// [HARD] nesting allowed (enter while Branched pushes a deeper frame); depth
+//        tracks 0/1/2 and OnBranchDepthChanged fires each change
+// [HARD] branch signal (desaturate PP + HUD) on iff depth >= 1
+// [HARD] nested discard restores to the OUTER branch exactly (no leak in);
+//        outer discard restores to Main exactly (no leak out)
+// [HARD] re-enter after unwind starts clean from Main (no residue)
+// [HARD] nested merge folds into the enclosing branch; a later outer discard
+//        drops the merged-inner changes too (outer discard wins)
+//
+// Phase 4 appends its own block here. CP3 lesson #6: NAMED namespace to avoid
+// unity-build redefinition collisions with the sibling commandlets.
 
 #include "BranchSmokeTestCommandlet.h"
 #include "BranchSubsystem.h"
@@ -170,8 +179,7 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 	// [HARD] Pickups suspended while branched.
 	R.Check(Branch->ArePickupsSuspended(), TEXT("Pickups suspended while branched (product decision)"));
 
-	// [HARD] No nesting yet: re-enter from Branched is rejected.
-	R.Check(!Branch->EnterBranch(), TEXT("EnterBranch() rejected while Branched (no nesting until Phase 3)"));
+	// (Nesting is enabled in Phase 3 and exercised in its own block below.)
 
 	// [HARD] Discard: Branched -> Main; second discard is a guarded no-op.
 	R.Check(Branch->DiscardBranch(), TEXT("DiscardBranch() succeeds from Branched"));
@@ -334,15 +342,88 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(Refac->IsRefactored() == RefacLive, TEXT("P2: discard restores Refactorable to the merged baseline"));
 		R.Check(Site->IsBuilt() && !Hatch->IsLocked(), TEXT("P2: merged build/unlock survive the post-merge discard"));
 
-		// Nesting still rejected (Phase 3's job).
+		// Clean single-level resolve (nesting is Phase 3's block, below).
 		R.Check(Branch->EnterBranch(),  TEXT("P2: enter once more"));
-		R.Check(!Branch->EnterBranch(), TEXT("P2: nesting still rejected (re-enter while Branched is a no-op)"));
 		R.Check(Branch->MergeBranch(),  TEXT("P2: clean up the final branch via merge"));
+
+		// =====================================================================
+		//  PHASE 3 — nesting + branch-state signaling. World here is the Phase-2
+		//  MERGED baseline (refactored / built / unlocked / ledger 6 Book, 4 Key).
+		// =====================================================================
+		UE_LOG(LogBranchSmoke, Display, TEXT("--- Phase 3: nesting + signaling ---"));
+
+		// Signal driver: PP desaturate + HUD marker subscribe to OnBranchDepthChanged.
+		int32 LastSignalDepth = -1;
+		FDelegateHandle SignalH = Branch->OnBranchDepthChanged.AddLambda(
+			[&LastSignalDepth](int32 D) { LastSignalDepth = D; });
+
+		R.Check(Branch->GetDepth() == 0, TEXT("P3: depth 0 at Main"));
+		R.Check(!Branch->IsBranchSignalActive(), TEXT("P3: branch signal OFF at Main (no desaturate/HUD)"));
+
+		// Level-0 baseline = whatever the world is now.
+		const bool  L0Refac = Refac->IsRefactored();
+		const int32 L0Book  = Inv->GetCount(EResourceType::Book);
+
+		// Enter OUTER (depth 1) -> mutate.
+		R.Check(Branch->EnterBranch(), TEXT("P3: enter outer (depth 1)"));
+		R.Check(Branch->GetDepth() == 1 && LastSignalDepth == 1, TEXT("P3: depth 1, signal fired (1)"));
+		R.Check(Branch->IsBranchSignalActive(), TEXT("P3: branch signal ON while branched"));
+		Refac->ToggleRefactor();
+		Inv->Spend(EResourceType::Book, 2);
+		const bool  OuterRefac = Refac->IsRefactored();
+		const int32 OuterBook  = Inv->GetCount(EResourceType::Book);
+
+		// Enter NESTED (depth 2) — nesting now allowed -> mutate.
+		R.Check(Branch->EnterBranch(), TEXT("P3: enter nested (depth 2) — nesting allowed"));
+		R.Check(Branch->GetDepth() == 2 && LastSignalDepth == 2, TEXT("P3: depth 2, signal fired (2)"));
+		Refac->ToggleRefactor();
+		Inv->Add(EResourceType::Book, 100);
+
+		// Discard NESTED -> restores to the OUTER branch's live (no leak in).
+		R.Check(Branch->DiscardBranch(), TEXT("P3: discard nested"));
+		R.Check(Branch->GetDepth() == 1 && LastSignalDepth == 1, TEXT("P3: back to depth 1, signal (1)"));
+		R.Check(Branch->IsBranchSignalActive(), TEXT("P3: signal still ON at depth 1"));
+		R.Check(Refac->IsRefactored() == OuterRefac && Inv->GetCount(EResourceType::Book) == OuterBook,
+			TEXT("P3: nested discard restored to the OUTER branch exactly (no leak in)"));
+
+		// Discard OUTER -> restores to Main exactly (no leak out).
+		R.Check(Branch->DiscardBranch(), TEXT("P3: discard outer"));
+		R.Check(Branch->GetDepth() == 0 && LastSignalDepth == 0, TEXT("P3: depth 0, signal fired (0)"));
+		R.Check(!Branch->IsBranchSignalActive(), TEXT("P3: branch signal OFF back at Main"));
+		R.Check(!Branch->ArePickupsSuspended(), TEXT("P3: pickups released at depth 0"));
+		R.Check(Refac->IsRefactored() == L0Refac && Inv->GetCount(EResourceType::Book) == L0Book,
+			TEXT("P3: outer discard restored to Main exactly (no leak out)"));
+
+		// Re-enter clean: the new capture starts from Main, no residue.
+		R.Check(Branch->EnterBranch(), TEXT("P3: re-enter after full unwind"));
+		int32 ReenterBook = -1;
+		for (const FResourceEntry& E : Branch->GetManifest().Resources)
+		{
+			if (E.Resource == EResourceType::Book) { ReenterBook = E.Count; }
+		}
+		R.Check(ReenterBook == L0Book, TEXT("P3: re-entered branch starts clean from Main (no residue)"));
+		R.Check(Branch->DiscardBranch(), TEXT("P3: discard the clean re-enter"));
+
+		// Nested MERGE folds into the enclosing branch; outer discard then drops it.
+		R.Check(Branch->EnterBranch(), TEXT("P3: enter outer again (depth 1)"));
+		Inv->Spend(EResourceType::Book, 1);
+		R.Check(Branch->EnterBranch(), TEXT("P3: enter nested again (depth 2)"));
+		Inv->Spend(EResourceType::Book, 1);
+		const int32 NestedBook = Inv->GetCount(EResourceType::Book);
+		R.Check(Branch->MergeBranch(), TEXT("P3: merge nested -> folds into the outer branch"));
+		R.Check(Branch->GetDepth() == 1, TEXT("P3: depth 1 after nested merge (still inside outer)"));
+		R.Check(Inv->GetCount(EResourceType::Book) == NestedBook, TEXT("P3: nested merge KEEPS its live in the outer branch"));
+		R.Check(Branch->DiscardBranch(), TEXT("P3: discard outer (drops the nested-merged changes too)"));
+		R.Check(Branch->GetDepth() == 0, TEXT("P3: depth 0"));
+		R.Check(Inv->GetCount(EResourceType::Book) == L0Book,
+			TEXT("P3: outer discard wins — nested-merged changes dropped to the Main baseline"));
+
+		Branch->OnBranchDepthChanged.Remove(SignalH);
 	}
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phase 0 + 1 + 2 green). ==="));
+		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phase 0 + 1 + 2 + 3 green). ==="));
 		return 0;
 	}
 	UE_LOG(LogBranchSmoke, Error, TEXT("=== BRANCH SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);
