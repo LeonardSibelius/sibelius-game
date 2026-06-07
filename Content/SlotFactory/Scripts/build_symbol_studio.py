@@ -1,4 +1,4 @@
-# build_symbol_studio.py — Celestial Fortune Symbol Studio production pass (P3a)
+# build_symbol_studio.py — Celestial Fortune Symbol Studio (P3a build + P4 theme pass)
 #
 # Programmatically builds, for each of the 9 model symbols (star, moon, galaxy,
 # saturn, mars, crown, seven, wild, scatter):
@@ -39,18 +39,27 @@ CAM_DIST = 460.0       # cm from symbol centre
 FRAME_FILL = 0.80      # symbol fills ~80% of the square frame
 TARGET_SIZE = 175.0    # cm the frame height spans (symbol ~ FRAME_FILL of this)
 FOCAL = (CAM_DIST / TARGET_SIZE) * FILMBACK  # ~63mm
+SEVEN_GLYPH_SCALE = 1.6  # Text3D "7" scale -> ~cell height (eyeball/tune)
 
-# id, base colour (linear rgb), emissive strength, metallic, roughness, builder key
+# P4 theme knobs. Per symbol: color = base linear rgb; em = emissive strength;
+# met/rough = PBR; optional rim = (rgb, strength) Fresnel rim light; optional
+# mottle = (rgb, noiseScale, strength) world-space noise that varies base colour
+# (moon craters / mars mottling). A warm GOLD_RIM unifies the set as one
+# "celestial gold" family; moon keeps a cool rim per its icy identity. Emissive
+# is balanced so every symbol reads at reel-cell (~100px) size without blowing out.
+GOLD_RIM = (1.00, 0.86, 0.52)
 SYMBOLS = [
-    ("star",    (1.00, 0.80, 0.22), 2.5, 1.0, 0.20, "star"),
-    ("moon",    (0.82, 0.86, 1.00), 0.6, 0.25, 0.55, "moon"),
-    ("galaxy",  (0.55, 0.32, 0.95), 2.2, 0.30, 0.40, "galaxy"),
-    ("saturn",  (0.92, 0.74, 0.38), 0.8, 0.85, 0.30, "saturn"),
-    ("mars",    (0.85, 0.26, 0.09), 0.9, 0.25, 0.65, "mars"),
-    ("crown",   (1.00, 0.84, 0.30), 1.4, 1.0, 0.18, "crown"),
-    ("seven",   (0.92, 0.11, 0.18), 1.6, 0.60, 0.30, "seven"),
-    ("wild",    (0.72, 0.32, 1.00), 3.0, 1.0, 0.22, "wild"),
-    ("scatter", (0.20, 0.72, 1.00), 2.8, 0.40, 0.35, "scatter"),
+    dict(id="star",    builder="star",    color=(1.00, 0.80, 0.25), em=2.0, met=1.0,  rough=0.22, rim=(GOLD_RIM, 0.6)),
+    dict(id="moon",    builder="moon",    color=(0.80, 0.84, 0.92), em=0.5, met=0.15, rough=0.60,
+         mottle=((0.20, 0.22, 0.30), 0.030, 0.85), rim=((0.75, 0.86, 1.00), 0.9)),
+    dict(id="galaxy",  builder="galaxy",  color=(0.55, 0.32, 0.95), em=1.8, met=0.30, rough=0.40, rim=(GOLD_RIM, 0.5)),
+    dict(id="saturn",  builder="saturn",  color=(0.95, 0.76, 0.40), em=0.9, met=0.85, rough=0.30, rim=(GOLD_RIM, 0.5)),
+    dict(id="mars",    builder="mars",    color=(0.70, 0.18, 0.06), em=0.8, met=0.20, rough=0.70,
+         mottle=((0.16, 0.04, 0.02), 0.035, 0.85), rim=((1.00, 0.62, 0.36), 0.5)),
+    dict(id="crown",   builder="crown",   color=(1.00, 0.84, 0.32), em=1.4, met=1.0,  rough=0.18, rim=(GOLD_RIM, 0.6)),
+    dict(id="seven",   builder="seven",   color=(1.00, 0.80, 0.30), em=1.6, met=1.0,  rough=0.20, rim=(GOLD_RIM, 0.6)),
+    dict(id="wild",    builder="wild",    color=(0.72, 0.32, 1.00), em=2.4, met=1.0,  rough=0.22, rim=(GOLD_RIM, 0.7)),
+    dict(id="scatter", builder="scatter", color=(0.20, 0.72, 1.00), em=2.2, met=0.40, rough=0.35, rim=(GOLD_RIM, 0.5)),
 ]
 
 TAG = "###STUDIO###"
@@ -95,26 +104,72 @@ def main():
     fc.set_light_color(unreal.LinearColor(0.7, 0.8, 1.0, 1.0))
 
     # -- helpers ------------------------------------------------------------
-    def make_material(sid, color, emissive, metallic, rough):
+    def make_material(spec):
+        # Emissive+metallic PBR in the M_SlotGold recipe family, with optional
+        # world-space noise mottling (craters/skin) and a Fresnel rim light.
+        sid = spec["id"]
         full = "%s/M_%s" % (MAT_DIR, sid)
         if eal.does_asset_exist(full):
             eal.delete_asset(full)
         mat = asset_tools.create_asset("M_" + sid, MAT_DIR, unreal.Material, unreal.MaterialFactoryNew())
-        col = mel.create_material_expression(mat, unreal.MaterialExpressionConstant3Vector, -450, 0)
-        col.set_editor_property("constant", unreal.LinearColor(color[0], color[1], color[2], 1.0))
-        mel.connect_material_property(col, "", unreal.MaterialProperty.MP_BASE_COLOR)
-        met = mel.create_material_expression(mat, unreal.MaterialExpressionConstant, -450, 160)
-        met.set_editor_property("r", metallic)
-        mel.connect_material_property(met, "", unreal.MaterialProperty.MP_METALLIC)
-        rgh = mel.create_material_expression(mat, unreal.MaterialExpressionConstant, -450, 250)
-        rgh.set_editor_property("r", rough)
-        mel.connect_material_property(rgh, "", unreal.MaterialProperty.MP_ROUGHNESS)
-        es = mel.create_material_expression(mat, unreal.MaterialExpressionConstant, -450, 360)
-        es.set_editor_property("r", emissive)
-        mul = mel.create_material_expression(mat, unreal.MaterialExpressionMultiply, -220, 300)
-        mel.connect_material_expressions(col, "", mul, "A")
-        mel.connect_material_expressions(es, "", mul, "B")
-        mel.connect_material_property(mul, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+
+        def c3(rgb, x, y):
+            n = mel.create_material_expression(mat, unreal.MaterialExpressionConstant3Vector, x, y)
+            n.set_editor_property("constant", unreal.LinearColor(rgb[0], rgb[1], rgb[2], 1.0))
+            return n
+
+        def c1(v, x, y):
+            n = mel.create_material_expression(mat, unreal.MaterialExpressionConstant, x, y)
+            n.set_editor_property("r", v)
+            return n
+
+        def mul(a, b, x, y):
+            n = mel.create_material_expression(mat, unreal.MaterialExpressionMultiply, x, y)
+            mel.connect_material_expressions(a, "", n, "A")
+            mel.connect_material_expressions(b, "", n, "B")
+            return n
+
+        col = c3(spec["color"], -700, 0)
+
+        # base colour, optionally mottled toward a darker shade by 3D noise.
+        # We drive the Noise Position with WorldPosition * freq so the feature
+        # size is explicit (~1/freq cm) and reads at ~100px — the node's own
+        # "scale" was ambiguous and washed flat at this cam distance.
+        base_out = col
+        if "mottle" in spec:
+            mc, freq, strength = spec["mottle"]
+            wpos = mel.create_material_expression(mat, unreal.MaterialExpressionWorldPosition, -1000, 180)
+            scaled = mul(wpos, c1(freq, -1000, 330), -820, 200)
+            noise = mel.create_material_expression(mat, unreal.MaterialExpressionNoise, -640, 180)
+            mel.connect_material_expressions(scaled, "", noise, "Position")
+            noise.set_editor_property("scale", 1.0)
+            noise.set_editor_property("output_min", 0.0)
+            noise.set_editor_property("output_max", 1.0)
+            alpha = mul(noise, c1(strength, -640, 330), -480, 220)
+            lerp = mel.create_material_expression(mat, unreal.MaterialExpressionLinearInterpolate, -320, 40)
+            mel.connect_material_expressions(col, "", lerp, "A")
+            mel.connect_material_expressions(c3(mc, -640, 90), "", lerp, "B")
+            mel.connect_material_expressions(alpha, "", lerp, "Alpha")
+            base_out = lerp
+            unreal.log("%s %s: mottle freq=%.3f strength=%.2f" % (TAG, sid, freq, strength))
+        mel.connect_material_property(base_out, "", unreal.MaterialProperty.MP_BASE_COLOR)
+
+        mel.connect_material_property(c1(spec["met"], -700, 420), "", unreal.MaterialProperty.MP_METALLIC)
+        mel.connect_material_property(c1(spec["rough"], -700, 500), "", unreal.MaterialProperty.MP_ROUGHNESS)
+
+        # emissive = base colour * strength (+ optional Fresnel rim light)
+        emis_out = mul(col, c1(spec["em"], -700, 600), -320, 560)
+        if "rim" in spec:
+            rc, rstr = spec["rim"]
+            fres = mel.create_material_expression(mat, unreal.MaterialExpressionFresnel, -700, 720)
+            fres.set_editor_property("exponent", 4.0)
+            rim = mul(mul(fres, c1(rstr, -700, 860), -500, 760), c3(rc, -700, 940), -320, 760)
+            add = mel.create_material_expression(mat, unreal.MaterialExpressionAdd, -150, 600)
+            mel.connect_material_expressions(emis_out, "", add, "A")
+            mel.connect_material_expressions(rim, "", add, "B")
+            emis_out = add
+        mel.connect_material_property(emis_out, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+
         mel.recompile_material(mat)
         eal.save_asset(full)
         return mat
@@ -150,7 +205,17 @@ def main():
         return add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (1.5, 1.5, 1.5), mat, "body")
 
     def build_mars(sid, c, mat):
-        return add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (1.4, 1.4, 1.4), mat, "body")
+        body = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (1.4, 1.4, 1.4), mat, "body")
+        # white polar ice cap at the upper-front of the planet — the cue that
+        # separates mars (red+cap) from moon (grey+craters) at reel-cell size.
+        ice = make_material(dict(id="mars_ice", color=(0.92, 0.96, 1.00), em=0.7, met=0.05, rough=0.50,
+                                 rim=((0.80, 0.90, 1.00), 0.5)))
+        # The planet sphere is r=70cm. Put the cap centre OUT on the surface
+        # (dist ~69 from centre) on the camera-facing (-Y) upper hemisphere so it
+        # pokes proud of the pole instead of being buried inside the planet.
+        cap = add_part(sid, body, MESH["sphere"], V(c, y=-40, z=56), unreal.Rotator(0, 0, 0), (0.74, 0.62, 0.46), ice, "icecap")
+        unreal.log("%s mars: ice cap built '%s' at pole (dist~69 of r70)" % (TAG, cap.get_actor_label()))
+        return body
 
     def build_saturn(sid, c, mat):
         body = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (0.95, 0.95, 0.95), mat, "planet")
@@ -169,9 +234,67 @@ def main():
         return build_crown_parts(sid, c, mat)
 
     def build_seven(sid, c, mat):
-        bar = add_part(sid, None, MESH["cube"], V(c, x=0, z=48), unreal.Rotator(0, 0, 0), (1.0, 0.18, 0.16), mat, "bar")
-        add_part(sid, bar, MESH["cube"], V(c, x=10, z=-12), unreal.Rotator(20.0, 0, 0), (0.16, 0.18, 0.95), mat, "stem")
-        return bar
+        # P4: true extruded "7" via the Text 3D plugin; box-built fallback so the
+        # other 8 (and a usable seven) survive if the plugin is unavailable.
+        try:
+            # UE5.7 editor Python has no Actor.add_component_by_class; the Text 3D
+            # plugin ships AText3DActor with a Text3DComponent root — spawn it and
+            # grab the component directly.
+            if not hasattr(unreal, "Text3DActor"):
+                raise RuntimeError("Text3DActor unavailable (Text 3D plugin off)")
+            actor = eas.spawn_actor_from_class(unreal.Text3DActor, V(c), unreal.Rotator(0.0, -90.0, 0.0))
+            comp = actor.get_component_by_class(unreal.Text3DComponent)
+
+            # UE5.7: Text3DComponent UPROPERTYs (Text/Extrude/Bevel/materials) are
+            # protected and can't be set via set_editor_property — use the
+            # BlueprintCallable setters. Resolve by name so we use whatever this
+            # build of the plugin actually exposes.
+            def call(names, *args):
+                for n in names:
+                    fn = getattr(comp, n, None)
+                    if callable(fn):
+                        try:
+                            fn(*args)
+                            return True
+                        except Exception:
+                            pass
+                return False
+
+            # `text` has no BlueprintSetter (no set_text in dir) -> unlike the
+            # protected Extrude/Bevel/etc it IS directly settable here; the rest
+            # must go through their set_* methods.
+            try:
+                comp.set_editor_property("text", "7")
+            except Exception as ex:
+                raise RuntimeError("set text failed: %s" % ex)
+            call(["set_extrude"], 25.0)
+            call(["set_bevel"], 3.0)
+            call(["set_bevel_segments"], 4)
+            if hasattr(unreal, "Text3DBevelType"):
+                try:
+                    call(["set_bevel_type"], unreal.Text3DBevelType.CONVEX)
+                except Exception:
+                    pass
+            # centre the glyph on the actor pivot so the camera framing holds
+            if hasattr(unreal, "Text3DHorizontalTextAlignment"):
+                call(["set_horizontal_alignment"], unreal.Text3DHorizontalTextAlignment.CENTER)
+            if hasattr(unreal, "Text3DVerticalTextAlignment"):
+                call(["set_vertical_alignment"], unreal.Text3DVerticalTextAlignment.CENTER)
+            for setter in ("set_front_material", "set_back_material", "set_extrude_material", "set_bevel_material"):
+                call([setter], mat)
+            actor.set_actor_label("%s_glyph" % sid)
+            try:
+                actor.set_folder_path("SlotFactory/%s" % sid)
+            except Exception:
+                pass
+            actor.set_actor_scale3d(unreal.Vector(SEVEN_GLYPH_SCALE, SEVEN_GLYPH_SCALE, SEVEN_GLYPH_SCALE))
+            unreal.log("%s seven: Text3D extruded glyph (Text3DActor)" % TAG)
+            return actor
+        except Exception as ex:
+            unreal.log("%s seven: Text3D failed (%s) -> box fallback" % (TAG, ex))
+            bar = add_part(sid, None, MESH["cube"], V(c, x=0, z=48), unreal.Rotator(0, 0, 0), (1.0, 0.18, 0.16), mat, "bar")
+            add_part(sid, bar, MESH["cube"], V(c, x=10, z=-12), unreal.Rotator(20.0, 0, 0), (0.16, 0.18, 0.95), mat, "stem")
+            return bar
 
     def build_galaxy(sid, c, mat):
         disc = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 68.0), (1.55, 1.55, 0.22), mat, "disc")
@@ -236,11 +359,12 @@ def main():
 
     # -- build each symbol --------------------------------------------------
     built = []
-    for idx, (sid, color, emissive, metallic, rough, key_name) in enumerate(SYMBOLS):
+    for idx, spec in enumerate(SYMBOLS):
+        sid = spec["id"]
         try:
             center = unreal.Vector(idx * SPACING, 0.0, BASE_Z)
-            mat = make_material(sid, color, emissive, metallic, rough)
-            body = BUILDERS[key_name](sid, center, mat)
+            mat = make_material(spec)
+            body = BUILDERS[spec["builder"]](sid, center, mat)
 
             cam_loc = unreal.Vector(center.x, center.y - CAM_DIST, center.z)
             cam_rot = unreal.MathLibrary.find_look_at_rotation(cam_loc, center)
