@@ -54,8 +54,13 @@ SYMBOLS = [
          mottle=((0.20, 0.22, 0.30), 0.030, 0.85), rim=((0.75, 0.86, 1.00), 0.9)),
     dict(id="galaxy",  builder="galaxy",  color=(0.55, 0.32, 0.95), em=1.8, met=0.30, rough=0.40, rim=(GOLD_RIM, 0.5)),
     dict(id="saturn",  builder="saturn",  color=(0.95, 0.76, 0.40), em=0.9, met=0.85, rough=0.30, rim=(GOLD_RIM, 0.5)),
+    # polar = (iceColor, smoothstep lo, hi on normal.Z, edgeNoiseAmt, noiseFreq).
+    # Small cap (top ~10%) with a noise-broken, feathered edge — a frosty patch,
+    # not a clean latitude line.
     dict(id="mars",    builder="mars",    color=(0.70, 0.18, 0.06), em=0.8, met=0.20, rough=0.70,
-         mottle=((0.16, 0.04, 0.02), 0.035, 0.85), rim=((1.00, 0.62, 0.36), 0.5)),
+         mottle=((0.16, 0.04, 0.02), 0.035, 0.85),
+         polar=((0.84, 0.91, 1.00), 0.78, 0.88, 0.10, 0.05),
+         rim=((1.00, 0.62, 0.36), 0.5)),
     dict(id="crown",   builder="crown",   color=(1.00, 0.84, 0.32), em=1.4, met=1.0,  rough=0.18, rim=(GOLD_RIM, 0.6)),
     dict(id="seven",   builder="seven",   color=(1.00, 0.80, 0.30), em=1.6, met=1.0,  rough=0.20, rim=(GOLD_RIM, 0.6)),
     dict(id="wild",    builder="wild",    color=(0.72, 0.32, 1.00), em=2.4, met=1.0,  rough=0.22, rim=(GOLD_RIM, 0.7)),
@@ -89,7 +94,17 @@ def main():
         eal.delete_asset(LEVEL_PATH)
     les.new_level(LEVEL_PATH)
     world = ues.get_editor_world()
-    unreal.log("%s new level: %s" % (TAG, LEVEL_PATH))
+    # Defensive clean slate: if the level couldn't be fully reset (e.g. it was the
+    # OPEN editor level, so delete_asset/new_level silently left it as-is), destroy
+    # every actor already present so NO stale geometry — like an old mars_icecap
+    # cap sphere from an earlier run — survives into the rebuild.
+    stale = list(eas.get_all_level_actors())
+    for a in stale:
+        try:
+            eas.destroy_actor(a)
+        except Exception:
+            pass
+    unreal.log("%s new level: %s (cleared %d pre-existing actors)" % (TAG, LEVEL_PATH, len(stale)))
 
     # even, position-independent lighting (two directionals) so metallic shape
     # reads across every symbol; the empty level keeps the bg transparent.
@@ -152,6 +167,43 @@ def main():
             mel.connect_material_expressions(alpha, "", lerp, "Alpha")
             base_out = lerp
             unreal.log("%s %s: mottle freq=%.3f strength=%.2f" % (TAG, sid, freq, strength))
+
+        # optional polar ice cap baked into base colour: mask the top of the
+        # sphere by world-normal Z (preserved under the yaw spin, so the cap stays
+        # on the pole) and smoothstep rust -> ice with a soft edge — the white
+        # follows the curvature exactly instead of perching on top.
+        if "polar" in spec:
+            ice_color, lo, hi, edge_amt, pfreq = spec["polar"]
+            # latitude = dot(worldNormal, +Z): +1 at the north pole, 0 at equator
+            nrm = mel.create_material_expression(mat, unreal.MaterialExpressionVertexNormalWS, -1100, 560)
+            dot = mel.create_material_expression(mat, unreal.MaterialExpressionDotProduct, -900, 560)
+            mel.connect_material_expressions(nrm, "", dot, "A")
+            mel.connect_material_expressions(c3((0.0, 0.0, 1.0), -1100, 700), "", dot, "B")
+            # break the latitude line with signed world-space noise so the cap
+            # edge is irregular/feathered (rust pokes through) — not a hat brim
+            pn = mel.create_material_expression(mat, unreal.MaterialExpressionNoise, -1100, 820)
+            ps = mul(mel.create_material_expression(mat, unreal.MaterialExpressionWorldPosition, -1320, 820),
+                     c1(pfreq, -1320, 960), -1200, 840)
+            mel.connect_material_expressions(ps, "", pn, "Position")
+            pn.set_editor_property("scale", 1.0)
+            pn.set_editor_property("output_min", -1.0)
+            pn.set_editor_property("output_max", 1.0)
+            edge = mul(pn, c1(edge_amt, -900, 860), -760, 840)
+            nz = mel.create_material_expression(mat, unreal.MaterialExpressionAdd, -640, 640)
+            mel.connect_material_expressions(dot, "", nz, "A")
+            mel.connect_material_expressions(edge, "", nz, "B")
+            ss = mel.create_material_expression(mat, unreal.MaterialExpressionSmoothStep, -460, 600)
+            try:
+                ss.set_editor_property("const_min", lo)
+                ss.set_editor_property("const_max", hi)
+            except Exception:
+                pass
+            mel.connect_material_expressions(nz, "", ss, "Value")
+            cap = mel.create_material_expression(mat, unreal.MaterialExpressionLinearInterpolate, -300, 460)
+            mel.connect_material_expressions(base_out, "", cap, "A")
+            mel.connect_material_expressions(c3(ice_color, -640, 470), "", cap, "B")
+            mel.connect_material_expressions(ss, "", cap, "Alpha")
+            base_out = cap
         mel.connect_material_property(base_out, "", unreal.MaterialProperty.MP_BASE_COLOR)
 
         mel.connect_material_property(c1(spec["met"], -700, 420), "", unreal.MaterialProperty.MP_METALLIC)
@@ -206,15 +258,14 @@ def main():
 
     def build_mars(sid, c, mat):
         body = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (1.4, 1.4, 1.4), mat, "body")
-        # white polar ice cap at the upper-front of the planet — the cue that
-        # separates mars (red+cap) from moon (grey+craters) at reel-cell size.
-        ice = make_material(dict(id="mars_ice", color=(0.92, 0.96, 1.00), em=0.7, met=0.05, rough=0.50,
-                                 rim=((0.80, 0.90, 1.00), 0.5)))
-        # The planet sphere is r=70cm. Put the cap centre OUT on the surface
-        # (dist ~69 from centre) on the camera-facing (-Y) upper hemisphere so it
-        # pokes proud of the pole instead of being buried inside the planet.
-        cap = add_part(sid, body, MESH["sphere"], V(c, y=-40, z=56), unreal.Rotator(0, 0, 0), (0.74, 0.62, 0.46), ice, "icecap")
-        unreal.log("%s mars: ice cap built '%s' at pole (dist~69 of r70)" % (TAG, cap.get_actor_label()))
+        # Ice cap is now baked into M_mars (normal-Z smoothstep polar mask) so it
+        # hugs the curvature — drop the old separate cap sphere + its material.
+        try:
+            if eal.does_asset_exist("%s/M_mars_ice" % MAT_DIR):
+                eal.delete_asset("%s/M_mars_ice" % MAT_DIR)
+        except Exception:
+            pass
+        unreal.log("%s mars: ice cap (material polar mask in M_mars)" % TAG)
         return body
 
     def build_saturn(sid, c, mat):
