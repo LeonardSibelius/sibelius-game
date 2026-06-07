@@ -100,6 +100,11 @@ void ABuildSite::SetGhostVisible(bool bVisible)
 	}
 }
 
+void ABuildSite::RestoreBranchState(uint8 InState)
+{
+	ApplyBuiltState(InState != 0); // RAW: swaps mesh/collision/nav, no inventory
+}
+
 void ABuildSite::ApplyBuiltState(bool bBuilt)
 {
 	bIsBuilt = bBuilt;

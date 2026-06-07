@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "CompileTypes.h"
 #include "Interactable.h"
+#include "Branchable.h"
 #include "BuildSite.generated.h"
 
 class UStaticMeshComponent;
@@ -18,12 +19,17 @@ class ANavLinkProxy;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuildStateChanged, bool, bIsBuilt);
 
 UCLASS()
-class SIBELIUSGAME_API ABuildSite : public AActor, public IInteractable
+class SIBELIUSGAME_API ABuildSite : public AActor, public IInteractable, public IBranchable
 {
 	GENERATED_BODY()
 
 public:
 	ABuildSite();
+
+	// IBranchable (SIB-28): declared state is bIsBuilt. RestoreBranchState writes
+	// it RAW via ApplyBuiltState - no inventory spend/refund (that's the verb).
+	virtual uint8 CaptureBranchState() const override { return IsBuilt() ? 1 : 0; }
+	virtual void RestoreBranchState(uint8 InState) override;
 
 	virtual void BeginPlay() override;
 

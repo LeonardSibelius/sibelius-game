@@ -1,0 +1,181 @@
+// BranchSubsystem.cpp — SIB-28 Ch4 Test-Drive, Phase 0 (the seam).
+
+#include "BranchSubsystem.h"
+#include "Branchable.h"
+#include "InventoryComponent.h"
+
+#include "Engine/World.h"
+#include "EngineUtils.h"            // TActorIterator
+#include "GameFramework/Actor.h"
+#include "SibeliusGame.h"           // LogSibeliusGame
+
+bool UBranchSubsystem::DoesSupportWorldType(const EWorldType::Type WorldType) const
+{
+	// Gameplay worlds only - never the editor preview or the commandlet world.
+	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
+}
+
+UWorld* UBranchSubsystem::ResolveWorld() const
+{
+	if (UWorld* W = BranchWorld.Get())
+	{
+		return W;
+	}
+	return GetWorld();
+}
+
+void UBranchSubsystem::RebuildRegistry()
+{
+	Branchables.Reset();
+	Inventory.Reset();
+
+	UWorld* World = ResolveWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	// Collect every IBranchable in the level (actor-level: ABuildSite/AHatchLock;
+	// component-level: URefactorableComponent) plus the inventory ledger. Phase 0
+	// builds the registry on enter; a later phase moves to BeginPlay registration.
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		AActor* Actor = *It;
+		if (!Actor)
+		{
+			continue;
+		}
+		if (Cast<IBranchable>(Actor))
+		{
+			Branchables.Add(Actor);
+		}
+		TInlineComponentArray<UActorComponent*> Comps(Actor);
+		for (UActorComponent* Comp : Comps)
+		{
+			if (!Comp)
+			{
+				continue;
+			}
+			if (Cast<IBranchable>(Comp))
+			{
+				Branchables.Add(Comp);
+			}
+			if (!Inventory.IsValid())
+			{
+				if (UInventoryComponent* Inv = Cast<UInventoryComponent>(Comp))
+				{
+					Inventory = Inv;
+				}
+			}
+		}
+	}
+}
+
+FBranchManifest UBranchSubsystem::CaptureDeclaredSet() const
+{
+	FBranchManifest Snap;
+
+	for (int32 i = 0; i < Branchables.Num(); ++i)
+	{
+		UObject* Obj = Branchables[i].Get();
+		if (IBranchable* B = (Obj ? Cast<IBranchable>(Obj) : nullptr))
+		{
+			FBranchObjectState S;
+			S.RegistryIndex = i;
+			S.State = B->CaptureBranchState();
+			Snap.Objects.Add(S);
+		}
+	}
+
+	if (UInventoryComponent* Inv = Inventory.Get())
+	{
+		FResourceEntry Book;
+		Book.Resource = EResourceType::Book;
+		Book.Count = Inv->GetCount(EResourceType::Book);
+		Snap.Resources.Add(Book);
+
+		FResourceEntry Key;
+		Key.Resource = EResourceType::Key;
+		Key.Count = Inv->GetCount(EResourceType::Key);
+		Snap.Resources.Add(Key);
+	}
+
+	return Snap;
+}
+
+void UBranchSubsystem::RestoreDeclaredSet(const FBranchManifest& Snapshot)
+{
+	// RAW state only — never replay Build()/TryUnlock()/Collect(). Each object
+	// restores its own exact visuals; the ledger is overwritten whole so the
+	// spend/grant couplings restore consistently.
+	for (const FBranchObjectState& S : Snapshot.Objects)
+	{
+		if (!Branchables.IsValidIndex(S.RegistryIndex))
+		{
+			continue;
+		}
+		UObject* Obj = Branchables[S.RegistryIndex].Get();
+		if (IBranchable* B = (Obj ? Cast<IBranchable>(Obj) : nullptr))
+		{
+			B->RestoreBranchState(S.State);
+		}
+	}
+
+	if (UInventoryComponent* Inv = Inventory.Get())
+	{
+		for (const FResourceEntry& E : Snapshot.Resources)
+		{
+			Inv->RestoreCount(E.Resource, E.Count);
+		}
+	}
+}
+
+bool UBranchSubsystem::EnterBranch()
+{
+	if (State != EBranchState::Main)
+	{
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Branch] EnterBranch ignored: state != Main (no nesting until Phase 3)."));
+		return false;
+	}
+
+	RebuildRegistry();
+	Manifest = CaptureDeclaredSet();
+	State = EBranchState::Branched;
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Entered: captured %d object(s) + %d ledger entr(ies)."),
+		Manifest.Objects.Num(), Manifest.Resources.Num());
+	return true;
+}
+
+bool UBranchSubsystem::DiscardBranch()
+{
+	if (State != EBranchState::Branched)
+	{
+		return false; // guard: exactly one resolution, only from Branched
+	}
+
+	State = EBranchState::Resolving;
+	RestoreDeclaredSet(Manifest); // RAW restore
+	Manifest.Reset();
+	State = EBranchState::Main;
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Discarded: declared set restored."));
+	return true;
+}
+
+bool UBranchSubsystem::MergeBranch()
+{
+	if (State != EBranchState::Branched)
+	{
+		return false; // guard
+	}
+
+	State = EBranchState::Resolving;
+	// Merge = keep live, advance the baseline: drop the snapshot, restore nothing.
+	// (Phase 3 nesting will fold into the enclosing branch instead of Main.)
+	Manifest.Reset();
+	State = EBranchState::Main;
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Merged: live kept, baseline advanced."));
+	return true;
+}

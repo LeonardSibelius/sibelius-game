@@ -28,6 +28,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Inventory")
 	int32 GetCount(EResourceType Resource) const;
 
+	// SIB-28 (Ch4 branch): RAW overwrite to a captured count - NOT Add/Spend
+	// semantics - so a branch discard restores the ledger exactly. Clamped >= 0.
+	void RestoreCount(EResourceType Resource, int32 Count);
+
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
 	FOnInventoryChanged OnInventoryChanged;
 

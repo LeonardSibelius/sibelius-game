@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
+#include "Branchable.h"
 #include "HatchLock.generated.h"
 
 class UStaticMeshComponent;
@@ -15,12 +16,17 @@ class UInventoryComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHatchUnlocked);
 
 UCLASS()
-class SIBELIUSGAME_API AHatchLock : public AActor, public IInteractable
+class SIBELIUSGAME_API AHatchLock : public AActor, public IInteractable, public IBranchable
 {
 	GENERATED_BODY()
 
 public:
 	AHatchLock();
+
+	// IBranchable (SIB-28): declared state is bLocked. RestoreBranchState writes
+	// it RAW via ApplyLockedState - no Key spend (that's TryUnlock, the verb).
+	virtual uint8 CaptureBranchState() const override { return IsLocked() ? 1 : 0; }
+	virtual void RestoreBranchState(uint8 InState) override;
 
 	// Spends one Key to unlock. Returns false (and stays shut) without a Key.
 	UFUNCTION(BlueprintCallable, Category = "Hatch")

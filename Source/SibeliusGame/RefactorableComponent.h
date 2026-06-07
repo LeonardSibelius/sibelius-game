@@ -11,6 +11,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "RefactorTypes.h"
+#include "Branchable.h"
 #include "RefactorableComponent.generated.h"
 
 class UMeshComponent;
@@ -20,12 +21,17 @@ class UMaterialInstanceDynamic;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRefactorChanged, bool, bIsRefactored);
 
 UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))
-class SIBELIUSGAME_API URefactorableComponent : public UActorComponent
+class SIBELIUSGAME_API URefactorableComponent : public UActorComponent, public IBranchable
 {
 	GENERATED_BODY()
 
 public:
 	URefactorableComponent();
+
+	// IBranchable (SIB-28): declared state is just bIsRefactored; the component's
+	// own FRefactorSnapshot makes the material/scale/collision restore exact.
+	virtual uint8 CaptureBranchState() const override { return IsRefactored() ? 1 : 0; }
+	virtual void RestoreBranchState(uint8 InState) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Refactor")
 	void ApplyRefactor();

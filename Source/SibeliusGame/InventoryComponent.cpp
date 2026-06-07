@@ -38,6 +38,13 @@ int32 UInventoryComponent::GetCount(EResourceType Resource) const
 	return Count ? *Count : 0;
 }
 
+void UInventoryComponent::RestoreCount(EResourceType Resource, int32 Count)
+{
+	const int32 Clamped = FMath::Max(0, Count);
+	Counts.FindOrAdd(Resource) = Clamped;
+	OnInventoryChanged.Broadcast(Resource, Clamped);
+}
+
 bool UInventoryComponent::RunInventorySelfTest(FString& OutError)
 {
 	// Bar item 2: Add(Book,12) -> Spend(Book,8) -> Count==4; over-spend rejected.

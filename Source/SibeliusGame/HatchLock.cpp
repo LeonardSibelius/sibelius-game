@@ -44,6 +44,11 @@ FText AHatchLock::GetInteractionPrompt_Implementation() const
 	return bLocked ? NSLOCTEXT("Sibelius", "HatchLockPrompt", "Unlock hatch — needs a Key [E]") : FText::GetEmpty();
 }
 
+void AHatchLock::RestoreBranchState(uint8 InState)
+{
+	ApplyLockedState(InState != 0); // RAW: drops/raises the blocker, no Key spend
+}
+
 void AHatchLock::ApplyLockedState(bool bNowLocked)
 {
 	bLocked = bNowLocked;

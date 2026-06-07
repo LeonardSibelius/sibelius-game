@@ -170,6 +170,20 @@ void URefactorableComponent::ToggleRefactor()
 	}
 }
 
+void URefactorableComponent::RestoreBranchState(uint8 InState)
+{
+	// RAW state target. Apply/Revert are idempotent and restore exact visuals
+	// from this component's own snapshot.
+	if (InState != 0)
+	{
+		ApplyRefactor();
+	}
+	else
+	{
+		RevertRefactor();
+	}
+}
+
 bool URefactorableComponent::RunRefactorSelfTest()
 {
 	if (!CachedMesh)
