@@ -110,6 +110,11 @@ public:
 	int32 GetLastApplyOrphansForTest() const { return LastApplyOrphans; }
 	EDeployLoadSource GetLastLoadSourceForTest() const { return LastLoadSource; }
 
+	// Dev/debug: wipe the deploy slot + its backup so the next load starts from the
+	// authored world (apply-on-load finds nothing). Lets a playtest of other mechanics
+	// not inherit a stale deploy. Never touches BranchIds.
+	void ClearDeployedSave();
+
 	// Locked product decision (SIB-28): pickups are suspended while branched so
 	// collecting can't mutate state outside the declared set. Guard stubbed now;
 	// ABookPickup consults it once wired (later phase).

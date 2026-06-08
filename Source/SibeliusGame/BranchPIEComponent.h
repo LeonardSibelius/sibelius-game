@@ -29,6 +29,7 @@ public:
 	void Debug_Merge();
 	void Debug_Discard();
 	void Debug_Deploy();
+	void Debug_ClearDeploy(); // wipe the deploy save so the next load starts authored-clean
 
 protected:
 	virtual void BeginPlay() override;

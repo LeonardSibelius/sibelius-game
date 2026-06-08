@@ -483,6 +483,15 @@ ESaveLoadStatus UBranchSubsystem::ClassifyDeploySave(const FString& Slot, USibel
 	return ESaveLoadStatus::Valid;
 }
 
+void UBranchSubsystem::ClearDeployedSave()
+{
+	const bool bPrimary = FSibeliusSaveIO::Delete(DeploySlotName);
+	const bool bBackup = FSibeliusSaveIO::Delete(BackupSlotName());
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Branch] Cleared deploy save '%s' (primary:%s backup:%s) — next load starts from the authored world."),
+		*DeploySlotName, bPrimary ? TEXT("removed") : TEXT("none"), bBackup ? TEXT("removed") : TEXT("none"));
+}
+
 bool UBranchSubsystem::ApplyDeployedSave()
 {
 	LastApplyObjects = 0;

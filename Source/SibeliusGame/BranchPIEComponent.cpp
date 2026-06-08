@@ -276,3 +276,12 @@ void UBranchPIEComponent::Debug_Deploy()
 		Toast(TEXT("Deploy REFUSED — merge or discard the branch first"), FColor::Red);
 	}
 }
+
+void UBranchPIEComponent::Debug_ClearDeploy()
+{
+	if (UBranchSubsystem* Branch = GetBranch())
+	{
+		Branch->ClearDeployedSave();
+		Toast(TEXT("Deploy save cleared — fresh authored world on next load"), FColor::Yellow);
+	}
+}
