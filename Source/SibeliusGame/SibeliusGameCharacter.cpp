@@ -13,6 +13,8 @@
 #include "RefactorComponent.h"
 #include "InventoryComponent.h"
 #include "BuildComponent.h"
+#include "BranchPIEComponent.h"
+#include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -51,6 +53,9 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 	// Both pawn-owned so neither has to find the player (SIB-27, generalizing the Ch1/R7 lesson).
 	InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComp"));
 	BuildComp = CreateDefaultSubobject<UBuildComponent>(TEXT("BuildComp"));
+
+	// Ch4 Test-Drive (SIB-36): PIE consumer of UBranchSubsystem (debug keys + signals)
+	BranchPIEComp = CreateDefaultSubobject<UBranchPIEComponent>(TEXT("BranchPIEComp"));
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(true);
@@ -107,6 +112,16 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	else
 	{
 		UE_LOG(LogSibeliusGame, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+	}
+
+	// SIB-36 debug branch keys (raw BindKey works regardless of Enhanced Input):
+	// F6 Enter · F7 Merge · F8 Discard · F9 RequestDeploy.
+	if (BranchPIEComp)
+	{
+		PlayerInputComponent->BindKey(EKeys::F6, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Enter);
+		PlayerInputComponent->BindKey(EKeys::F7, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Merge);
+		PlayerInputComponent->BindKey(EKeys::F8, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Discard);
+		PlayerInputComponent->BindKey(EKeys::F9, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Deploy);
 	}
 }
 

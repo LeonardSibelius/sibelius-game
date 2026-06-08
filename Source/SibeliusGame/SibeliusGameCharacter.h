@@ -16,6 +16,7 @@ class UCodeVisionComponent;
 class URefactorComponent;
 class UInventoryComponent;
 class UBuildComponent;
+class UBranchPIEComponent;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -55,6 +56,10 @@ class ASibeliusGameCharacter : public ACharacter
 	/** Ch3 Compile: build/dismantle driver; pawn-owned so there's no find-the-player race (SIB-27) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UBuildComponent> BuildComp;
+
+	/** Ch4 Test-Drive (SIB-36): PIE consumer of the branch subsystem — debug keys + desaturate/HUD/freeze */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UBranchPIEComponent> BranchPIEComp;
 
 protected:
 

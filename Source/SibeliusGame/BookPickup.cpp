@@ -29,6 +29,10 @@ bool ABookPickup::Collect(UInventoryComponent* Inventory)
 
 void ABookPickup::Interact_Implementation(AActor* Interactor)
 {
+	if (bInert)
+	{
+		return; // SIB-36: non-interactable while a branch is open
+	}
 	// Inventory lives on the pawn (the interactor); no actor-finds-player race (Ch1/R7).
 	UInventoryComponent* Inventory = Interactor ? Interactor->FindComponentByClass<UInventoryComponent>() : nullptr;
 	Collect(Inventory);
@@ -36,5 +40,21 @@ void ABookPickup::Interact_Implementation(AActor* Interactor)
 
 FText ABookPickup::GetInteractionPrompt_Implementation() const
 {
-	return bCollected ? FText::GetEmpty() : NSLOCTEXT("Sibelius", "BookPickupPrompt", "Collect book [E]");
+	return (bCollected || bInert) ? FText::GetEmpty() : NSLOCTEXT("Sibelius", "BookPickupPrompt", "Collect book [E]");
+}
+
+void ABookPickup::SetInert(bool bNewInert)
+{
+	if (bInert == bNewInert || bCollected)
+	{
+		return;
+	}
+	bInert = bNewInert;
+	if (Mesh)
+	{
+		// Drop the interact-trace collision (UInteractorComponent's trace skips it)
+		// and shrink as the inert cue; the camera desaturate provides the grey.
+		Mesh->SetCollisionEnabled(bInert ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryOnly);
+		SetActorScale3D(bInert ? FVector(0.6f) : FVector(1.0f));
+	}
 }

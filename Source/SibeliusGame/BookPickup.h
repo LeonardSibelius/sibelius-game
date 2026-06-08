@@ -27,6 +27,11 @@ public:
 	virtual void Interact_Implementation(AActor* Interactor) override;
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
+	// SIB-36: pickups go inert while a branch is open (dropped collision so the
+	// interact trace skips them + no prompt + shrunk; the scene desaturate greys
+	// them). Driven by UBranchPIEComponent off the branch depth.
+	void SetInert(bool bNewInert);
+
 	UPROPERTY(VisibleAnywhere, Category = "Pickup")
 	TObjectPtr<UStaticMeshComponent> Mesh;
 
@@ -38,4 +43,5 @@ public:
 
 private:
 	bool bCollected = false; // re-entrancy guard (C3)
+	bool bInert = false;     // SIB-36: suspended while a branch is open
 };
