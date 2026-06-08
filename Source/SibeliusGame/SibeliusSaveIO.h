@@ -25,4 +25,9 @@ struct SIBELIUSGAME_API FSibeliusSaveIO
 	static bool Has(const FString& SlotName, int32 UserIndex = 0);
 
 	static bool Delete(const FString& SlotName, int32 UserIndex = 0);
+
+	// Read the RAW save bytes (header + body) without deserializing the object — for
+	// pre-validation, so a corrupt stream is rejected before it reaches the object
+	// deserializer (which hard-asserts on garbage). False if absent/unreadable.
+	static bool LoadRawBytes(const FString& SlotName, TArray<uint8>& OutBytes, int32 UserIndex = 0);
 };

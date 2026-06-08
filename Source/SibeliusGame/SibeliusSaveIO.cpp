@@ -3,7 +3,9 @@
 #include "SibeliusSaveIO.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/SaveGame.h"
-#include "SibeliusGame.h"   // LogSibeliusGame
+#include "SaveGameSystem.h"      // ISaveGameSystem (raw byte access)
+#include "PlatformFeatures.h"    // IPlatformFeaturesModule
+#include "SibeliusGame.h"        // LogSibeliusGame
 
 bool FSibeliusSaveIO::Commit(USaveGame* SaveObject, const FString& SlotName, int32 UserIndex)
 {
@@ -40,4 +42,21 @@ bool FSibeliusSaveIO::Delete(const FString& SlotName, int32 UserIndex)
 		return false;
 	}
 	return UGameplayStatics::DeleteGameInSlot(SlotName, UserIndex);
+}
+
+bool FSibeliusSaveIO::LoadRawBytes(const FString& SlotName, TArray<uint8>& OutBytes, int32 UserIndex)
+{
+	OutBytes.Reset();
+	if (SlotName.IsEmpty())
+	{
+		return false;
+	}
+	// Same save system UGameplayStatics writes through, so we read the exact bytes the
+	// loader would parse — but we get them WITHOUT deserializing the object.
+	ISaveGameSystem* SaveSystem = IPlatformFeaturesModule::Get().GetSaveGameSystem();
+	if (!SaveSystem || !SaveSystem->DoesSaveGameExist(*SlotName, UserIndex))
+	{
+		return false;
+	}
+	return SaveSystem->LoadGame(/*bAttemptToUseUI*/ false, *SlotName, UserIndex, OutBytes);
 }

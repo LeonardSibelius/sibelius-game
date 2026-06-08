@@ -9,7 +9,11 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"            // TActorIterator
 #include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h" // CreateSaveGameObject
+#include "Kismet/GameplayStatics.h" // CreateSaveGameObject / LoadSaveGameFromMemory
+#include "Serialization/MemoryReader.h"   // header pre-validation (read raw bytes safely)
+#include "Serialization/CustomVersion.h"  // FCustomVersionContainer in the save header
+#include "UObject/ObjectVersion.h"        // FPackageFileVersion
+#include "Misc/EngineVersion.h"           // FEngineVersion
 #include "SibeliusGame.h"           // LogSibeliusGame
 
 bool UBranchSubsystem::DoesSupportWorldType(const EWorldType::Type WorldType) const
@@ -347,6 +351,84 @@ bool UBranchSubsystem::RequestDeploy()
 	return true;
 }
 
+// UE SaveGame file magic ("GVAS" on disk). Matches UGameplayStatics' private
+// UE_SAVEGAME_FILE_TYPE_TAG — the first int32 of every engine-written save.
+static constexpr int32 GSibeliusSaveGameFileTag = 0x53415647;
+
+// Validate a SaveGame byte stream's HEADER without deserializing the object (the
+// object deserialize is what hard-asserts on garbage — a bogus FString/FName length
+// triggers a critical check()). We read only the fixed header with a bounds-checked
+// FMemoryReader and extract the stored SaveGame class path. Returns false on any
+// structural problem; on success OutClassName holds the class path to resolve.
+static bool ValidateDeploySaveHeader(const TArray<uint8>& Bytes, FString& OutClassName)
+{
+	OutClassName.Reset();
+	if (Bytes.Num() < 8) // must at least hold tag + version
+	{
+		return false;
+	}
+
+	FMemoryReader Reader(Bytes, /*bIsPersistent*/ true);
+
+	int32 FileTypeTag = 0;
+	Reader << FileTypeTag;
+	if (Reader.IsError() || FileTypeTag != GSibeliusSaveGameFileTag)
+	{
+		return false; // garbage / truncated / not a UE save — never feed it to the deserializer
+	}
+
+	int32 SaveGameFileVersion = 0;
+	Reader << SaveGameFileVersion;
+	if (Reader.IsError() || SaveGameFileVersion < 1 || SaveGameFileVersion > 100)
+	{
+		return false;
+	}
+
+	// Package file version: FPackageFileVersion since the summary-version change (v3),
+	// a single int32 before that. (Mirrors FSaveGameHeader::Read.)
+	if (SaveGameFileVersion >= 3)
+	{
+		FPackageFileVersion PackageVer;
+		Reader << PackageVer;
+	}
+	else
+	{
+		int32 OldUE4Version = 0;
+		Reader << OldUE4Version;
+	}
+
+	FEngineVersion SavedEngineVersion;
+	Reader << SavedEngineVersion;
+
+	if (SaveGameFileVersion >= 2) // AddedCustomVersions
+	{
+		int32 CustomVersionFormat = 0;
+		Reader << CustomVersionFormat;
+		FCustomVersionContainer CustomVersions;
+		CustomVersions.Serialize(Reader, (ECustomVersionSerializationFormat::Type)CustomVersionFormat);
+	}
+
+	if (Reader.IsError())
+	{
+		return false;
+	}
+
+	// The class name is the last header field. Peek its length first and bound it so
+	// a corrupt length can't drive a huge allocation before the FString read.
+	const int64 NamePos = Reader.Tell();
+	int32 RawNameLen = 0;
+	Reader << RawNameLen;
+	const int32 NameLen = (RawNameLen < 0) ? -RawNameLen : RawNameLen;
+	if (Reader.IsError() || NameLen <= 0 || NameLen > 1024)
+	{
+		return false;
+	}
+	Reader.Seek(NamePos); // rewind; let the FString operator read it properly now it's bounded
+
+	Reader << OutClassName;
+	return !Reader.IsError() && !OutClassName.IsEmpty();
+}
+
 ESaveLoadStatus UBranchSubsystem::ClassifyDeploySave(const FString& Slot, USibeliusSaveGame*& Out) const
 {
 	Out = nullptr;
@@ -354,9 +436,33 @@ ESaveLoadStatus UBranchSubsystem::ClassifyDeploySave(const FString& Slot, USibel
 	{
 		return ESaveLoadStatus::Missing;
 	}
-	// A truncated/garbage .sav fails to deserialize (null) or comes back as the wrong
-	// class — either way Cast yields null. Both read as Corrupt (never a crash).
-	USibeliusSaveGame* S = Cast<USibeliusSaveGame>(FSibeliusSaveIO::Load(Slot));
+
+	// Read raw bytes and validate the header BEFORE deserializing — LoadGameFromSlot
+	// hard-crashes (FName length assert) on garbage, so corrupt data must never reach it.
+	TArray<uint8> Bytes;
+	if (!FSibeliusSaveIO::LoadRawBytes(Slot, Bytes) || Bytes.Num() == 0)
+	{
+		return ESaveLoadStatus::Corrupt; // unreadable
+	}
+
+	FString ClassName;
+	if (!ValidateDeploySaveHeader(Bytes, ClassName))
+	{
+		return ESaveLoadStatus::Corrupt; // bad magic / truncated / unparsable header
+	}
+
+	// The stored class must resolve to a loaded, concrete USibeliusSaveGame subclass.
+	UClass* SaveClass = FindObject<UClass>(nullptr, *ClassName);
+	if (!SaveClass
+		|| SaveClass->HasAnyClassFlags(CLASS_Abstract)
+		|| !SaveClass->IsChildOf(USibeliusSaveGame::StaticClass()))
+	{
+		return ESaveLoadStatus::Corrupt; // unresolved / abstract / wrong type
+	}
+
+	// Header is sound — NOW deserialize the object (from the validated bytes). Defensive
+	// null-check regardless.
+	USibeliusSaveGame* S = Cast<USibeliusSaveGame>(UGameplayStatics::LoadSaveGameFromMemory(Bytes));
 	if (!S)
 	{
 		return ESaveLoadStatus::Corrupt;
