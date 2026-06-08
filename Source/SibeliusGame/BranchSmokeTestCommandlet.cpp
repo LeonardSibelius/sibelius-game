@@ -94,6 +94,8 @@
 #include "EngineUtils.h"            // TActorIterator
 #include "GameFramework/Actor.h"
 #include "UObject/Package.h"        // GetTransientPackage
+#include "Misc/FileHelper.h"        // Ch5 Phase 3: FFileHelper (corrupt a .sav on disk)
+#include "Misc/Paths.h"             // Ch5 Phase 3: FPaths (resolve the save-slot file path)
 
 #if WITH_EDITOR
 #include "FileHelpers.h"            // UEditorLoadingAndSavingUtils
@@ -798,6 +800,16 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 			}
 			return S;
 		};
+		// True on-disk corruption: overwrite the slot's .sav with a short garbage
+		// buffer so LoadGameFromSlot fails the header/deserialize and the load routes
+		// to Corrupt — without ever instantiating the abstract USaveGame base. Path
+		// mirrors the generic save system (<ProjectSaved>/SaveGames/<Slot>.sav).
+		auto CorruptSlotFile = [](const FString& Slot) -> bool
+		{
+			const FString Path = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("SaveGames"), Slot + TEXT(".sav"));
+			const TArray<uint8> Garbage = { 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01, 0x02, 0x03 };
+			return FFileHelper::SaveArrayToFile(Garbage, *Path);
+		};
 
 		// --- (a) Migration step in isolation: v1 -> v2 marks + bumps; current is a
 		//         no-op; newer can't downgrade. ---
@@ -856,10 +868,9 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 				TEXT("C5-P3: apply promotes the good primary to the last-good backup"));
 			R.Check(FSibeliusSaveIO::Has(DeploySandboxBackup), TEXT("C5-P3: last-good backup now exists"));
 
-			// Corrupt the primary: write a base USaveGame (wrong type) — stands in for
-			// a truncated/garbage .sav (Load returns a non-USibeliusSaveGame).
-			USaveGame* Junk = NewObject<USaveGame>(GetTransientPackage());
-			R.Check(FSibeliusSaveIO::Commit(Junk, DeploySandboxSlot), TEXT("C5-P3: corrupted the primary slot"));
+			// Corrupt the primary on disk: garbage bytes -> LoadGameFromSlot fails to
+			// deserialize -> routes to the Corrupt path (real truncation, no ensures).
+			R.Check(CorruptSlotFile(DeploySandboxSlot), TEXT("C5-P3: corrupted the primary slot (garbage bytes on disk)"));
 
 			ResetToDefault();
 			R.Check(Branch->ApplyDeployedSave(), TEXT("C5-P3: corrupt primary falls back to backup and applies"));
@@ -872,8 +883,7 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 
 		// --- (e) Both bad -> fail safe to authored default (no crash, no partial write). ---
 		{
-			USaveGame* Junk = NewObject<USaveGame>(GetTransientPackage());
-			R.Check(FSibeliusSaveIO::Commit(Junk, DeploySandboxSlot), TEXT("C5-P3: corrupted the primary again"));
+			R.Check(CorruptSlotFile(DeploySandboxSlot), TEXT("C5-P3: corrupted the primary again (garbage bytes on disk)"));
 			R.Check(FSibeliusSaveIO::Delete(DeploySandboxBackup), TEXT("C5-P3: removed the backup (both unusable)"));
 			ResetToDefault();
 			R.Check(!Branch->ApplyDeployedSave(), TEXT("C5-P3: with no usable save, apply fails safe (returns false)"));
