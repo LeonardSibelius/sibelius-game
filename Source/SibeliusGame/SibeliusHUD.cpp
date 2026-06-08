@@ -68,7 +68,7 @@ void ASibeliusHUD::DrawDevOverlay()
 	const FLinearColor Dim(0.7f, 0.7f, 0.7f, 1.0f);
 	const FLinearColor Warn(1.0f, 0.45f, 0.45f, 1.0f);
 
-	Line(TEXT("== DEV OVERLAY ==   (V to hide)"), Head);
+	Line(TEXT("== DEV OVERLAY ==   (H to hide)"), Head);
 
 	APawn* Pawn = PlayerOwner ? PlayerOwner->GetPawn() : nullptr;
 	UWorld* W = GetWorld();
@@ -172,4 +172,11 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(FString::Printf(TEXT("  hatches locked: %d/%d"), HatchLocked, HatchTotal), White);
 	Line(FString::Printf(TEXT("  built sites: %d/%d"), SiteBuilt, SiteTotal), White);
 	Line(TEXT("  score: n/a"), Dim);
+
+	// --- CONTROLS: every binding, for reference ---
+	Line(TEXT("CONTROLS"), Head);
+	Line(TEXT("  F slap    E interact    V vision"), White);
+	Line(TEXT("  R refactor    B build"), White);
+	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
+	Line(TEXT("  H hide/show overlay"), White);
 }

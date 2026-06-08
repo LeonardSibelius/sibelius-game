@@ -128,9 +128,9 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		PlayerInputComponent->BindKey(EKeys::Zero, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Deploy);
 	}
 
-	// SIB-39 dev-overlay toggle: V (off the F-row, gizmo keys 1-5, the 6-9/0 branch
-	// block, B/E/R, and WASD).
-	PlayerInputComponent->BindKey(EKeys::V, IE_Pressed, this, &ASibeliusGameCharacter::ToggleDevOverlay);
+	// SIB-39 dev-overlay toggle: H (hide/help). V was taken by Code Vision; H is free
+	// and off the F-row, gizmo keys 1-5, the 6-9/0 branch block, and F/E/V/R/B/WASD.
+	PlayerInputComponent->BindKey(EKeys::H, IE_Pressed, this, &ASibeliusGameCharacter::ToggleDevOverlay);
 }
 
 
