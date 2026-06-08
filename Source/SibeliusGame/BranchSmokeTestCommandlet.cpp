@@ -38,8 +38,14 @@
 // [HARD] nested merge folds into the enclosing branch; a later outer discard
 //        drops the merged-inner changes too (outer discard wins)
 //
-// Phase 4 appends its own block here. CP3 lesson #6: NAMED namespace to avoid
-// unity-build redefinition collisions with the sibling commandlets.
+// PHASE 4 (Ch5 Deploy boundary guard — guard-only, no persistence):
+// [HARD] Deploy allowed at Main (depth 0); CanDeploy() true
+// [HARD] Deploy refused while branched (depth 1 and nested depth 2)
+// [HARD] partial resolve isn't enough — refused until depth 0; allowed again once
+//        merge/discard returns to Main (merge precedes deploy)
+//
+// CP3 lesson #6: NAMED namespace to avoid unity-build redefinition collisions
+// with the sibling commandlets.
 
 #include "BranchSmokeTestCommandlet.h"
 #include "BranchSubsystem.h"
@@ -419,11 +425,41 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 			TEXT("P3: outer discard wins — nested-merged changes dropped to the Main baseline"));
 
 		Branch->OnBranchDepthChanged.Remove(SignalH);
+
+		// =====================================================================
+		//  PHASE 4 — Ch5 Deploy boundary guard (guard-only, no persistence). A
+		//  save reads Main ONLY and must never capture an uncommitted branch.
+		// =====================================================================
+		UE_LOG(LogBranchSmoke, Display, TEXT("--- Phase 4: deploy boundary guard ---"));
+
+		// At Main: Deploy is allowed.
+		R.Check(Branch->GetDepth() == 0, TEXT("P4: at Main before the deploy checks"));
+		R.Check(Branch->CanDeploy(), TEXT("P4: CanDeploy() true at Main"));
+		R.Check(Branch->RequestDeploy(), TEXT("P4: Deploy allowed at depth 0 (Main)"));
+
+		// While branched: Deploy is refused.
+		R.Check(Branch->EnterBranch(), TEXT("P4: enter a branch (depth 1)"));
+		R.Check(!Branch->CanDeploy(), TEXT("P4: CanDeploy() false while branched"));
+		R.Check(!Branch->RequestDeploy(), TEXT("P4: Deploy refused at depth 1 (uncommitted branch)"));
+
+		// Refused at deeper nesting too.
+		R.Check(Branch->EnterBranch(), TEXT("P4: nest (depth 2)"));
+		R.Check(!Branch->RequestDeploy(), TEXT("P4: Deploy refused at depth 2"));
+
+		// Resolving one level is not enough — still refused at depth 1.
+		R.Check(Branch->DiscardBranch(), TEXT("P4: discard nested -> depth 1"));
+		R.Check(!Branch->RequestDeploy(), TEXT("P4: Deploy still refused at depth 1"));
+
+		// Merge/discard must take it all the way to Main before Deploy is allowed.
+		R.Check(Branch->MergeBranch(), TEXT("P4: merge outer -> back to Main"));
+		R.Check(Branch->GetDepth() == 0, TEXT("P4: at Main after fully resolving"));
+		R.Check(Branch->CanDeploy() && Branch->RequestDeploy(),
+			TEXT("P4: Deploy allowed again once Main (merge/discard precedes deploy)"));
 	}
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phase 0 + 1 + 2 + 3 green). ==="));
+		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 green — Test-Drive COMPLETE). ==="));
 		return 0;
 	}
 	UE_LOG(LogBranchSmoke, Error, TEXT("=== BRANCH SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);

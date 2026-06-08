@@ -230,3 +230,20 @@ void UBranchSubsystem::ResumePickups()
 {
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Pickups resumed."));
 }
+
+bool UBranchSubsystem::RequestDeploy()
+{
+	// Ch5 Deploy boundary: refuse while any branch is open so a save can't capture
+	// uncommitted, ephemeral branch state. The player must merge or discard first.
+	if (!CanDeploy())
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Branch] Deploy refused: a branch is open (depth %d) — merge or discard first."), GetDepth());
+		return false;
+	}
+
+	// Allowed (at Main). Ch5 persists the committed declared set to disk HERE.
+	// Phase 4 is guard-only, so this is just the gate for now.
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Deploy allowed (at Main, depth 0)."));
+	return true;
+}

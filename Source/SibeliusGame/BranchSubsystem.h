@@ -58,6 +58,14 @@ public:
 	// the enclosing branch's live (or Main) at depth 0. Nested discard can't leak.
 	bool DiscardBranch();
 
+	// Ch5 Deploy boundary (Phase 4): Deploy persists Main to disk and reads Main
+	// ONLY — a save must never capture an uncommitted branch. CanDeploy() is the
+	// gate (true iff at Main); RequestDeploy() is the guarded entry point that
+	// refuses while branched (merge or discard must happen first). Guard-only for
+	// now — Ch5 fills in the actual persistence at the allowed branch.
+	bool CanDeploy() const { return GetDepth() == 0; }
+	bool RequestDeploy();
+
 	// Locked product decision (SIB-28): pickups are suspended while branched so
 	// collecting can't mutate state outside the declared set. Guard stubbed now;
 	// ABookPickup consults it once wired (later phase).
