@@ -229,8 +229,8 @@ void ASibeliusGameCharacter::ToggleJournal()
 	}
 	if (JournalWidget)
 	{
-		JournalWidget->RefreshFromNarrative();
-		JournalWidget->AddToViewport(50);
+		JournalWidget->AddToViewport(50);      // builds the Slate tree (NativeConstruct loads once)
+		JournalWidget->RefreshFromNarrative(); // reload each open — BodyText is valid now
 
 		// Show the cursor + UI input so the scroll box is usable; J still closes it.
 		FInputModeGameAndUI Mode;

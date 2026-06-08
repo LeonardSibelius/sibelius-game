@@ -24,19 +24,29 @@ class SIBELIUSGAME_API UJournalWidget : public UUserWidget
 public:
 	UJournalWidget(const FObjectInitializer& ObjectInitializer);
 
-	// (Re)load docs/NARRATIVE.md and display it. Call before showing.
+	// (Re)load docs/NARRATIVE.md into the cached text and push it to the panel.
 	void RefreshFromNarrative();
 
 protected:
 	// Native widget: build the scroll-box + text-block tree in code (no BP asset).
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
+	// Runs once the Slate tree exists (on AddToViewport) — safe place to load text.
+	virtual void NativeConstruct() override;
+
 private:
+	// Push the cached text (or a placeholder) into BodyText, if it's been built yet.
+	void ApplyText();
+
 	UPROPERTY()
 	TObjectPtr<UScrollBox> ScrollBox;
 
 	UPROPERTY()
 	TObjectPtr<UTextBlock> BodyText;
+
+	// Cached narrative text — survives independent of when BodyText is constructed,
+	// so the load result is never lost to RebuildWidget timing.
+	FString JournalText;
 
 	// Light markdown cleanup for readable display (strip #, >, * markers).
 	static FString CleanMarkdown(const FString& Raw);

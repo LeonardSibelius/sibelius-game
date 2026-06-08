@@ -25,17 +25,17 @@ TSharedRef<SWidget> UJournalWidget::RebuildWidget()
 		UCanvasPanel* Canvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
 		WidgetTree->RootWidget = Canvas;
 
-		// Dark, slightly-transparent reading panel.
+		// Aged-paper / parchment reading panel (Leonard's notebook).
 		UBorder* Bg = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("JournalBg"));
-		Bg->SetBrushColor(FLinearColor(0.02f, 0.02f, 0.04f, 0.93f));
+		Bg->SetBrushColor(FLinearColor(0.92f, 0.88f, 0.78f, 0.97f)); // cream/tan
 		Bg->SetPadding(FMargin(28.0f));
 
 		ScrollBox = WidgetTree->ConstructWidget<UScrollBox>(UScrollBox::StaticClass(), TEXT("JournalScroll"));
 
 		BodyText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("JournalBody"));
 		BodyText->SetAutoWrapText(true);
-		BodyText->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 22)); // readable on 4K
-		BodyText->SetText(FText::FromString(TEXT("(Journal)")));
+		BodyText->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 22));               // readable on 4K
+		BodyText->SetColorAndOpacity(FSlateColor(FLinearColor(0.15f, 0.10f, 0.05f, 1.0f))); // dark-brown ink
 
 		ScrollBox->AddChild(BodyText);
 		Bg->SetContent(ScrollBox);
@@ -46,30 +46,49 @@ TSharedRef<SWidget> UJournalWidget::RebuildWidget()
 			CSlot->SetAnchors(FAnchors(0.12f, 0.10f, 0.88f, 0.90f));
 			CSlot->SetOffsets(FMargin(0.0f, 0.0f, 0.0f, 0.0f));
 		}
+
+		ApplyText(); // show whatever's cached (or a placeholder) the instant BodyText exists
 	}
 
 	return Super::RebuildWidget();
 }
 
+void UJournalWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	// The tree exists here (AddToViewport just built it) — load the narrative now.
+	RefreshFromNarrative();
+}
+
+void UJournalWidget::ApplyText()
+{
+	if (BodyText)
+	{
+		BodyText->SetText(FText::FromString(JournalText.IsEmpty() ? TEXT("(Journal — no text loaded)") : JournalText));
+	}
+}
+
 void UJournalWidget::RefreshFromNarrative()
 {
-	const FString Path = FPaths::ProjectDir() / TEXT("docs/NARRATIVE.md");
+	const FString FullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("docs/NARRATIVE.md"));
 
 	FString Raw;
-	FString Display;
-	if (FFileHelper::LoadFileToString(Raw, *Path))
+	if (FFileHelper::LoadFileToString(Raw, *FullPath))
 	{
-		Display = CleanMarkdown(Raw);
+		JournalText = CleanMarkdown(Raw);
+		UE_LOG(LogTemp, Display, TEXT("[Journal] loaded %d chars from %s"), JournalText.Len(), *FullPath);
 	}
 	else
 	{
-		Display = FString::Printf(TEXT("Journal unavailable.\n\nCould not read:\n%s\n\n(docs/ is editor-only — it isn't staged into a packaged build.)"), *Path);
+		// Print the attempted path + reason right in the panel so failures are visible.
+		const bool bExists = FPaths::FileExists(FullPath);
+		JournalText = FString::Printf(
+			TEXT("Journal unavailable — could not load the narrative.\n\nPath attempted:\n%s\n\nReason: %s\n\n(docs/ is editor-only; it is not staged into a packaged build — for shipping, bake the text into Content.)"),
+			*FullPath, bExists ? TEXT("file exists but the read failed") : TEXT("file not found at that path"));
+		UE_LOG(LogTemp, Warning, TEXT("[Journal] FAILED to load '%s' (exists=%d)"), *FullPath, bExists ? 1 : 0);
 	}
 
-	if (BodyText)
-	{
-		BodyText->SetText(FText::FromString(Display));
-	}
+	ApplyText();
 }
 
 FString UJournalWidget::CleanMarkdown(const FString& Raw)
