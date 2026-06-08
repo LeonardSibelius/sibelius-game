@@ -113,7 +113,7 @@ void UBranchPIEComponent::UpdateHudMarker(int32 Depth)
 	if (Depth >= 1)
 	{
 		GEngine->AddOnScreenDebugMessage(MarkerKey, 1.0e8f, FColor(190, 160, 255),
-			FString::Printf(TEXT("BRANCH x%d   [F7] merge   [F8] discard"), Depth));
+			FString::Printf(TEXT("BRANCH x%d   [7] merge   [8] discard"), Depth));
 	}
 	else
 	{

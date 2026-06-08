@@ -115,13 +115,14 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	}
 
 	// SIB-36 debug branch keys (raw BindKey works regardless of Enhanced Input):
-	// F6 Enter · F7 Merge · F8 Discard · F9 RequestDeploy.
+	// 6 Enter · 7 Merge · 8 Discard · 9 RequestDeploy. Number row, not the F-row —
+	// F8 collided with the editor's built-in Eject/Possess toggle in PIE.
 	if (BranchPIEComp)
 	{
-		PlayerInputComponent->BindKey(EKeys::F6, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Enter);
-		PlayerInputComponent->BindKey(EKeys::F7, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Merge);
-		PlayerInputComponent->BindKey(EKeys::F8, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Discard);
-		PlayerInputComponent->BindKey(EKeys::F9, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Deploy);
+		PlayerInputComponent->BindKey(EKeys::Six, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Enter);
+		PlayerInputComponent->BindKey(EKeys::Seven, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Merge);
+		PlayerInputComponent->BindKey(EKeys::Eight, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Discard);
+		PlayerInputComponent->BindKey(EKeys::Nine, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Deploy);
 	}
 }
 
