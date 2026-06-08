@@ -17,6 +17,7 @@ class URefactorComponent;
 class UInventoryComponent;
 class UBuildComponent;
 class UBranchPIEComponent;
+class UJournalWidget;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -60,6 +61,10 @@ class ASibeliusGameCharacter : public ACharacter
 	/** Ch4 Test-Drive (SIB-36): PIE consumer of the branch subsystem — debug keys + desaturate/HUD/freeze */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UBranchPIEComponent> BranchPIEComp;
+
+	/** SIB-41: the Journal/story panel widget, created on first J press. */
+	UPROPERTY()
+	TObjectPtr<UJournalWidget> JournalWidget;
 
 protected:
 
@@ -126,8 +131,11 @@ protected:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void DoInteract();
 
-	/** SIB-39: toggles the developer overlay (bound to V). */
+	/** SIB-39: toggles the developer/HELP overlay (bound to H). */
 	void ToggleDevOverlay();
+
+	/** SIB-41: opens/closes the Journal story panel (bound to J). */
+	void ToggleJournal();
 
 protected:
 

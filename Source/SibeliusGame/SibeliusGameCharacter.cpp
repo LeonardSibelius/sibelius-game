@@ -15,6 +15,9 @@
 #include "BuildComponent.h"
 #include "BranchPIEComponent.h"
 #include "SibeliusHUD.h"          // SIB-39 dev-overlay toggle
+#include "JournalWidget.h"        // SIB-41 journal panel
+#include "Blueprint/UserWidget.h" // CreateWidget
+#include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
 #include "SibeliusGame.h"
 
@@ -131,6 +134,9 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// SIB-39 dev-overlay toggle: H (hide/help). V was taken by Code Vision; H is free
 	// and off the F-row, gizmo keys 1-5, the 6-9/0 branch block, and F/E/V/R/B/WASD.
 	PlayerInputComponent->BindKey(EKeys::H, IE_Pressed, this, &ASibeliusGameCharacter::ToggleDevOverlay);
+
+	// SIB-41 journal/story panel toggle: J.
+	PlayerInputComponent->BindKey(EKeys::J, IE_Pressed, this, &ASibeliusGameCharacter::ToggleJournal);
 }
 
 
@@ -197,4 +203,39 @@ void ASibeliusGameCharacter::DoInteract()
 void ASibeliusGameCharacter::ToggleDevOverlay()
 {
 	ASibeliusHUD::bOverlayVisible = !ASibeliusHUD::bOverlayVisible;
+}
+
+void ASibeliusGameCharacter::ToggleJournal()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		return;
+	}
+
+	// Open -> close.
+	if (JournalWidget && JournalWidget->IsInViewport())
+	{
+		JournalWidget->RemoveFromParent();
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
+		return;
+	}
+
+	// Create once, then show. Reload the narrative each open so edits show live in PIE.
+	if (!JournalWidget)
+	{
+		JournalWidget = CreateWidget<UJournalWidget>(PC, UJournalWidget::StaticClass());
+	}
+	if (JournalWidget)
+	{
+		JournalWidget->RefreshFromNarrative();
+		JournalWidget->AddToViewport(50);
+
+		// Show the cursor + UI input so the scroll box is usable; J still closes it.
+		FInputModeGameAndUI Mode;
+		Mode.SetWidgetToFocus(JournalWidget->TakeWidget());
+		PC->SetInputMode(Mode);
+		PC->SetShowMouseCursor(true);
+	}
 }

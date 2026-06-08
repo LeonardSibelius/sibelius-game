@@ -6,15 +6,12 @@
 #include "EngineUtils.h"                      // TActorIterator
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
-#include "Components/StaticMeshComponent.h"
 
 #include "InventoryComponent.h"
 #include "CompileTypes.h"                     // EResourceType
 #include "BuildSite.h"
 #include "HatchLock.h"
 #include "RefactorableComponent.h"
-#include "BranchSubsystem.h"
-#include "BranchPIEComponent.h"
 
 bool ASibeliusHUD::bOverlayVisible = true; // default ON
 
@@ -66,9 +63,8 @@ void ASibeliusHUD::DrawDevOverlay()
 	const FLinearColor Head(0.55f, 0.85f, 1.0f, 1.0f);
 	const FLinearColor White(1.0f, 1.0f, 1.0f, 1.0f);
 	const FLinearColor Dim(0.7f, 0.7f, 0.7f, 1.0f);
-	const FLinearColor Warn(1.0f, 0.45f, 0.45f, 1.0f);
 
-	Line(TEXT("== DEV OVERLAY ==   (H to hide)"), Head);
+	Line(TEXT("== HELP ==   (H to hide)"), Head);
 
 	APawn* Pawn = PlayerOwner ? PlayerOwner->GetPawn() : nullptr;
 	UWorld* W = GetWorld();
@@ -97,22 +93,14 @@ void ASibeliusHUD::DrawDevOverlay()
 		Line(TEXT("  (no inventory)"), Dim);
 	}
 
-	// --- one world pass: nearest build site + progress counts ---
-	ABuildSite* NearSite = nullptr;
-	float NearDist = -1.0f;
+	// --- world pass for the PROGRESS counts ---
 	int32 RefacTotal = 0, RefacOn = 0, HatchTotal = 0, HatchLocked = 0, SiteTotal = 0, SiteBuilt = 0;
-	const FVector PLoc = Pawn ? Pawn->GetActorLocation() : FVector::ZeroVector;
 	if (W)
 	{
 		for (TActorIterator<ABuildSite> It(W); It; ++It)
 		{
 			++SiteTotal;
 			if (It->IsBuilt()) { ++SiteBuilt; }
-			if (Pawn)
-			{
-				const float D = FVector::Dist(PLoc, It->GetActorLocation());
-				if (!NearSite || D < NearDist) { NearSite = *It; NearDist = D; }
-			}
 		}
 		for (TActorIterator<AHatchLock> It(W); It; ++It)
 		{
@@ -130,42 +118,6 @@ void ASibeliusHUD::DrawDevOverlay()
 		}
 	}
 
-	// --- BUILD: nearest site state (incl. ghost diagnostics — regression still open) ---
-	Line(TEXT("BUILD"), Head);
-	if (NearSite)
-	{
-		const bool bGhostHidden = NearSite->GhostMesh ? NearSite->GhostMesh->bHiddenInGame : true;
-		const bool bHasMesh = NearSite->GhostMesh && NearSite->GhostMesh->GetStaticMesh() != nullptr;
-		Line(FString::Printf(TEXT("  near: %s  dist:%.0f/%.0f"), *NearSite->GetName(), NearDist, NearSite->InteractRadius), White);
-		Line(FString::Printf(TEXT("  built:%d  canBuild:%d  cost:%d"),
-			NearSite->IsBuilt() ? 1 : 0, NearSite->CanBuild(Inv) ? 1 : 0, NearSite->Cost), White);
-		Line(FString::Printf(TEXT("  ghostHidden:%d  ghostMesh:%s"),
-			bGhostHidden ? 1 : 0, bHasMesh ? TEXT("SET") : TEXT("NONE!")), bHasMesh ? Dim : Warn);
-	}
-	else
-	{
-		Line(TEXT("  (no build site)"), Dim);
-	}
-
-	// --- BRANCH state ---
-	Line(TEXT("BRANCH"), Head);
-	UBranchSubsystem* Branch = W ? W->GetSubsystem<UBranchSubsystem>() : nullptr;
-	if (Branch)
-	{
-		Line(FString::Printf(TEXT("  depth:%d  branched:%s  deployAllowed:%s"),
-			Branch->GetDepth(),
-			Branch->IsBranched() ? TEXT("yes") : TEXT("no"),
-			Branch->CanDeploy() ? TEXT("yes") : TEXT("no")), White);
-	}
-	else
-	{
-		Line(TEXT("  (no branch subsystem)"), Dim);
-	}
-	UBranchPIEComponent* PIE = Pawn ? Pawn->FindComponentByClass<UBranchPIEComponent>() : nullptr;
-	Line(FString::Printf(TEXT("  lastDeploy: %s   inputGate: %s"),
-		PIE ? *PIE->GetLastDeployStatus() : TEXT("-"),
-		(PIE && PIE->IsLoadInputGated()) ? TEXT("ENGAGED") : TEXT("released")), Dim);
-
 	// --- PROGRESS: chapter flags (no score system yet) ---
 	Line(TEXT("PROGRESS"), Head);
 	Line(FString::Printf(TEXT("  refactored: %d/%d"), RefacOn, RefacTotal), White);
@@ -178,5 +130,5 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(TEXT("  F slap    E interact    V vision"), White);
 	Line(TEXT("  R refactor    B build"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
-	Line(TEXT("  H hide/show overlay"), White);
+	Line(TEXT("  J journal / story    H hide/show overlay"), White);
 }
