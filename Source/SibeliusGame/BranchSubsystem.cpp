@@ -9,7 +9,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"            // TActorIterator
 #include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h" // CreateSaveGameObject / LoadSaveGameFromMemory
+#include "Kismet/GameplayStatics.h" // CreateSaveGameObject / LoadGameFromMemory
 #include "Serialization/MemoryReader.h"   // header pre-validation (read raw bytes safely)
 #include "Serialization/CustomVersion.h"  // FCustomVersionContainer in the save header
 #include "UObject/ObjectVersion.h"        // FPackageFileVersion
@@ -405,7 +405,10 @@ static bool ValidateDeploySaveHeader(const TArray<uint8>& Bytes, FString& OutCla
 		int32 CustomVersionFormat = 0;
 		Reader << CustomVersionFormat;
 		FCustomVersionContainer CustomVersions;
-		CustomVersions.Serialize(Reader, (ECustomVersionSerializationFormat::Type)CustomVersionFormat);
+		// 5.7: ECustomVersionSerializationFormat is a scoped enum (no inner ::Type).
+		// Symmetric with the writer, so this consumes exactly the bytes it wrote and
+		// leaves the reader positioned at the class-name FString that follows.
+		CustomVersions.Serialize(Reader, static_cast<ECustomVersionSerializationFormat>(CustomVersionFormat));
 	}
 
 	if (Reader.IsError())
@@ -461,8 +464,8 @@ ESaveLoadStatus UBranchSubsystem::ClassifyDeploySave(const FString& Slot, USibel
 	}
 
 	// Header is sound — NOW deserialize the object (from the validated bytes). Defensive
-	// null-check regardless.
-	USibeliusSaveGame* S = Cast<USibeliusSaveGame>(UGameplayStatics::LoadSaveGameFromMemory(Bytes));
+	// null-check regardless. (5.7 member is LoadGameFromMemory.)
+	USibeliusSaveGame* S = Cast<USibeliusSaveGame>(UGameplayStatics::LoadGameFromMemory(Bytes));
 	if (!S)
 	{
 		return ESaveLoadStatus::Corrupt;
