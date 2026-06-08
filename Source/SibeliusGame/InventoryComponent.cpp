@@ -45,6 +45,22 @@ void UInventoryComponent::RestoreCount(EResourceType Resource, int32 Count)
 	OnInventoryChanged.Broadcast(Resource, Clamped);
 }
 
+FGuid UInventoryComponent::GetOrCreateResourceId(EResourceType Resource)
+{
+	FGuid& Id = ResourceIds.FindOrAdd(Resource);
+	if (!Id.IsValid())
+	{
+		Id = FGuid::NewGuid();
+	}
+	return Id;
+}
+
+FGuid UInventoryComponent::GetResourceId(EResourceType Resource) const
+{
+	const FGuid* Id = ResourceIds.Find(Resource);
+	return Id ? *Id : FGuid();
+}
+
 bool UInventoryComponent::RunInventorySelfTest(FString& OutError)
 {
 	// Bar item 2: Add(Book,12) -> Spend(Book,8) -> Count==4; over-spend rejected.

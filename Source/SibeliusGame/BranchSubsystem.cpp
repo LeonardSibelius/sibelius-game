@@ -26,8 +26,9 @@ UWorld* UBranchSubsystem::ResolveWorld() const
 
 void UBranchSubsystem::RebuildRegistry()
 {
-	Branchables.Reset();
+	BranchablesById.Reset();
 	Inventory.Reset();
+	LastRegistryCollisions = 0;
 
 	UWorld* World = ResolveWorld();
 	if (!World)
@@ -36,8 +37,9 @@ void UBranchSubsystem::RebuildRegistry()
 	}
 
 	// Collect every IBranchable in the level (actor-level: ABuildSite/AHatchLock;
-	// component-level: URefactorableComponent) plus the inventory ledger. Phase 0
-	// builds the registry on enter; a later phase moves to BeginPlay registration.
+	// component-level: URefactorableComponent) plus the inventory ledger, indexing
+	// each by its stable GUID (SIB-29). Phase 0 builds the registry on enter; a
+	// later phase moves to BeginPlay registration.
 	for (TActorIterator<AActor> It(World); It; ++It)
 	{
 		AActor* Actor = *It;
@@ -45,10 +47,7 @@ void UBranchSubsystem::RebuildRegistry()
 		{
 			continue;
 		}
-		if (Cast<IBranchable>(Actor))
-		{
-			Branchables.Add(Actor);
-		}
+		RegisterBranchable(Actor);
 		TInlineComponentArray<UActorComponent*> Comps(Actor);
 		for (UActorComponent* Comp : Comps)
 		{
@@ -56,10 +55,7 @@ void UBranchSubsystem::RebuildRegistry()
 			{
 				continue;
 			}
-			if (Cast<IBranchable>(Comp))
-			{
-				Branchables.Add(Comp);
-			}
+			RegisterBranchable(Comp);
 			if (!Inventory.IsValid())
 			{
 				if (UInventoryComponent* Inv = Cast<UInventoryComponent>(Comp))
@@ -71,17 +67,52 @@ void UBranchSubsystem::RebuildRegistry()
 	}
 }
 
+void UBranchSubsystem::RegisterBranchable(UObject* Obj)
+{
+	IBranchable* B = Cast<IBranchable>(Obj);
+	if (!B)
+	{
+		return;
+	}
+
+	// Assign-once if invalid, then index by the GUID (identity, not array position).
+	const FGuid Id = B->GetOrCreateBranchId();
+	if (TWeakObjectPtr<UObject>* Existing = BranchablesById.Find(Id))
+	{
+		if (Existing->Get() != Obj)
+		{
+			// Two DISTINCT objects share a GUID — a real collision (e.g. an actor
+			// duplicated in-editor copied its baked BranchId). Keep the first
+			// registrant; count it so the smoke test can assert zero.
+			++LastRegistryCollisions;
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Branch] GUID collision on %s: %s already maps to a different object; ignoring the duplicate."),
+				*GetNameSafe(Obj), *Id.ToString());
+		}
+		return; // same object re-seen (or a collision): nothing to add
+	}
+	BranchablesById.Add(Id, Obj);
+}
+
+UObject* UBranchSubsystem::ResolveBranchable(const FGuid& Id) const
+{
+	const TWeakObjectPtr<UObject>* Found = BranchablesById.Find(Id);
+	return Found ? Found->Get() : nullptr;
+}
+
 FBranchManifest UBranchSubsystem::CaptureDeclaredSet() const
 {
 	FBranchManifest Snap;
 
-	for (int32 i = 0; i < Branchables.Num(); ++i)
+	// Key each captured object by its stable GUID (the registry map key). Identity
+	// is position-independent now, so restore matches on GUID, not array slot.
+	for (const TPair<FGuid, TWeakObjectPtr<UObject>>& Pair : BranchablesById)
 	{
-		UObject* Obj = Branchables[i].Get();
+		UObject* Obj = Pair.Value.Get();
 		if (IBranchable* B = (Obj ? Cast<IBranchable>(Obj) : nullptr))
 		{
 			FBranchObjectState S;
-			S.RegistryIndex = i;
+			S.ObjectId = Pair.Key;
 			S.State = B->CaptureBranchState();
 			Snap.Objects.Add(S);
 		}
@@ -91,11 +122,13 @@ FBranchManifest UBranchSubsystem::CaptureDeclaredSet() const
 	{
 		FResourceEntry Book;
 		Book.Resource = EResourceType::Book;
+		Book.EntryId = Inv->GetOrCreateResourceId(EResourceType::Book);
 		Book.Count = Inv->GetCount(EResourceType::Book);
 		Snap.Resources.Add(Book);
 
 		FResourceEntry Key;
 		Key.Resource = EResourceType::Key;
+		Key.EntryId = Inv->GetOrCreateResourceId(EResourceType::Key);
 		Key.Count = Inv->GetCount(EResourceType::Key);
 		Snap.Resources.Add(Key);
 	}
@@ -110,11 +143,7 @@ void UBranchSubsystem::RestoreDeclaredSet(const FBranchManifest& Snapshot)
 	// spend/grant couplings restore consistently.
 	for (const FBranchObjectState& S : Snapshot.Objects)
 	{
-		if (!Branchables.IsValidIndex(S.RegistryIndex))
-		{
-			continue;
-		}
-		UObject* Obj = Branchables[S.RegistryIndex].Get();
+		UObject* Obj = ResolveBranchable(S.ObjectId); // GUID -> object (SIB-29), not array slot
 		if (IBranchable* B = (Obj ? Cast<IBranchable>(Obj) : nullptr))
 		{
 			B->RestoreBranchState(S.State);

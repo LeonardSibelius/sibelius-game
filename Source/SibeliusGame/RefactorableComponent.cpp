@@ -17,6 +17,7 @@ URefactorableComponent::URefactorableComponent()
 void URefactorableComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	GetOrCreateBranchId();   // SIB-29: stable identity from spawn (assign-once if invalid)
 	CachedMesh = ResolveTargetMesh();
 	bIsRefactored = false;
 }

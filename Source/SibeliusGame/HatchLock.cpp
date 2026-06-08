@@ -16,6 +16,12 @@ AHatchLock::AHatchLock()
 	BlockerMesh->SetCanEverAffectNavigation(false);
 }
 
+void AHatchLock::BeginPlay()
+{
+	Super::BeginPlay();
+	GetOrCreateBranchId();   // SIB-29: stable identity from spawn (assign-once if invalid)
+}
+
 bool AHatchLock::TryUnlock(UInventoryComponent* Inventory)
 {
 	if (!bLocked || !Inventory)

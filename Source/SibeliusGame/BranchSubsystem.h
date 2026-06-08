@@ -84,9 +84,19 @@ public:
 	// resolves GetWorld().
 	void SetBranchWorld(UWorld* InWorld) { BranchWorld = InWorld; }
 
+	// Resolve a branchable by its stable GUID (SIB-29). Null if not registered /
+	// the object has gone away. The manifest restore keys off this.
+	UObject* ResolveBranchable(const FGuid& Id) const;
+
+	// Test seams (SIB-29): drive + inspect the GUID registry without PIE.
+	void RebuildRegistryForTest() { RebuildRegistry(); }
+	const TMap<FGuid, TWeakObjectPtr<UObject>>& GetRegistryForTest() const { return BranchablesById; }
+	int32 GetRegistryCollisionsForTest() const { return LastRegistryCollisions; }
+
 private:
 	UWorld* ResolveWorld() const;
 	void RebuildRegistry();                                   // collect IBranchable + inventory from the world
+	void RegisterBranchable(UObject* Obj);                    // GUID-index one candidate (assign-once + collision guard)
 	FBranchManifest CaptureDeclaredSet() const;
 	void RestoreDeclaredSet(const FBranchManifest& Snapshot); // RAW writes only — never replay verbs
 	void SuspendPickups();                                    // engage on enter (locked product decision)
@@ -98,8 +108,10 @@ private:
 	// pre-edit capture; discarding pops+restores it, merging pops+keeps live.
 	TArray<FBranchManifest> Stack;
 
-	// In-session identity = index into this registry (Ch5 promotes to FGuid).
-	TArray<TWeakObjectPtr<UObject>> Branchables;
+	// SIB-29: identity is a stable per-object FGuid, not array position. The registry
+	// is a GUID -> object lookup; the manifest keys by GUID and resolves through here.
+	TMap<FGuid, TWeakObjectPtr<UObject>> BranchablesById;
+	int32 LastRegistryCollisions = 0; // distinct objects that hashed to an already-claimed GUID on the last rebuild
 	TWeakObjectPtr<UInventoryComponent> Inventory;
 	TWeakObjectPtr<UWorld> BranchWorld;
 };

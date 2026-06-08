@@ -33,6 +33,10 @@ public:
 	virtual uint8 CaptureBranchState() const override { return IsRefactored() ? 1 : 0; }
 	virtual void RestoreBranchState(uint8 InState) override;
 
+	// IBranchable identity (SIB-29): stable persisted GUID, assign-once.
+	virtual FGuid GetOrCreateBranchId() override { AssignBranchIdIfInvalid(BranchId); return BranchId; }
+	virtual FGuid GetBranchId() const override { return BranchId; }
+
 	UFUNCTION(BlueprintCallable, Category = "Refactor")
 	void ApplyRefactor();
 
@@ -88,6 +92,10 @@ private:
 
 	// MIDs created ONCE per actor and reused on re-refactor (R8 — no per-toggle leak).
 	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> CachedMIDs;
+
+	// SIB-29: stable cross-reload identity. SaveGame so Ch5's save archive carries
+	// it; assigned once if invalid (BeginPlay / registration), never on load.
+	UPROPERTY(SaveGame) FGuid BranchId;
 
 	bool bIsRefactored = false;
 };

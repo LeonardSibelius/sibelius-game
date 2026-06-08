@@ -44,6 +44,13 @@
 // [HARD] partial resolve isn't enough — refused until depth 0; allowed again once
 //        merge/discard returns to Main (merge precedes deploy)
 //
+// PHASE 0 (Ch5) — GUID identity seam (SIB-29, no SaveGame yet):
+// [HARD] every registered IBranchable has a valid GUID; no collisions
+// [HARD] GetOrCreateBranchId is assign-once (stable, never regenerated)
+// [HARD] a re-register (clear + rebuild) keeps identity: each GUID resolves to the
+//        SAME logical object, registry size holds, object ids unchanged
+// [HARD] inventory ledger entries carry valid, distinct, stable GUIDs
+//
 // CP3 lesson #6: NAMED namespace to avoid unity-build redefinition collisions
 // with the sibling commandlets.
 
@@ -101,24 +108,29 @@ namespace BranchSmokeTestNS
 		return DefaultMapPackage;
 	}
 
-	// Byte-exact manifest comparison (the registry order is deterministic between
-	// two captures with no intervening spawn/destroy).
+	// Manifest equality keyed by stable identity (SIB-29): resources by EResourceType,
+	// objects by GUID — order-independent, so it no longer leans on the registry
+	// emitting captures in a fixed array order.
 	bool ManifestsEqual(const FBranchManifest& A, const FBranchManifest& B)
 	{
 		if (A.Resources.Num() != B.Resources.Num() || A.Objects.Num() != B.Objects.Num())
 		{
 			return false;
 		}
-		for (int32 i = 0; i < A.Resources.Num(); ++i)
+		for (const FResourceEntry& EA : A.Resources)
 		{
-			if (A.Resources[i].Resource != B.Resources[i].Resource || A.Resources[i].Count != B.Resources[i].Count)
+			const FResourceEntry* EB = B.Resources.FindByPredicate(
+				[&EA](const FResourceEntry& X) { return X.Resource == EA.Resource; });
+			if (!EB || EB->Count != EA.Count)
 			{
 				return false;
 			}
 		}
-		for (int32 i = 0; i < A.Objects.Num(); ++i)
+		for (const FBranchObjectState& OA : A.Objects)
 		{
-			if (A.Objects[i].RegistryIndex != B.Objects[i].RegistryIndex || A.Objects[i].State != B.Objects[i].State)
+			const FBranchObjectState* OB = B.Objects.FindByPredicate(
+				[&OA](const FBranchObjectState& X) { return X.ObjectId == OA.ObjectId; });
+			if (!OB || OB->State != OA.State)
 			{
 				return false;
 			}
@@ -455,11 +467,88 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(Branch->GetDepth() == 0, TEXT("P4: at Main after fully resolving"));
 		R.Check(Branch->CanDeploy() && Branch->RequestDeploy(),
 			TEXT("P4: Deploy allowed again once Main (merge/discard precedes deploy)"));
+
+		// =====================================================================
+		//  PHASE 0 (Ch5) — GUID identity seam (SIB-29). Identity is a stable
+		//  per-object FGuid, not array position: every registered IBranchable has
+		//  a valid, unique GUID; the registry survives a clear+rebuild with each
+		//  GUID resolving to the SAME logical object; no GUID collisions. Seam
+		//  only — no SaveGame yet (that's Ch5 Phase 1).
+		// =====================================================================
+		UE_LOG(LogBranchSmoke, Display, TEXT("--- Phase 0 (Ch5): GUID identity seam ---"));
+
+		// Build (or rebuild) the GUID registry over the test mini-scene.
+		Branch->RebuildRegistryForTest();
+		const TMap<FGuid, TWeakObjectPtr<UObject>>& Reg1 = Branch->GetRegistryForTest();
+
+		// At least our spawned Site + Hatch + a level Refactorable are indexed.
+		R.Check(Reg1.Num() >= 3,
+			TEXT("C5-P0: registry indexes >= 3 IBranchables (Refactorable + BuildSite + HatchLock)"));
+		R.Check(Branch->GetRegistryCollisionsForTest() == 0,
+			TEXT("C5-P0: no GUID collisions on first registration"));
+
+		// Every registered GUID is valid; snapshot id -> object for the re-register
+		// resolve check. (Map keys are inherently unique; the collision counter above
+		// is the real two-objects-one-GUID guard.)
+		TMap<FGuid, UObject*> Expected;
+		bool bAllValid = true;
+		for (const TPair<FGuid, TWeakObjectPtr<UObject>>& P : Reg1)
+		{
+			if (!P.Key.IsValid())
+			{
+				bAllValid = false;
+			}
+			Expected.Add(P.Key, P.Value.Get());
+		}
+		R.Check(bAllValid, TEXT("C5-P0: every registered IBranchable has a VALID GUID"));
+
+		// Each implementer exposes a valid id via the interface, and distinct objects
+		// have distinct ids.
+		R.Check(Site->GetBranchId().IsValid() && Hatch->GetBranchId().IsValid() && Refac->GetBranchId().IsValid(),
+			TEXT("C5-P0: BuildSite/HatchLock/Refactorable each carry a valid persisted GUID"));
+		R.Check(Site->GetBranchId() != Hatch->GetBranchId() && Site->GetBranchId() != Refac->GetBranchId(),
+			TEXT("C5-P0: distinct objects have distinct GUIDs"));
+
+		// Assign-once: GetOrCreateBranchId is stable across calls, never regenerated.
+		const FGuid SiteId = Site->GetOrCreateBranchId();
+		R.Check(SiteId == Site->GetOrCreateBranchId() && SiteId == Site->GetBranchId(),
+			TEXT("C5-P0: GetOrCreateBranchId is assign-once (stable, never regenerated)"));
+
+		// Re-register: clear + rebuild the registry; identity must survive — each
+		// GUID resolves to the SAME logical object (not a shifted array slot).
+		Branch->RebuildRegistryForTest();
+		const TMap<FGuid, TWeakObjectPtr<UObject>>& Reg2 = Branch->GetRegistryForTest();
+		R.Check(Branch->GetRegistryCollisionsForTest() == 0, TEXT("C5-P0: no GUID collisions on re-register"));
+		R.Check(Reg2.Num() == Expected.Num(), TEXT("C5-P0: re-register yields the same registry size"));
+
+		bool bResolveStable = true;
+		for (const TPair<FGuid, UObject*>& E : Expected)
+		{
+			if (Branch->ResolveBranchable(E.Key) != E.Value)
+			{
+				bResolveStable = false;
+				break;
+			}
+		}
+		R.Check(bResolveStable,
+			TEXT("C5-P0: after clear+rebuild every GUID resolves to the SAME object (identity, not index)"));
+		R.Check(Site->GetBranchId() == SiteId,
+			TEXT("C5-P0: re-register did NOT regenerate the object's GUID"));
+
+		// Inventory tracked entries also carry stable, distinct, assign-once GUIDs
+		// (so Ch5's save payload is uniformly GUID-keyed).
+		const FGuid BookId = Inv->GetOrCreateResourceId(EResourceType::Book);
+		const FGuid KeyId  = Inv->GetOrCreateResourceId(EResourceType::Key);
+		R.Check(BookId.IsValid() && KeyId.IsValid() && BookId != KeyId,
+			TEXT("C5-P0: inventory entries carry valid, distinct GUIDs"));
+		R.Check(Inv->GetOrCreateResourceId(EResourceType::Book) == BookId
+			&& Inv->GetResourceId(EResourceType::Book) == BookId,
+			TEXT("C5-P0: inventory entry GUID is assign-once (stable)"));
 	}
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 green — Test-Drive COMPLETE). ==="));
+		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phase 0 GUID seam green). ==="));
 		return 0;
 	}
 	UE_LOG(LogBranchSmoke, Error, TEXT("=== BRANCH SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);

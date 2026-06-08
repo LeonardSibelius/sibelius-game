@@ -26,6 +26,7 @@ ABuildSite::ABuildSite()
 void ABuildSite::BeginPlay()
 {
 	Super::BeginPlay();
+	GetOrCreateBranchId();     // SIB-29: stable identity from spawn (assign-once if invalid)
 	ApplyBuiltState(bIsBuilt); // enforce ghost/final/nav-link coherence from one source of truth
 }
 

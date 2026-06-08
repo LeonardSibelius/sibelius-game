@@ -4,12 +4,14 @@
 // the subsystem state enum. Mirrors docs/ch4-spike-notes.md exactly: a declared
 // set of bool-per-object + the inventory ledger, never a world dump.
 //
-// Identity is an in-session registry index (Ch5 Deploy promotes it to a stable
-// FGuid — FBuildRecord::SiteId in CompileTypes.h is the groundwork).
+// Identity is a stable per-object FGuid (SIB-29, Ch5 Phase 0) — promoted from the
+// in-session registry index. The manifest keys objects AND ledger entries by GUID,
+// so it survives a re-register (and, from Ch5 Phase 1, a SaveGame reload).
 
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/Guid.h"
 #include "CompileTypes.h"   // EResourceType
 #include "BranchTypes.generated.h"
 
@@ -23,22 +25,26 @@ enum class EBranchState : uint8
 	Resolving
 };
 
-// One registered branchable's packed declared state (a single bool today).
+// One registered branchable's packed declared state (a single bool today), keyed
+// by its stable GUID (SIB-29) rather than a registry array position.
 USTRUCT()
 struct FBranchObjectState
 {
 	GENERATED_BODY()
 
-	UPROPERTY() int32 RegistryIndex = INDEX_NONE;
+	UPROPERTY() FGuid ObjectId;       // SIB-29: stable identity (was RegistryIndex)
 	UPROPERTY() uint8 State = 0;
 };
 
-// The inventory ledger captured whole (2 entries today: Book, Key).
+// The inventory ledger captured whole (2 entries today: Book, Key). The Resource
+// enum is the natural key for the count; EntryId carries the entry's stable GUID
+// (SIB-29) so the whole manifest is uniformly GUID-keyed for Ch5's save.
 USTRUCT()
 struct FResourceEntry
 {
 	GENERATED_BODY()
 
+	UPROPERTY() FGuid EntryId;
 	UPROPERTY() EResourceType Resource = EResourceType::Book;
 	UPROPERTY() int32 Count = 0;
 };

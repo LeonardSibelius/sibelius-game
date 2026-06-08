@@ -8,6 +8,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/Guid.h"
 #include "UObject/Interface.h"
 #include "Branchable.generated.h"
 
@@ -29,4 +30,28 @@ public:
 	// Collect() have side effects (spend/grant resources, hide a pickup). The
 	// object restores its own exact visuals from this raw bool.
 	virtual void RestoreBranchState(uint8 State) = 0;
+
+	// SIB-29 — Ch5 Phase 0 (GUID identity seam). Identity is a STABLE per-object
+	// FGuid, not a registry array index: it survives a re-register (and, from Ch5
+	// Phase 1, a SaveGame reload). Each implementer stores a persisted
+	// UPROPERTY(SaveGame) FGuid, assigned ONCE if invalid and NEVER regenerated on
+	// load (the deserialized value is kept). The subsystem indexes/resolves
+	// branchables by this GUID and the manifest keys by it.
+	//
+	//   GetOrCreateBranchId() — assign-once-if-invalid, then return. Call at
+	//                           registration so the id exists before first use.
+	//   GetBranchId()         — const read (valid only after a create has run).
+	virtual FGuid GetOrCreateBranchId() = 0;
+	virtual FGuid GetBranchId() const = 0;
+
+protected:
+	// Shared assign-once helper for implementers. Never overwrites a valid id, so a
+	// value loaded from disk (Ch5) or assigned earlier this session is preserved.
+	static void AssignBranchIdIfInvalid(FGuid& Id)
+	{
+		if (!Id.IsValid())
+		{
+			Id = FGuid::NewGuid();
+		}
+	}
 };

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Misc/Guid.h"
 #include "Components/ActorComponent.h"
 #include "CompileTypes.h"
 #include "InventoryComponent.generated.h"
@@ -32,6 +33,12 @@ public:
 	// semantics - so a branch discard restores the ledger exactly. Clamped >= 0.
 	void RestoreCount(EResourceType Resource, int32 Count);
 
+	// SIB-29 (Ch5 Phase 0): stable identity for each tracked ledger entry, so the
+	// branch manifest / Ch5 save is uniformly GUID-keyed. Assign-once if invalid;
+	// the const read returns an invalid FGuid for an untracked resource.
+	FGuid GetOrCreateResourceId(EResourceType Resource);
+	FGuid GetResourceId(EResourceType Resource) const;
+
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
 	FOnInventoryChanged OnInventoryChanged;
 
@@ -40,4 +47,9 @@ public:
 
 private:
 	TMap<EResourceType, int32> Counts;
+
+	// SIB-29: a stable GUID per tracked resource entry. SaveGame so Ch5's archive
+	// carries it; assigned once per resource if invalid, never regenerated on load.
+	UPROPERTY(SaveGame)
+	TMap<EResourceType, FGuid> ResourceIds;
 };

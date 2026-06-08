@@ -31,6 +31,10 @@ public:
 	virtual uint8 CaptureBranchState() const override { return IsBuilt() ? 1 : 0; }
 	virtual void RestoreBranchState(uint8 InState) override;
 
+	// IBranchable identity (SIB-29): stable persisted GUID, assign-once.
+	virtual FGuid GetOrCreateBranchId() override { AssignBranchIdIfInvalid(BranchId); return BranchId; }
+	virtual FGuid GetBranchId() const override { return BranchId; }
+
 	virtual void BeginPlay() override;
 
 	// IInteractable: E dismantles a built site (refund). Building is the B verb (UBuildComponent::TriggerBuild).
@@ -86,6 +90,10 @@ public:
 private:
 	void ApplyBuiltState(bool bBuilt);
 	void SetNavLinkEnabled(bool bEnabled);
+
+	// SIB-29: stable cross-reload identity. SaveGame so Ch5's save archive carries
+	// it; assigned once if invalid (BeginPlay / registration), never on load.
+	UPROPERTY(SaveGame) FGuid BranchId;
 
 	bool bIsBuilt = false;
 };
