@@ -19,6 +19,7 @@
 #include "GenerateSmokeTestCommandlet.h"
 #include "GenerateMatcher.h"
 #include "GenerateTypes.h"
+#include "GenerateCatalog.h"        // load the real CSV-backed catalog
 
 #include "BuildSite.h"
 #include "InventoryComponent.h"
@@ -71,27 +72,6 @@ namespace GenerateSmokeTestNS
 		}
 	}
 
-	// Disposable test catalog — NOT the real one. ladder/lamp/crate/key with keyword
-	// lists and per-entry costs.
-	TArray<FGenerateCatalogEntry> MakeTestCatalog()
-	{
-		TArray<FGenerateCatalogEntry> C;
-		auto Add = [&C](const FName& Id, const TArray<FString>& Keys, int32 Cost)
-		{
-			FGenerateCatalogEntry E;
-			E.EntryId = Id;
-			E.DisplayName = FText::FromName(Id);
-			E.Keywords = Keys;
-			E.Cost = Cost;
-			C.Add(MoveTemp(E));
-		};
-		Add(TEXT("ladder"), { TEXT("ladder"), TEXT("steps"), TEXT("rungs"), TEXT("climb") }, 1);
-		Add(TEXT("lamp"),   { TEXT("lamp"), TEXT("light"), TEXT("lantern"), TEXT("glow") },   1);
-		Add(TEXT("crate"),  { TEXT("crate"), TEXT("box"), TEXT("container"), TEXT("chest") }, 2);
-		Add(TEXT("key"),    { TEXT("key"), TEXT("unlock"), TEXT("brass") },                   3);
-		return C;
-	}
-
 	bool CatalogHas(const TArray<FGenerateCatalogEntry>& Catalog, const FName& Id)
 	{
 		return Catalog.ContainsByPredicate([&Id](const FGenerateCatalogEntry& E) { return E.EntryId == Id; });
@@ -110,10 +90,26 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 {
 	using namespace GenerateSmokeTestNS;
 
-	UE_LOG(LogGenerateSmoke, Display, TEXT("=== SIB-30 Generate smoke test (Ch6 spike): G1-G6 ==="));
+	UE_LOG(LogGenerateSmoke, Display, TEXT("=== SIB-30 Generate smoke test (Ch6 P0): G1-G6 against the REAL catalog ==="));
 
 	FResult R;
-	const TArray<FGenerateCatalogEntry> Catalog = MakeTestCatalog();
+
+	// Load the curated catalog from the committed CSV (the real thing, not a fixture).
+	TArray<FGenerateCatalogEntry> Catalog;
+	FString LoadErr;
+	const bool bLoaded = LoadGenerateCatalog(Catalog, LoadErr);
+	R.Check(bLoaded, FString::Printf(TEXT("P0: catalog loads from %s"), *GetGenerateCatalogCsvPath()));
+	R.Check(Catalog.Num() >= 4, FString::Printf(TEXT("P0: catalog has >= 4 entries (%d loaded)"), Catalog.Num()));
+	if (!bLoaded)
+	{
+		UE_LOG(LogGenerateSmoke, Error, TEXT("  catalog load error: %s"), *LoadErr);
+	}
+	else
+	{
+		FString Ids;
+		for (const FGenerateCatalogEntry& E : Catalog) { Ids += E.EntryId.ToString() + TEXT(" "); }
+		UE_LOG(LogGenerateSmoke, Display, TEXT("  catalog entries: %s"), *Ids);
+	}
 
 	// =====================================================================
 	//  G2 — varied phrasing (the core risk). ~3 phrasings per item resolve to
@@ -122,18 +118,24 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 	UE_LOG(LogGenerateSmoke, Display, TEXT("--- G2: varied phrasing ---"));
 	struct FPhrasing { const TCHAR* Input; const TCHAR* Expected; };
 	const FPhrasing PhraseTable[] = {
-		{ TEXT("ladder"),              TEXT("ladder") },
-		{ TEXT("something to climb"),  TEXT("ladder") },
-		{ TEXT("steps up"),            TEXT("ladder") },
-		{ TEXT("lamp"),                TEXT("lamp") },
-		{ TEXT("a light please"),      TEXT("lamp") },
-		{ TEXT("an old lantern"),      TEXT("lamp") },
-		{ TEXT("crate"),               TEXT("crate") },
-		{ TEXT("a wooden box"),        TEXT("crate") },
-		{ TEXT("storage container"),   TEXT("crate") },
-		{ TEXT("key"),                 TEXT("key") },
-		{ TEXT("a brass key"),         TEXT("key") },
-		{ TEXT("unlock the door"),     TEXT("key") },
+		{ TEXT("a tree"),             TEXT("tree") },
+		{ TEXT("tall oak"),           TEXT("tree") },
+		{ TEXT("leaves and trunk"),   TEXT("tree") },
+		{ TEXT("a potted plant"),     TEXT("plant") },
+		{ TEXT("small shrub"),        TEXT("plant") },
+		{ TEXT("a fern"),             TEXT("plant") },
+		{ TEXT("a lamp"),             TEXT("lamp") },
+		{ TEXT("some light"),         TEXT("lamp") },
+		{ TEXT("an old lantern"),     TEXT("lamp") },
+		{ TEXT("a crate"),            TEXT("crate") },
+		{ TEXT("a wooden box"),       TEXT("crate") },
+		{ TEXT("storage container"),  TEXT("crate") },
+		{ TEXT("a chair"),            TEXT("chair") },
+		{ TEXT("a seat"),             TEXT("chair") },
+		{ TEXT("a wooden stool"),     TEXT("chair") },
+		{ TEXT("a key"),              TEXT("key") },
+		{ TEXT("a brass key"),        TEXT("key") },
+		{ TEXT("unlock the door"),    TEXT("key") },
 	};
 
 	int32 PhraseHits = 0;
@@ -176,7 +178,7 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 	// =====================================================================
 	UE_LOG(LogGenerateSmoke, Display, TEXT("--- G1: closed-catalog scope ---"));
 	const TCHAR* AllInputs[] = {
-		TEXT("ladder"), TEXT("something to climb"), TEXT("a brass key"), TEXT("light box"),
+		TEXT("a lamp"), TEXT("a tree"), TEXT("a brass key"), TEXT("light box"),
 		TEXT("xyzzy"), TEXT("a unicorn"), TEXT("a gun"), TEXT(""), TEXT("conjure a dragon")
 	};
 	bool bScopeHolds = true;
@@ -225,8 +227,8 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 	// =====================================================================
 	UE_LOG(LogGenerateSmoke, Display, TEXT("--- G5: budget economy ---"));
 	int32 Budget = 5;
-	const FGenerateResolution L = ClassifyGenerateRequest(TEXT("ladder"), Catalog, Budget); // cost 1
-	R.Check(L.Outcome == EGenerateOutcome::Resolved && L.Cost == 1, TEXT("G5: 'ladder' resolves with cost 1"));
+	const FGenerateResolution L = ClassifyGenerateRequest(TEXT("a lamp"), Catalog, Budget); // cost 1
+	R.Check(L.Outcome == EGenerateOutcome::Resolved && L.Cost == 1, TEXT("G5: 'a lamp' resolves with cost 1"));
 	Budget -= L.Cost; // 5 -> 4 (the per-area economy decrements on spawn)
 	R.Check(Budget == 4, TEXT("G5: budget decremented by the entry's cost"));
 
@@ -304,7 +306,7 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogGenerateSmoke, Display, TEXT("=== GENERATE SMOKE TEST PASSED (Ch6 spike — G1-G6 green). ==="));
+		UE_LOG(LogGenerateSmoke, Display, TEXT("=== GENERATE SMOKE TEST PASSED (Ch6 P0 — real catalog green). ==="));
 		return 0;
 	}
 	UE_LOG(LogGenerateSmoke, Error, TEXT("=== GENERATE SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);

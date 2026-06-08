@@ -67,3 +67,35 @@ Once Walt confirms **DA (DataTable/CSV)** and **DB (RefusedAmbiguous, already do
 graduates as-is into P0: swap the throwaway C++ catalog for a CSV-backed `UDataTable`, and wire
 `ClassifyGenerateRequest`'s `Resolved` outcome to spawn the entry's `Mesh`/buildable through the Ch3
 build entry point. G6 already proves the spawned result persists.
+
+---
+
+## P0 update — real CSV catalog wired (decisions locked)
+
+The spike seam is promoted to a **real, content-loaded catalog**. Still headless-gated, no UI (P1).
+
+- **`FGenerateCatalogEntry`** is now a CSV-shaped DataTable row: `Keywords` is **pipe-delimited**
+  (`tree|oak|trunk`, spreadsheet-friendly) parsed via `GetKeywordTokens`; added **`SpawnScale` (FVector)**
+  + **`SpawnRotation` (FRotator)** so each entry's transform is authored *in data* — the SIB-40 gold-key
+  lesson (Scale 0.25 + Yaw 90 or it's an invisible "stick") baked in, no per-object code.
+- **`Data/GenerateCatalog.csv`** (committed) — 6 seed entries against meshes confirmed present in
+  Content: `tree`→SM_Tree_01, `plant`→SM_Plant_01, `lamp`→SM_Lamp_B, `crate`→SM_MainBox_01,
+  `chair`→SM_Arm_Chair_A1, `key`→the Fab copper key (Scale 0.25 / Yaw 90). Seed data Walt curates + grows.
+- **`GenerateCatalog.h/.cpp`** — `LoadGenerateCatalog()` reads the CSV into a transient `UDataTable`
+  (`CreateTableFromCSVString`) and hands the matcher its entries (EntryId = row name). The matcher stays
+  the same pure function.
+- **`GenerateSmokeTest`** now runs G1–G6 against the **loaded** catalog: an 18-row phrasing table
+  (3 per entry), a real tie (`"light box"` → lamp|crate → `RefusedAmbiguous`), over-budget (`key` cost 3
+  vs budget 2), budget decrement, and the unchanged G6 persistence round-trip. Ends
+  `=== GENERATE SMOKE TEST PASSED (Ch6 P0 — real catalog green). ===`.
+
+### Caveat for P1 (recorded, not a blocker)
+`UDataTable::CreateTableFromCSVString` is **editor-only**, so the CSV→DataTable path runs in the headless
+commandlet (editor) but **not in a packaged build**. For P1/shipping, import the same `GenerateCatalog.csv`
+as a **persistent `UDataTable` asset** and read it the same way (the row struct is unchanged). The
+accessor already returns a clear "editor-only in P0" error in non-editor builds.
+
+### Next (P1)
+Typed-input UI (DD) → feed `ClassifyGenerateRequest` → on `Resolved`, spawn `Mesh` with the entry's
+`SpawnScale`/`SpawnRotation` through the Ch3 build entry point (G6 proves it persists). On any refusal,
+the in-fiction Mrs. Hall line.

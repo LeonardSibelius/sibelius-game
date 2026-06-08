@@ -27,23 +27,26 @@ enum class EGenerateOutcome : uint8
 	RefusedUnsafe
 };
 
-// One catalog entry. The only thing that can ever enter the world is a resolved EntryId.
+// One catalog entry — a DataTable row (DECISION DA: CSV-backed UDataTable). The only
+// thing that can ever enter the world is a resolved EntryId.
 USTRUCT()
 struct FGenerateCatalogEntry : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	// Stable key, e.g. "ladder".
-	UPROPERTY(EditAnywhere, Category = "Generate")
+	// Stable key, e.g. "ladder". Set from the DataTable ROW NAME by the accessor — not
+	// a CSV column.
+	UPROPERTY()
 	FName EntryId;
 
 	// Player-facing name, e.g. "Wooden Ladder".
 	UPROPERTY(EditAnywhere, Category = "Generate")
 	FText DisplayName;
 
-	// Synonym/intent keywords — DATA, grows over time, e.g. ["ladder","steps","climb"].
+	// Synonym/intent keywords — DATA, grows over time. PIPE-DELIMITED in the CSV so it's
+	// spreadsheet-friendly, e.g. "ladder|steps|rungs|climb". Parse via GetKeywordTokens.
 	UPROPERTY(EditAnywhere, Category = "Generate")
-	TArray<FString> Keywords;
+	FString Keywords;
 
 	// What resolving this spawns (route through the Ch3 build pipeline). Soft so the
 	// catalog doesn't hard-load every asset.
@@ -53,6 +56,22 @@ struct FGenerateCatalogEntry : public FTableRowBase
 	// Charged against the per-area generation budget (the in-fiction economy).
 	UPROPERTY(EditAnywhere, Category = "Generate")
 	int32 Cost = 1;
+
+	// Per-entry spawn transform so an authored mesh looks right when built. SIB-40
+	// lesson baked into DATA: the gold key needed Scale 0.25 + Yaw 90 or it read as an
+	// invisible/flat "stick" — authoring transform-in-data means no code change per object.
+	UPROPERTY(EditAnywhere, Category = "Generate")
+	FVector SpawnScale = FVector::OneVector;
+
+	UPROPERTY(EditAnywhere, Category = "Generate")
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+
+	// Split the pipe-delimited Keywords into individual tokens for the matcher.
+	void GetKeywordTokens(TArray<FString>& Out) const
+	{
+		Out.Reset();
+		Keywords.ParseIntoArray(Out, TEXT("|"), /*bCullEmpty*/ true);
+	}
 };
 
 // Transient result of classifying one request. Not serialized — plain struct.

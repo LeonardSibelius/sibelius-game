@@ -19,15 +19,19 @@ TArray<FString> TokenizeGenerateInput(const FString& RawInput)
 	return Tokens;
 }
 
-// # of input tokens that exactly match any (lowercased) keyword of the entry.
+// # of input tokens that exactly match any (lowercased) keyword of the entry. The
+// entry's keywords are pipe-delimited in data; parse + normalize them here.
 // CP3 lesson #6: file-static, not an anonymous namespace (unity-build safety).
 static int32 ScoreGenerateEntry(const TArray<FString>& Tokens, const FGenerateCatalogEntry& Entry)
 {
+	TArray<FString> KeywordList;
+	Entry.GetKeywordTokens(KeywordList);
+
 	TSet<FString> Keys;
-	Keys.Reserve(Entry.Keywords.Num());
-	for (const FString& K : Entry.Keywords)
+	Keys.Reserve(KeywordList.Num());
+	for (const FString& K : KeywordList)
 	{
-		Keys.Add(K.ToLower());
+		Keys.Add(K.ToLower().TrimStartAndEnd());
 	}
 
 	int32 Score = 0;
