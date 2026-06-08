@@ -47,6 +47,7 @@ private:
 	FDelegateHandle DepthHandle;
 
 	// Saturation lost per depth level (0..1). depth 0 = full colour, deeper = greyer.
+	// 0.5 → depth 1 reads as clearly muted, depth 2 as full greyscale (clamped).
 	UPROPERTY(EditAnywhere, Category = "Branch")
-	float SaturationPerDepth = 0.35f;
+	float SaturationPerDepth = 0.5f;
 };

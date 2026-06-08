@@ -4,6 +4,7 @@
 #include "BranchSubsystem.h"
 #include "BookPickup.h"
 #include "RefuserController.h"
+#include "SibeliusGameCharacter.h"
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Pawn.h"
@@ -52,16 +53,33 @@ void UBranchPIEComponent::OnDepthChanged(int32 Depth)
 
 void UBranchPIEComponent::ApplyDesaturation(int32 Depth)
 {
+	// Target the camera the player view actually renders THROUGH. FindComponentByClass
+	// returns the first UCameraComponent on the owner, which isn't guaranteed to be the
+	// FP camera — write the wrong one and nothing changes on screen. Pin it to the
+	// character's real FP camera; fall back to a generic find only if the owner isn't
+	// our character type.
 	AActor* Owner = GetOwner();
-	UCameraComponent* Cam = Owner ? Owner->FindComponentByClass<UCameraComponent>() : nullptr;
+	UCameraComponent* Cam = nullptr;
+	if (ASibeliusGameCharacter* Char = Cast<ASibeliusGameCharacter>(Owner))
+	{
+		Cam = Char->GetFirstPersonCameraComponent();
+	}
+	if (!Cam && Owner)
+	{
+		Cam = Owner->FindComponentByClass<UCameraComponent>();
+	}
 	if (!Cam)
 	{
 		return;
 	}
+
 	const float Sat = FMath::Clamp(1.0f - Depth * SaturationPerDepth, 0.0f, 1.0f);
+
+	// The camera's own post process blends in LAST (on top of any PostProcessVolume),
+	// so this wins as long as the weight is up and the channel is flagged for override.
 	Cam->PostProcessBlendWeight = 1.0f;
-	Cam->PostProcessSettings.bOverride_ColorSaturation = true;
-	Cam->PostProcessSettings.ColorSaturation = FVector4(Sat, Sat, Sat, 1.0f); // (1,1,1,1) = unchanged
+	Cam->PostProcessSettings.bOverride_ColorSaturation = true;       // flag MUST be set or the value is ignored
+	Cam->PostProcessSettings.ColorSaturation = FVector4(Sat, Sat, Sat, 1.0f); // (1,1,1,1) = unchanged, 0 = greyscale
 }
 
 void UBranchPIEComponent::UpdateHudMarker(int32 Depth)
