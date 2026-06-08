@@ -47,7 +47,9 @@ private:
 	FDelegateHandle DepthHandle;
 
 	// Saturation lost per depth level (0..1). depth 0 = full colour, deeper = greyer.
-	// 0.5 → depth 1 reads as clearly muted, depth 2 as full greyscale (clamped).
+	// 0.75 → depth 1 is strongly drained (0.25 sat), depth 2+ full greyscale (clamped).
+	// Paired with a cold-blue gain + contrast lift in ApplyDesaturation for an
+	// unmistakable "different reality" read while branched.
 	UPROPERTY(EditAnywhere, Category = "Branch")
-	float SaturationPerDepth = 0.5f;
+	float SaturationPerDepth = 0.75f;
 };

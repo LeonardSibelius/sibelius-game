@@ -73,13 +73,34 @@ void UBranchPIEComponent::ApplyDesaturation(int32 Depth)
 		return;
 	}
 
-	const float Sat = FMath::Clamp(1.0f - Depth * SaturationPerDepth, 0.0f, 1.0f);
-
 	// The camera's own post process blends in LAST (on top of any PostProcessVolume),
-	// so this wins as long as the weight is up and the channel is flagged for override.
+	// so this wins as long as the weight is up and each channel is flagged for override.
 	Cam->PostProcessBlendWeight = 1.0f;
-	Cam->PostProcessSettings.bOverride_ColorSaturation = true;       // flag MUST be set or the value is ignored
-	Cam->PostProcessSettings.ColorSaturation = FVector4(Sat, Sat, Sat, 1.0f); // (1,1,1,1) = unchanged, 0 = greyscale
+	FPostProcessSettings& PP = Cam->PostProcessSettings;
+
+	if (Depth <= 0)
+	{
+		// Depth 0 must be EXACTLY normal — release every channel we drive so the
+		// office reads as authored (warm), not a faint leftover of the branch grade.
+		PP.bOverride_ColorSaturation = false;
+		PP.bOverride_ColorContrast = false;
+		PP.bOverride_ColorGain = false;
+		return;
+	}
+
+	// Branched: unmistakably "a different reality".
+	//  - saturation collapses hard with depth (depth 1 already strongly drained);
+	//  - a cold blue cast fights the warm office lighting;
+	//  - a slight contrast lift makes it read crisp/clinical rather than just dull.
+	const float Sat = FMath::Clamp(1.0f - Depth * SaturationPerDepth, 0.0f, 1.0f);
+	PP.bOverride_ColorSaturation = true;          // flag MUST be set or the value is ignored
+	PP.ColorSaturation = FVector4(Sat, Sat, Sat, 1.0f); // (1,1,1,1) = unchanged, 0 = greyscale
+
+	PP.bOverride_ColorContrast = true;
+	PP.ColorContrast = FVector4(1.12f, 1.12f, 1.12f, 1.0f); // >1 = crisper midtone separation
+
+	PP.bOverride_ColorGain = true;                // per-channel multiplier: pull warmth, push cold
+	PP.ColorGain = FVector4(0.82f, 0.92f, 1.20f, 1.0f); // R down, B up = cold blue cast
 }
 
 void UBranchPIEComponent::UpdateHudMarker(int32 Depth)
