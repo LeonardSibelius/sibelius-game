@@ -272,6 +272,7 @@ USibeliusSaveGame* UBranchSubsystem::BuildDeploySave() const
 		return nullptr;
 	}
 	Save->SaveVersion = USibeliusSaveGame::CurrentSaveVersion; // stamp on write
+	Save->FormatNote = TEXT("v2");                             // fresh-deploy provenance (v2 field)
 
 	// Deltas only: an object contributes an entry iff its current declared state
 	// differs from its authored default. An untouched world writes an empty save.
@@ -346,31 +347,103 @@ bool UBranchSubsystem::RequestDeploy()
 	return true;
 }
 
+ESaveLoadStatus UBranchSubsystem::ClassifyDeploySave(const FString& Slot, USibeliusSaveGame*& Out) const
+{
+	Out = nullptr;
+	if (!FSibeliusSaveIO::Has(Slot))
+	{
+		return ESaveLoadStatus::Missing;
+	}
+	// A truncated/garbage .sav fails to deserialize (null) or comes back as the wrong
+	// class — either way Cast yields null. Both read as Corrupt (never a crash).
+	USibeliusSaveGame* S = Cast<USibeliusSaveGame>(FSibeliusSaveIO::Load(Slot));
+	if (!S)
+	{
+		return ESaveLoadStatus::Corrupt;
+	}
+	if (S->SaveVersion > USibeliusSaveGame::CurrentSaveVersion)
+	{
+		Out = S;
+		return ESaveLoadStatus::Newer; // readable, but can't downgrade
+	}
+	if (!S->IsStructurallyValid())
+	{
+		return ESaveLoadStatus::Corrupt;
+	}
+	Out = S;
+	return ESaveLoadStatus::Valid;
+}
+
 bool UBranchSubsystem::ApplyDeployedSave()
 {
 	LastApplyObjects = 0;
 	LastApplyResources = 0;
 	LastApplyOrphans = 0;
+	LastLoadSource = EDeployLoadSource::None;
 
-	USibeliusSaveGame* Save = Cast<USibeliusSaveGame>(FSibeliusSaveIO::Load(DeploySlotName));
-	if (!Save)
+	const FString BackupSlot = BackupSlotName();
+
+	// 1) Try the primary slot.
+	USibeliusSaveGame* Save = nullptr;
+	const ESaveLoadStatus PrimaryStatus = ClassifyDeploySave(DeploySlotName, Save);
+
+	if (PrimaryStatus == ESaveLoadStatus::Newer)
 	{
-		UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] ApplyDeployedSave: no deployed save at slot '%s'."), *DeploySlotName);
+		// Never downgrade, never fall back to an older backup, never wipe.
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Branch] ApplyDeployedSave: primary '%s' is from a newer build (v%d > v%d) — refusing (world stays default)."),
+			*DeploySlotName, Save ? Save->SaveVersion : 0, USibeliusSaveGame::CurrentSaveVersion);
 		return false;
 	}
 
-	// Version guard: refuse a save written by a newer build than we can read. Full
-	// migration is Phase 3; for now we skip rather than risk misreading the shape.
-	if (Save->SaveVersion > USibeliusSaveGame::CurrentSaveVersion)
+	bool bFromPrimary = (PrimaryStatus == ESaveLoadStatus::Valid);
+
+	// 2) Primary unusable -> fall back to the last-good backup.
+	if (!bFromPrimary)
+	{
+		if (PrimaryStatus == ESaveLoadStatus::Corrupt)
+		{
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Branch] ApplyDeployedSave: primary '%s' unreadable/corrupt — falling back to last-good backup '%s'."),
+				*DeploySlotName, *BackupSlot);
+		}
+
+		USibeliusSaveGame* BackupSave = nullptr;
+		const ESaveLoadStatus BackupStatus = ClassifyDeploySave(BackupSlot, BackupSave);
+		if (BackupStatus != ESaveLoadStatus::Valid)
+		{
+			// Both bad/absent -> fail safe to authored default. NO partial apply.
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Branch] ApplyDeployedSave: no usable save (primary + backup both unavailable) — world stays authored default."));
+			return false;
+		}
+		Save = BackupSave;
+		LastLoadSource = EDeployLoadSource::Backup;
+	}
+	else
+	{
+		LastLoadSource = EDeployLoadSource::Primary;
+	}
+
+	// 3) Migrate the chosen save up to current (defensive: Valid already implies
+	// version <= current, so this won't refuse here).
+	if (!Save->MigrateToCurrent())
 	{
 		UE_LOG(LogSibeliusGame, Warning,
-			TEXT("[Branch] ApplyDeployedSave: save v%d is newer than supported v%d — skipping (migration is Phase 3)."),
-			Save->SaveVersion, USibeliusSaveGame::CurrentSaveVersion);
+			TEXT("[Branch] ApplyDeployedSave: save not migratable to v%d — refusing."), USibeliusSaveGame::CurrentSaveVersion);
+		LastLoadSource = EDeployLoadSource::None;
 		return false;
 	}
 
-	// Resolve GUIDs against the LIVE world (the level loads in authored-default
-	// state; we overlay the deltas on top — objects with no delta stay default).
+	// 4) A good primary becomes the last-good backup (migrated, so the backup is
+	// always current-version). We don't auto-repair a corrupt primary from backup.
+	if (bFromPrimary)
+	{
+		FSibeliusSaveIO::Commit(Save, BackupSlot);
+	}
+
+	// 5) Resolve GUIDs against the LIVE world and overlay the deltas (raw writes —
+	// same path Ch4 discard uses; objects with no delta stay at authored default).
 	RebuildRegistry();
 
 	for (const FBranchObjectState& S : Save->ObjectDeltas)
@@ -382,7 +455,7 @@ bool UBranchSubsystem::ApplyDeployedSave()
 			++LastApplyOrphans; // GUID with no live object — skip gracefully, don't crash
 			continue;
 		}
-		B->RestoreBranchState(S.State); // RAW write — same path Ch4 discard uses; idempotent
+		B->RestoreBranchState(S.State); // RAW write; idempotent
 		++LastApplyObjects;
 	}
 
@@ -396,7 +469,8 @@ bool UBranchSubsystem::ApplyDeployedSave()
 	}
 
 	UE_LOG(LogSibeliusGame, Display,
-		TEXT("[Branch] ApplyDeployedSave (v%d): applied %d object + %d resource delta(s), %d orphan(s) skipped."),
+		TEXT("[Branch] ApplyDeployedSave from %s (v%d): applied %d object + %d resource delta(s), %d orphan(s) skipped."),
+		bFromPrimary ? TEXT("primary") : TEXT("backup"),
 		Save->SaveVersion, LastApplyObjects, LastApplyResources, LastApplyOrphans);
 	return true;
 }

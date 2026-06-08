@@ -19,6 +19,23 @@ class UWorld;
 class UInventoryComponent;
 class USibeliusSaveGame;
 
+// Ch5 Phase 3 (SIB-29). Classification of a load attempt at one slot.
+enum class ESaveLoadStatus : uint8
+{
+	Valid,    // loaded, right type, version <= current, structurally sane
+	Missing,  // no save in the slot
+	Corrupt,  // unreadable / wrong type / structurally bad — fall back to backup
+	Newer     // readable but from a newer build — refuse, never downgrade
+};
+
+// Which slot the last ApplyDeployedSave actually applied from (for diagnostics/tests).
+enum class EDeployLoadSource : uint8
+{
+	None,     // nothing applied (fail-safe to authored default)
+	Primary,  // the primary DeploySlot
+	Backup    // the last-good backup (primary was corrupt/missing)
+};
+
 // Fires whenever the branch nesting depth changes (0 = Main). The desaturate
 // post-process + HUD branch marker subscribe to this and toggle on depth >= 1.
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBranchDepthChanged, int32 /*Depth*/);
@@ -91,6 +108,7 @@ public:
 	int32 GetLastApplyObjectsForTest() const { return LastApplyObjects; }
 	int32 GetLastApplyResourcesForTest() const { return LastApplyResources; }
 	int32 GetLastApplyOrphansForTest() const { return LastApplyOrphans; }
+	EDeployLoadSource GetLastLoadSourceForTest() const { return LastLoadSource; }
 
 	// Locked product decision (SIB-28): pickups are suspended while branched so
 	// collecting can't mutate state outside the declared set. Guard stubbed now;
@@ -135,6 +153,8 @@ private:
 	void ResumePickups();                                     // release on resolve (discard/merge)
 
 	USibeliusSaveGame* BuildDeploySave() const;               // gather current deltas (vs authored default) into a save
+	FString BackupSlotName() const { return DeploySlotName + TEXT("_Backup"); } // last-good companion slot
+	ESaveLoadStatus ClassifyDeploySave(const FString& Slot, USibeliusSaveGame*& Out) const; // load + validate one slot
 
 	EBranchState State = EBranchState::Main;
 
@@ -156,4 +176,7 @@ private:
 	int32 LastApplyObjects = 0;
 	int32 LastApplyResources = 0;
 	int32 LastApplyOrphans = 0;
+
+	// Ch5 Phase 3: which slot the last apply sourced from (None = failed safe).
+	EDeployLoadSource LastLoadSource = EDeployLoadSource::None;
 };

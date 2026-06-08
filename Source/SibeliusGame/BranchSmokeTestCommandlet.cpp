@@ -67,6 +67,14 @@
 // [HARD] an orphan GUID (resolves to nothing) is skipped, not fatal
 // [HARD] a save newer than CurrentSaveVersion is refused (no mutation)
 //
+// PHASE 3 (Ch5) — versioning + fail-safe (SIB-29):
+// [HARD] migration: a v1 save migrates v1->v2 (marker stamped) and applies; a
+//        current save is a no-op; a newer save can't downgrade
+// [HARD] a newer-than-current save on disk is refused (no fallback, no mutation)
+// [HARD] fail-safe (D6): a corrupt primary falls back to the last-good backup and
+//        applies it; with neither usable, load fails safe to authored default
+//        (no crash, no partial write)
+//
 // CP3 lesson #6: NAMED namespace to avoid unity-build redefinition collisions
 // with the sibling commandlets.
 
@@ -203,9 +211,11 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 	// Point Deploy at a sandbox slot for the WHOLE run so Phase 4's allowed deploys
 	// don't litter the real "DeploySlot"; the Ch5 Phase-1 block asserts on it and
 	// deletes it at the end.
-	const FString DeploySandboxSlot = TEXT("SmokeDeploySlot_Temp");
+	const FString DeploySandboxSlot   = TEXT("SmokeDeploySlot_Temp");
+	const FString DeploySandboxBackup = DeploySandboxSlot + TEXT("_Backup"); // matches BackupSlotName()
 	Branch->SetDeploySlotName(DeploySandboxSlot);
-	FSibeliusSaveIO::Delete(DeploySandboxSlot); // clear any stale artifact up front
+	FSibeliusSaveIO::Delete(DeploySandboxSlot);   // clear any stale artifacts up front
+	FSibeliusSaveIO::Delete(DeploySandboxBackup); // (the apply path promotes good saves here)
 
 	// [HARD] Starts in Main.
 	R.Check(Branch->GetState() == EBranchState::Main, TEXT("Initial state is Main"));
@@ -747,14 +757,144 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 			R.Check(Refac->CaptureBranchState() == 1, TEXT("C5-P2: skipped future save did NOT mutate the world"));
 		}
 
-		// Clean up the sandbox slot.
+		// Clean up the sandbox slots (apply promoted a backup too).
 		FSibeliusSaveIO::Delete(DeploySandboxSlot);
-		R.Check(!FSibeliusSaveIO::Has(DeploySandboxSlot), TEXT("C5-P2: sandbox slot cleaned up after the test"));
+		FSibeliusSaveIO::Delete(DeploySandboxBackup);
+		R.Check(!FSibeliusSaveIO::Has(DeploySandboxSlot) && !FSibeliusSaveIO::Has(DeploySandboxBackup),
+			TEXT("C5-P2: sandbox slots cleaned up after the test"));
+
+		// =====================================================================
+		//  PHASE 3 (Ch5) — versioning + fail-safe (SIB-29). A v1 save migrates to
+		//  v2 and applies; a newer-than-current save is refused; a corrupt primary
+		//  falls back to the last-good backup; with neither usable, load fails safe
+		//  (world stays default, no crash, no partial write). Sandbox slots, cleaned.
+		// =====================================================================
+		UE_LOG(LogBranchSmoke, Display, TEXT("--- Phase 3 (Ch5): versioning + fail-safe ---"));
+
+		FSibeliusSaveIO::Delete(DeploySandboxSlot);
+		FSibeliusSaveIO::Delete(DeploySandboxBackup);
+
+		// Helpers: reset the live branchables to authored default, and hand-build a
+		// deploy save at a chosen version with Refac/Site/Book deltas.
+		auto ResetToDefault = [&]()
+		{
+			Refac->RestoreBranchState(Refac->GetDefaultBranchState());
+			Site->RestoreBranchState(Site->GetDefaultBranchState());
+			Hatch->RestoreBranchState(Hatch->GetDefaultBranchState());
+			Inv->RestoreCount(EResourceType::Book, 0);
+			Inv->RestoreCount(EResourceType::Key, 0);
+		};
+		auto MakeSave = [&](int32 Version, uint8 RefacState, uint8 SiteState, int32 Book) -> USibeliusSaveGame*
+		{
+			USibeliusSaveGame* S = NewObject<USibeliusSaveGame>(GetTransientPackage());
+			S->SaveVersion = Version;
+			{ FBranchObjectState d; d.ObjectId = Refac->GetBranchId(); d.State = RefacState; S->ObjectDeltas.Add(d); }
+			{ FBranchObjectState d; d.ObjectId = Site->GetBranchId();  d.State = SiteState;  S->ObjectDeltas.Add(d); }
+			if (Book != 0)
+			{
+				FResourceEntry e; e.Resource = EResourceType::Book;
+				e.EntryId = Inv->GetOrCreateResourceId(EResourceType::Book); e.Count = Book;
+				S->ResourceDeltas.Add(e);
+			}
+			return S;
+		};
+
+		// --- (a) Migration step in isolation: v1 -> v2 marks + bumps; current is a
+		//         no-op; newer can't downgrade. ---
+		{
+			USibeliusSaveGame* V1 = MakeSave(1, 1, 1, 9);
+			R.Check(V1 && V1->MigrateToCurrent(), TEXT("C5-P3: a v1 save migrates to current"));
+			R.Check(V1 && V1->SaveVersion == USibeliusSaveGame::CurrentSaveVersion,
+				TEXT("C5-P3: migrated save is stamped at CurrentSaveVersion (v2)"));
+			R.Check(V1 && V1->FormatNote == TEXT("migrated:v1->v2"),
+				TEXT("C5-P3: v1->v2 migrator ran (FormatNote marker set)"));
+
+			USibeliusSaveGame* V2 = MakeSave(USibeliusSaveGame::CurrentSaveVersion, 1, 1, 9);
+			R.Check(V2 && V2->MigrateToCurrent() && V2->SaveVersion == USibeliusSaveGame::CurrentSaveVersion,
+				TEXT("C5-P3: a current-version save migrates as a no-op"));
+
+			USibeliusSaveGame* Vn = MakeSave(USibeliusSaveGame::CurrentSaveVersion + 1, 1, 1, 9);
+			R.Check(Vn && !Vn->MigrateToCurrent(),
+				TEXT("C5-P3: a newer-than-current save can't be migrated (no downgrade)"));
+		}
+
+		// --- (b) v1 save on disk migrates AND applies end-to-end. ---
+		{
+			USibeliusSaveGame* V1 = MakeSave(1, 1, 1, 9);
+			R.Check(FSibeliusSaveIO::Commit(V1, DeploySandboxSlot), TEXT("C5-P3: wrote a v1 save to the primary slot"));
+			ResetToDefault();
+			R.Check(Branch->ApplyDeployedSave(), TEXT("C5-P3: ApplyDeployedSave loads + migrates + applies the v1 save"));
+			R.Check(Branch->GetLastLoadSourceForTest() == EDeployLoadSource::Primary,
+				TEXT("C5-P3: applied from the primary slot"));
+			R.Check(Refac->CaptureBranchState() == 1 && Site->CaptureBranchState() == 1
+				&& Inv->GetCount(EResourceType::Book) == 9,
+				TEXT("C5-P3: migrated v1 save applied byte-exact"));
+		}
+
+		// --- (c) Newer-than-current on disk is refused, no fallback, no mutation. ---
+		{
+			USibeliusSaveGame* Vn = MakeSave(USibeliusSaveGame::CurrentSaveVersion + 1, 0, 0, 0); // would clear if wrongly applied
+			R.Check(FSibeliusSaveIO::Commit(Vn, DeploySandboxSlot), TEXT("C5-P3: wrote a newer-version save to the primary"));
+			Refac->RestoreBranchState(1); // a wrong apply would flip this to 0
+			Site->RestoreBranchState(1);
+			R.Check(!Branch->ApplyDeployedSave(), TEXT("C5-P3: newer-version save refused (returns false)"));
+			R.Check(Branch->GetLastLoadSourceForTest() == EDeployLoadSource::None,
+				TEXT("C5-P3: refusal applied nothing (no fallback to an older backup)"));
+			R.Check(Refac->CaptureBranchState() == 1 && Site->CaptureBranchState() == 1,
+				TEXT("C5-P3: newer-version refusal did NOT mutate the world"));
+		}
+
+		// --- (d) Corrupt primary falls back to the last-good backup. ---
+		{
+			// Establish a good backup: deploy a known state, then apply (promotes it).
+			ResetToDefault();
+			Refac->RestoreBranchState(1);
+			Site->RestoreBranchState(1);
+			Inv->RestoreCount(EResourceType::Book, 9);
+			R.Check(Branch->RequestDeploy(), TEXT("C5-P3: deploy a known-good state to the primary"));
+			R.Check(Branch->ApplyDeployedSave() && Branch->GetLastLoadSourceForTest() == EDeployLoadSource::Primary,
+				TEXT("C5-P3: apply promotes the good primary to the last-good backup"));
+			R.Check(FSibeliusSaveIO::Has(DeploySandboxBackup), TEXT("C5-P3: last-good backup now exists"));
+
+			// Corrupt the primary: write a base USaveGame (wrong type) — stands in for
+			// a truncated/garbage .sav (Load returns a non-USibeliusSaveGame).
+			USaveGame* Junk = NewObject<USaveGame>(GetTransientPackage());
+			R.Check(FSibeliusSaveIO::Commit(Junk, DeploySandboxSlot), TEXT("C5-P3: corrupted the primary slot"));
+
+			ResetToDefault();
+			R.Check(Branch->ApplyDeployedSave(), TEXT("C5-P3: corrupt primary falls back to backup and applies"));
+			R.Check(Branch->GetLastLoadSourceForTest() == EDeployLoadSource::Backup,
+				TEXT("C5-P3: the fallback sourced from the backup slot"));
+			R.Check(Refac->CaptureBranchState() == 1 && Site->CaptureBranchState() == 1
+				&& Inv->GetCount(EResourceType::Book) == 9,
+				TEXT("C5-P3: backup applied byte-exact after primary corruption"));
+		}
+
+		// --- (e) Both bad -> fail safe to authored default (no crash, no partial write). ---
+		{
+			USaveGame* Junk = NewObject<USaveGame>(GetTransientPackage());
+			R.Check(FSibeliusSaveIO::Commit(Junk, DeploySandboxSlot), TEXT("C5-P3: corrupted the primary again"));
+			R.Check(FSibeliusSaveIO::Delete(DeploySandboxBackup), TEXT("C5-P3: removed the backup (both unusable)"));
+			ResetToDefault();
+			R.Check(!Branch->ApplyDeployedSave(), TEXT("C5-P3: with no usable save, apply fails safe (returns false)"));
+			R.Check(Branch->GetLastLoadSourceForTest() == EDeployLoadSource::None,
+				TEXT("C5-P3: nothing applied on the fail-safe path"));
+			R.Check(Refac->CaptureBranchState() == Refac->GetDefaultBranchState()
+				&& Site->CaptureBranchState() == Site->GetDefaultBranchState()
+				&& Inv->GetCount(EResourceType::Book) == 0,
+				TEXT("C5-P3: world stays at authored default (no partial apply)"));
+		}
+
+		// Clean up the sandbox slots.
+		FSibeliusSaveIO::Delete(DeploySandboxSlot);
+		FSibeliusSaveIO::Delete(DeploySandboxBackup);
+		R.Check(!FSibeliusSaveIO::Has(DeploySandboxSlot) && !FSibeliusSaveIO::Has(DeploySandboxBackup),
+			TEXT("C5-P3: sandbox slots cleaned up after the test"));
 	}
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phases 0-2 green — GUID seam + SaveGame write/load). ==="));
+		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phases 0-3 green — GUID seam + deploy write/load/migrate/fail-safe). ==="));
 		return 0;
 	}
 	UE_LOG(LogBranchSmoke, Error, TEXT("=== BRANCH SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);
