@@ -18,6 +18,10 @@
 
 bool ASibeliusHUD::bOverlayVisible = true; // default ON
 
+// Dev overlay text scale (2.0 = double size for Walt's 4K monitor). Single knob —
+// scales both the glyph size and the line spacing. Bump to taste.
+static constexpr float OverlayTextScale = 2.0f;
+
 void ASibeliusHUD::DrawHUD()
 {
 	Super::DrawHUD();
@@ -55,8 +59,8 @@ void ASibeliusHUD::DrawDevOverlay()
 	float Y = 50.0f;
 	auto Line = [this, &Y, Font](const FString& Text, const FLinearColor& Col)
 	{
-		DrawText(Text, Col, 16.0f, Y, Font);
-		Y += 15.0f;
+		DrawText(Text, Col, 16.0f, Y, Font, OverlayTextScale); // Scale param doubles the glyphs
+		Y += 15.0f * OverlayTextScale;                         // keep line spacing in step
 	};
 
 	const FLinearColor Head(0.55f, 0.85f, 1.0f, 1.0f);
