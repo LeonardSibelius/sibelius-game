@@ -345,3 +345,58 @@ bool UBranchSubsystem::RequestDeploy()
 	// is the side effect.
 	return true;
 }
+
+bool UBranchSubsystem::ApplyDeployedSave()
+{
+	LastApplyObjects = 0;
+	LastApplyResources = 0;
+	LastApplyOrphans = 0;
+
+	USibeliusSaveGame* Save = Cast<USibeliusSaveGame>(FSibeliusSaveIO::Load(DeploySlotName));
+	if (!Save)
+	{
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] ApplyDeployedSave: no deployed save at slot '%s'."), *DeploySlotName);
+		return false;
+	}
+
+	// Version guard: refuse a save written by a newer build than we can read. Full
+	// migration is Phase 3; for now we skip rather than risk misreading the shape.
+	if (Save->SaveVersion > USibeliusSaveGame::CurrentSaveVersion)
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Branch] ApplyDeployedSave: save v%d is newer than supported v%d — skipping (migration is Phase 3)."),
+			Save->SaveVersion, USibeliusSaveGame::CurrentSaveVersion);
+		return false;
+	}
+
+	// Resolve GUIDs against the LIVE world (the level loads in authored-default
+	// state; we overlay the deltas on top — objects with no delta stay default).
+	RebuildRegistry();
+
+	for (const FBranchObjectState& S : Save->ObjectDeltas)
+	{
+		UObject* Obj = ResolveBranchable(S.ObjectId);
+		IBranchable* B = (Obj ? Cast<IBranchable>(Obj) : nullptr);
+		if (!B)
+		{
+			++LastApplyOrphans; // GUID with no live object — skip gracefully, don't crash
+			continue;
+		}
+		B->RestoreBranchState(S.State); // RAW write — same path Ch4 discard uses; idempotent
+		++LastApplyObjects;
+	}
+
+	if (UInventoryComponent* Inv = Inventory.Get())
+	{
+		for (const FResourceEntry& E : Save->ResourceDeltas)
+		{
+			Inv->RestoreCount(E.Resource, E.Count); // RAW overwrite; idempotent
+			++LastApplyResources;
+		}
+	}
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Branch] ApplyDeployedSave (v%d): applied %d object + %d resource delta(s), %d orphan(s) skipped."),
+		Save->SaveVersion, LastApplyObjects, LastApplyResources, LastApplyOrphans);
+	return true;
+}

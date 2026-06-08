@@ -71,6 +71,27 @@ public:
 	bool CanDeploy() const { return GetDepth() == 0; }
 	bool RequestDeploy();
 
+	// Ch5 Phase 2 (SIB-29): load DeploySlot and RE-APPLY the deployed deltas to the
+	// live world through the SAME raw RestoreBranchState path Ch4 uses (raw state
+	// write, never replay verbs); resource deltas overwrite the ledger the same way.
+	// Returns true iff a save was read and applied. A GUID that resolves to no live
+	// object (orphan) is skipped gracefully. Re-applying the same save is a no-op by
+	// construction (raw re-apply is idempotent). A save newer than CurrentSaveVersion
+	// is skipped (return false) — full migration is Phase 3.
+	//
+	// === PIE HOOK (not built here) ====================================
+	// In-game, call this on load-complete, at depth 0 (Main), BEFORE the player can
+	// act, and GATE PLAYER INPUT until it returns. Wire that on the PIE side (e.g. a
+	// GameMode/PlayerController post-login step or a loading-screen gate). The
+	// commandlet calls it directly. Never apply mid-branch.
+	// ==================================================================
+	bool ApplyDeployedSave();
+
+	// Last ApplyDeployedSave stats (smoke test / debugging).
+	int32 GetLastApplyObjectsForTest() const { return LastApplyObjects; }
+	int32 GetLastApplyResourcesForTest() const { return LastApplyResources; }
+	int32 GetLastApplyOrphansForTest() const { return LastApplyOrphans; }
+
 	// Locked product decision (SIB-28): pickups are suspended while branched so
 	// collecting can't mutate state outside the declared set. Guard stubbed now;
 	// ABookPickup consults it once wired (later phase).
@@ -130,4 +151,9 @@ private:
 
 	// Ch5 Phase 1: the slot Deploy persists to (overridable for the test sandbox).
 	FString DeploySlotName = TEXT("DeploySlot");
+
+	// Ch5 Phase 2: stats from the last ApplyDeployedSave (for assertions/logging).
+	int32 LastApplyObjects = 0;
+	int32 LastApplyResources = 0;
+	int32 LastApplyOrphans = 0;
 };

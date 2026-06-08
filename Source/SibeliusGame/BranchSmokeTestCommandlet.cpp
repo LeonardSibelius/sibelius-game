@@ -59,6 +59,14 @@
 // [HARD] a branched RequestDeploy writes NOTHING (D4 regression)
 // [HARD] runs against a sandbox slot it deletes afterward (no artifact)
 //
+// PHASE 2 (Ch5) — load + re-apply (SIB-29):
+// [HARD] deploy a known edit, reset live branchables to default, ApplyDeployedSave
+//        restores each edited object byte-exact (Ch4 round-trip, via the file)
+// [HARD] objects with NO saved delta stay at default (no spurious writes)
+// [HARD] applying the same save twice is a no-op the second time (idempotent)
+// [HARD] an orphan GUID (resolves to nothing) is skipped, not fatal
+// [HARD] a save newer than CurrentSaveVersion is refused (no mutation)
+//
 // CP3 lesson #6: NAMED namespace to avoid unity-build redefinition collisions
 // with the sibling commandlets.
 
@@ -640,11 +648,113 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		// Clean up the sandbox slot so the test leaves no artifact behind.
 		FSibeliusSaveIO::Delete(DeploySandboxSlot);
 		R.Check(!FSibeliusSaveIO::Has(DeploySandboxSlot), TEXT("C5-P1: sandbox slot cleaned up after the test"));
+
+		// =====================================================================
+		//  PHASE 2 (Ch5) — load + re-apply (SIB-29). Deploy a known edit, reset
+		//  the live branchables to default (simulate a fresh level load), then
+		//  ApplyDeployedSave: edited objects restore byte-exact (the Ch4 round-trip
+		//  equality, now through the save file); no-delta objects stay at default;
+		//  applying twice is a no-op; an orphan GUID is skipped; a newer-version
+		//  save is refused. Sandbox slot, cleaned up.
+		// =====================================================================
+		UE_LOG(LogBranchSmoke, Display, TEXT("--- Phase 2 (Ch5): load + re-apply ---"));
+
+		FSibeliusSaveIO::Delete(DeploySandboxSlot);
+
+		// Deploy a KNOWN edit at Main: Refactorable refactored + BuildSite built +
+		// Book = 5 are CHANGED; HatchLock locked + Key = 0 are DEFAULT (no delta).
+		Refac->RestoreBranchState(1);
+		Site->RestoreBranchState(1);
+		Hatch->RestoreBranchState(1);              // default (locked) -> no delta
+		Inv->RestoreCount(EResourceType::Book, 5);
+		Inv->RestoreCount(EResourceType::Key, 0);
+		R.Check(Branch->RequestDeploy(), TEXT("C5-P2: deploy the known edit at Main"));
+		R.Check(FSibeliusSaveIO::Has(DeploySandboxSlot), TEXT("C5-P2: deploy wrote the slot"));
+
+		// Ch4 round-trip baseline = the deployed (pre-reset) states.
+		const uint8 RefacWant = Refac->CaptureBranchState(); // 1
+		const uint8 SiteWant  = Site->CaptureBranchState();  // 1
+		const uint8 HatchWant = Hatch->CaptureBranchState(); // 1 (default)
+		const int32 BookWant  = Inv->GetCount(EResourceType::Book); // 5
+		const int32 KeyWant   = Inv->GetCount(EResourceType::Key);  // 0
+
+		// Reset the live branchables to authored DEFAULT (a fresh level load).
+		Refac->RestoreBranchState(Refac->GetDefaultBranchState()); // 0
+		Site->RestoreBranchState(Site->GetDefaultBranchState());   // 0
+		Hatch->RestoreBranchState(Hatch->GetDefaultBranchState()); // 1 (locked)
+		Inv->RestoreCount(EResourceType::Book, 0);
+		Inv->RestoreCount(EResourceType::Key, 0);
+		R.Check(Refac->CaptureBranchState() == 0 && Site->CaptureBranchState() == 0
+			&& Inv->GetCount(EResourceType::Book) == 0,
+			TEXT("C5-P2: live branchables reset to default before apply"));
+
+		// APPLY: load the slot + re-apply the deltas through raw RestoreBranchState.
+		R.Check(Branch->ApplyDeployedSave(), TEXT("C5-P2: ApplyDeployedSave loads + re-applies the slot"));
+
+		// Edited objects restored byte-exact (Ch4 round-trip, now via the file).
+		R.Check(Refac->CaptureBranchState() == RefacWant, TEXT("C5-P2: Refactorable restored byte-exact from the save"));
+		R.Check(Site->CaptureBranchState() == SiteWant,   TEXT("C5-P2: BuildSite restored byte-exact from the save"));
+		R.Check(Inv->GetCount(EResourceType::Book) == BookWant, TEXT("C5-P2: Book ledger restored from the save"));
+		// Objects: >= our 2 forced deltas (the level may author other default-state
+		// branchables, which write no delta). Resources are fully controlled: Book
+		// non-zero + Key zero -> exactly 1 resource delta.
+		R.Check(Branch->GetLastApplyObjectsForTest() >= 2 && Branch->GetLastApplyResourcesForTest() == 1,
+			TEXT("C5-P2: applied the forced object delta(s) + exactly 1 resource delta"));
+
+		// Objects with NO saved delta stay at default (no spurious writes).
+		R.Check(Hatch->CaptureBranchState() == Hatch->GetDefaultBranchState(),
+			TEXT("C5-P2: unchanged HatchLock stays default (no delta in the save)"));
+		R.Check(Inv->GetCount(EResourceType::Key) == 0,
+			TEXT("C5-P2: zero-Key stays default (no delta in the save)"));
+
+		// Idempotency: applying the same save again changes nothing.
+		R.Check(Branch->ApplyDeployedSave(), TEXT("C5-P2: second ApplyDeployedSave succeeds"));
+		R.Check(Refac->CaptureBranchState() == RefacWant && Site->CaptureBranchState() == SiteWant
+			&& Hatch->CaptureBranchState() == HatchWant
+			&& Inv->GetCount(EResourceType::Book) == BookWant
+			&& Inv->GetCount(EResourceType::Key) == KeyWant,
+			TEXT("C5-P2: re-applying the same save is a no-op (idempotent)"));
+
+		// Orphan GUID: a delta that resolves to no live object is skipped, not fatal.
+		USibeliusSaveGame* OrphanSave = NewObject<USibeliusSaveGame>(GetTransientPackage());
+		if (OrphanSave)
+		{
+			OrphanSave->SaveVersion = USibeliusSaveGame::CurrentSaveVersion;
+			FBranchObjectState Orphan; Orphan.ObjectId = FGuid::NewGuid(); Orphan.State = 1; // resolves to nothing
+			FBranchObjectState RealOne; RealOne.ObjectId = Refac->GetBranchId(); RealOne.State = 1;
+			OrphanSave->ObjectDeltas.Add(Orphan);   // orphan FIRST — must not abort the rest
+			OrphanSave->ObjectDeltas.Add(RealOne);
+			R.Check(FSibeliusSaveIO::Commit(OrphanSave, DeploySandboxSlot), TEXT("C5-P2: wrote an orphan-bearing save"));
+
+			Refac->RestoreBranchState(0); // reset the real target so its re-apply is observable
+			R.Check(Branch->ApplyDeployedSave(), TEXT("C5-P2: apply skips the orphan and continues"));
+			R.Check(Refac->CaptureBranchState() == 1, TEXT("C5-P2: the real delta still applied despite the orphan"));
+			R.Check(Branch->GetLastApplyOrphansForTest() == 1, TEXT("C5-P2: exactly one orphan GUID was skipped"));
+			R.Check(Branch->GetLastApplyObjectsForTest() == 1, TEXT("C5-P2: only the one resolvable delta was applied"));
+		}
+
+		// Version guard: a save newer than CurrentSaveVersion is refused (no mutation).
+		USibeliusSaveGame* FutureSave = NewObject<USibeliusSaveGame>(GetTransientPackage());
+		if (FutureSave)
+		{
+			FutureSave->SaveVersion = USibeliusSaveGame::CurrentSaveVersion + 1;
+			FBranchObjectState Future; Future.ObjectId = Refac->GetBranchId(); Future.State = 0; // would un-refactor if wrongly applied
+			FutureSave->ObjectDeltas.Add(Future);
+			R.Check(FSibeliusSaveIO::Commit(FutureSave, DeploySandboxSlot), TEXT("C5-P2: wrote a newer-version save"));
+
+			Refac->RestoreBranchState(1); // a wrongly-applied future save would flip this to 0
+			R.Check(!Branch->ApplyDeployedSave(), TEXT("C5-P2: newer-version save is skipped (returns false)"));
+			R.Check(Refac->CaptureBranchState() == 1, TEXT("C5-P2: skipped future save did NOT mutate the world"));
+		}
+
+		// Clean up the sandbox slot.
+		FSibeliusSaveIO::Delete(DeploySandboxSlot);
+		R.Check(!FSibeliusSaveIO::Has(DeploySandboxSlot), TEXT("C5-P2: sandbox slot cleaned up after the test"));
 	}
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phases 0-1 green — GUID seam + SaveGame write). ==="));
+		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phases 0-2 green — GUID seam + SaveGame write/load). ==="));
 		return 0;
 	}
 	UE_LOG(LogBranchSmoke, Error, TEXT("=== BRANCH SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);
