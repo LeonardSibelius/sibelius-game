@@ -37,6 +37,14 @@ public:
 
 	virtual void BeginPlay() override;
 
+	// SIB-38 GUID baking: assign at edit time (OnConstruction in an editor world), and
+	// give a copy-pasted hatch a fresh id so it never shares its source's.
+	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void PostDuplicate(bool bDuplicateForPIE) override;
+#if WITH_EDITOR
+	virtual void PostEditImport() override;
+#endif
+
 	// Spends one Key to unlock. Returns false (and stays shut) without a Key.
 	UFUNCTION(BlueprintCallable, Category = "Hatch")
 	bool TryUnlock(UInventoryComponent* Inventory);
@@ -63,9 +71,11 @@ public:
 private:
 	void ApplyLockedState(bool bNowLocked);
 
-	// SIB-29: stable cross-reload identity. SaveGame so Ch5's save archive carries
-	// it; assigned once if invalid (BeginPlay / registration), never on load.
-	UPROPERTY(SaveGame) FGuid BranchId;
+	// SIB-29/38: stable cross-reload identity, BAKED into the level package so it
+	// survives across sessions (assigned at edit time in OnConstruction). Plain
+	// serialized UPROPERTY (not SaveGame-only); VisibleAnywhere to inspect in-editor.
+	UPROPERTY(VisibleAnywhere, Category = "Branch")
+	FGuid BranchId;
 
 	UPROPERTY(EditAnywhere, Category = "Hatch")
 	bool bLocked = true;

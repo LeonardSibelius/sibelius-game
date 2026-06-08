@@ -26,9 +26,36 @@ ABuildSite::ABuildSite()
 void ABuildSite::BeginPlay()
 {
 	Super::BeginPlay();
-	GetOrCreateBranchId();     // SIB-29: stable identity from spawn (assign-once if invalid)
+	GetOrCreateBranchId();     // SIB-29: runtime fallback — only fills an invalid (unbaked) id
 	ApplyBuiltState(bIsBuilt); // enforce ghost/final/nav-link coherence from one source of truth
 }
+
+void ABuildSite::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+#if WITH_EDITOR
+	AssignBranchIdAtEditTime(this, BranchId); // SIB-38: bake the id in the editor world
+#endif
+}
+
+void ABuildSite::PostDuplicate(bool bDuplicateForPIE)
+{
+	Super::PostDuplicate(bDuplicateForPIE);
+	// SIB-38: an editor copy-paste/duplicate gets a fresh id; a PIE duplicate KEEPS
+	// the baked id (so the PIE world resolves the deployed save).
+	if (!bDuplicateForPIE)
+	{
+		BranchId = FGuid::NewGuid();
+	}
+}
+
+#if WITH_EDITOR
+void ABuildSite::PostEditImport()
+{
+	Super::PostEditImport();
+	BranchId = FGuid::NewGuid(); // SIB-38: pasted copy must not share its source's id
+}
+#endif
 
 bool ABuildSite::CanBuild(const UInventoryComponent* Inventory) const
 {

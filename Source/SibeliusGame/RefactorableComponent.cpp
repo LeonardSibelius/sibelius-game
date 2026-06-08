@@ -17,10 +17,37 @@ URefactorableComponent::URefactorableComponent()
 void URefactorableComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	GetOrCreateBranchId();   // SIB-29: stable identity from spawn (assign-once if invalid)
+	GetOrCreateBranchId();   // SIB-29: runtime fallback — only fills an invalid (unbaked) id
 	CachedMesh = ResolveTargetMesh();
 	bIsRefactored = false;
 }
+
+void URefactorableComponent::OnRegister()
+{
+	Super::OnRegister();
+#if WITH_EDITOR
+	AssignBranchIdAtEditTime(this, BranchId); // SIB-38: bake the id in the editor world
+#endif
+}
+
+void URefactorableComponent::PostDuplicate(bool bDuplicateForPIE)
+{
+	Super::PostDuplicate(bDuplicateForPIE);
+	// SIB-38: an editor copy-paste/duplicate gets a fresh id; a PIE duplicate KEEPS
+	// the baked id (so the PIE world resolves the deployed save).
+	if (!bDuplicateForPIE)
+	{
+		BranchId = FGuid::NewGuid();
+	}
+}
+
+#if WITH_EDITOR
+void URefactorableComponent::PostEditImport()
+{
+	Super::PostEditImport();
+	BranchId = FGuid::NewGuid(); // SIB-38: pasted copy must not share its source's id
+}
+#endif
 
 UMeshComponent* URefactorableComponent::ResolveTargetMesh() const
 {

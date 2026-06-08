@@ -40,6 +40,14 @@ public:
 
 	virtual void BeginPlay() override;
 
+	// SIB-38 GUID baking: assign at edit time (OnConstruction in an editor world), and
+	// give a copy-pasted site a fresh id so it never shares its source's.
+	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void PostDuplicate(bool bDuplicateForPIE) override;
+#if WITH_EDITOR
+	virtual void PostEditImport() override;
+#endif
+
 	// IInteractable: E dismantles a built site (refund). Building is the B verb (UBuildComponent::TriggerBuild).
 	virtual void Interact_Implementation(AActor* Interactor) override;
 	virtual FText GetInteractionPrompt_Implementation() const override;
@@ -94,9 +102,11 @@ private:
 	void ApplyBuiltState(bool bBuilt);
 	void SetNavLinkEnabled(bool bEnabled);
 
-	// SIB-29: stable cross-reload identity. SaveGame so Ch5's save archive carries
-	// it; assigned once if invalid (BeginPlay / registration), never on load.
-	UPROPERTY(SaveGame) FGuid BranchId;
+	// SIB-29/38: stable cross-reload identity, BAKED into the level package so it
+	// survives across sessions (assigned at edit time in OnConstruction). Plain
+	// serialized UPROPERTY (not SaveGame-only); VisibleAnywhere to inspect in-editor.
+	UPROPERTY(VisibleAnywhere, Category = "Branch")
+	FGuid BranchId;
 
 	bool bIsBuilt = false;
 };

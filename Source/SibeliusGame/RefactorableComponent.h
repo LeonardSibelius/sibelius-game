@@ -66,6 +66,14 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	// SIB-38 GUID baking: assign at edit time (OnRegister in an editor world), and
+	// give a copy-pasted component a fresh id so it never shares its source's.
+	virtual void OnRegister() override;
+	virtual void PostDuplicate(bool bDuplicateForPIE) override;
+#if WITH_EDITOR
+	virtual void PostEditImport() override;
+#endif
+
 	// What this object's refactor does (R5 — closed set).
 	UPROPERTY(EditAnywhere, Category = "Refactor")
 	ERefactorEditType EditType = ERefactorEditType::Material;
@@ -96,9 +104,11 @@ private:
 	// MIDs created ONCE per actor and reused on re-refactor (R8 — no per-toggle leak).
 	UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> CachedMIDs;
 
-	// SIB-29: stable cross-reload identity. SaveGame so Ch5's save archive carries
-	// it; assigned once if invalid (BeginPlay / registration), never on load.
-	UPROPERTY(SaveGame) FGuid BranchId;
+	// SIB-29/38: stable cross-reload identity, BAKED into the level package so it
+	// survives across sessions (assigned at edit time in OnRegister). Plain serialized
+	// UPROPERTY (not SaveGame-only); VisibleAnywhere so it's inspectable in the editor.
+	UPROPERTY(VisibleAnywhere, Category = "Branch")
+	FGuid BranchId;
 
 	bool bIsRefactored = false;
 };

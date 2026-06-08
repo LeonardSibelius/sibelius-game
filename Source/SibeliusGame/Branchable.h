@@ -53,6 +53,8 @@ public:
 protected:
 	// Shared assign-once helper for implementers. Never overwrites a valid id, so a
 	// value loaded from disk (Ch5) or assigned earlier this session is preserved.
+	// This is the RUNTIME fallback (BeginPlay) — a level-placed actor with a baked id
+	// must not be regenerated, so it only fills an INVALID id.
 	static void AssignBranchIdIfInvalid(FGuid& Id)
 	{
 		if (!Id.IsValid())
@@ -60,4 +62,12 @@ protected:
 			Id = FGuid::NewGuid();
 		}
 	}
+
+#if WITH_EDITOR
+	// SIB-38: edit-time identity baking. In an EDITOR world, if Id is invalid, assign
+	// a new GUID and dirty the package so it serializes into the level (.umap) — this
+	// is what makes deploy persist across sessions. No-op at runtime / in PIE / in the
+	// editor preview world (those rely on the baked id or the BeginPlay fallback).
+	static void AssignBranchIdAtEditTime(UObject* Object, FGuid& Id);
+#endif
 };
