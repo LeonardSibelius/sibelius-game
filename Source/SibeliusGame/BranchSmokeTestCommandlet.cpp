@@ -71,7 +71,7 @@
 #include "BuildSite.h"
 #include "HatchLock.h"
 #include "CompileTypes.h"           // EResourceType
-#include "SaveSubsystem.h"          // Ch5 Phase 1: save chokepoint
+#include "SibeliusSaveIO.h"         // Ch5 Phase 1: GameInstance-free save I/O
 #include "SibeliusSaveGame.h"       // Ch5 Phase 1: persisted manifest
 
 #include "Engine/World.h"
@@ -190,6 +190,14 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		return 1;
 	}
 	Branch->SetBranchWorld(World);
+
+	// Ch5 Phase 1 routes Deploy writes through the GameInstance-free save helper.
+	// Point Deploy at a sandbox slot for the WHOLE run so Phase 4's allowed deploys
+	// don't litter the real "DeploySlot"; the Ch5 Phase-1 block asserts on it and
+	// deletes it at the end.
+	const FString DeploySandboxSlot = TEXT("SmokeDeploySlot_Temp");
+	Branch->SetDeploySlotName(DeploySandboxSlot);
+	FSibeliusSaveIO::Delete(DeploySandboxSlot); // clear any stale artifact up front
 
 	// [HARD] Starts in Main.
 	R.Check(Branch->GetState() == EBranchState::Main, TEXT("Initial state is Main"));
@@ -564,18 +572,11 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		// =====================================================================
 		UE_LOG(LogBranchSmoke, Display, TEXT("--- Phase 1 (Ch5): SaveGame write ---"));
 
-		const FString SandboxSlot = TEXT("SmokeDeploySlot_Temp");
-
-		// Chokepoint: NewObject a save subsystem (no GameInstance in a commandlet)
-		// and inject it + the sandbox slot so the deploy routes through one place.
-		USaveSubsystem* Saver = NewObject<USaveSubsystem>(GetTransientPackage(), TEXT("SmokeSaver"));
-		R.Check(Saver != nullptr, TEXT("C5-P1: save subsystem (chokepoint) instantiates"));
-		Branch->SetSaveSubsystem(Saver);
-		Branch->SetDeploySlotName(SandboxSlot);
-
-		// Clear any stale sandbox save from a prior run.
-		Saver->DeleteSave(SandboxSlot);
-		R.Check(!Saver->HasSave(SandboxSlot), TEXT("C5-P1: sandbox slot empty before deploy"));
+		// Deploy routes through FSibeliusSaveIO directly (no GameInstance) — the
+		// test exercises that same helper path. Start from a clean sandbox slot
+		// (Phase 4's allowed deploys wrote it; clear it so the assert is meaningful).
+		FSibeliusSaveIO::Delete(DeploySandboxSlot);
+		R.Check(!FSibeliusSaveIO::Has(DeploySandboxSlot), TEXT("C5-P1: sandbox slot empty before deploy"));
 
 		// Force a KNOWN deployed state at Main via RAW restores (no verbs / ledger
 		// coupling): Refactorable refactored + BuildSite built = CHANGED; HatchLock
@@ -590,12 +591,12 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		const FGuid SiteId2 = Site->GetBranchId();
 		const FGuid HatchId = Hatch->GetBranchId();
 
-		// Deploy at Main: allowed + writes the save.
+		// Deploy at Main: allowed + writes the save through the helper.
 		R.Check(Branch->RequestDeploy(), TEXT("C5-P1: RequestDeploy allowed at Main"));
-		R.Check(Saver->HasSave(SandboxSlot), TEXT("C5-P1: deploy wrote a save to the slot"));
+		R.Check(FSibeliusSaveIO::Has(DeploySandboxSlot), TEXT("C5-P1: deploy wrote a save to the slot"));
 
 		// Read the WRITTEN save back (I/O-only; no world re-apply — that's Phase 2).
-		USibeliusSaveGame* Loaded = Cast<USibeliusSaveGame>(Saver->LoadSave(SandboxSlot));
+		USibeliusSaveGame* Loaded = Cast<USibeliusSaveGame>(FSibeliusSaveIO::Load(DeploySandboxSlot));
 		R.Check(Loaded != nullptr, TEXT("C5-P1: written save loads back as USibeliusSaveGame"));
 		if (Loaded)
 		{
@@ -630,15 +631,15 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		}
 
 		// D4 regression: a branched RequestDeploy must write NOTHING.
-		R.Check(Saver->DeleteSave(SandboxSlot), TEXT("C5-P1: cleared the slot before the D4 check"));
+		R.Check(FSibeliusSaveIO::Delete(DeploySandboxSlot), TEXT("C5-P1: cleared the slot before the D4 check"));
 		R.Check(Branch->EnterBranch(), TEXT("C5-P1: enter a branch for the D4 check"));
 		R.Check(!Branch->RequestDeploy(), TEXT("C5-P1: RequestDeploy refused while branched (guard)"));
-		R.Check(!Saver->HasSave(SandboxSlot), TEXT("C5-P1: branched deploy wrote NOTHING to the slot (D4)"));
+		R.Check(!FSibeliusSaveIO::Has(DeploySandboxSlot), TEXT("C5-P1: branched deploy wrote NOTHING to the slot (D4)"));
 		R.Check(Branch->DiscardBranch(), TEXT("C5-P1: discard the D4 branch"));
 
 		// Clean up the sandbox slot so the test leaves no artifact behind.
-		Saver->DeleteSave(SandboxSlot);
-		R.Check(!Saver->HasSave(SandboxSlot), TEXT("C5-P1: sandbox slot cleaned up after the test"));
+		FSibeliusSaveIO::Delete(DeploySandboxSlot);
+		R.Check(!FSibeliusSaveIO::Has(DeploySandboxSlot), TEXT("C5-P1: sandbox slot cleaned up after the test"));
 	}
 
 	if (R.Failures == 0)

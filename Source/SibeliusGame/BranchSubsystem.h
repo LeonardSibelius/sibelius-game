@@ -17,7 +17,6 @@
 
 class UWorld;
 class UInventoryComponent;
-class USaveSubsystem;
 class USibeliusSaveGame;
 
 // Fires whenever the branch nesting depth changes (0 = Main). The desaturate
@@ -99,10 +98,9 @@ public:
 	const TMap<FGuid, TWeakObjectPtr<UObject>>& GetRegistryForTest() const { return BranchablesById; }
 	int32 GetRegistryCollisionsForTest() const { return LastRegistryCollisions; }
 
-	// Ch5 Phase 1 save wiring. Production resolves USaveSubsystem off the game
-	// instance; SetSaveSubsystem injects one headlessly. SetDeploySlotName lets the
-	// smoke test target a sandbox slot it cleans up.
-	void SetSaveSubsystem(USaveSubsystem* InSaver) { SaveSubsystemOverride = InSaver; }
+	// Ch5 Phase 1 save wiring. Deploy writes go through FSibeliusSaveIO directly
+	// (GameInstance-free, so this works in PIE and in a headless commandlet alike).
+	// SetDeploySlotName lets the smoke test target a sandbox slot it cleans up.
 	void SetDeploySlotName(const FString& InSlot) { DeploySlotName = InSlot; }
 	const FString& GetDeploySlotName() const { return DeploySlotName; }
 
@@ -115,7 +113,6 @@ private:
 	void SuspendPickups();                                    // engage on enter (locked product decision)
 	void ResumePickups();                                     // release on resolve (discard/merge)
 
-	USaveSubsystem* ResolveSaveSubsystem() const;             // injected override, else off the game instance
 	USibeliusSaveGame* BuildDeploySave() const;               // gather current deltas (vs authored default) into a save
 
 	EBranchState State = EBranchState::Main;
@@ -131,8 +128,6 @@ private:
 	TWeakObjectPtr<UInventoryComponent> Inventory;
 	TWeakObjectPtr<UWorld> BranchWorld;
 
-	// Ch5 Phase 1: the deploy save target + an optional injected chokepoint (tests).
-	UPROPERTY()
-	TObjectPtr<USaveSubsystem> SaveSubsystemOverride;
+	// Ch5 Phase 1: the slot Deploy persists to (overridable for the test sandbox).
 	FString DeploySlotName = TEXT("DeploySlot");
 };

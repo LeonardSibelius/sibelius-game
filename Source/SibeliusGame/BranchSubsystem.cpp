@@ -3,11 +3,10 @@
 #include "BranchSubsystem.h"
 #include "Branchable.h"
 #include "InventoryComponent.h"
-#include "SaveSubsystem.h"
 #include "SibeliusSaveGame.h"
+#include "SibeliusSaveIO.h"
 
 #include "Engine/World.h"
-#include "Engine/GameInstance.h"
 #include "EngineUtils.h"            // TActorIterator
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h" // CreateSaveGameObject
@@ -264,22 +263,6 @@ void UBranchSubsystem::ResumePickups()
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Pickups resumed."));
 }
 
-USaveSubsystem* UBranchSubsystem::ResolveSaveSubsystem() const
-{
-	if (SaveSubsystemOverride)
-	{
-		return SaveSubsystemOverride; // injected (headless tests)
-	}
-	if (UWorld* World = ResolveWorld())
-	{
-		if (UGameInstance* GI = World->GetGameInstance())
-		{
-			return GI->GetSubsystem<USaveSubsystem>();
-		}
-	}
-	return nullptr;
-}
-
 USibeliusSaveGame* UBranchSubsystem::BuildDeploySave() const
 {
 	USibeliusSaveGame* Save = Cast<USibeliusSaveGame>(
@@ -345,25 +328,18 @@ bool UBranchSubsystem::RequestDeploy()
 	}
 
 	// Allowed (at Main). Rebuild over the live Main world, then persist the deployed
-	// declared set (GUID-keyed deltas) through the single save chokepoint.
+	// declared set (GUID-keyed deltas) through the GameInstance-free save helper —
+	// the single I/O chokepoint, callable in PIE and headless alike.
 	RebuildRegistry();
-	if (USaveSubsystem* Saver = ResolveSaveSubsystem())
-	{
-		USibeliusSaveGame* Save = BuildDeploySave();
-		const bool bWrote = Save && Saver->CommitSave(Save, DeploySlotName);
-		UE_LOG(LogSibeliusGame, Display,
-			TEXT("[Branch] Deploy at Main: %s slot '%s' (v%d) — %d object + %d resource delta(s)."),
-			bWrote ? TEXT("wrote") : TEXT("FAILED to write"),
-			*DeploySlotName,
-			Save ? Save->SaveVersion : 0,
-			Save ? Save->ObjectDeltas.Num() : 0,
-			Save ? Save->ResourceDeltas.Num() : 0);
-	}
-	else
-	{
-		UE_LOG(LogSibeliusGame, Warning,
-			TEXT("[Branch] Deploy allowed (Main) but no save subsystem resolved — nothing persisted."));
-	}
+	USibeliusSaveGame* Save = BuildDeploySave();
+	const bool bWrote = Save && FSibeliusSaveIO::Commit(Save, DeploySlotName);
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Branch] Deploy at Main: %s slot '%s' (v%d) — %d object + %d resource delta(s)."),
+		bWrote ? TEXT("wrote") : TEXT("FAILED to write"),
+		*DeploySlotName,
+		Save ? Save->SaveVersion : 0,
+		Save ? Save->ObjectDeltas.Num() : 0,
+		Save ? Save->ResourceDeltas.Num() : 0);
 
 	// Return reflects the GUARD (allowed), unchanged from Phase 4; persistence above
 	// is the side effect.

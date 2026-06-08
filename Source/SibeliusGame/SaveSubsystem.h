@@ -1,11 +1,12 @@
 // SaveSubsystem.h
 //
-// SIB-29 — Ch5 Phase 1. The single chokepoint for SaveGame disk I/O: every
-// SaveGameToSlot / LoadGameFromSlot / DeleteGameInSlot in the project routes
-// through here (no scattered UGameplayStatics::SaveGameToSlot calls). A
-// GameInstance subsystem so production code reaches it via
-// GetGameInstance()->GetSubsystem<USaveSubsystem>(); the headless smoke test
-// NewObject's one and injects it into the branch subsystem.
+// SIB-29 — Ch5 Phase 1. The RUNTIME chokepoint for SaveGame disk I/O. A
+// GameInstance subsystem so in-game code reaches it via
+// GetGameInstance()->GetSubsystem<USaveSubsystem>(); it delegates the actual work
+// to FSibeliusSaveIO. The disk logic lives in that helper (not here) because a
+// UGameInstanceSubsystem has ClassWithin=GameInstance and cannot be created in a
+// bare commandlet — so UBranchSubsystem::RequestDeploy and the headless smoke test
+// call FSibeliusSaveIO directly instead of going through this subsystem.
 
 #pragma once
 
