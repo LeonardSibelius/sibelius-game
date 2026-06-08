@@ -3,10 +3,14 @@
 #include "BranchSubsystem.h"
 #include "Branchable.h"
 #include "InventoryComponent.h"
+#include "SaveSubsystem.h"
+#include "SibeliusSaveGame.h"
 
 #include "Engine/World.h"
+#include "Engine/GameInstance.h"
 #include "EngineUtils.h"            // TActorIterator
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h" // CreateSaveGameObject
 #include "SibeliusGame.h"           // LogSibeliusGame
 
 bool UBranchSubsystem::DoesSupportWorldType(const EWorldType::Type WorldType) const
@@ -260,6 +264,75 @@ void UBranchSubsystem::ResumePickups()
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Pickups resumed."));
 }
 
+USaveSubsystem* UBranchSubsystem::ResolveSaveSubsystem() const
+{
+	if (SaveSubsystemOverride)
+	{
+		return SaveSubsystemOverride; // injected (headless tests)
+	}
+	if (UWorld* World = ResolveWorld())
+	{
+		if (UGameInstance* GI = World->GetGameInstance())
+		{
+			return GI->GetSubsystem<USaveSubsystem>();
+		}
+	}
+	return nullptr;
+}
+
+USibeliusSaveGame* UBranchSubsystem::BuildDeploySave() const
+{
+	USibeliusSaveGame* Save = Cast<USibeliusSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(USibeliusSaveGame::StaticClass()));
+	if (!Save)
+	{
+		return nullptr;
+	}
+	Save->SaveVersion = USibeliusSaveGame::CurrentSaveVersion; // stamp on write
+
+	// Deltas only: an object contributes an entry iff its current declared state
+	// differs from its authored default. An untouched world writes an empty save.
+	for (const TPair<FGuid, TWeakObjectPtr<UObject>>& Pair : BranchablesById)
+	{
+		UObject* Obj = Pair.Value.Get();
+		IBranchable* B = (Obj ? Cast<IBranchable>(Obj) : nullptr);
+		if (!B)
+		{
+			continue;
+		}
+		const uint8 Cur = B->CaptureBranchState();
+		if (Cur == B->GetDefaultBranchState())
+		{
+			continue; // no deployed change -> no delta
+		}
+		FBranchObjectState S;
+		S.ObjectId = Pair.Key;
+		S.State = Cur;
+		Save->ObjectDeltas.Add(S);
+	}
+
+	// Resource entries: persist only non-zero counts (empty == authored default).
+	if (UInventoryComponent* Inv = Inventory.Get())
+	{
+		const EResourceType Tracked[] = { EResourceType::Book, EResourceType::Key };
+		for (EResourceType R : Tracked)
+		{
+			const int32 Count = Inv->GetCount(R);
+			if (Count == 0)
+			{
+				continue;
+			}
+			FResourceEntry E;
+			E.Resource = R;
+			E.EntryId = Inv->GetOrCreateResourceId(R);
+			E.Count = Count;
+			Save->ResourceDeltas.Add(E);
+		}
+	}
+
+	return Save;
+}
+
 bool UBranchSubsystem::RequestDeploy()
 {
 	// Ch5 Deploy boundary: refuse while any branch is open so a save can't capture
@@ -268,11 +341,31 @@ bool UBranchSubsystem::RequestDeploy()
 	{
 		UE_LOG(LogSibeliusGame, Warning,
 			TEXT("[Branch] Deploy refused: a branch is open (depth %d) — merge or discard first."), GetDepth());
-		return false;
+		return false; // D4: a branched deploy writes NOTHING
 	}
 
-	// Allowed (at Main). Ch5 persists the committed declared set to disk HERE.
-	// Phase 4 is guard-only, so this is just the gate for now.
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Branch] Deploy allowed (at Main, depth 0)."));
+	// Allowed (at Main). Rebuild over the live Main world, then persist the deployed
+	// declared set (GUID-keyed deltas) through the single save chokepoint.
+	RebuildRegistry();
+	if (USaveSubsystem* Saver = ResolveSaveSubsystem())
+	{
+		USibeliusSaveGame* Save = BuildDeploySave();
+		const bool bWrote = Save && Saver->CommitSave(Save, DeploySlotName);
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Branch] Deploy at Main: %s slot '%s' (v%d) — %d object + %d resource delta(s)."),
+			bWrote ? TEXT("wrote") : TEXT("FAILED to write"),
+			*DeploySlotName,
+			Save ? Save->SaveVersion : 0,
+			Save ? Save->ObjectDeltas.Num() : 0,
+			Save ? Save->ResourceDeltas.Num() : 0);
+	}
+	else
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Branch] Deploy allowed (Main) but no save subsystem resolved — nothing persisted."));
+	}
+
+	// Return reflects the GUARD (allowed), unchanged from Phase 4; persistence above
+	// is the side effect.
 	return true;
 }

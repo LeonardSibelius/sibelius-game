@@ -35,6 +35,9 @@ public:
 	virtual FGuid GetOrCreateBranchId() override { AssignBranchIdIfInvalid(BranchId); return BranchId; }
 	virtual FGuid GetBranchId() const override { return BranchId; }
 
+	// Authored default: unbuilt.
+	virtual uint8 GetDefaultBranchState() const override { return 0; }
+
 	virtual void BeginPlay() override;
 
 	// IInteractable: E dismantles a built site (refund). Building is the B verb (UBuildComponent::TriggerBuild).

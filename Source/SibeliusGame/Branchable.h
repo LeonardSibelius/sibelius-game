@@ -31,6 +31,12 @@ public:
 	// object restores its own exact visuals from this raw bool.
 	virtual void RestoreBranchState(uint8 State) = 0;
 
+	// The authored/pristine declared state — the byte CaptureBranchState() returns
+	// before any gameplay verb (Refactorable/BuildSite = 0; HatchLock = 1, locked).
+	// Ch5 Deploy persists DELTAS: only objects whose current state differs from this
+	// get an entry, so an untouched world writes an empty save.
+	virtual uint8 GetDefaultBranchState() const = 0;
+
 	// SIB-29 — Ch5 Phase 0 (GUID identity seam). Identity is a STABLE per-object
 	// FGuid, not a registry array index: it survives a re-register (and, from Ch5
 	// Phase 1, a SaveGame reload). Each implementer stores a persisted

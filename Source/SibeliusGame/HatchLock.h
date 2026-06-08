@@ -32,6 +32,9 @@ public:
 	virtual FGuid GetOrCreateBranchId() override { AssignBranchIdIfInvalid(BranchId); return BranchId; }
 	virtual FGuid GetBranchId() const override { return BranchId; }
 
+	// Authored default: locked.
+	virtual uint8 GetDefaultBranchState() const override { return 1; }
+
 	virtual void BeginPlay() override;
 
 	// Spends one Key to unlock. Returns false (and stays shut) without a Key.

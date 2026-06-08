@@ -17,6 +17,8 @@
 
 class UWorld;
 class UInventoryComponent;
+class USaveSubsystem;
+class USibeliusSaveGame;
 
 // Fires whenever the branch nesting depth changes (0 = Main). The desaturate
 // post-process + HUD branch marker subscribe to this and toggle on depth >= 1.
@@ -58,11 +60,15 @@ public:
 	// the enclosing branch's live (or Main) at depth 0. Nested discard can't leak.
 	bool DiscardBranch();
 
-	// Ch5 Deploy boundary (Phase 4): Deploy persists Main to disk and reads Main
-	// ONLY — a save must never capture an uncommitted branch. CanDeploy() is the
-	// gate (true iff at Main); RequestDeploy() is the guarded entry point that
-	// refuses while branched (merge or discard must happen first). Guard-only for
-	// now — Ch5 fills in the actual persistence at the allowed branch.
+	// Ch5 Deploy boundary. Deploy persists Main to disk and reads Main ONLY — a
+	// save must never capture an uncommitted branch. CanDeploy() is the gate (true
+	// iff at Main); RequestDeploy() is the guarded entry point that refuses while
+	// branched (merge or discard must happen first).
+	//
+	// Phase 1 (SIB-29): when allowed, RequestDeploy gathers the deployed declared
+	// set into a USibeliusSaveGame (GUID-keyed deltas) and writes it to DeploySlot
+	// through the save chokepoint. The return value is the GUARD result (allowed),
+	// unchanged from Phase 4; persistence is the side effect. No load yet (Phase 2).
 	bool CanDeploy() const { return GetDepth() == 0; }
 	bool RequestDeploy();
 
@@ -93,6 +99,13 @@ public:
 	const TMap<FGuid, TWeakObjectPtr<UObject>>& GetRegistryForTest() const { return BranchablesById; }
 	int32 GetRegistryCollisionsForTest() const { return LastRegistryCollisions; }
 
+	// Ch5 Phase 1 save wiring. Production resolves USaveSubsystem off the game
+	// instance; SetSaveSubsystem injects one headlessly. SetDeploySlotName lets the
+	// smoke test target a sandbox slot it cleans up.
+	void SetSaveSubsystem(USaveSubsystem* InSaver) { SaveSubsystemOverride = InSaver; }
+	void SetDeploySlotName(const FString& InSlot) { DeploySlotName = InSlot; }
+	const FString& GetDeploySlotName() const { return DeploySlotName; }
+
 private:
 	UWorld* ResolveWorld() const;
 	void RebuildRegistry();                                   // collect IBranchable + inventory from the world
@@ -101,6 +114,9 @@ private:
 	void RestoreDeclaredSet(const FBranchManifest& Snapshot); // RAW writes only — never replay verbs
 	void SuspendPickups();                                    // engage on enter (locked product decision)
 	void ResumePickups();                                     // release on resolve (discard/merge)
+
+	USaveSubsystem* ResolveSaveSubsystem() const;             // injected override, else off the game instance
+	USibeliusSaveGame* BuildDeploySave() const;               // gather current deltas (vs authored default) into a save
 
 	EBranchState State = EBranchState::Main;
 
@@ -114,4 +130,9 @@ private:
 	int32 LastRegistryCollisions = 0; // distinct objects that hashed to an already-claimed GUID on the last rebuild
 	TWeakObjectPtr<UInventoryComponent> Inventory;
 	TWeakObjectPtr<UWorld> BranchWorld;
+
+	// Ch5 Phase 1: the deploy save target + an optional injected chokepoint (tests).
+	UPROPERTY()
+	TObjectPtr<USaveSubsystem> SaveSubsystemOverride;
+	FString DeploySlotName = TEXT("DeploySlot");
 };

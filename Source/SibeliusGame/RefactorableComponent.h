@@ -37,6 +37,9 @@ public:
 	virtual FGuid GetOrCreateBranchId() override { AssignBranchIdIfInvalid(BranchId); return BranchId; }
 	virtual FGuid GetBranchId() const override { return BranchId; }
 
+	// Authored default: not refactored.
+	virtual uint8 GetDefaultBranchState() const override { return 0; }
+
 	UFUNCTION(BlueprintCallable, Category = "Refactor")
 	void ApplyRefactor();
 

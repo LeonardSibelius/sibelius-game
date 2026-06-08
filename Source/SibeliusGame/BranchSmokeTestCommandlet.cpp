@@ -51,6 +51,14 @@
 //        SAME logical object, registry size holds, object ids unchanged
 // [HARD] inventory ledger entries carry valid, distinct, stable GUIDs
 //
+// PHASE 1 (Ch5) — SaveGame write (SIB-29, no load/re-apply yet):
+// [HARD] RequestDeploy at Main writes a USibeliusSaveGame to the slot via the save
+//        chokepoint; the written save's SaveVersion is stamped
+// [HARD] the save holds a GUID-keyed delta for each CHANGED branchable and NONE for
+//        the unchanged (default) ones; non-zero resource entries only
+// [HARD] a branched RequestDeploy writes NOTHING (D4 regression)
+// [HARD] runs against a sandbox slot it deletes afterward (no artifact)
+//
 // CP3 lesson #6: NAMED namespace to avoid unity-build redefinition collisions
 // with the sibling commandlets.
 
@@ -63,6 +71,8 @@
 #include "BuildSite.h"
 #include "HatchLock.h"
 #include "CompileTypes.h"           // EResourceType
+#include "SaveSubsystem.h"          // Ch5 Phase 1: save chokepoint
+#include "SibeliusSaveGame.h"       // Ch5 Phase 1: persisted manifest
 
 #include "Engine/World.h"
 #include "EngineUtils.h"            // TActorIterator
@@ -544,11 +554,96 @@ int32 UBranchSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(Inv->GetOrCreateResourceId(EResourceType::Book) == BookId
 			&& Inv->GetResourceId(EResourceType::Book) == BookId,
 			TEXT("C5-P0: inventory entry GUID is assign-once (stable)"));
+
+		// =====================================================================
+		//  PHASE 1 (Ch5) — SaveGame write (SIB-29). RequestDeploy at Main writes
+		//  the deployed manifest (GUID-keyed deltas vs authored default) to a slot
+		//  through the save chokepoint; SaveVersion is stamped; unchanged objects
+		//  get NO delta; a branched RequestDeploy writes NOTHING (D4). No load /
+		//  re-apply yet (Phase 2). Uses a sandbox slot, deleted at the end.
+		// =====================================================================
+		UE_LOG(LogBranchSmoke, Display, TEXT("--- Phase 1 (Ch5): SaveGame write ---"));
+
+		const FString SandboxSlot = TEXT("SmokeDeploySlot_Temp");
+
+		// Chokepoint: NewObject a save subsystem (no GameInstance in a commandlet)
+		// and inject it + the sandbox slot so the deploy routes through one place.
+		USaveSubsystem* Saver = NewObject<USaveSubsystem>(GetTransientPackage(), TEXT("SmokeSaver"));
+		R.Check(Saver != nullptr, TEXT("C5-P1: save subsystem (chokepoint) instantiates"));
+		Branch->SetSaveSubsystem(Saver);
+		Branch->SetDeploySlotName(SandboxSlot);
+
+		// Clear any stale sandbox save from a prior run.
+		Saver->DeleteSave(SandboxSlot);
+		R.Check(!Saver->HasSave(SandboxSlot), TEXT("C5-P1: sandbox slot empty before deploy"));
+
+		// Force a KNOWN deployed state at Main via RAW restores (no verbs / ledger
+		// coupling): Refactorable refactored + BuildSite built = CHANGED; HatchLock
+		// locked = authored default = UNCHANGED (must produce no delta).
+		Refac->RestoreBranchState(1);   // refactored (delta)
+		Site->RestoreBranchState(1);    // built (delta)
+		Hatch->RestoreBranchState(1);   // locked == default (NO delta)
+		Inv->RestoreCount(EResourceType::Book, 7); // non-zero (delta)
+		Inv->RestoreCount(EResourceType::Key, 0);  // zero == default (NO delta)
+
+		const FGuid RefacId = Refac->GetBranchId();
+		const FGuid SiteId2 = Site->GetBranchId();
+		const FGuid HatchId = Hatch->GetBranchId();
+
+		// Deploy at Main: allowed + writes the save.
+		R.Check(Branch->RequestDeploy(), TEXT("C5-P1: RequestDeploy allowed at Main"));
+		R.Check(Saver->HasSave(SandboxSlot), TEXT("C5-P1: deploy wrote a save to the slot"));
+
+		// Read the WRITTEN save back (I/O-only; no world re-apply — that's Phase 2).
+		USibeliusSaveGame* Loaded = Cast<USibeliusSaveGame>(Saver->LoadSave(SandboxSlot));
+		R.Check(Loaded != nullptr, TEXT("C5-P1: written save loads back as USibeliusSaveGame"));
+		if (Loaded)
+		{
+			R.Check(Loaded->SaveVersion == USibeliusSaveGame::CurrentSaveVersion,
+				TEXT("C5-P1: written save's SaveVersion is stamped (== CurrentSaveVersion)"));
+
+			auto FindObj = [&Loaded](const FGuid& Id) -> const FBranchObjectState*
+			{
+				return Loaded->ObjectDeltas.FindByPredicate(
+					[&Id](const FBranchObjectState& X) { return X.ObjectId == Id; });
+			};
+			auto FindRes = [&Loaded](EResourceType R) -> const FResourceEntry*
+			{
+				return Loaded->ResourceDeltas.FindByPredicate(
+					[R](const FResourceEntry& X) { return X.Resource == R; });
+			};
+
+			const FBranchObjectState* RefacDelta = FindObj(RefacId);
+			const FBranchObjectState* SiteDelta  = FindObj(SiteId2);
+			R.Check(RefacDelta && RefacDelta->State == 1,
+				TEXT("C5-P1: GUID-keyed delta written for the refactored Refactorable"));
+			R.Check(SiteDelta && SiteDelta->State == 1,
+				TEXT("C5-P1: GUID-keyed delta written for the built BuildSite"));
+			R.Check(FindObj(HatchId) == nullptr,
+				TEXT("C5-P1: NO delta for the unchanged (default-locked) HatchLock"));
+
+			const FResourceEntry* BookDelta = FindRes(EResourceType::Book);
+			R.Check(BookDelta && BookDelta->Count == 7 && BookDelta->EntryId == BookId,
+				TEXT("C5-P1: resource delta written for the non-zero Book ledger entry"));
+			R.Check(FindRes(EResourceType::Key) == nullptr,
+				TEXT("C5-P1: NO resource delta for the zero-count Key entry"));
+		}
+
+		// D4 regression: a branched RequestDeploy must write NOTHING.
+		R.Check(Saver->DeleteSave(SandboxSlot), TEXT("C5-P1: cleared the slot before the D4 check"));
+		R.Check(Branch->EnterBranch(), TEXT("C5-P1: enter a branch for the D4 check"));
+		R.Check(!Branch->RequestDeploy(), TEXT("C5-P1: RequestDeploy refused while branched (guard)"));
+		R.Check(!Saver->HasSave(SandboxSlot), TEXT("C5-P1: branched deploy wrote NOTHING to the slot (D4)"));
+		R.Check(Branch->DiscardBranch(), TEXT("C5-P1: discard the D4 branch"));
+
+		// Clean up the sandbox slot so the test leaves no artifact behind.
+		Saver->DeleteSave(SandboxSlot);
+		R.Check(!Saver->HasSave(SandboxSlot), TEXT("C5-P1: sandbox slot cleaned up after the test"));
 	}
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phase 0 GUID seam green). ==="));
+		UE_LOG(LogBranchSmoke, Display, TEXT("=== BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phases 0-1 green — GUID seam + SaveGame write). ==="));
 		return 0;
 	}
 	UE_LOG(LogBranchSmoke, Error, TEXT("=== BRANCH SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);
