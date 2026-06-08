@@ -44,6 +44,13 @@ private:
 	void FreezeRefusers(bool bFreeze);
 	void Toast(const FString& Msg, const FColor& Color) const;
 
+	// Ch5 PIE hook (SIB-37): on level load-complete, re-apply the deployed save at
+	// depth 0 BEFORE the player can act, gating input until it returns (spike D2).
+	// Deferred one tick so it runs AFTER every branchable's BeginPlay (some reset
+	// their own state there) — the deployed deltas then land on top.
+	void ApplyDeployedOnLoad();
+	void SetPlayerInputEnabled(bool bEnabled);
+
 	FDelegateHandle DepthHandle;
 
 	// Saturation lost per depth level (0..1). depth 0 = full colour, deeper = greyer.

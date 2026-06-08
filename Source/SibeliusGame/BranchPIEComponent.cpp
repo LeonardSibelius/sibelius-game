@@ -8,10 +8,12 @@
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h" // input gate on load (SIB-37)
 #include "BrainComponent.h"
 #include "EngineUtils.h"            // TActorIterator
 #include "Engine/Engine.h"          // GEngine
 #include "Engine/World.h"
+#include "TimerManager.h"           // SetTimerForNextTick (defer apply-on-load)
 
 UBranchPIEComponent::UBranchPIEComponent()
 {
@@ -31,6 +33,50 @@ void UBranchPIEComponent::BeginPlay()
 	{
 		DepthHandle = Branch->OnBranchDepthChanged.AddUObject(this, &UBranchPIEComponent::OnDepthChanged);
 		OnDepthChanged(Branch->GetDepth()); // sync to current state (depth 0 at start)
+	}
+
+	// Ch5 PIE hook (SIB-37): apply the deployed save on load. Gate input NOW so the
+	// player can't act during the load->apply window (spike D2), then run the apply on
+	// the next tick — after every branchable's BeginPlay has settled — and ungate.
+	SetPlayerInputEnabled(false);
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimerForNextTick(this, &UBranchPIEComponent::ApplyDeployedOnLoad);
+	}
+	else
+	{
+		SetPlayerInputEnabled(true); // no world to defer through — don't leave input gated
+	}
+}
+
+void UBranchPIEComponent::ApplyDeployedOnLoad()
+{
+	if (UBranchSubsystem* Branch = GetBranch())
+	{
+		// Load is always at Main; never overlay a deploy onto an open branch.
+		if (Branch->GetDepth() == 0)
+		{
+			Branch->ApplyDeployedSave();
+		}
+	}
+	SetPlayerInputEnabled(true); // ungate — the world is now in its deployed state
+}
+
+void UBranchPIEComponent::SetPlayerInputEnabled(bool bEnabled)
+{
+	APawn* Pawn = Cast<APawn>(GetOwner());
+	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+	if (!PC)
+	{
+		return; // not player-controlled (or not possessed yet) — nothing to gate
+	}
+	if (bEnabled)
+	{
+		Pawn->EnableInput(PC);
+	}
+	else
+	{
+		Pawn->DisableInput(PC);
 	}
 }
 
@@ -221,7 +267,8 @@ void UBranchPIEComponent::Debug_Deploy()
 	}
 	if (Branch->RequestDeploy())
 	{
-		Toast(TEXT("Deploy allowed (at Main)"), FColor::Green);
+		// SIB-37: RequestDeploy now persists at Main (Ch5 Phase 1+), so say so.
+		Toast(TEXT("DEPLOYED — changes saved"), FColor::Green);
 	}
 	else
 	{

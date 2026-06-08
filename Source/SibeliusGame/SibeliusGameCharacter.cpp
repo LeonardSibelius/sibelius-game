@@ -114,15 +114,16 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		UE_LOG(LogSibeliusGame, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 
-	// SIB-36 debug branch keys (raw BindKey works regardless of Enhanced Input):
-	// 6 Enter · 7 Merge · 8 Discard · 9 RequestDeploy. Number row, not the F-row —
-	// F8 collided with the editor's built-in Eject/Possess toggle in PIE.
+	// Debug branch keys (raw BindKey works regardless of Enhanced Input). Number row,
+	// not the F-row (F8 collided with the editor's Eject/Possess) and not gizmo keys
+	// 1-5: 6 Enter · 7 Merge · 8 Discard (Ch4 branch ops) · 0 Deploy (Ch5, SIB-37 —
+	// its own key, off the 6-9 branch block).
 	if (BranchPIEComp)
 	{
 		PlayerInputComponent->BindKey(EKeys::Six, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Enter);
 		PlayerInputComponent->BindKey(EKeys::Seven, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Merge);
 		PlayerInputComponent->BindKey(EKeys::Eight, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Discard);
-		PlayerInputComponent->BindKey(EKeys::Nine, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Deploy);
+		PlayerInputComponent->BindKey(EKeys::Zero, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Deploy);
 	}
 }
 
