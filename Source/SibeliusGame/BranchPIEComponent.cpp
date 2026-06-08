@@ -68,7 +68,8 @@ void UBranchPIEComponent::SetPlayerInputEnabled(bool bEnabled)
 	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
 	if (!PC)
 	{
-		return; // not player-controlled (or not possessed yet) — nothing to gate
+		bLoadInputGated = false; // couldn't gate (not possessed yet) — treat as not gated
+		return;
 	}
 	if (bEnabled)
 	{
@@ -78,6 +79,7 @@ void UBranchPIEComponent::SetPlayerInputEnabled(bool bEnabled)
 	{
 		Pawn->DisableInput(PC);
 	}
+	bLoadInputGated = !bEnabled; // accurate gate state for the debug readout
 }
 
 void UBranchPIEComponent::EndPlay(const EEndPlayReason::Type Reason)

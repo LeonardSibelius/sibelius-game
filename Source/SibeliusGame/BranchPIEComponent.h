@@ -31,6 +31,9 @@ public:
 	void Debug_Deploy();
 	void Debug_ClearDeploy(); // wipe the deploy save so the next load starts authored-clean
 
+	// Debug (SIB-37): true while the load-time apply input-gate is holding input off.
+	bool IsLoadInputGated() const { return bLoadInputGated; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
@@ -53,6 +56,7 @@ private:
 	void SetPlayerInputEnabled(bool bEnabled);
 
 	FDelegateHandle DepthHandle;
+	bool bLoadInputGated = false; // SIB-37: tracks whether apply-on-load currently holds input off
 
 	// Saturation lost per depth level (0..1). depth 0 = full colour, deeper = greyer.
 	// 0.75 → depth 1 is strongly drained (0.25 sat), depth 2+ full greyscale (clamped).
