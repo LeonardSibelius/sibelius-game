@@ -14,6 +14,7 @@
 #include "InventoryComponent.h"
 #include "BuildComponent.h"
 #include "BranchPIEComponent.h"
+#include "SibeliusHUD.h"          // SIB-39 dev-overlay toggle
 #include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
 #include "SibeliusGame.h"
 
@@ -126,6 +127,10 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		PlayerInputComponent->BindKey(EKeys::Nine, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_ClearDeploy);
 		PlayerInputComponent->BindKey(EKeys::Zero, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Deploy);
 	}
+
+	// SIB-39 dev-overlay toggle: V (off the F-row, gizmo keys 1-5, the 6-9/0 branch
+	// block, B/E/R, and WASD).
+	PlayerInputComponent->BindKey(EKeys::V, IE_Pressed, this, &ASibeliusGameCharacter::ToggleDevOverlay);
 }
 
 
@@ -187,4 +192,9 @@ void ASibeliusGameCharacter::DoInteract()
 	{
 		InteractorComponent->TryInteract();
 	}
+}
+
+void ASibeliusGameCharacter::ToggleDevOverlay()
+{
+	ASibeliusHUD::bOverlayVisible = !ASibeliusHUD::bOverlayVisible;
 }

@@ -1,7 +1,8 @@
 // SibeliusHUD.h
 //
-// SIB-37 follow-up: a minimal always-on center reticle so the interaction/build
-// trace's aim point is visible. Set as the GameMode's HUDClass.
+// Always-on center reticle (SIB-37) + a toggleable developer overlay (SIB-39) that
+// reads live game state (inventory, nearby build site, branch state, progress).
+// Set as the GameMode's HUDClass. Overlay toggled with V (default ON).
 
 #pragma once
 
@@ -17,6 +18,11 @@ class SIBELIUSGAME_API ASibeliusHUD : public AHUD
 public:
 	virtual void DrawHUD() override;
 
+	// SIB-39 dev overlay visibility. Static so the toggle key (character) and the
+	// ScanForSite log gate (UBuildComponent) share one flag without a HUD lookup.
+	// Default ON (Walt likes seeing it).
+	static bool bOverlayVisible;
+
 	// Reticle look (tweakable on the HUD class / BP).
 	UPROPERTY(EditDefaultsOnly, Category = "Crosshair")
 	float ArmLength = 10.0f;   // length of each crosshair arm (px)
@@ -29,4 +35,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Crosshair")
 	FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 0.85f);
+
+private:
+	void DrawCrosshair();
+	void DrawDevOverlay();
 };

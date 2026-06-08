@@ -126,6 +126,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void DoInteract();
 
+	/** SIB-39: toggles the developer overlay (bound to V). */
+	void ToggleDevOverlay();
+
 protected:
 
 	/** Set up input action bindings */

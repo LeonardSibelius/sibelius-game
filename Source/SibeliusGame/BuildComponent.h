@@ -22,9 +22,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	// TEMP (SIB-37 ghost regression): per-tick on-screen debug readout. Remove once solved.
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 	// Bound to IA_Build (B). Builds the current proximate site if affordable. (C12: no-op otherwise.)
 	UFUNCTION(BlueprintCallable, Category = "Build")
 	void TriggerBuild();

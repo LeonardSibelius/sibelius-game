@@ -271,11 +271,13 @@ void UBranchPIEComponent::Debug_Deploy()
 	{
 		// SIB-37: RequestDeploy now persists at Main (Ch5 Phase 1+), so say so.
 		Toast(TEXT("DEPLOYED — changes saved"), FColor::Green);
+		LastDeployStatus = TEXT("DEPLOYED");
 	}
 	else
 	{
 		// Deploy refusal must be legible to the player, not just the log.
 		Toast(TEXT("Deploy REFUSED — merge or discard the branch first"), FColor::Red);
+		LastDeployStatus = TEXT("refused (branched)");
 	}
 }
 
@@ -285,5 +287,6 @@ void UBranchPIEComponent::Debug_ClearDeploy()
 	{
 		Branch->ClearDeployedSave();
 		Toast(TEXT("Deploy save cleared — fresh authored world on next load"), FColor::Yellow);
+		LastDeployStatus = TEXT("cleared");
 	}
 }

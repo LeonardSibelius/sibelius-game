@@ -34,6 +34,9 @@ public:
 	// Debug (SIB-37): true while the load-time apply input-gate is holding input off.
 	bool IsLoadInputGated() const { return bLoadInputGated; }
 
+	// SIB-39 dev overlay: last deploy/clear outcome, for display.
+	const FString& GetLastDeployStatus() const { return LastDeployStatus; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
@@ -57,6 +60,7 @@ private:
 
 	FDelegateHandle DepthHandle;
 	bool bLoadInputGated = false; // SIB-37: tracks whether apply-on-load currently holds input off
+	FString LastDeployStatus = TEXT("none"); // SIB-39: last deploy/clear outcome for the overlay
 
 	// Saturation lost per depth level (0..1). depth 0 = full colour, deeper = greyer.
 	// 0.75 → depth 1 is strongly drained (0.25 sat), depth 2+ full greyscale (clamped).
