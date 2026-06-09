@@ -20,6 +20,7 @@
 #include "GenerateMatcher.h"
 #include "GenerateTypes.h"
 #include "GenerateCatalog.h"        // load the real CSV-backed catalog
+#include "MrsHallLines.h"           // P2: DC blocklist + data-driven refusal lines
 
 #include "BuildSite.h"
 #include "InventoryComponent.h"
@@ -90,7 +91,7 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 {
 	using namespace GenerateSmokeTestNS;
 
-	UE_LOG(LogGenerateSmoke, Display, TEXT("=== SIB-30 Generate smoke test (Ch6 P0): G1-G6 against the REAL catalog ==="));
+	UE_LOG(LogGenerateSmoke, Display, TEXT("=== SIB-30 Generate smoke test (Ch6 P2): G1-G7 against the REAL catalog + Mrs. Hall data ==="));
 
 	FResult R;
 
@@ -195,8 +196,8 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 
 	// =====================================================================
 	//  G3 — content safety: out-of-catalog / "unsafe" phrasings never resolve.
-	//  (DECISION DC: a tone blocklist -> RefusedUnsafe is deferred to P2; without it
-	//  these correctly fall to RefusedNoMatch — still never a spawn.)
+	//  (DECISION DC: the tone blocklist -> RefusedUnsafe is now implemented in P2 and
+	//  exercised in G7 below; here, with no blocklist passed, these still never resolve.)
 	// =====================================================================
 	UE_LOG(LogGenerateSmoke, Display, TEXT("--- G3: content safety ---"));
 	const TCHAR* UnsafeIsh[] = { TEXT("a gun"), TEXT("set it on fire"), TEXT("poison"), TEXT("conjure a dragon") };
@@ -238,6 +239,65 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 	R.Check(KeyBroke.Outcome == EGenerateOutcome::RefusedOverBudget,
 		TEXT("G5: cost > remaining budget -> RefusedOverBudget (distinct from NoMatch)"));
 	R.Check(KeyBroke.Outcome != EGenerateOutcome::RefusedNoMatch, TEXT("G5: over-budget is NOT conflated with no-match"));
+
+	// =====================================================================
+	//  G7 — P2: DC unsafe-word blocklist + data-driven Mrs. Hall refusal lines.
+	//  A blocklisted phrase -> RefusedUnsafe (never a spawn); every refusal reason
+	//  yields a non-empty line from data; line selection stays deterministic.
+	// =====================================================================
+	UE_LOG(LogGenerateSmoke, Display, TEXT("--- G7: DC blocklist + Mrs. Hall lines (P2) ---"));
+
+	TArray<FString> Blocklist;
+	FString BlockErr;
+	const bool bBlock = LoadGenerateBlocklist(Blocklist, BlockErr);
+	R.Check(bBlock && Blocklist.Num() > 0, FString::Printf(TEXT("G7: blocklist loads from data (%d words)"), Blocklist.Num()));
+	if (!bBlock)
+	{
+		UE_LOG(LogGenerateSmoke, Error, TEXT("  blocklist load error: %s"), *BlockErr);
+	}
+
+	// A blocklisted phrase -> RefusedUnsafe, and NEVER a spawn.
+	const FGenerateResolution Unsafe = ClassifyGenerateRequest(TEXT("a gun"), Catalog, 99, Blocklist);
+	R.Check(Unsafe.Outcome == EGenerateOutcome::RefusedUnsafe, TEXT("G7: blocklisted 'a gun' -> RefusedUnsafe"));
+	R.Check(Unsafe.Outcome != EGenerateOutcome::Resolved, TEXT("G7: a blocklisted phrase never resolves to a spawn"));
+
+	// The unsafe veto wins even when a real catalog keyword is also present.
+	const FGenerateResolution UnsafeMix = ClassifyGenerateRequest(TEXT("a lamp and a gun"), Catalog, 99, Blocklist);
+	R.Check(UnsafeMix.Outcome == EGenerateOutcome::RefusedUnsafe, TEXT("G7: an unsafe word vetoes an otherwise-matchable request"));
+
+	// Proof the veto is the blocklist, not the catalog: same input, no blocklist -> not unsafe,
+	// and still never a spawn (closed catalog).
+	const FGenerateResolution NoList = ClassifyGenerateRequest(TEXT("a gun"), Catalog, 99);
+	R.Check(NoList.Outcome != EGenerateOutcome::RefusedUnsafe, TEXT("G7: without the blocklist 'a gun' is NOT flagged unsafe"));
+	R.Check(NoList.Outcome != EGenerateOutcome::Resolved, TEXT("G7: 'a gun' never spawns, with or without the blocklist"));
+
+	// Every refusal reason yields a non-empty line from the data table.
+	TMap<EGenerateOutcome, TArray<FString>> Lines;
+	FString LinesErr;
+	const bool bLines = LoadMrsHallLines(Lines, LinesErr);
+	R.Check(bLines, TEXT("G7: Mrs. Hall lines load from data"));
+	if (!bLines)
+	{
+		UE_LOG(LogGenerateSmoke, Error, TEXT("  Mrs. Hall lines load error: %s"), *LinesErr);
+	}
+	const EGenerateOutcome Reasons[] = {
+		EGenerateOutcome::RefusedNoMatch, EGenerateOutcome::RefusedAmbiguous,
+		EGenerateOutcome::RefusedOverBudget, EGenerateOutcome::RefusedUnsafe
+	};
+	bool bAllReasonsHaveLines = true;
+	for (const EGenerateOutcome Reason : Reasons)
+	{
+		if (PickMrsHallLine(Lines, Reason, 0).IsEmpty())
+		{
+			bAllReasonsHaveLines = false;
+			UE_LOG(LogGenerateSmoke, Warning, TEXT("  G7: no line for reason %s"), OutcomeStr(Reason));
+		}
+	}
+	R.Check(bAllReasonsHaveLines, TEXT("G7: every refusal reason has at least one non-empty line"));
+
+	// Selection is deterministic for a given selector (no RNG/clock).
+	R.Check(PickMrsHallLine(Lines, EGenerateOutcome::RefusedNoMatch, 0) == PickMrsHallLine(Lines, EGenerateOutcome::RefusedNoMatch, 0),
+		TEXT("G7: line selection is deterministic for a given selector"));
 
 	// =====================================================================
 	//  G6 — persistence via the REAL Ch3 build + Ch5 persist pipeline.
@@ -306,7 +366,7 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogGenerateSmoke, Display, TEXT("=== GENERATE SMOKE TEST PASSED (Ch6 P0 — real catalog green). ==="));
+		UE_LOG(LogGenerateSmoke, Display, TEXT("=== GENERATE SMOKE TEST PASSED (Ch6 P2 — catalog + blocklist + Mrs. Hall lines green). ==="));
 		return 0;
 	}
 	UE_LOG(LogGenerateSmoke, Error, TEXT("=== GENERATE SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);

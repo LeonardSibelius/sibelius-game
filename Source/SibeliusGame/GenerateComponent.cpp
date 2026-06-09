@@ -3,11 +3,16 @@
 #include "GenerateComponent.h"
 #include "GenerateMatcher.h"
 #include "GenerateCatalog.h"
+#include "MrsHallLines.h"           // P2: refusal lines + DC blocklist (data-driven)
+#include "MrsHallMessageWidget.h"   // P2: the styled refusal memo
 
 #include "BuildSite.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "Blueprint/UserWidget.h"   // CreateWidget
+#include "TimerManager.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"          // GEngine toast
 #include "CollisionQueryParams.h"
@@ -30,6 +35,28 @@ void UGenerateComponent::BeginPlay()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Generate] catalog load FAILED: %s"), *Err);
 	}
+
+	// P2: Mrs. Hall's refusal lines + the DC unsafe-word blocklist (data, editor-CSV or
+	// asset). Non-fatal if missing — refusals fall back to a terse hard-coded line / no veto.
+	FString LinesErr;
+	if (LoadMrsHallLines(RefusalLines, LinesErr))
+	{
+		UE_LOG(LogTemp, Display, TEXT("[Generate] Mrs. Hall lines loaded: %d reason group(s)."), RefusalLines.Num());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Generate] Mrs. Hall lines load FAILED: %s"), *LinesErr);
+	}
+
+	FString BlockErr;
+	if (LoadGenerateBlocklist(Blocklist, BlockErr))
+	{
+		UE_LOG(LogTemp, Display, TEXT("[Generate] unsafe blocklist loaded: %d word(s)."), Blocklist.Num());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Generate] blocklist load FAILED: %s"), *BlockErr);
+	}
 }
 
 const FGenerateCatalogEntry* UGenerateComponent::FindEntry(const FName& Id) const
@@ -39,11 +66,11 @@ const FGenerateCatalogEntry* UGenerateComponent::FindEntry(const FName& Id) cons
 
 EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 {
-	const FGenerateResolution R = ClassifyGenerateRequest(RawText, Catalog, RemainingBudget);
+	const FGenerateResolution R = ClassifyGenerateRequest(RawText, Catalog, RemainingBudget, Blocklist);
 
-	switch (R.Outcome)
+	// Success path is unchanged: the object appears + a small neutral confirm. Don't over-style.
+	if (R.Outcome == EGenerateOutcome::Resolved)
 	{
-	case EGenerateOutcome::Resolved:
 		if (const FGenerateCatalogEntry* E = FindEntry(R.EntryId))
 		{
 			if (SpawnEntry(*E))
@@ -56,23 +83,17 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 				Toast(TEXT("...nothing came (could not place it)."), FColor::Red);
 			}
 		}
-		break;
-
-	// Distinct refusal line per reason — the P1 seed of the Mrs. Hall presentation (P2).
-	case EGenerateOutcome::RefusedNoMatch:
-		Toast(TEXT("Mrs. Hall: \"We don't keep that here.\""), FColor(220, 160, 60));
-		break;
-	case EGenerateOutcome::RefusedAmbiguous:
-		Toast(TEXT("Mrs. Hall: \"You'll have to be more specific.\""), FColor(220, 160, 60));
-		break;
-	case EGenerateOutcome::RefusedOverBudget:
-		Toast(FString::Printf(TEXT("Mrs. Hall: \"Not within this room's means.\"   (budget %d)"), RemainingBudget), FColor::Red);
-		break;
-	case EGenerateOutcome::RefusedUnsafe:
-		Toast(TEXT("Mrs. Hall: \"Absolutely not.\""), FColor::Red);
-		break;
+		return R.Outcome;
 	}
 
+	// Refusal (no-match / ambiguous / over-budget / unsafe): Mrs. Hall, in her own voice,
+	// from data — rotated deterministically. The styled memo replaces the P1 placeholder text.
+	FString Line = PickMrsHallLine(RefusalLines, R.Outcome, RefusalCount++);
+	if (Line.IsEmpty())
+	{
+		Line = TEXT("Absolutely not."); // last-ditch fallback if the lines table is missing
+	}
+	ShowMrsHall(Line);
 	return R.Outcome;
 }
 
@@ -169,5 +190,49 @@ void UGenerateComponent::Toast(const FString& Msg, const FColor& Color) const
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 3.5f, Color, Msg);
+	}
+}
+
+void UGenerateComponent::ShowMrsHall(const FString& Line)
+{
+	APawn* Pawn = Cast<APawn>(GetOwner());
+	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+	if (!PC)
+	{
+		Toast(FString::Printf(TEXT("Mrs. Hall: \"%s\""), *Line), FColor(220, 160, 60)); // headless/edge fallback
+		return;
+	}
+
+	if (!MrsHallWidget)
+	{
+		MrsHallWidget = CreateWidget<UMrsHallMessageWidget>(PC, UMrsHallMessageWidget::StaticClass());
+	}
+	if (!MrsHallWidget)
+	{
+		Toast(FString::Printf(TEXT("Mrs. Hall: \"%s\""), *Line), FColor(220, 160, 60));
+		return;
+	}
+
+	MrsHallWidget->SetMessage(FText::FromString(Line));
+	if (!MrsHallWidget->IsInViewport())
+	{
+		MrsHallWidget->AddToViewport(50); // above the world; below any modal panel
+	}
+	// Non-interactive notice — never steals input; the player keeps playing.
+	MrsHallWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+	// Auto-dismiss; a fresh refusal resets the timer (and replaces the line).
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(MrsHallDismissTimer);
+		World->GetTimerManager().SetTimer(MrsHallDismissTimer, this, &UGenerateComponent::DismissMrsHall, 6.0f, false);
+	}
+}
+
+void UGenerateComponent::DismissMrsHall()
+{
+	if (MrsHallWidget)
+	{
+		MrsHallWidget->RemoveFromParent();
 	}
 }

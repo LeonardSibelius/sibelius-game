@@ -46,7 +46,8 @@ static int32 ScoreGenerateEntry(const TArray<FString>& Tokens, const FGenerateCa
 }
 
 FGenerateResolution ClassifyGenerateRequest(const FString& RawInput,
-	const TArray<FGenerateCatalogEntry>& Catalog, int32 RemainingBudget)
+	const TArray<FGenerateCatalogEntry>& Catalog, int32 RemainingBudget,
+	const TArray<FString>& Blocklist)
 {
 	FGenerateResolution Res;
 
@@ -56,6 +57,24 @@ FGenerateResolution ClassifyGenerateRequest(const FString& RawInput,
 		Res.Outcome = EGenerateOutcome::RefusedNoMatch;
 		Res.RefusalReason = TEXT("empty request");
 		return Res;
+	}
+
+	// DECISION DC: an obviously-disallowed word/intent gets a pointed RefusedUnsafe BEFORE
+	// any catalog scoring — and vetoes even an otherwise-matchable request (so "a lamp and
+	// a gun" is Unsafe, not a lamp). Tokens are already lowercased by the tokenizer; the
+	// blocklist is lowercased by its loader.
+	if (Blocklist.Num() > 0)
+	{
+		const TSet<FString> Block(Blocklist);
+		for (const FString& T : Tokens)
+		{
+			if (Block.Contains(T))
+			{
+				Res.Outcome = EGenerateOutcome::RefusedUnsafe;
+				Res.RefusalReason = FString::Printf(TEXT("blocklisted token '%s'"), *T);
+				return Res;
+			}
+		}
 	}
 
 	// Score every entry; track the best score and how many entries share it.

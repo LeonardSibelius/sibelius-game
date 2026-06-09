@@ -9,8 +9,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Engine/TimerHandle.h"
 #include "GenerateTypes.h"
 #include "GenerateComponent.generated.h"
+
+class UMrsHallMessageWidget;
 
 UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))
 class SIBELIUSGAME_API UGenerateComponent : public UActorComponent
@@ -44,5 +47,21 @@ private:
 	const FGenerateCatalogEntry* FindEntry(const FName& Id) const;
 	void Toast(const FString& Msg, const FColor& Color) const;
 
+	// P2: present Mrs. Hall's refusal as a styled memo (auto-dismissed); helper-toast fallback.
+	void ShowMrsHall(const FString& Line);
+	void DismissMrsHall();
+
 	TArray<FGenerateCatalogEntry> Catalog;
+
+	// P2 data (loaded in BeginPlay): refusal lines grouped by outcome + the DC blocklist.
+	TMap<EGenerateOutcome, TArray<FString>> RefusalLines;
+	TArray<FString> Blocklist;
+
+	// Rotates Mrs. Hall's lines deterministically across refusals (NOT RNG/clock).
+	int32 RefusalCount = 0;
+
+	UPROPERTY()
+	TObjectPtr<UMrsHallMessageWidget> MrsHallWidget;
+
+	FTimerHandle MrsHallDismissTimer;
 };

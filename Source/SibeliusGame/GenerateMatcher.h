@@ -15,12 +15,16 @@ SIBELIUSGAME_API TArray<FString> TokenizeGenerateInput(const FString& RawInput);
 
 // Resolve a natural-language request against the closed catalog:
 //   1. tokenize the input
-//   2. score each entry = # of input tokens matching any of its keywords (exact token)
-//   3. highest score wins; 0 -> RefusedNoMatch; top-score tie -> RefusedAmbiguous (DB)
-//   4. resolved but Cost > RemainingBudget -> RefusedOverBudget
-//   5. otherwise Resolved(EntryId, Cost)
-// Pure: same (input, catalog, budget) always yields the same result.
+//   2. DECISION DC: any token in Blocklist -> RefusedUnsafe (checked BEFORE scoring, so an
+//      obviously-bad word gets a pointed refusal, not a generic no-match). Empty Blocklist
+//      (the default) skips this step — keeps the pre-P2 3-arg calls behaving identically.
+//   3. score each entry = # of input tokens matching any of its keywords (exact token)
+//   4. highest score wins; 0 -> RefusedNoMatch; top-score tie -> RefusedAmbiguous (DB)
+//   5. resolved but Cost > RemainingBudget -> RefusedOverBudget
+//   6. otherwise Resolved(EntryId, Cost)
+// Pure: same (input, catalog, budget, blocklist) always yields the same result.
 SIBELIUSGAME_API FGenerateResolution ClassifyGenerateRequest(
 	const FString& RawInput,
 	const TArray<FGenerateCatalogEntry>& Catalog,
-	int32 RemainingBudget);
+	int32 RemainingBudget,
+	const TArray<FString>& Blocklist = TArray<FString>());
