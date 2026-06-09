@@ -16,6 +16,10 @@
 #include "Engine/World.h"
 #include "Engine/Engine.h"          // GEngine toast
 #include "CollisionQueryParams.h"
+#include "Kismet/GameplayStatics.h" // P2.5: PlaySound2D
+#include "Sound/SoundBase.h"        // P2.5: USoundBase
+#include "Misc/App.h"               // P2.5: FApp::CanEverRenderAudio (headless guard)
+#include "UObject/UObjectGlobals.h" // P2.5: LoadObject (soft-load the clip by path)
 
 UGenerateComponent::UGenerateComponent()
 {
@@ -42,6 +46,8 @@ void UGenerateComponent::BeginPlay()
 	if (LoadMrsHallLines(RefusalLines, LinesErr))
 	{
 		UE_LOG(LogTemp, Display, TEXT("[Generate] Mrs. Hall lines loaded: %d reason group(s)."), RefusalLines.Num());
+		// P2.5: print the Line -> AudioKey manifest so Walt knows which clips to record.
+		LogMrsHallAudioManifest(RefusalLines);
 	}
 	else
 	{
@@ -88,12 +94,14 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 
 	// Refusal (no-match / ambiguous / over-budget / unsafe): Mrs. Hall, in her own voice,
 	// from data — rotated deterministically. The styled memo replaces the P1 placeholder text.
-	FString Line = PickMrsHallLine(RefusalLines, R.Outcome, RefusalCount++);
+	const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, R.Outcome, RefusalCount++);
+	FString Line = Picked.Line;
 	if (Line.IsEmpty())
 	{
 		Line = TEXT("Absolutely not."); // last-ditch fallback if the lines table is missing
 	}
 	ShowMrsHall(Line);
+	PlayMrsHallClip(Picked.AudioKey); // P2.5: her voice alongside the memo (silent until clips exist)
 	return R.Outcome;
 }
 
@@ -234,5 +242,34 @@ void UGenerateComponent::DismissMrsHall()
 	if (MrsHallWidget)
 	{
 		MrsHallWidget->RemoveFromParent();
+	}
+}
+
+void UGenerateComponent::PlayMrsHallClip(const FString& AudioKey)
+{
+	if (AudioKey.IsEmpty())
+	{
+		return; // line has no clip key — nothing to play
+	}
+
+	// Headless safety: a commandlet / -nosound / server run has no audio device. The gate
+	// must stay green and silent. (The smoke test calls the matcher directly and never
+	// reaches this, but guard regardless so no path can error headless.)
+	if (IsRunningCommandlet() || !FApp::CanEverRenderAudio())
+	{
+		return;
+	}
+	UWorld* World = GetWorld();
+	if (!World || !World->IsGameWorld())
+	{
+		return;
+	}
+
+	// Soft-load by path: no hard asset dependency, and a not-yet-recorded clip is harmless.
+	// LOAD_NoWarn|LOAD_Quiet so a missing clip does NOT spam the log (clips arrive after this).
+	const FString Path = FString::Printf(TEXT("/Game/Audio/MrsHall/%s.%s"), *AudioKey, *AudioKey);
+	if (USoundBase* Clip = LoadObject<USoundBase>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet))
+	{
+		UGameplayStatics::PlaySound2D(World, Clip);
 	}
 }

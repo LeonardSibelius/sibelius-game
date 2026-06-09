@@ -272,7 +272,7 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 	R.Check(NoList.Outcome != EGenerateOutcome::Resolved, TEXT("G7: 'a gun' never spawns, with or without the blocklist"));
 
 	// Every refusal reason yields a non-empty line from the data table.
-	TMap<EGenerateOutcome, TArray<FString>> Lines;
+	TMap<EGenerateOutcome, TArray<FMrsHallLine>> Lines;
 	FString LinesErr;
 	const bool bLines = LoadMrsHallLines(Lines, LinesErr);
 	R.Check(bLines, TEXT("G7: Mrs. Hall lines load from data"));
@@ -285,19 +285,33 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 		EGenerateOutcome::RefusedOverBudget, EGenerateOutcome::RefusedUnsafe
 	};
 	bool bAllReasonsHaveLines = true;
+	bool bAllReasonsHaveAudioKey = true; // P2.5: the AudioKey column wired through to the pick
 	for (const EGenerateOutcome Reason : Reasons)
 	{
-		if (PickMrsHallLine(Lines, Reason, 0).IsEmpty())
+		const FMrsHallLine Picked = PickMrsHallLine(Lines, Reason, 0);
+		if (Picked.Line.IsEmpty())
 		{
 			bAllReasonsHaveLines = false;
 			UE_LOG(LogGenerateSmoke, Warning, TEXT("  G7: no line for reason %s"), OutcomeStr(Reason));
 		}
+		if (Picked.AudioKey.IsEmpty())
+		{
+			bAllReasonsHaveAudioKey = false;
+			UE_LOG(LogGenerateSmoke, Warning, TEXT("  G7: no AudioKey for reason %s"), OutcomeStr(Reason));
+		}
 	}
 	R.Check(bAllReasonsHaveLines, TEXT("G7: every refusal reason has at least one non-empty line"));
+	R.Check(bAllReasonsHaveAudioKey, TEXT("G7/P2.5: every refusal reason's line carries a non-empty AudioKey"));
 
 	// Selection is deterministic for a given selector (no RNG/clock).
-	R.Check(PickMrsHallLine(Lines, EGenerateOutcome::RefusedNoMatch, 0) == PickMrsHallLine(Lines, EGenerateOutcome::RefusedNoMatch, 0),
+	R.Check(PickMrsHallLine(Lines, EGenerateOutcome::RefusedNoMatch, 0).Line == PickMrsHallLine(Lines, EGenerateOutcome::RefusedNoMatch, 0).Line,
 		TEXT("G7: line selection is deterministic for a given selector"));
+
+	// P2.5: print the Line -> AudioKey manifest in the gate output (the record list for Walt).
+	if (bLines)
+	{
+		LogMrsHallAudioManifest(Lines);
+	}
 
 	// =====================================================================
 	//  G6 — persistence via the REAL Ch3 build + Ch5 persist pipeline.

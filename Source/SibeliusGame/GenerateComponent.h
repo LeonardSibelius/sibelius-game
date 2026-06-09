@@ -11,6 +11,7 @@
 #include "Components/ActorComponent.h"
 #include "Engine/TimerHandle.h"
 #include "GenerateTypes.h"
+#include "MrsHallLines.h"   // FMrsHallLine (line + AudioKey)
 #include "GenerateComponent.generated.h"
 
 class UMrsHallMessageWidget;
@@ -51,10 +52,14 @@ private:
 	void ShowMrsHall(const FString& Line);
 	void DismissMrsHall();
 
+	// P2.5: play the line's pre-generated voice clip alongside the memo. Silent + harmless
+	// if the clip isn't imported yet; never runs headless (no audio device).
+	void PlayMrsHallClip(const FString& AudioKey);
+
 	TArray<FGenerateCatalogEntry> Catalog;
 
 	// P2 data (loaded in BeginPlay): refusal lines grouped by outcome + the DC blocklist.
-	TMap<EGenerateOutcome, TArray<FString>> RefusalLines;
+	TMap<EGenerateOutcome, TArray<FMrsHallLine>> RefusalLines;
 	TArray<FString> Blocklist;
 
 	// Rotates Mrs. Hall's lines deterministically across refusals (NOT RNG/clock).

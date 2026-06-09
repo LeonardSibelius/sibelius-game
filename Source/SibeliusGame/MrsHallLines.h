@@ -5,9 +5,11 @@
 // can edit/grow without recompiling — a CSV-backed UDataTable (mirrors GenerateCatalog).
 //
 // Two tables:
-//   - Data/MrsHallLines.csv  (Reason, Line)  — multiple lines per refusal reason,
+//   - Data/MrsHallLines.csv  (Reason, Line, AudioKey) — multiple lines per refusal reason,
 //     selected deterministically by a rotating counter (NO RNG/clock — preserves the
-//     smoke-test discipline).
+//     smoke-test discipline). P2.5: AudioKey names the pre-generated voice clip for the
+//     line — the WAV filename and imported USoundWave both equal the key, loaded from
+//     /Game/Audio/MrsHall/<AudioKey> at refusal time (silent if not yet imported).
 //   - Data/MrsHallBlocklist.csv (Word)       — DECISION DC: obviously-bad words/intents
 //     that classify as RefusedUnsafe.
 //
@@ -37,6 +39,21 @@ struct FMrsHallLineRow : public FTableRowBase
 	// import quirks; these are dev-authored display strings, not localized yet.
 	UPROPERTY(EditAnywhere, Category = "MrsHall")
 	FString Line;
+
+	// P2.5: stable key for this line's pre-generated voice clip. The WAV filename and the
+	// imported USoundWave asset both = this key (e.g. mrshall_nomatch_1.wav -> asset
+	// mrshall_nomatch_1), loaded from /Game/Audio/MrsHall/<AudioKey> on refusal.
+	UPROPERTY(EditAnywhere, Category = "MrsHall")
+	FString AudioKey;
+};
+
+// One picked refusal line carried to the handler: the display text + its voice-clip key.
+struct FMrsHallLine
+{
+	FString Line;
+	FString AudioKey;
+
+	bool IsEmpty() const { return Line.IsEmpty(); }
 };
 
 // One disallowed word/intent (DECISION DC). An input token hit -> RefusedUnsafe. Row
@@ -53,14 +70,19 @@ struct FGenerateBlocklistRow : public FTableRowBase
 // Map a CSV Reason string to a refusal outcome. Unrecognized -> RefusedNoMatch.
 SIBELIUSGAME_API EGenerateOutcome MrsHallReasonToOutcome(const FString& Reason);
 
-// Load all refusal lines grouped by outcome (asset-first, CSV fallback in-editor).
-SIBELIUSGAME_API bool LoadMrsHallLines(TMap<EGenerateOutcome, TArray<FString>>& OutLines, FString& OutError);
+// Load all refusal lines grouped by outcome (asset-first, CSV fallback in-editor). Each
+// line carries its display text + AudioKey.
+SIBELIUSGAME_API bool LoadMrsHallLines(TMap<EGenerateOutcome, TArray<FMrsHallLine>>& OutLines, FString& OutError);
 
 // Load the unsafe-word blocklist, lowercased + trimmed (asset-first, CSV fallback).
 SIBELIUSGAME_API bool LoadGenerateBlocklist(TArray<FString>& OutWords, FString& OutError);
 
 // Deterministically pick one line for a refusal outcome. Selector rotates within the
 // group (e.g. a per-session refusal counter) — pure given (Lines, Reason, Selector), no
-// RNG/clock. Returns empty if there are no lines for that outcome.
-SIBELIUSGAME_API FString PickMrsHallLine(
-	const TMap<EGenerateOutcome, TArray<FString>>& Lines, EGenerateOutcome Reason, int32 Selector);
+// RNG/clock. Returns an empty FMrsHallLine if there are no lines for that outcome.
+SIBELIUSGAME_API FMrsHallLine PickMrsHallLine(
+	const TMap<EGenerateOutcome, TArray<FMrsHallLine>>& Lines, EGenerateOutcome Reason, int32 Selector);
+
+// P2.5: print the full Line -> AudioKey manifest to the log, so Walt knows exactly which
+// clip to record per line and how to name it (filename + asset = AudioKey, .wav).
+SIBELIUSGAME_API void LogMrsHallAudioManifest(const TMap<EGenerateOutcome, TArray<FMrsHallLine>>& Lines);

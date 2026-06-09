@@ -62,7 +62,7 @@ EGenerateOutcome MrsHallReasonToOutcome(const FString& Reason)
 	return EGenerateOutcome::RefusedNoMatch; // "NoMatch" + anything unrecognized
 }
 
-bool LoadMrsHallLines(TMap<EGenerateOutcome, TArray<FString>>& OutLines, FString& OutError)
+bool LoadMrsHallLines(TMap<EGenerateOutcome, TArray<FMrsHallLine>>& OutLines, FString& OutError)
 {
 	OutLines.Reset();
 	OutError.Reset();
@@ -82,7 +82,10 @@ bool LoadMrsHallLines(TMap<EGenerateOutcome, TArray<FString>>& OutLines, FString
 		{
 			continue;
 		}
-		OutLines.FindOrAdd(MrsHallReasonToOutcome(Data->Reason)).Add(Data->Line);
+		FMrsHallLine Picked;
+		Picked.Line = Data->Line;
+		Picked.AudioKey = Data->AudioKey.TrimStartAndEnd(); // tolerate stray CSV whitespace
+		OutLines.FindOrAdd(MrsHallReasonToOutcome(Data->Reason)).Add(Picked);
 	}
 
 	if (OutLines.Num() == 0)
@@ -130,15 +133,42 @@ bool LoadGenerateBlocklist(TArray<FString>& OutWords, FString& OutError)
 	return true;
 }
 
-FString PickMrsHallLine(const TMap<EGenerateOutcome, TArray<FString>>& Lines,
+FMrsHallLine PickMrsHallLine(const TMap<EGenerateOutcome, TArray<FMrsHallLine>>& Lines,
 	EGenerateOutcome Reason, int32 Selector)
 {
-	const TArray<FString>* Group = Lines.Find(Reason);
+	const TArray<FMrsHallLine>* Group = Lines.Find(Reason);
 	if (!Group || Group->Num() == 0)
 	{
-		return FString();
+		return FMrsHallLine();
 	}
 	const int32 N = Group->Num();
 	const int32 Idx = ((Selector % N) + N) % N; // safe rotation, even for a negative selector
 	return (*Group)[Idx];
+}
+
+void LogMrsHallAudioManifest(const TMap<EGenerateOutcome, TArray<FMrsHallLine>>& Lines)
+{
+	// Fixed reason order so the manifest reads the same every run (record-list friendly).
+	static const EGenerateOutcome Order[] = {
+		EGenerateOutcome::RefusedNoMatch, EGenerateOutcome::RefusedAmbiguous,
+		EGenerateOutcome::RefusedOverBudget, EGenerateOutcome::RefusedUnsafe
+	};
+
+	UE_LOG(LogTemp, Display, TEXT("[MrsHall] === Voice clip manifest: record one WAV per AudioKey, import to /Game/Audio/MrsHall/ (asset name = key) ==="));
+	int32 Total = 0;
+	for (const EGenerateOutcome Reason : Order)
+	{
+		const TArray<FMrsHallLine>* Group = Lines.Find(Reason);
+		if (!Group)
+		{
+			continue;
+		}
+		for (const FMrsHallLine& L : *Group)
+		{
+			++Total;
+			UE_LOG(LogTemp, Display, TEXT("[MrsHall]   %s.wav  <-  \"%s\""),
+				L.AudioKey.IsEmpty() ? TEXT("(NO AudioKey!)") : *L.AudioKey, *L.Line);
+		}
+	}
+	UE_LOG(LogTemp, Display, TEXT("[MrsHall] === %d clip(s) total ==="), Total);
 }

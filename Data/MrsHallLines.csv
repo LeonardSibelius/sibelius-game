@@ -1,10 +1,10 @@
-Name,Reason,Line
-nomatch_1,NoMatch,"We don't keep that here, Programmer. Make do with what you've got."
-nomatch_2,NoMatch,"You. Programmer. We don't keep that here."
-nomatch_3,NoMatch,"That's not in our inventory. This is a workplace, not a wish."
-ambiguous_1,Ambiguous,"Be precise. I expect a senior developer to know exactly what he wants."
-ambiguous_2,Ambiguous,"You. Programmer. Say what you mean, plainly."
-overbudget_1,OverBudget,"That's enough of that. What am I paying you for, Programmer, if you lean on it all day?"
-overbudget_2,OverBudget,"You've spent your allowance. We don't throw resources around here."
-unsafe_1,Unsafe,"Absolutely not. I won't have that in my shop."
-unsafe_2,Unsafe,"You. Programmer. We do not make such things. Not under my roof."
+Name,Reason,Line,AudioKey
+nomatch_1,NoMatch,"We don't keep that here, Programmer. Make do with what you've got.",mrshall_nomatch_1
+nomatch_2,NoMatch,"You. Programmer. We don't keep that here.",mrshall_nomatch_2
+nomatch_3,NoMatch,"That's not in our inventory. This is a workplace, not a wish.",mrshall_nomatch_3
+ambiguous_1,Ambiguous,"Be precise. I expect a senior developer to know exactly what he wants.",mrshall_ambiguous_1
+ambiguous_2,Ambiguous,"You. Programmer. Say what you mean, plainly.",mrshall_ambiguous_2
+overbudget_1,OverBudget,"That's enough of that. What am I paying you for, Programmer, if you lean on it all day?",mrshall_overbudget_1
+overbudget_2,OverBudget,"You've spent your allowance. We don't throw resources around here.",mrshall_overbudget_2
+unsafe_1,Unsafe,"Absolutely not. I won't have that in my shop.",mrshall_unsafe_1
+unsafe_2,Unsafe,"You. Programmer. We do not make such things. Not under my roof.",mrshall_unsafe_2
