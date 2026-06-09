@@ -11,7 +11,6 @@
 #include "Engine/World.h"
 #include "Engine/Engine.h"          // GEngine toast
 #include "CollisionQueryParams.h"
-#include "DrawDebugHelpers.h"       // locator sphere + line
 
 UGenerateComponent::UGenerateComponent()
 {
@@ -83,7 +82,6 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	UWorld* World = Pawn ? Pawn->GetWorld() : nullptr;
 	if (!Pawn || !World)
 	{
-		Toast(TEXT("[GenSpawn] FAIL: no pawn/world"), FColor::Red);
 		return false;
 	}
 
@@ -109,10 +107,6 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	}
 	const FVector ForwardPoint = PlayerLoc + Fwd * EffectiveAhead;
 
-	// Diagnostic: ahead clamps from SpawnAheadDistance to EffectiveAhead at a wall.
-	Toast(FString::Printf(TEXT("[GenSpawn] yaw=%.0f fwd=(%.2f,%.2f) ahead=%.0f->%.0f  player=(%.0f,%.0f) fwdPt=(%.0f,%.0f)"),
-		YawDeg, Fwd.X, Fwd.Y, SpawnAheadDistance, EffectiveAhead, PlayerLoc.X, PlayerLoc.Y, ForwardPoint.X, ForwardPoint.Y), FColor::Cyan);
-
 	// Downward floor trace. Start BELOW the ceiling but above the floor (player head
 	// height ~= player.Z + 100), then trace straight DOWN a long way so the FIRST hit is
 	// the floor — NOT the ceiling. (Starting above the ceiling made the first hit the
@@ -127,12 +121,8 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	const float FeetZ = PlayerLoc.Z - 90.0f; // ~capsule bottom, fallback Z on a trace miss
 	FVector SpawnLoc = bHit ? Hit.ImpactPoint : FVector(ForwardPoint.X, ForwardPoint.Y, FeetZ);
 
-	// Force-load the mesh from the soft pointer; print the path + result.
-	const FString MeshPath = Entry.Mesh.ToSoftObjectPath().ToString();
+	// Force-load the mesh from the soft pointer.
 	UStaticMesh* Mesh = Entry.Mesh.LoadSynchronous();
-	Toast(FString::Printf(TEXT("[GenSpawn] mesh '%s' -> %s"),
-		MeshPath.IsEmpty() ? TEXT("(none)") : *MeshPath,
-		Mesh ? *Mesh->GetName() : TEXT("NULL (failed to load)")), Mesh ? FColor::Green : FColor::Orange);
 
 	// Rest the mesh ON the floor: the actor origin sits at the trace-hit point, but a
 	// centered pivot would bury the lower half. Lift the actor by the distance from the
@@ -144,17 +134,10 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 		SpawnLoc.Z += -LocalBox.Min.Z * Entry.SpawnScale.Z;
 	}
 
-	Toast(FString::Printf(TEXT("[GenSpawn] id=%s  trace=%s  spawnLoc=(%.0f,%.0f,%.0f)"),
-		*Entry.EntryId.ToString(), bHit ? TEXT("HIT") : TEXT("MISS"),
-		SpawnLoc.X, SpawnLoc.Y, SpawnLoc.Z), FColor::Cyan);
-
 	// Spawn — adjust out of overlaps but ALWAYS spawn (never silently rejected).
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	ABuildSite* Site = World->SpawnActor<ABuildSite>(ABuildSite::StaticClass(), SpawnLoc, FRotator::ZeroRotator, SpawnParams);
-
-	Toast(FString::Printf(TEXT("[GenSpawn] SpawnActor -> %s"),
-		Site ? *Site->GetName() : TEXT("NULL (rejected)")), Site ? FColor::Green : FColor::Red);
 	if (!Site)
 	{
 		return false; // confirmed failure — budget must NOT charge (handled by caller)
@@ -176,18 +159,6 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	// lesson: it's hidden until built). Generation pays the BUDGET, not Books, so it does
 	// NOT use the Book-spending Build() verb — but it IS a real ABuildSite (GUID + Ch5).
 	Site->RestoreBranchState(1);
-
-	const bool bFinalHidden = Site->FinalMesh ? Site->FinalMesh->bHiddenInGame : true;
-	const FVector ActualLoc = Site->GetActorLocation(); // after any collision-adjust
-
-	// LOCATE: a red sphere at the object + a green line from the player to it (30s).
-	DrawDebugSphere(World, ActualLoc, 60.0f, 12, FColor::Red, false, 30.0f);
-	DrawDebugLine(World, PlayerLoc, ActualLoc, FColor::Green, false, 30.0f);
-
-	Toast(FString::Printf(TEXT("[GenSpawn] built=%d scale=(%.2f,%.2f,%.2f) hidden=%d hasMesh=%d actorLoc=(%.0f,%.0f,%.0f)"),
-		Site->IsBuilt() ? 1 : 0, Entry.SpawnScale.X, Entry.SpawnScale.Y, Entry.SpawnScale.Z,
-		bFinalHidden ? 1 : 0, (Site->FinalMesh && Site->FinalMesh->GetStaticMesh()) ? 1 : 0,
-		ActualLoc.X, ActualLoc.Y, ActualLoc.Z), FColor::Cyan);
 
 	// Budget charges only because we reached here with a real, created actor.
 	return true;
