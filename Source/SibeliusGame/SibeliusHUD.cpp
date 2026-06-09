@@ -66,6 +66,7 @@ void ASibeliusHUD::DrawDevOverlay()
 	const FLinearColor Dim(0.7f, 0.7f, 0.7f, 1.0f);
 
 	Line(TEXT("== HELP ==   (H to hide)"), Head);
+	Line(TEXT("== JOURNAL ==   (J to reveal / hide)"), Head);
 
 	APawn* Pawn = PlayerOwner ? PlayerOwner->GetPawn() : nullptr;
 	UWorld* W = GetWorld();
