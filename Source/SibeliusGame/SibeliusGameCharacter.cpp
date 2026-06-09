@@ -290,12 +290,22 @@ void ASibeliusGameCharacter::ToggleGenerate()
 		}
 		GenerateWidget->SetVisibility(ESlateVisibility::Visible);
 
-		FInputModeGameAndUI Mode;
-		Mode.SetWidgetToFocus(GenerateWidget->TakeWidget());
+		// UIOnly so keystrokes enter the text box and WASD no longer moves the pawn.
+		// Focus the text box's live Slate widget specifically. (In UIOnly the game won't
+		// get G/Esc — the panel closes itself: Esc in its OnKeyDown, or Enter-submit.)
+		FInputModeUIOnly Mode;
+		if (TSharedPtr<SWidget> InputSlate = GenerateWidget->GetInputSlate())
+		{
+			Mode.SetWidgetToFocus(InputSlate);
+		}
+		else
+		{
+			Mode.SetWidgetToFocus(GenerateWidget->TakeWidget());
+		}
 		PC->SetInputMode(Mode);
 		PC->SetShowMouseCursor(true);
 
-		GenerateWidget->FocusInput(); // focus the text box AFTER the input mode is applied
+		GenerateWidget->FocusInput(); // also SetKeyboardFocus on the text box
 	}
 }
 

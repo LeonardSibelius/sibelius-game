@@ -29,8 +29,15 @@ public:
 	// Clear the field and give it keyboard focus (call on open).
 	void FocusInput();
 
+	// The text box's live Slate widget — for FInputModeUIOnly::SetWidgetToFocus so
+	// keystrokes go to the field (not the pawn).
+	TSharedPtr<SWidget> GetInputSlate() const;
+
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
+
+	// In UIOnly the game can't receive Esc, so the panel closes itself from here.
+	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
 	UFUNCTION()
 	void HandleTextCommitted(const FText& Text, ETextCommit::Type Method);

@@ -10,6 +10,8 @@
 #include "Components/TextBlock.h"
 #include "Components/EditableTextBox.h"
 #include "Styling/CoreStyle.h"
+#include "Styling/SlateTypes.h"   // FEditableTextBoxStyle
+#include "InputCoreTypes.h"       // EKeys::Escape
 
 UGenerateRequestWidget::UGenerateRequestWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -37,6 +39,15 @@ TSharedRef<SWidget> UGenerateRequestWidget::RebuildWidget()
 
 		InputBox = WidgetTree->ConstructWidget<UEditableTextBox>(UEditableTextBox::StaticClass(), TEXT("GenInput"));
 		InputBox->SetHintText(FText::FromString(TEXT("e.g. a lamp")));
+
+		// Big, dark, readable text on a light field so it's unmistakable on the parchment.
+		FEditableTextBoxStyle TBStyle = InputBox->WidgetStyle;
+		TBStyle.TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 24));
+		TBStyle.TextStyle.SetColorAndOpacity(FSlateColor(FLinearColor(0.10f, 0.07f, 0.03f, 1.0f)));
+		TBStyle.BackgroundColor = FSlateColor(FLinearColor(0.98f, 0.96f, 0.90f, 1.0f)); // pale field
+		InputBox->WidgetStyle = TBStyle;
+		InputBox->SetMinimumDesiredWidth(640.0f);
+
 		InputBox->OnTextCommitted.AddDynamic(this, &UGenerateRequestWidget::HandleTextCommitted);
 
 		Box->AddChildToVerticalBox(Prompt);
@@ -75,4 +86,20 @@ void UGenerateRequestWidget::HandleTextCommitted(const FText& Text, ETextCommit:
 		// Esc (OnCleared) or focus-loss — close without submitting.
 		OnCancel.ExecuteIfBound();
 	}
+}
+
+TSharedPtr<SWidget> UGenerateRequestWidget::GetInputSlate() const
+{
+	return InputBox ? InputBox->GetCachedWidget() : TSharedPtr<SWidget>();
+}
+
+FReply UGenerateRequestWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	// UIOnly swallows game input, so the panel must close itself on Esc.
+	if (InKeyEvent.GetKey() == EKeys::Escape)
+	{
+		OnCancel.ExecuteIfBound();
+		return FReply::Handled();
+	}
+	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
