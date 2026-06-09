@@ -14,8 +14,10 @@
 #include "InventoryComponent.h"
 #include "BuildComponent.h"
 #include "BranchPIEComponent.h"
+#include "GenerateComponent.h"    // Ch6 Generate driver
 #include "SibeliusHUD.h"          // SIB-39 dev-overlay toggle
 #include "JournalWidget.h"        // SIB-41 journal panel
+#include "GenerateRequestWidget.h" // SIB-30 P1 typed-request panel
 #include "Blueprint/UserWidget.h" // CreateWidget
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
@@ -60,6 +62,9 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 
 	// Ch4 Test-Drive (SIB-36): PIE consumer of UBranchSubsystem (debug keys + signals)
 	BranchPIEComp = CreateDefaultSubobject<UBranchPIEComponent>(TEXT("BranchPIEComp"));
+
+	// Ch6 Generate (SIB-30): typed-request budget + catalog + resolve-and-spawn.
+	GenerateComp = CreateDefaultSubobject<UGenerateComponent>(TEXT("GenerateComp"));
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(true);
@@ -137,6 +142,9 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 	// SIB-41 journal/story panel toggle: J.
 	PlayerInputComponent->BindKey(EKeys::J, IE_Pressed, this, &ASibeliusGameCharacter::ToggleJournal);
+
+	// SIB-30 P1 generate/ask panel toggle: G.
+	PlayerInputComponent->BindKey(EKeys::G, IE_Pressed, this, &ASibeliusGameCharacter::ToggleGenerate);
 }
 
 
@@ -237,5 +245,69 @@ void ASibeliusGameCharacter::ToggleJournal()
 		Mode.SetWidgetToFocus(JournalWidget->TakeWidget());
 		PC->SetInputMode(Mode);
 		PC->SetShowMouseCursor(true);
+	}
+}
+
+void ASibeliusGameCharacter::ToggleGenerate()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		return;
+	}
+
+	// Open -> close.
+	if (GenerateWidget && GenerateWidget->IsInViewport()
+		&& GenerateWidget->GetVisibility() != ESlateVisibility::Collapsed)
+	{
+		CloseGenerate();
+		return;
+	}
+
+	// Create once; reuse (toggle visibility, never destroy mid-callback).
+	if (!GenerateWidget)
+	{
+		GenerateWidget = CreateWidget<UGenerateRequestWidget>(PC, UGenerateRequestWidget::StaticClass());
+		if (GenerateWidget)
+		{
+			GenerateWidget->OnSubmit.BindUObject(this, &ASibeliusGameCharacter::HandleGenerateSubmit);
+			GenerateWidget->OnCancel.BindUObject(this, &ASibeliusGameCharacter::CloseGenerate);
+		}
+	}
+	if (GenerateWidget)
+	{
+		if (!GenerateWidget->IsInViewport())
+		{
+			GenerateWidget->AddToViewport(60);
+		}
+		GenerateWidget->SetVisibility(ESlateVisibility::Visible);
+		GenerateWidget->FocusInput();
+
+		FInputModeGameAndUI Mode;
+		Mode.SetWidgetToFocus(GenerateWidget->TakeWidget());
+		PC->SetInputMode(Mode);
+		PC->SetShowMouseCursor(true);
+	}
+}
+
+void ASibeliusGameCharacter::HandleGenerateSubmit(const FString& Text)
+{
+	if (GenerateComp)
+	{
+		GenerateComp->SubmitRequest(Text);
+	}
+	CloseGenerate();
+}
+
+void ASibeliusGameCharacter::CloseGenerate()
+{
+	if (GenerateWidget)
+	{
+		GenerateWidget->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
 	}
 }

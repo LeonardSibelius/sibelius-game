@@ -18,6 +18,8 @@ class UInventoryComponent;
 class UBuildComponent;
 class UBranchPIEComponent;
 class UJournalWidget;
+class UGenerateComponent;
+class UGenerateRequestWidget;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -62,9 +64,17 @@ class ASibeliusGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UBranchPIEComponent> BranchPIEComp;
 
+	/** Ch6 Generate (SIB-30): budget + catalog + resolve-and-spawn for typed requests. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UGenerateComponent> GenerateComp;
+
 	/** SIB-41: the Journal/story panel widget, created on first J press. */
 	UPROPERTY()
 	TObjectPtr<UJournalWidget> JournalWidget;
+
+	/** SIB-30 P1: the typed-request panel, created on first G press. */
+	UPROPERTY()
+	TObjectPtr<UGenerateRequestWidget> GenerateWidget;
 
 protected:
 
@@ -136,6 +146,11 @@ protected:
 
 	/** SIB-41: opens/closes the Journal story panel (bound to J). */
 	void ToggleJournal();
+
+	/** SIB-30 P1: opens/closes the Generate typed-request panel (bound to G). */
+	void ToggleGenerate();
+	void HandleGenerateSubmit(const FString& Text); // Enter in the panel
+	void CloseGenerate();                           // Esc / after submit
 
 protected:
 

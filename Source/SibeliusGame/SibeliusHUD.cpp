@@ -12,6 +12,7 @@
 #include "BuildSite.h"
 #include "HatchLock.h"
 #include "RefactorableComponent.h"
+#include "GenerateComponent.h"                // Ch6 budget readout
 
 bool ASibeliusHUD::bOverlayVisible = true; // default ON
 
@@ -125,10 +126,22 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(FString::Printf(TEXT("  built sites: %d/%d"), SiteBuilt, SiteTotal), White);
 	Line(TEXT("  score: n/a"), Dim);
 
+	// --- GENERATE: live budget + catalog size (Ch6) ---
+	Line(TEXT("GENERATE"), Head);
+	UGenerateComponent* Gen = Pawn ? Pawn->FindComponentByClass<UGenerateComponent>() : nullptr;
+	if (Gen)
+	{
+		Line(FString::Printf(TEXT("  budget: %d    catalog: %d"), Gen->GetRemainingBudget(), Gen->GetCatalogNum()), White);
+	}
+	else
+	{
+		Line(TEXT("  (no generate component)"), Dim);
+	}
+
 	// --- CONTROLS: every binding, for reference ---
 	Line(TEXT("CONTROLS"), Head);
 	Line(TEXT("  F slap    E interact    V vision"), White);
-	Line(TEXT("  R refactor    B build"), White);
+	Line(TEXT("  R refactor    B build    G generate / ask"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
 	Line(TEXT("  J journal / story    H hide/show overlay"), White);
 }

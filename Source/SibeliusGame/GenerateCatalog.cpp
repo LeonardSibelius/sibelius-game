@@ -1,4 +1,7 @@
-// GenerateCatalog.cpp — SIB-30 Ch6 P0. CSV -> UDataTable -> matcher entries.
+// GenerateCatalog.cpp — SIB-30 Ch6. Catalog -> matcher entries.
+//
+// P1: prefer a PERSISTENT UDataTable asset (cooks into a package), falling back to the
+// committed CSV in the editor (so the headless gate stays green before the asset exists).
 
 #include "GenerateCatalog.h"
 
@@ -6,40 +9,23 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UObject/Package.h"
+#include "UObject/UObjectGlobals.h"
+
+// Where the imported DataTable asset lives once Walt creates it (import the CSV in-editor).
+static const TCHAR* GGenerateCatalogAssetPath = TEXT("/Game/Data/GenerateCatalog.GenerateCatalog");
 
 FString GetGenerateCatalogCsvPath()
 {
 	return FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("Data/GenerateCatalog.csv"));
 }
 
-bool LoadGenerateCatalog(TArray<FGenerateCatalogEntry>& OutEntries, FString& OutError)
+// Copy each DataTable row into a matcher entry (EntryId = the row name).
+static void FillEntriesFromTable(const UDataTable* Table, TArray<FGenerateCatalogEntry>& Out)
 {
-	OutEntries.Reset();
-	OutError.Reset();
-
-	const FString Path = GetGenerateCatalogCsvPath();
-
-	FString Csv;
-	if (!FFileHelper::LoadFileToString(Csv, *Path))
+	if (!Table)
 	{
-		OutError = FString::Printf(TEXT("could not read catalog CSV at %s"), *Path);
-		return false;
+		return;
 	}
-
-#if WITH_EDITOR
-	// Build a transient DataTable straight from the committed CSV — no .uasset needed.
-	// (CreateTableFromCSVString is editor-only; a packaged build reads a DataTable asset.)
-	UDataTable* Table = NewObject<UDataTable>(GetTransientPackage()); // auto-unique name
-	Table->RowStruct = FGenerateCatalogEntry::StaticStruct();
-
-	const TArray<FString> Problems = Table->CreateTableFromCSVString(Csv);
-	if (Problems.Num() > 0)
-	{
-		// Report but keep going — well-formed rows are still usable.
-		OutError = FString::Printf(TEXT("CSV import reported %d problem(s): %s"),
-			Problems.Num(), *FString::Join(Problems, TEXT(" | ")));
-	}
-
 	for (const TPair<FName, uint8*>& Row : Table->GetRowMap())
 	{
 		const FGenerateCatalogEntry* RowData = reinterpret_cast<const FGenerateCatalogEntry*>(Row.Value);
@@ -49,20 +35,62 @@ bool LoadGenerateCatalog(TArray<FGenerateCatalogEntry>& OutEntries, FString& Out
 		}
 		FGenerateCatalogEntry Entry = *RowData;
 		Entry.EntryId = Row.Key; // the row name is the stable EntryId
-		OutEntries.Add(Entry);
+		Out.Add(Entry);
+	}
+}
+
+bool LoadGenerateCatalog(TArray<FGenerateCatalogEntry>& OutEntries, FString& OutError)
+{
+	OutEntries.Reset();
+	OutError.Reset();
+
+	// 1) Prefer the persistent DataTable asset (works in PIE AND packaged builds).
+	if (UDataTable* Asset = LoadObject<UDataTable>(nullptr, GGenerateCatalogAssetPath))
+	{
+		FillEntriesFromTable(Asset, OutEntries);
+		if (OutEntries.Num() > 0)
+		{
+			return true;
+		}
+		OutError = TEXT("DataTable asset loaded but produced zero rows");
 	}
 
+	// 2) Editor fallback: build a transient table from the committed CSV. Lets the
+	//    headless gate run before the asset is imported. (Editor-only API.)
+#if WITH_EDITOR
+	const FString Path = GetGenerateCatalogCsvPath();
+	FString Csv;
+	if (!FFileHelper::LoadFileToString(Csv, *Path))
+	{
+		OutError = FString::Printf(TEXT("no DataTable asset at %s and could not read CSV at %s"),
+			GGenerateCatalogAssetPath, *Path);
+		return false;
+	}
+
+	UDataTable* Table = NewObject<UDataTable>(GetTransientPackage()); // auto-unique name
+	Table->RowStruct = FGenerateCatalogEntry::StaticStruct();
+	const TArray<FString> Problems = Table->CreateTableFromCSVString(Csv);
+	if (Problems.Num() > 0)
+	{
+		OutError = FString::Printf(TEXT("CSV import reported %d problem(s): %s"),
+			Problems.Num(), *FString::Join(Problems, TEXT(" | ")));
+	}
+
+	FillEntriesFromTable(Table, OutEntries);
 	if (OutEntries.Num() == 0)
 	{
 		if (OutError.IsEmpty())
 		{
-			OutError = TEXT("catalog loaded zero rows");
+			OutError = TEXT("CSV produced zero rows");
 		}
 		return false;
 	}
 	return true;
 #else
-	OutError = TEXT("CSV catalog load is editor-only in P0; a packaged build loads a DataTable asset (P1)");
+	if (OutError.IsEmpty())
+	{
+		OutError = FString::Printf(TEXT("no DataTable asset at %s (CSV fallback is editor-only)"), GGenerateCatalogAssetPath);
+	}
 	return false;
 #endif
 }
