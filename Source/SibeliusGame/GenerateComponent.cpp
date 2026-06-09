@@ -92,12 +92,26 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	const FVector PlayerLoc = Pawn->GetActorLocation();
 	const float YawDeg = Pawn->GetControlRotation().Yaw;
 	const FVector Fwd = FRotator(0.0f, YawDeg, 0.0f).Vector();
-	const FVector ForwardPoint = PlayerLoc + Fwd * SpawnAheadDistance;
 
-	// Diagnostic: shows whether the forward offset is actually applied (fwdPt should be
-	// ~SpawnAheadDistance away from player along Fwd).
-	Toast(FString::Printf(TEXT("[GenSpawn] yaw=%.0f fwd=(%.2f,%.2f) ahead=%.0f  player=(%.0f,%.0f) fwdPt=(%.0f,%.0f)"),
-		YawDeg, Fwd.X, Fwd.Y, SpawnAheadDistance, PlayerLoc.X, PlayerLoc.Y, ForwardPoint.X, ForwardPoint.Y), FColor::Cyan);
+	// Clamp the forward distance to the nearest wall/window so the object never spawns
+	// beyond it (outside the house). Trace forward at chest height (~capsule center).
+	float EffectiveAhead = SpawnAheadDistance;
+	{
+		const FVector WallStart = PlayerLoc;
+		const FVector WallEnd = WallStart + Fwd * SpawnAheadDistance;
+		FHitResult WallHit;
+		FCollisionQueryParams WallParams(SCENE_QUERY_STAT(GenerateWallTrace), false, Pawn);
+		WallParams.AddIgnoredActor(Pawn);
+		if (World->LineTraceSingleByChannel(WallHit, WallStart, WallEnd, ECC_WorldStatic, WallParams))
+		{
+			EffectiveAhead = FMath::Max(0.0f, WallHit.Distance - 50.0f); // just IN FRONT of the wall
+		}
+	}
+	const FVector ForwardPoint = PlayerLoc + Fwd * EffectiveAhead;
+
+	// Diagnostic: ahead clamps from SpawnAheadDistance to EffectiveAhead at a wall.
+	Toast(FString::Printf(TEXT("[GenSpawn] yaw=%.0f fwd=(%.2f,%.2f) ahead=%.0f->%.0f  player=(%.0f,%.0f) fwdPt=(%.0f,%.0f)"),
+		YawDeg, Fwd.X, Fwd.Y, SpawnAheadDistance, EffectiveAhead, PlayerLoc.X, PlayerLoc.Y, ForwardPoint.X, ForwardPoint.Y), FColor::Cyan);
 
 	// Downward floor trace. Start BELOW the ceiling but above the floor (player head
 	// height ~= player.Z + 100), then trace straight DOWN a long way so the FIRST hit is
@@ -112,16 +126,6 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 
 	const float FeetZ = PlayerLoc.Z - 90.0f; // ~capsule bottom, fallback Z on a trace miss
 	FVector SpawnLoc = bHit ? Hit.ImpactPoint : FVector(ForwardPoint.X, ForwardPoint.Y, FeetZ);
-
-	// Clearance: never let the object sit inside the player capsule. If the chosen spot is
-	// too close horizontally, push it out along the forward direction.
-	const float MinClearance = 120.0f;
-	const FVector2D ToSpawnXY(SpawnLoc.X - PlayerLoc.X, SpawnLoc.Y - PlayerLoc.Y);
-	if (ToSpawnXY.SizeSquared() < MinClearance * MinClearance)
-	{
-		SpawnLoc.X = PlayerLoc.X + Fwd.X * MinClearance;
-		SpawnLoc.Y = PlayerLoc.Y + Fwd.Y * MinClearance;
-	}
 
 	// Force-load the mesh from the soft pointer; print the path + result.
 	const FString MeshPath = Entry.Mesh.ToSoftObjectPath().ToString();
