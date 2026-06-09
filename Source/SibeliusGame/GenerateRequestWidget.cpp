@@ -45,10 +45,10 @@ TSharedRef<SWidget> UGenerateRequestWidget::RebuildWidget()
 
 		if (UCanvasPanelSlot* CSlot = Canvas->AddChildToCanvas(Bg))
 		{
-			// Centered, modest fixed size.
-			CSlot->SetAnchors(FAnchors(0.5f, 0.5f));
-			CSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-			CSlot->SetSize(FVector2D(760.0f, 150.0f));
+			// Stretch to a centered band — the same robust anchors+offsets layout the
+			// Journal panel uses (a point anchor + SetSize was producing a zero-size box).
+			CSlot->SetAnchors(FAnchors(0.22f, 0.40f, 0.78f, 0.58f));
+			CSlot->SetOffsets(FMargin(0.0f));
 		}
 	}
 

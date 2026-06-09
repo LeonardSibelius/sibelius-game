@@ -20,6 +20,7 @@
 #include "GenerateRequestWidget.h" // SIB-30 P1 typed-request panel
 #include "Blueprint/UserWidget.h" // CreateWidget
 #include "GameFramework/PlayerController.h"
+#include "Engine/Engine.h"        // GEngine (temp G-toggle debug print)
 #include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
 #include "SibeliusGame.h"
 
@@ -250,6 +251,13 @@ void ASibeliusGameCharacter::ToggleJournal()
 
 void ASibeliusGameCharacter::ToggleGenerate()
 {
+	// TEMP diagnostic: proves whether the G key reaches this handler at all. If this
+	// line does NOT appear in PIE, the key is being intercepted (not the widget).
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan, TEXT("[Generate] G toggle pressed"));
+	}
+
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (!PC)
 	{
@@ -281,12 +289,13 @@ void ASibeliusGameCharacter::ToggleGenerate()
 			GenerateWidget->AddToViewport(60);
 		}
 		GenerateWidget->SetVisibility(ESlateVisibility::Visible);
-		GenerateWidget->FocusInput();
 
 		FInputModeGameAndUI Mode;
 		Mode.SetWidgetToFocus(GenerateWidget->TakeWidget());
 		PC->SetInputMode(Mode);
 		PC->SetShowMouseCursor(true);
+
+		GenerateWidget->FocusInput(); // focus the text box AFTER the input mode is applied
 	}
 }
 
