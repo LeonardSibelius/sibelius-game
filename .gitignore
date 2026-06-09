@@ -82,6 +82,10 @@ Content/MetaHumans/*
 Content/Audio/Generated/
 Content/Music/Generated/
 Content/Cinematics/Generated/
+# Mrs. Hall refusal voice clips (SIB-30 P2.5) — AI-generated (ElevenLabs etc.); local-only,
+# back up manually. Regenerable from the Line->AudioKey manifest. Clear the synthetic-voice
+# commercial license before any shipped build.
+Content/Audio/MrsHall/
 
 # --- Custom commissioned art (unless commissioned with full assignment) ---
 Content/Commissioned/
