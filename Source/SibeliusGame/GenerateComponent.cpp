@@ -86,21 +86,40 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 		return false;
 	}
 
-	// A point a short distance ahead (horizontal look direction), then trace down to the
-	// floor so the object lands where the player is facing.
-	const FRotator YawOnly(0.0f, Pawn->GetControlRotation().Yaw, 0.0f);
-	const FVector Ahead = Pawn->GetActorLocation() + YawOnly.Vector() * SpawnAheadDistance;
-	const FVector TraceStart = Ahead + FVector(0.0f, 0.0f, 250.0f);
-	const FVector TraceEnd = Ahead - FVector(0.0f, 0.0f, 3000.0f);
+	// Horizontal facing only (pitch zeroed) so the object lands ahead on the floor,
+	// not underfoot or up in the air.
+	const FVector PlayerLoc = Pawn->GetActorLocation();
+	const float YawDeg = Pawn->GetControlRotation().Yaw;
+	const FVector Fwd = FRotator(0.0f, YawDeg, 0.0f).Vector();
+	const FVector ForwardPoint = PlayerLoc + Fwd * SpawnAheadDistance;
 
+	// Diagnostic: shows whether the forward offset is actually applied (fwdPt should be
+	// ~SpawnAheadDistance away from player along Fwd).
+	Toast(FString::Printf(TEXT("[GenSpawn] yaw=%.0f fwd=(%.2f,%.2f) ahead=%.0f  player=(%.0f,%.0f) fwdPt=(%.0f,%.0f)"),
+		YawDeg, Fwd.X, Fwd.Y, SpawnAheadDistance, PlayerLoc.X, PlayerLoc.Y, ForwardPoint.X, ForwardPoint.Y), FColor::Cyan);
+
+	// Downward floor trace from above the forward point, ignoring the player pawn.
+	const FVector TraceStart = ForwardPoint + FVector(0.0f, 0.0f, 250.0f);
+	const FVector TraceEnd = ForwardPoint - FVector(0.0f, 0.0f, 3000.0f);
 	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(GenerateSpawnTrace), false, Pawn);
+	Params.AddIgnoredActor(Pawn);
 	const bool bHit = World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_WorldStatic, Params);
-	// Fallback to the player's foot level so Z is never absurd on a trace miss.
-	const float FeetZ = Pawn->GetActorLocation().Z - 90.0f;
-	const FVector SpawnLoc = bHit ? Hit.ImpactPoint : FVector(Ahead.X, Ahead.Y, FeetZ);
 
-	Toast(FString::Printf(TEXT("[GenSpawn] id=%s  trace=%s  loc=(%.0f,%.0f,%.0f)"),
+	const float FeetZ = PlayerLoc.Z - 90.0f; // ~capsule bottom, fallback Z on a trace miss
+	FVector SpawnLoc = bHit ? Hit.ImpactPoint : FVector(ForwardPoint.X, ForwardPoint.Y, FeetZ);
+
+	// Clearance: never let the object sit inside the player capsule. If the chosen spot is
+	// too close horizontally, push it out along the forward direction.
+	const float MinClearance = 120.0f;
+	const FVector2D ToSpawnXY(SpawnLoc.X - PlayerLoc.X, SpawnLoc.Y - PlayerLoc.Y);
+	if (ToSpawnXY.SizeSquared() < MinClearance * MinClearance)
+	{
+		SpawnLoc.X = PlayerLoc.X + Fwd.X * MinClearance;
+		SpawnLoc.Y = PlayerLoc.Y + Fwd.Y * MinClearance;
+	}
+
+	Toast(FString::Printf(TEXT("[GenSpawn] id=%s  trace=%s  spawnLoc=(%.0f,%.0f,%.0f)"),
 		*Entry.EntryId.ToString(), bHit ? TEXT("HIT") : TEXT("MISS"),
 		SpawnLoc.X, SpawnLoc.Y, SpawnLoc.Z), FColor::Cyan);
 
@@ -141,9 +160,11 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	Site->RestoreBranchState(1);
 
 	const bool bFinalHidden = Site->FinalMesh ? Site->FinalMesh->bHiddenInGame : true;
-	Toast(FString::Printf(TEXT("[GenSpawn] built=%d  scale=(%.2f,%.2f,%.2f)  finalHidden=%d  hasMesh=%d"),
+	const FVector ActualLoc = Site->GetActorLocation(); // after any collision-adjust
+	Toast(FString::Printf(TEXT("[GenSpawn] built=%d scale=(%.2f,%.2f,%.2f) hidden=%d hasMesh=%d actorLoc=(%.0f,%.0f,%.0f)"),
 		Site->IsBuilt() ? 1 : 0, Entry.SpawnScale.X, Entry.SpawnScale.Y, Entry.SpawnScale.Z,
-		bFinalHidden ? 1 : 0, (Site->FinalMesh && Site->FinalMesh->GetStaticMesh()) ? 1 : 0), FColor::Cyan);
+		bFinalHidden ? 1 : 0, (Site->FinalMesh && Site->FinalMesh->GetStaticMesh()) ? 1 : 0,
+		ActualLoc.X, ActualLoc.Y, ActualLoc.Z), FColor::Cyan);
 
 	// Budget charges only because we reached here with a real, created actor.
 	return true;
