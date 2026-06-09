@@ -7,6 +7,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Border.h"
 #include "Components/VerticalBox.h"
+#include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "Components/EditableTextBox.h"
 #include "Styling/CoreStyle.h"
@@ -46,12 +47,16 @@ TSharedRef<SWidget> UGenerateRequestWidget::RebuildWidget()
 		TBStyle.TextStyle.SetColorAndOpacity(FSlateColor(FLinearColor(0.10f, 0.07f, 0.03f, 1.0f)));
 		TBStyle.BackgroundColor = FSlateColor(FLinearColor(0.98f, 0.96f, 0.90f, 1.0f)); // pale field
 		InputBox->WidgetStyle = TBStyle;
-		InputBox->SetMinimumDesiredWidth(640.0f);
-
 		InputBox->OnTextCommitted.AddDynamic(this, &UGenerateRequestWidget::HandleTextCommitted);
 
+		// Min size via a SizeBox (UEditableTextBox has no SetMinimumDesiredWidth in 5.7).
+		USizeBox* InputSize = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("GenInputSize"));
+		InputSize->SetMinDesiredWidth(640.0f);
+		InputSize->SetMinDesiredHeight(40.0f);
+		InputSize->AddChild(InputBox);
+
 		Box->AddChildToVerticalBox(Prompt);
-		Box->AddChildToVerticalBox(InputBox);
+		Box->AddChildToVerticalBox(InputSize);
 		Bg->SetContent(Box);
 
 		if (UCanvasPanelSlot* CSlot = Canvas->AddChildToCanvas(Bg))
