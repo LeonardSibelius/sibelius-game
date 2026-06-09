@@ -99,9 +99,12 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	Toast(FString::Printf(TEXT("[GenSpawn] yaw=%.0f fwd=(%.2f,%.2f) ahead=%.0f  player=(%.0f,%.0f) fwdPt=(%.0f,%.0f)"),
 		YawDeg, Fwd.X, Fwd.Y, SpawnAheadDistance, PlayerLoc.X, PlayerLoc.Y, ForwardPoint.X, ForwardPoint.Y), FColor::Cyan);
 
-	// Downward floor trace from above the forward point, ignoring the player pawn.
-	const FVector TraceStart = ForwardPoint + FVector(0.0f, 0.0f, 250.0f);
-	const FVector TraceEnd = ForwardPoint - FVector(0.0f, 0.0f, 3000.0f);
+	// Downward floor trace. Start BELOW the ceiling but above the floor (player head
+	// height ~= player.Z + 100), then trace straight DOWN a long way so the FIRST hit is
+	// the floor — NOT the ceiling. (Starting above the ceiling made the first hit the
+	// ceiling, dropping the object overhead.)
+	const FVector TraceStart(ForwardPoint.X, ForwardPoint.Y, PlayerLoc.Z + 100.0f);
+	const FVector TraceEnd = TraceStart - FVector(0.0f, 0.0f, 3000.0f);
 	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(GenerateSpawnTrace), false, Pawn);
 	Params.AddIgnoredActor(Pawn);
