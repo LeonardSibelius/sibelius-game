@@ -11,6 +11,7 @@
 #include "Engine/World.h"
 #include "Engine/Engine.h"          // GEngine toast
 #include "CollisionQueryParams.h"
+#include "DrawDebugHelpers.h"       // locator sphere + line
 
 UGenerateComponent::UGenerateComponent()
 {
@@ -119,16 +120,26 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 		SpawnLoc.Y = PlayerLoc.Y + Fwd.Y * MinClearance;
 	}
 
-	Toast(FString::Printf(TEXT("[GenSpawn] id=%s  trace=%s  spawnLoc=(%.0f,%.0f,%.0f)"),
-		*Entry.EntryId.ToString(), bHit ? TEXT("HIT") : TEXT("MISS"),
-		SpawnLoc.X, SpawnLoc.Y, SpawnLoc.Z), FColor::Cyan);
-
 	// Force-load the mesh from the soft pointer; print the path + result.
 	const FString MeshPath = Entry.Mesh.ToSoftObjectPath().ToString();
 	UStaticMesh* Mesh = Entry.Mesh.LoadSynchronous();
 	Toast(FString::Printf(TEXT("[GenSpawn] mesh '%s' -> %s"),
 		MeshPath.IsEmpty() ? TEXT("(none)") : *MeshPath,
 		Mesh ? *Mesh->GetName() : TEXT("NULL (failed to load)")), Mesh ? FColor::Green : FColor::Orange);
+
+	// Rest the mesh ON the floor: the actor origin sits at the trace-hit point, but a
+	// centered pivot would bury the lower half. Lift the actor by the distance from the
+	// pivot down to the bounding-box bottom (scaled), so the mesh BOTTOM rests on the
+	// floor. (Yaw rotations don't change the Z extent; good enough for P1.)
+	if (Mesh)
+	{
+		const FBox LocalBox = Mesh->GetBoundingBox();
+		SpawnLoc.Z += -LocalBox.Min.Z * Entry.SpawnScale.Z;
+	}
+
+	Toast(FString::Printf(TEXT("[GenSpawn] id=%s  trace=%s  spawnLoc=(%.0f,%.0f,%.0f)"),
+		*Entry.EntryId.ToString(), bHit ? TEXT("HIT") : TEXT("MISS"),
+		SpawnLoc.X, SpawnLoc.Y, SpawnLoc.Z), FColor::Cyan);
 
 	// Spawn — adjust out of overlaps but ALWAYS spawn (never silently rejected).
 	FActorSpawnParameters SpawnParams;
@@ -161,6 +172,11 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 
 	const bool bFinalHidden = Site->FinalMesh ? Site->FinalMesh->bHiddenInGame : true;
 	const FVector ActualLoc = Site->GetActorLocation(); // after any collision-adjust
+
+	// LOCATE: a red sphere at the object + a green line from the player to it (30s).
+	DrawDebugSphere(World, ActualLoc, 60.0f, 12, FColor::Red, false, 30.0f);
+	DrawDebugLine(World, PlayerLoc, ActualLoc, FColor::Green, false, 30.0f);
+
 	Toast(FString::Printf(TEXT("[GenSpawn] built=%d scale=(%.2f,%.2f,%.2f) hidden=%d hasMesh=%d actorLoc=(%.0f,%.0f,%.0f)"),
 		Site->IsBuilt() ? 1 : 0, Entry.SpawnScale.X, Entry.SpawnScale.Y, Entry.SpawnScale.Z,
 		bFinalHidden ? 1 : 0, (Site->FinalMesh && Site->FinalMesh->GetStaticMesh()) ? 1 : 0,
