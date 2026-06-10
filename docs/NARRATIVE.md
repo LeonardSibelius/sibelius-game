@@ -1,6 +1,6 @@
 ## Controls
 
-F Slap  E interact  V vision  R refactor  B build  6 enter  7 merge  8 discard
+F Slap  E interact  V vision  R refactor  B build  P Play Slot Machine 6 enter  7 merge  8 discard
 
 ## Plot
 
@@ -11,9 +11,9 @@ needs and have it appear*. Each power is the same act: forcing an opaque, locked
 system to become **legible** and his to edit. His boss would rather the world stayed closed. 
 He opens it anyway.  He becomes enhanced with AI powers.
 
-The way that this game was created shows how Artificial Intelligence can enhance someone.
+The act of building this game demonstrates how Artificial Intelligence can enhance someone.
 This game was vibe coded by Walt Parkman using Anthropic Claude with Cowork and Code
-operating Unreal Engine 5.7.  
+operating Unreal Engine 5.7.  As of 6/10/2026, the LLM used is Fable 5.
 Walt became a three-part entity to build this game and tries to give a sense in the game
 of what such enhancement feels like.
 
@@ -102,11 +102,9 @@ The world escalates with the powers:
 
 ## Leonard Sibelius Incorporated — the anything machine
 
-> A name that has been forged can be made to stand on its own. So it has been given the form the world recognizes: Leonard Sibelius, Incorporated. Not a person — one mind and the machines that think beside it, set down where anyone can find them.
->
 > What does it make? Anything. That is the whole of the promise and the whole of the boast: an anything machine — software with intelligence built in, not bolted on. The fog made legible; the impossible thing shipped, and shipped again.
 >
-> The creed behind it is old. Probability is the strongest force that exists. It is older than gravity and deeper than light. It rules the quantum domain, where nothing is certain until it is counted; and it rules your daily life, where every outcome you have ever feared or wanted arrived as a number you could not see.
+> The creed behind this entity is old. Probability is the strongest force that exists. It is older than gravity and deeper than light. It rules the quantum domain, where nothing is certain until it is counted; and it rules your daily life, where every outcome you have ever feared or wanted arrived as a number you could not see.
 >
 > Men have always knelt before this force. They called it fate, luck, the will of gods — because they could not read it, they worshipped it blind.
 >
@@ -114,11 +112,11 @@ The world escalates with the powers:
 >
 > We answer probability by building algorithms — small honest machines that take the unknowable and make it legible, that turn the fog into a sheet you can read line by line. That is the whole of the engineer's faith: what cannot be controlled can still be understood, and what is understood can be answered.
 >
-> The slot machine is the purest altar of this creed. It hides nothing. Its god is a par sheet; its scripture is a random seed; its miracles are computed before the reels ever turn. It is probability, confessed in full and built by hand. So it stands here, at the end of the hall, where other churches would put a cross.
+> The slot machine is a pure altar of this creed. It hides nothing. Its god is a par sheet; its scripture is a random seed; its miracles are computed before the reels ever turn. It is probability, confessed in full and built by hand. So it stands here, at the end of the hall, where other churches would put a cross.
 >
-> Pull the lever. The house does not always win here.
+> Enter the cathedral.  Pull the lever. The house does not always win here.
 >
-> Leonard Sibelius, Incorporated. An anything machine. We dominate code.
+> Leonard Sibelius, Incorporated. The anything machine. We dominate code.
 
 ---
 site:  https://leonardsibelius.com
