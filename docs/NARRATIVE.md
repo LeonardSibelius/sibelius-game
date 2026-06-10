@@ -119,9 +119,10 @@ The world escalates with the powers:
 
 > **On the Name**
 >
-> A score is an algorithm. It takes the uncountable ways a phrase might be played and makes them
-> legible — a sheet you can read line by line — then hands them to others to bring into the air. Music
-> is the oldest proof that structure and feeling were never enemies.
+> A musical composition that can be presented as a sheet-music score is an algorithm. It takes the
+> uncountable ways a phrase might be played and makes them legible — something you can read line by
+> line — then hands them to others to bring into the air. Music is the oldest proof that structure and
+> feeling were never enemies.
 >
 > So the name was taken from two men who served that proof. **Sibelius**, who wrote the structure —
 > Jean Sibelius, the composer. **Leonard**, who gave it breath — Leonard Bernstein, the conductor. One
