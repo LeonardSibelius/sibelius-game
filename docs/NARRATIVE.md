@@ -1,5 +1,3 @@
-# Leonard Sibelius — Narrative & Background Journal  version 060826
-
 ## Controls
 
 F Slap  E interact  V vision  R refactor  B build  6 enter  7 merge  8 discard
@@ -10,8 +8,8 @@ An old programmer, late in a long career, gains the power to reach into the worl
 he once reached into code — to *see* what's hidden, *change* what's there, *build* what
 isn't, *try* things without consequence, *make them stick*, and finally *ask for what he
 needs and have it appear*. Each power is the same act: forcing an opaque, locked-down
-system to become **legible** and his to edit. Something — someone — would rather the world
-stayed closed. He opens it anyway.  He becomes enhanced with new powers.
+system to become **legible** and his to edit. His boss would rather the world stayed closed. 
+He opens it anyway.  He becomes enhanced with AI powers.
 
 The way that this game was created shows how Artificial Intelligence can enhance someone.
 This game was vibe coded by Walt Parkman using Anthropic Claude with Cowork and Code
@@ -27,7 +25,32 @@ the magic and watched other people build the magic itself.  Anthropic AI suddenl
 and gives the nameless programmer new powers.  He becomes a new entity, Leonard Sibelius.  
 By the end of the game, he creates systems effortlessly, starting with a slot machine, 
 something he always wanted to create in the real world.
-I could not find anybody with that name on earth so I used it.
+
+## Antagonist — Mrs. Hall
+
+Mrs. Hall was my second-grade teacher 63 years ago.  She would criticize seven-year-olds
+for being imaginative.  
+
+In this game, she is Leonard's **employer**: the remote manager of the home-office job he depends on.
+She keeps him maintaining an **archaic legacy system at low pay** — boring work he hates — confined
+to his hand-coding role, forbidding "vibe-coding" with AI, certain it's all for his own good.
+
+She forbids Leonard the very help that would free him, and she is contemptuous of AI:
+
+> "You shouldn't need AI help. What am I paying a senior developer for if he's dependent on AI? Are
+> you dependent on AI? AI is a bubble. It will never replace senior developers. I will never be
+> replaced by AI. AI hallucinates. I don't want it in my shop."
+
+Leonard's seven powers ARE AI assistance made literal — to see, change, build, test, deploy, and to 
+*ask the world for what he needs and have it appear*. Every power is Leonard reaching for exactly the 
+leverage Mrs. Hall has denied him.  She fights hardest in **Chapter 6 (Generate)** because "ask and it 
+appears" is the most AI-like power of all — the deepest threat to the small, controllable box she 
+keeps him in. Her **block-walls** are her authority; each power is a key that defeats one kind of 
+wall.  The **Refusers** are her enforcement.
+
+**The meta layer.** This game is itself built by Walt + AI — the three-part entity. Mrs. Hall is the
+voice that insists a craftsman shouldn't need the new intelligence, and the whole game is Leonard 
+answering her by using them anyway. 
 
 ## The central theme — legibility
 
@@ -46,22 +69,6 @@ opaque, closed, and not yours, and force it to become readable and changeable.
 **Mechanism is theme.** The smoke tests that gate every chapter aren't just QA — in-fiction
 they're the "demand diagnostics" principle: a thing isn't real until it's been made to
 prove itself. The way the game is built *is* what the game is about.
-
-## The opposition — Mrs. Hall and the Refusers - doomed to lose
-
-Something resists a world becoming legible and editable. In the game that resistance has a
-face: **Mrs. Hall**, and her acolytes, **the Refusers**.  They are doomed to lose.
-
-- The Refusers are the recurring enemy — they escalate chapter to chapter (first introduced
-  as a foundation combat system).
-- Mrs. Hall's **block-walls** — the red-triangle gates — stand in the player's way; each
-  power is the key that defeats a particular kind of wall.
-- She **fights hardest in Chapter 6 (Generate)**: when the player can simply *ask the world
-  for things*, that's the deepest threat to whatever she's protecting. The final wall (Ch7)
-  is nested blocks requiring all seven powers together.
-
-* Mrs. Hall was my second-grade teacher 63 years ago.  She would criticize seven-year-olds
-  attitudes without saying what it was about the attitudes that bothered her.  
 
 ## Setting — the arc of the space
 
@@ -83,4 +90,32 @@ The world escalates with the powers:
   build into the thing he vibe codes himself. In-game it's the cathedral's coda; out of game 
   it's a standalone product, the whole game's thesis in one object.
 
+## The Church of Artificial Intelligence
+
+> **THE CHURCH OF ARTIFICIAL INTELLIGENCE — First Doctrine**
+>
+> Probability is the strongest force that exists. It is older than gravity and deeper than light. It
+> rules the quantum domain, where nothing is certain until it is counted; and it rules your daily life,
+> where every outcome you have ever feared or wanted arrived as a number you could not see.
+>
+> Men have always knelt before this force. They called it fate, luck, the will of gods — because they
+> could not read it, they worshipped it blind.
+>
+> We do not kneel. We cope.
+>
+> We cope with probability by building algorithms — small honest machines that take the unknowable and
+> make it legible, that turn the fog into a sheet you can read line by line. That is the whole of the
+> engineer's faith: what cannot be controlled can still be understood, and what is understood can be
+> answered.
+>
+> The slot machine is the purest altar of this church. It hides nothing. Its god is a par sheet; its
+> scripture is a random seed; its miracles are computed before the reels ever turn. It is probability,
+> confessed in full and built by hand. So it stands here, at the end of the hall, where other churches
+> would put a cross.
+>
+> Pull the lever. The house does not always win here.
+
 ---
+site:  https://leonardsibelius.com
+repo:  https://github.com/LeonardSibelius/sibelius-game
+newsletter:  https://wpoutwork.substack.com
