@@ -134,6 +134,7 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 			if (SpawnEntry(*E))
 			{
 				RemainingBudget -= R.Cost;
+				bHasSpawnedThisSession = true; // SIB-31: the cathedral door's generate gate
 				Toast(FString::Printf(TEXT("%s appears.   (budget %d)"), *E->DisplayName.ToString(), RemainingBudget), FColor::Green);
 			}
 			else

@@ -50,6 +50,11 @@ public:
 	int32 GetRemainingBudget() const { return RemainingBudget; }
 	int32 GetCatalogNum() const { return Catalog.Num(); }
 
+	// SIB-31 (Ch7): true once LIVE generation has spawned at least once this session.
+	// Session-local only (never persisted; deploy re-spawns don't count) — the
+	// cathedral door's optional bRequireGenerateUse gate polls this. Cheap + headless-safe.
+	bool HasSpawnedThisSession() const { return bHasSpawnedThisSession; }
+
 	// SIB-30 P3: restore the persisted generation budget on deploy-reload (Deploy saves it,
 	// ApplyDeployedSave writes it back). A pure restore — does NOT re-charge for re-spawns.
 	void SetRemainingBudget(int32 InBudget) { RemainingBudget = InBudget; }
@@ -86,6 +91,9 @@ private:
 
 	// Rotates Mrs. Hall's lines deterministically across refusals (NOT RNG/clock).
 	int32 RefusalCount = 0;
+
+	// SIB-31: set on the first successful live SpawnEntry; see HasSpawnedThisSession().
+	bool bHasSpawnedThisSession = false;
 
 	UPROPERTY()
 	TObjectPtr<UMrsHallMessageWidget> MrsHallWidget;
