@@ -90,20 +90,6 @@ The world escalates with the powers:
   build into the thing he vibe codes himself. In-game it's the cathedral's coda; out of game 
   it's a standalone product, the whole game's thesis in one object.
 
-## The Church of Artificial Intelligence
-
-> Probability is the strongest force that exists. It is older than gravity and deeper than light. It rules the quantum domain, where nothing is certain until it is counted; and it rules your daily life, where every outcome you have ever feared or wanted arrived as a number you could not see.
->
-> Men have always knelt before this force. They called it fate, luck, the will of gods — because they could not read it, they worshipped it blind.
->
-> We do not kneel. We cope.
->
-> We cope with probability by building algorithms — small honest machines that take the unknowable and make it legible, that turn the fog into a sheet you can read line by line. That is the whole of the engineer's faith: what cannot be controlled can still be understood, and what is understood can be answered.
->
-> The slot machine is the purest altar of this church. It hides nothing. Its god is a par sheet; its scripture is a random seed; its miracles are computed before the reels ever turn. It is probability, confessed in full and built by hand. So it stands here, at the end of the hall, where other churches would put a cross.
->
-> Pull the lever. The house does not always win here.
-
 ## On the Name
 
 > A musical composition that can be presented as a sheet-music score is an algorithm. It takes the uncountable ways a phrase might be played and makes them legible — something you can read line by line — then hands them to others to bring into the air. Music is the oldest proof that structure and feeling were never enemies.
@@ -114,11 +100,23 @@ The world escalates with the powers:
 >
 > We are called Leonard Sibelius. We dominate code.
 
-## The Incorporation
+## Leonard Sibelius Incorporated — the anything machine
 
 > A name that has been forged can be made to stand on its own. So it has been given the form the world recognizes: Leonard Sibelius, Incorporated. Not a person — one mind and the machines that think beside it, set down where anyone can find them.
 >
 > What does it make? Anything. That is the whole of the promise and the whole of the boast: an anything machine — software with intelligence built in, not bolted on. The fog made legible; the impossible thing shipped, and shipped again.
+>
+> The creed behind it is old. Probability is the strongest force that exists. It is older than gravity and deeper than light. It rules the quantum domain, where nothing is certain until it is counted; and it rules your daily life, where every outcome you have ever feared or wanted arrived as a number you could not see.
+>
+> Men have always knelt before this force. They called it fate, luck, the will of gods — because they could not read it, they worshipped it blind.
+>
+> We do not kneel. We build.
+>
+> We answer probability by building algorithms — small honest machines that take the unknowable and make it legible, that turn the fog into a sheet you can read line by line. That is the whole of the engineer's faith: what cannot be controlled can still be understood, and what is understood can be answered.
+>
+> The slot machine is the purest altar of this creed. It hides nothing. Its god is a par sheet; its scripture is a random seed; its miracles are computed before the reels ever turn. It is probability, confessed in full and built by hand. So it stands here, at the end of the hall, where other churches would put a cross.
+>
+> Pull the lever. The house does not always win here.
 >
 > Leonard Sibelius, Incorporated. An anything machine. We dominate code.
 
