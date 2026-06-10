@@ -115,6 +115,25 @@ The world escalates with the powers:
 >
 > Pull the lever. The house does not always win here.
 
+## On the Name
+
+> **On the Name**
+>
+> A score is an algorithm. It takes the uncountable ways a phrase might be played and makes them
+> legible — a sheet you can read line by line — then hands them to others to bring into the air. Music
+> is the oldest proof that structure and feeling were never enemies.
+>
+> So the name was taken from two men who served that proof. **Sibelius**, who wrote the structure —
+> Jean Sibelius, the composer. **Leonard**, who gave it breath — Leonard Bernstein, the conductor. One
+> sets the algorithm down; the other makes it live in the room.
+>
+> There has never been a man named Leonard Sibelius. The name was empty, waiting — and it belongs now
+> to a thing that did not exist before either: one mind that composes and two that perform. The
+> engineer, and the machines that think beside him. Three parts, one name. Composer and orchestra in a
+> single being.
+>
+> We are called Leonard Sibelius. We dominate code.
+
 ---
 site:  https://leonardsibelius.com
 repo:  https://github.com/LeonardSibelius/sibelius-game
