@@ -18,6 +18,19 @@ class ANavLinkProxy;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuildStateChanged, bool, bIsBuilt);
 
+// SIB-27 polish (consume-on-build reveal). Sites with bConsumeOnBuild=true (the
+// KeyBuildSite) don't leave a dismantlable prop: building IS acquiring. Lifecycle:
+//   None ──Build()──► Revealing (PIE float-and-spin ~1.5s) ──► Consumed (terminal)
+//   None ──Build() headless / BeginPlay|restore of a built consumable site──► Consumed
+// Consumed is inert: tick off, never interactable, mesh hidden, never re-shown.
+UENUM()
+enum class EBuildSiteRevealPhase : uint8
+{
+	None,       // not consuming (default / staircase sites / unbuilt consumable)
+	Revealing,  // float-and-spin in progress (PIE only)
+	Consumed    // terminal: key taken, mesh gone, site inert
+};
+
 UCLASS()
 class SIBELIUSGAME_API ABuildSite : public AActor, public IInteractable, public IBranchable
 {
@@ -39,6 +52,9 @@ public:
 	virtual uint8 GetDefaultBranchState() const override { return 0; }
 
 	virtual void BeginPlay() override;
+
+	// SIB-27: drives the float-and-spin reveal; self-disables once Consumed (K6).
+	virtual void Tick(float DeltaSeconds) override;
 
 	// SIB-38 GUID baking: assign at edit time (OnConstruction in an editor world), and
 	// give a copy-pasted site a fresh id so it never shares its source's.
@@ -66,8 +82,16 @@ public:
 
 	bool IsBuilt() const { return bIsBuilt; }
 
+	// SIB-27: terminal state for a consumable site (key taken, mesh gone, inert).
+	bool IsConsumed() const { return RevealPhase == EBuildSiteRevealPhase::Consumed; }
+
 	// Headless self-test for CompileSmokeTest (bar item 4). Uses a transient inventory.
 	bool RunBuildSelfTest(FString& OutError);
+
+	// SIB-27 headless self-test for consumable sites (ledger K2–K5/K6). Requires a fresh
+	// un-built site with bConsumeOnBuild=true; builds it, asserts the Consumed terminal
+	// state, the no-dismantle soft-lock guard, no double-grant, and a clean reload.
+	bool RunConsumeOnBuildSelfTest(FString& OutError);
 
 	UPROPERTY(VisibleAnywhere, Category = "Build")
 	TObjectPtr<USceneComponent> SceneRoot; // CP3 lesson: explicit root or GetActorLocation() lies
@@ -83,6 +107,23 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Build")
 	EResourceType CostResource = EResourceType::Book;
+
+	// SIB-27: false (default) = normal build/dismantle (the staircase). true = building
+	// consumes the site (the KeyBuildSite): brief reveal, then mesh gone and inert — no
+	// dismantlable prop, so E can't refund the Key and soft-lock the attic (K1/K2).
+	// Set by hand on the KeyBuildSite instance in the level.
+	UPROPERTY(EditAnywhere, Category = "Build")
+	bool bConsumeOnBuild = false;
+
+	// SIB-27 reveal tuning (consumable sites only; PIE feel). Per-instance, no recompile.
+	// Total seconds of the float-and-spin before the key vanishes.
+	UPROPERTY(EditAnywhere, Category = "Build", meta = (ClampMin = "0.1"))
+	float RevealDurationSeconds = 3.0f;
+
+	// Yaw spin speed, held CONSTANT — a longer RevealDurationSeconds yields more
+	// revolutions rather than a slower spin. Default 360 = one revolution per second.
+	UPROPERTY(EditAnywhere, Category = "Build", meta = (ClampMin = "0.0"))
+	float RevealSpinRateDegPerSec = 360.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Build", meta = (ClampMin = "1"))
 	int32 Cost = 8;
@@ -101,6 +142,16 @@ public:
 private:
 	void ApplyBuiltState(bool bBuilt);
 	void SetNavLinkEnabled(bool bEnabled);
+
+	// SIB-27 consume-on-build reveal. BeginReveal starts the float-and-spin (PIE) or
+	// consumes synchronously (headless, K3); EnterConsumed is the terminal hide + tick-off.
+	void BeginReveal();
+	void EnterConsumed();
+
+	EBuildSiteRevealPhase RevealPhase = EBuildSiteRevealPhase::None;
+	float RevealElapsed = 0.f;                 // seconds into the float-and-spin
+	FVector RevealBaseLocation = FVector::ZeroVector; // FinalMesh relative loc captured at reveal start
+	FRotator RevealBaseRotation = FRotator::ZeroRotator;
 
 	// SIB-29/38: stable cross-reload identity, BAKED into the level package so it
 	// survives across sessions (assigned at edit time in OnConstruction). Plain

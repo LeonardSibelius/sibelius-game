@@ -108,8 +108,14 @@ int32 UCompileSmokeTestCommandlet::Main(const FString& Params)
 		if (Site->Output == EBuildOutput::Structure) { ++StairSites; }
 		else { ++KeySites; }
 
+		// SIB-27: a consumable site (KeyBuildSite) can't survive RunBuildSelfTest's
+		// dismantle leg — it's intentionally never dismantlable — so route it to the
+		// consume-on-build ledger instead.
 		FString Err;
-		R.Check(Site->RunBuildSelfTest(Err),
+		const bool bSelfTestOk = Site->bConsumeOnBuild
+			? Site->RunConsumeOnBuildSelfTest(Err)
+			: Site->RunBuildSelfTest(Err);
+		R.Check(bSelfTestOk,
 			FString::Printf(TEXT("BuildSite self-test (%s)"), *Site->GetName()), Err);
 		if (Site->Output == EBuildOutput::Structure)
 		{
@@ -119,6 +125,46 @@ int32 UCompileSmokeTestCommandlet::Main(const FString& Params)
 	}
 	R.Check(StairSites >= 1, TEXT("At least one Structure build site present"));
 	R.Check(KeySites >= 1, TEXT("At least one KeyItem build site present"));
+
+	// 4b. Consume-on-build ledger (SIB-27 K1–K5) on controlled, spawned instances, so
+	// the asserts hold regardless of how the level's KeyBuildSite instance is authored
+	// (Walt flips bConsumeOnBuild by hand). Headless: the reveal consumes synchronously,
+	// so the terminal Consumed state is observable inline. Reveal *feel* is PIE-only.
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.ObjectFlags |= RF_Transient;
+
+		// K1: a default site (bConsumeOnBuild=false) keeps build→dismantle→refund intact.
+		if (ABuildSite* StairLike = World->SpawnActor<ABuildSite>(ABuildSite::StaticClass(), SpawnParams))
+		{
+			R.Check(!StairLike->bConsumeOnBuild, TEXT("bConsumeOnBuild defaults false (K1)"));
+			FString Err;
+			R.Check(StairLike->RunBuildSelfTest(Err),
+				TEXT("Default site build/dismantle/refund intact (K1)"), Err);
+			StairLike->Destroy();
+		}
+		else
+		{
+			R.Fail(TEXT("Could not spawn a default test BuildSite (K1)"));
+		}
+
+		// K2–K6: a consumable KeyItem site reveals→consumes, never dismantles, no
+		// double-grant, and a reload presents Consumed without minting a second Key.
+		if (ABuildSite* KeyLike = World->SpawnActor<ABuildSite>(ABuildSite::StaticClass(), SpawnParams))
+		{
+			KeyLike->bConsumeOnBuild = true;
+			KeyLike->Output = EBuildOutput::KeyItem;
+			KeyLike->CostResource = EResourceType::Book;
+			FString Err;
+			R.Check(KeyLike->RunConsumeOnBuildSelfTest(Err),
+				TEXT("Consume-on-build ledger (K2–K6)"), Err);
+			KeyLike->Destroy();
+		}
+		else
+		{
+			R.Fail(TEXT("Could not spawn a consumable test BuildSite (K2–K6)"));
+		}
+	}
 
 	// 5. Old attic stairs are gone (C9); actor count in band.
 	int32 ActorCount = 0, BookPickups = 0;
