@@ -160,6 +160,13 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 		{ TEXT("a key"),              TEXT("key") },
 		{ TEXT("a brass key"),        TEXT("key") },
 		{ TEXT("unlock the door"),    TEXT("key") },
+		// P4: each new keyword in the grown vocabulary resolves (never refuses) to its entry.
+		{ TEXT("a pine"),             TEXT("tree") },
+		{ TEXT("a potted flower"),    TEXT("plant") },
+		{ TEXT("a light bulb"),       TEXT("lamp") },
+		{ TEXT("a barrel"),           TEXT("crate") },
+		{ TEXT("a sofa"),             TEXT("chair") },
+		{ TEXT("a keycard"),          TEXT("key") },
 	};
 
 	int32 PhraseHits = 0;
