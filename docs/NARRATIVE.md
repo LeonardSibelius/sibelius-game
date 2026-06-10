@@ -114,6 +114,14 @@ The world escalates with the powers:
 >
 > We are called Leonard Sibelius. We dominate code.
 
+## The Incorporation
+
+> A name that has been forged can be made to stand on its own. So it has been given the form the world recognizes: Leonard Sibelius, Incorporated. Not a person — one mind and the machines that think beside it, set down where anyone can find them.
+>
+> What does it make? Anything. That is the whole of the promise and the whole of the boast: an anything machine — software with intelligence built in, not bolted on. The fog made legible; the impossible thing shipped, and shipped again.
+>
+> Leonard Sibelius, Incorporated. An anything machine. We dominate code.
+
 ---
 site:  https://leonardsibelius.com
 repo:  https://github.com/LeonardSibelius/sibelius-game
