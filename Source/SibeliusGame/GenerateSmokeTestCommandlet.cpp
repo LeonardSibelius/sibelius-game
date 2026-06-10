@@ -26,6 +26,9 @@
 #include "InventoryComponent.h"
 #include "BranchSubsystem.h"
 #include "SibeliusSaveIO.h"
+#include "SibeliusSaveGame.h"       // P3: inspect the written save (EntryId/transform/budget)
+#include "GenerateComponent.h"      // P3: AuthorGeneratedSite + UGenerateComponent budget
+#include "BranchTypes.h"            // P3: FBranchObjectState
 #include "CompileTypes.h"           // EResourceType
 
 #include "Engine/World.h"
@@ -76,6 +79,26 @@ namespace GenerateSmokeTestNS
 	bool CatalogHas(const TArray<FGenerateCatalogEntry>& Catalog, const FName& Id)
 	{
 		return Catalog.ContainsByPredicate([&Id](const FGenerateCatalogEntry& E) { return E.EntryId == Id; });
+	}
+
+	// P3 helpers: locate/count live ABuildSites by their stable GUID (re-spawn assertions).
+	int32 CountBuildSitesByGuid(UWorld* World, const FGuid& Id)
+	{
+		int32 N = 0;
+		for (TActorIterator<ABuildSite> It(World); It; ++It)
+		{
+			if (It->GetBranchId() == Id) { ++N; }
+		}
+		return N;
+	}
+
+	ABuildSite* FindBuildSiteByGuid(UWorld* World, const FGuid& Id)
+	{
+		for (TActorIterator<ABuildSite> It(World); It; ++It)
+		{
+			if (It->GetBranchId() == Id) { return *It; }
+		}
+		return nullptr;
 	}
 }
 
@@ -376,6 +399,106 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 	}
 #else
 	R.Check(false, TEXT("G6: requires an editor build (skipped) — re-run via UnrealEditor-Cmd"));
+#endif
+
+	// =====================================================================
+	//  G8 — SIB-30 P3: a runtime-GENERATED object survives deploy -> reload.
+	//  A generated ABuildSite has no placed actor, so on reload it must be
+	//  RE-CREATED from the catalog (EntryId + saved transform + saved GUID),
+	//  and the generation budget must persist (it used to reset). Headless we
+	//  simulate "reload" by DESTROYING the runtime actor + resetting the budget.
+	// =====================================================================
+	UE_LOG(LogGenerateSmoke, Display, TEXT("--- G8: P3 generated-object persistence (re-spawn on reload) ---"));
+#if WITH_EDITOR
+	{
+		const FGenerateResolution G8Res = ClassifyGenerateRequest(TEXT("a brass key"), Catalog, 99);
+		const FGenerateCatalogEntry* G8Entry = Catalog.FindByPredicate(
+			[&G8Res](const FGenerateCatalogEntry& E) { return E.EntryId == G8Res.EntryId; });
+		R.Check(G8Res.Outcome == EGenerateOutcome::Resolved && G8Entry != nullptr,
+			TEXT("G8: request resolves to a catalog entry to generate"));
+
+		// REUSE the map G6 already loaded (its `World` is still in function scope) — the
+		// destroy-actor/reset-budget reload simulation needs a world, not a fresh one.
+		// Re-declaring `World` here shadowed G6's (C4456, warnings-as-errors); a second
+		// LoadMap would also owe its own CleanupWorld on every exit path (the exit-3 lesson).
+		R.Check(World != nullptr, TEXT("G8: reuses the map loaded for G6"));
+		if (World && G8Entry)
+		{
+			const FString P3Slot = TEXT("GenerateP3Slot_Temp");
+			FSibeliusSaveIO::Delete(P3Slot);
+
+			// Spawn a GENERATED site through the SHARED author path (exactly what the live
+			// UGenerateComponent::SpawnEntry now calls), at a known, off-origin transform.
+			const FTransform SavedXform(FRotator(0.f, 90.f, 0.f), FVector(123.f, 456.f, 78.f), FVector::OneVector);
+			ABuildSite* Gen = World->SpawnActor<ABuildSite>(ABuildSite::StaticClass(), SavedXform);
+			R.Check(Gen != nullptr, TEXT("G8: spawned a generated ABuildSite"));
+			if (Gen)
+			{
+				AuthorGeneratedSite(Gen, *G8Entry);
+			}
+			const FGuid GenId = Gen ? Gen->GetOrCreateBranchId() : FGuid();
+			R.Check(Gen && Gen->IsGenerated() && Gen->IsBuilt(), TEXT("G8: generated site is tagged + BUILT"));
+			R.Check(Gen && Gen->GetGenerateEntryId() == G8Res.EntryId, TEXT("P3-2: site carries its catalog EntryId"));
+
+			// A generator component holding a known, non-default remaining budget (7).
+			AActor* GenOwner = World->SpawnActor<AActor>();
+			UGenerateComponent* GenComp = GenOwner ? NewObject<UGenerateComponent>(GenOwner) : nullptr;
+			if (GenComp) { GenComp->RegisterComponent(); GenComp->SetRemainingBudget(7); }
+			R.Check(GenComp != nullptr, TEXT("G8: generator component present in the world"));
+
+			UBranchSubsystem* Branch = NewObject<UBranchSubsystem>(GetTransientPackage(), TEXT("GenP3Branch"));
+			if (Branch && Gen && GenComp)
+			{
+				Branch->SetBranchWorld(World);
+				Branch->SetDeploySlotName(P3Slot);
+
+				// Deploy at Main.
+				R.Check(Branch->RequestDeploy(), TEXT("G8: RequestDeploy persisted the deployed state"));
+
+				// P3-2 / P3-6: the WRITTEN save carries the generated provenance + budget.
+				USibeliusSaveGame* Saved = Cast<USibeliusSaveGame>(FSibeliusSaveIO::Load(P3Slot));
+				const FBranchObjectState* Rec = Saved ? Saved->ObjectDeltas.FindByPredicate(
+					[&GenId](const FBranchObjectState& O) { return O.ObjectId == GenId; }) : nullptr;
+				R.Check(Rec != nullptr && Rec->bGenerated && Rec->GenerateEntryId == G8Res.EntryId,
+					TEXT("P3-2: save record carries the generated EntryId"));
+				R.Check(Rec != nullptr && Rec->GenerateTransform.Equals(SavedXform),
+					TEXT("P3-2/P3-3: save record carries the spawn transform"));
+				R.Check(Saved != nullptr && Saved->GenerateBudget == 7,
+					TEXT("P3-6: save carries the remaining generation budget (not the default)"));
+
+				// Simulate RELOAD: the runtime actor is gone, and the budget has reset.
+				Gen->Destroy();
+				GenComp->SetRemainingBudget(10); // back to the authored default
+				R.Check(CountBuildSitesByGuid(World, GenId) == 0, TEXT("G8: generated actor gone after simulated reload"));
+
+				// Apply — the fix re-creates it.
+				R.Check(Branch->ApplyDeployedSave(), TEXT("G8: ApplyDeployedSave re-applied the save"));
+				R.Check(Branch->GetLastApplyGeneratedForTest() == 1, TEXT("P3-1: exactly one generated object re-spawned"));
+
+				ABuildSite* Re = FindBuildSiteByGuid(World, GenId);
+				R.Check(Re != nullptr, TEXT("P3-1: the generated object was re-spawned"));
+				R.Check(Re != nullptr && Re->IsBuilt(), TEXT("P3-1: the re-spawned object is BUILT"));
+				R.Check(Re != nullptr && Re->GetBranchId() == GenId, TEXT("P3-4: its GUID is stable across the re-spawn"));
+				R.Check(Re != nullptr && Re->IsGenerated() && Re->GetGenerateEntryId() == G8Res.EntryId,
+					TEXT("P3-1: re-spawn re-tagged it generated with the same EntryId (so a 2nd deploy won't orphan it)"));
+				R.Check(Re != nullptr && Re->GetActorTransform().Equals(SavedXform),
+					TEXT("P3-3: re-spawn used the SAVED transform verbatim (no placement re-trace)"));
+				R.Check(GenComp->GetRemainingBudget() == 7,
+					TEXT("P3-6: budget restored to the deploy-time value (7), not the post-reload default (10)"));
+
+				// P3-5: idempotent — applying AGAIN must not double-spawn.
+				R.Check(Branch->ApplyDeployedSave(), TEXT("P3-5: a second ApplyDeployedSave succeeds"));
+				R.Check(Branch->GetLastApplyGeneratedForTest() == 0, TEXT("P3-5: the second apply re-spawns nothing (object already present)"));
+				R.Check(CountBuildSitesByGuid(World, GenId) == 1, TEXT("P3-5: exactly ONE generated object after two applies (no duplicate)"));
+			}
+
+			FSibeliusSaveIO::Delete(P3Slot);
+			FSibeliusSaveIO::Delete(P3Slot + TEXT("_Backup")); // apply mirrors a last-good backup
+			R.Check(!FSibeliusSaveIO::Has(P3Slot), TEXT("G8: sandbox slot cleaned up"));
+		}
+	}
+#else
+	R.Check(false, TEXT("G8: requires an editor build (skipped) — re-run via UnrealEditor-Cmd"));
 #endif
 
 	if (R.Failures == 0)

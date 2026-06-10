@@ -18,6 +18,9 @@
 class UWorld;
 class UInventoryComponent;
 class USibeliusSaveGame;
+class UGenerateComponent;     // SIB-30 P3: generation budget holder
+struct FBranchObjectState;
+struct FGenerateCatalogEntry; // SIB-30 P3: re-spawn source
 
 // Ch5 Phase 3 (SIB-29). Classification of a load attempt at one slot.
 enum class ESaveLoadStatus : uint8
@@ -108,6 +111,7 @@ public:
 	int32 GetLastApplyObjectsForTest() const { return LastApplyObjects; }
 	int32 GetLastApplyResourcesForTest() const { return LastApplyResources; }
 	int32 GetLastApplyOrphansForTest() const { return LastApplyOrphans; }
+	int32 GetLastApplyGeneratedForTest() const { return LastApplyGenerated; } // SIB-30 P3
 	EDeployLoadSource GetLastLoadSourceForTest() const { return LastLoadSource; }
 
 	// Dev/debug: wipe the deploy slot + its backup so the next load starts from the
@@ -161,6 +165,11 @@ private:
 	FString BackupSlotName() const { return DeploySlotName + TEXT("_Backup"); } // last-good companion slot
 	ESaveLoadStatus ClassifyDeploySave(const FString& Slot, USibeliusSaveGame*& Out) const; // load + validate one slot
 
+	// SIB-30 P3: re-create a saved GENERATED object that has no live actor on reload —
+	// spawn it from the catalog at its saved transform with its saved GUID, then register
+	// it (so a repeat apply resolves it instead of double-spawning, P3-5). True on success.
+	bool RespawnGeneratedObject(const FBranchObjectState& Saved, const TArray<FGenerateCatalogEntry>& Catalog);
+
 	EBranchState State = EBranchState::Main;
 
 	// Snapshot stack — one frame per nested branch. Top = the current branch's
@@ -172,6 +181,7 @@ private:
 	TMap<FGuid, TWeakObjectPtr<UObject>> BranchablesById;
 	int32 LastRegistryCollisions = 0; // distinct objects that hashed to an already-claimed GUID on the last rebuild
 	TWeakObjectPtr<UInventoryComponent> Inventory;
+	TWeakObjectPtr<UGenerateComponent> Generator; // SIB-30 P3: budget holder, cached on RebuildRegistry
 	TWeakObjectPtr<UWorld> BranchWorld;
 
 	// Ch5 Phase 1: the slot Deploy persists to (overridable for the test sandbox).
@@ -181,6 +191,7 @@ private:
 	int32 LastApplyObjects = 0;
 	int32 LastApplyResources = 0;
 	int32 LastApplyOrphans = 0;
+	int32 LastApplyGenerated = 0; // SIB-30 P3: generated objects re-spawned on the last apply
 
 	// Ch5 Phase 3: which slot the last apply sourced from (None = failed safe).
 	EDeployLoadSource LastLoadSource = EDeployLoadSource::None;

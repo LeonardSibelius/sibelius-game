@@ -48,6 +48,18 @@ public:
 	virtual FGuid GetOrCreateBranchId() override { AssignBranchIdIfInvalid(BranchId); return BranchId; }
 	virtual FGuid GetBranchId() const override { return BranchId; }
 
+	// SIB-30 P3: force a specific persisted identity when RE-CREATING a generated site
+	// from a save, so its GUID is stable across the re-spawn (P3-4). Placed actors keep
+	// assign-once semantics; this is the explicit deploy-restore path only.
+	void RestoreBranchId(const FGuid& InId) { BranchId = InId; }
+
+	// SIB-30 P3: a runtime-generated site (spawned by UGenerateComponent, not placed in
+	// the level) carries the catalog EntryId it came from, so Deploy can persist enough
+	// provenance to RE-CREATE it on reload. Placed/staircase sites leave these unset.
+	bool IsGenerated() const { return bIsGenerated; }
+	FName GetGenerateEntryId() const { return GenerateEntryId; }
+	void MarkGenerated(FName InEntryId) { bIsGenerated = true; GenerateEntryId = InEntryId; }
+
 	// Authored default: unbuilt.
 	virtual uint8 GetDefaultBranchState() const override { return 0; }
 
@@ -158,6 +170,15 @@ private:
 	// serialized UPROPERTY (not SaveGame-only); VisibleAnywhere to inspect in-editor.
 	UPROPERTY(VisibleAnywhere, Category = "Branch")
 	FGuid BranchId;
+
+	// SIB-30 P3: runtime-generation provenance. Set on sites spawned by UGenerateComponent
+	// (and re-set when re-created from a save). Transient by nature — a generated site is
+	// never serialized into the .umap; it's re-created from the deploy save instead.
+	UPROPERTY()
+	bool bIsGenerated = false;
+
+	UPROPERTY()
+	FName GenerateEntryId;
 
 	bool bIsBuilt = false;
 };

@@ -21,6 +21,58 @@
 #include "Misc/App.h"               // P2.5: FApp::CanEverRenderAudio (headless guard)
 #include "UObject/UObjectGlobals.h" // P2.5: LoadObject (soft-load the clip by path)
 
+// SIB-30 P3 — shared generated-site authoring. ONE place that turns a catalog entry into a
+// built, tagged ABuildSite, so live generation and re-spawn-on-load can't diverge.
+void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry)
+{
+	if (!Site)
+	{
+		return;
+	}
+
+	// Author the catalog mesh + per-entry transform onto the buildable's FinalMesh
+	// (SIB-40-in-data — e.g. the key's Scale 0.25 / Yaw 90). Soft-load is cached/cheap.
+	UStaticMesh* Mesh = Entry.Mesh.LoadSynchronous();
+	if (Site->FinalMesh)
+	{
+		if (Mesh)
+		{
+			Site->FinalMesh->SetStaticMesh(Mesh);
+		}
+		Site->FinalMesh->SetRelativeScale3D(Entry.SpawnScale);
+		Site->FinalMesh->SetRelativeRotation(Entry.SpawnRotation);
+	}
+
+	// Tag the provenance (so Deploy can persist it) and present it BUILT. Generation pays
+	// the BUDGET, not Books, so it uses the RAW RestoreBranchState(1) path, NOT Build().
+	Site->MarkGenerated(Entry.EntryId);
+	Site->RestoreBranchState(1);
+}
+
+ABuildSite* RespawnGeneratedSite(UWorld* World, const FGenerateCatalogEntry& Entry,
+	const FTransform& SavedTransform, const FGuid& SavedId)
+{
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	// AlwaysSpawn (NOT AdjustIfPossible) so the saved transform is honoured VERBATIM —
+	// the original P1 placement trace already resolved the floor/wall; re-running it on
+	// reload would be wrong (P3-3). The actor pose is the saved pose, full stop.
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	ABuildSite* Site = World->SpawnActor<ABuildSite>(ABuildSite::StaticClass(), SavedTransform, SpawnParams);
+	if (!Site)
+	{
+		return nullptr;
+	}
+
+	Site->RestoreBranchId(SavedId);   // stable identity across the re-spawn (P3-4)
+	AuthorGeneratedSite(Site, Entry); // mesh + tag + BUILT (no budget charge — pure recreate)
+	return Site;
+}
+
 UGenerateComponent::UGenerateComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -172,22 +224,11 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 		return false; // confirmed failure — budget must NOT charge (handled by caller)
 	}
 
-	// Author the result onto the buildable's FinalMesh: catalog mesh + the per-entry
-	// transform (SIB-40-in-data — e.g. the key's Scale 0.25 / Yaw 90).
-	if (Site->FinalMesh)
-	{
-		if (Mesh)
-		{
-			Site->FinalMesh->SetStaticMesh(Mesh);
-		}
-		Site->FinalMesh->SetRelativeScale3D(Entry.SpawnScale);
-		Site->FinalMesh->SetRelativeRotation(Entry.SpawnRotation);
-	}
-
-	// Reveal it: RestoreBranchState(1) -> ApplyBuiltState(true) unhides FinalMesh (SIB-40
-	// lesson: it's hidden until built). Generation pays the BUDGET, not Books, so it does
-	// NOT use the Book-spending Build() verb — but it IS a real ABuildSite (GUID + Ch5).
-	Site->RestoreBranchState(1);
+	// Author + tag + present BUILT via the SHARED path (SIB-30 P3) — the same call
+	// re-spawn-on-load uses, so a generated object looks identical fresh or reloaded. The
+	// actor's GUID is assigned by the normal IBranchable fallback (BeginPlay); Deploy then
+	// persists it + this site's EntryId + transform so reload can re-create it.
+	AuthorGeneratedSite(Site, Entry);
 
 	// Budget charges only because we reached here with a real, created actor.
 	return true;

@@ -6,6 +6,13 @@
 #include "SibeliusSaveGame.h"
 #include "SibeliusSaveIO.h"
 
+// SIB-30 P3: re-create runtime-generated objects on reload (catalog + buildable + the
+// shared spawn helpers). Ch5 deploy/apply is the orchestrator, so it owns this stitch.
+#include "BuildSite.h"
+#include "GenerateComponent.h"   // UGenerateComponent (budget) + AuthorGeneratedSite/RespawnGeneratedSite
+#include "GenerateCatalog.h"     // LoadGenerateCatalog
+#include "GenerateTypes.h"       // FGenerateCatalogEntry
+
 #include "Engine/World.h"
 #include "EngineUtils.h"            // TActorIterator
 #include "GameFramework/Actor.h"
@@ -35,6 +42,7 @@ void UBranchSubsystem::RebuildRegistry()
 {
 	BranchablesById.Reset();
 	Inventory.Reset();
+	Generator.Reset();
 	LastRegistryCollisions = 0;
 
 	UWorld* World = ResolveWorld();
@@ -68,6 +76,13 @@ void UBranchSubsystem::RebuildRegistry()
 				if (UInventoryComponent* Inv = Cast<UInventoryComponent>(Comp))
 				{
 					Inventory = Inv;
+				}
+			}
+			if (!Generator.IsValid())
+			{
+				if (UGenerateComponent* Gen = Cast<UGenerateComponent>(Comp))
+				{
+					Generator = Gen; // SIB-30 P3: cache the budget holder for save/restore
 				}
 			}
 		}
@@ -276,10 +291,12 @@ USibeliusSaveGame* UBranchSubsystem::BuildDeploySave() const
 		return nullptr;
 	}
 	Save->SaveVersion = USibeliusSaveGame::CurrentSaveVersion; // stamp on write
-	Save->FormatNote = TEXT("v2");                             // fresh-deploy provenance (v2 field)
+	Save->FormatNote = TEXT("v3");                             // fresh-deploy provenance (current shape)
 
-	// Deltas only: an object contributes an entry iff its current declared state
-	// differs from its authored default. An untouched world writes an empty save.
+	// Deltas only: a PLACED object contributes an entry iff its current declared state
+	// differs from its authored default. An untouched world writes an empty save. A
+	// GENERATED object is the exception — it has no placed actor to restore onto, so it is
+	// ALWAYS persisted (with provenance to re-create it), never gated on the delta check.
 	for (const TPair<FGuid, TWeakObjectPtr<UObject>>& Pair : BranchablesById)
 	{
 		UObject* Obj = Pair.Value.Get();
@@ -288,6 +305,24 @@ USibeliusSaveGame* UBranchSubsystem::BuildDeploySave() const
 		{
 			continue;
 		}
+
+		// SIB-30 P3 (P3-2): a runtime-generated site carries its catalog EntryId + spawn
+		// transform so reload can fully RE-CREATE it. Persist it unconditionally.
+		if (ABuildSite* Site = Cast<ABuildSite>(Obj))
+		{
+			if (Site->IsGenerated())
+			{
+				FBranchObjectState S;
+				S.ObjectId = Pair.Key;
+				S.State = B->CaptureBranchState();
+				S.bGenerated = true;
+				S.GenerateEntryId = Site->GetGenerateEntryId();
+				S.GenerateTransform = Site->GetActorTransform(); // saved verbatim (P3-3)
+				Save->ObjectDeltas.Add(S);
+				continue;
+			}
+		}
+
 		const uint8 Cur = B->CaptureBranchState();
 		if (Cur == B->GetDefaultBranchState())
 		{
@@ -317,6 +352,11 @@ USibeliusSaveGame* UBranchSubsystem::BuildDeploySave() const
 			Save->ResourceDeltas.Add(E);
 		}
 	}
+
+	// SIB-30 P3 (P3-6): persist the remaining generation budget so it survives reload (it
+	// lived only on the component and reset to default). Sentinel -1 when there's no
+	// generator in this world — apply leaves the live budget untouched in that case.
+	Save->GenerateBudget = Generator.IsValid() ? Generator->GetRemainingBudget() : -1;
 
 	return Save;
 }
@@ -497,6 +537,7 @@ bool UBranchSubsystem::ApplyDeployedSave()
 	LastApplyObjects = 0;
 	LastApplyResources = 0;
 	LastApplyOrphans = 0;
+	LastApplyGenerated = 0;
 	LastLoadSource = EDeployLoadSource::None;
 
 	const FString BackupSlot = BackupSlotName();
@@ -564,12 +605,37 @@ bool UBranchSubsystem::ApplyDeployedSave()
 	// same path Ch4 discard uses; objects with no delta stay at authored default).
 	RebuildRegistry();
 
+	// SIB-30 P3: the catalog is loaded lazily, only if a generated object needs re-creating.
+	TArray<FGenerateCatalogEntry> Catalog;
+	bool bCatalogLoaded = false;
+
 	for (const FBranchObjectState& S : Save->ObjectDeltas)
 	{
 		UObject* Obj = ResolveBranchable(S.ObjectId);
 		IBranchable* B = (Obj ? Cast<IBranchable>(Obj) : nullptr);
 		if (!B)
 		{
+			// SIB-30 P3 (P3-1): a saved GENERATED object has no placed actor on reload —
+			// RE-CREATE it from the catalog at its saved transform/GUID rather than drop
+			// it. (A non-generated GUID with no object is a true orphan: skip gracefully.)
+			if (S.bGenerated)
+			{
+				if (!bCatalogLoaded)
+				{
+					FString CatErr;
+					LoadGenerateCatalog(Catalog, CatErr);
+					bCatalogLoaded = true;
+				}
+				if (RespawnGeneratedObject(S, Catalog))
+				{
+					++LastApplyGenerated;
+				}
+				else
+				{
+					++LastApplyOrphans; // generated, but its catalog entry is gone — can't re-create
+				}
+				continue;
+			}
 			++LastApplyOrphans; // GUID with no live object — skip gracefully, don't crash
 			continue;
 		}
@@ -586,9 +652,51 @@ bool UBranchSubsystem::ApplyDeployedSave()
 		}
 	}
 
+	// SIB-30 P3 (P3-6): restore the persisted generation budget. -1 = not recorded (pre-v3
+	// save / no generator at deploy) -> leave the live budget alone. Re-spawns above never
+	// charged it (pure recreate), so this is the deploy-time value, not the post-reset default.
+	if (Save->GenerateBudget >= 0)
+	{
+		if (UGenerateComponent* Gen = Generator.Get())
+		{
+			Gen->SetRemainingBudget(Save->GenerateBudget);
+		}
+	}
+
 	UE_LOG(LogSibeliusGame, Display,
-		TEXT("[Branch] ApplyDeployedSave from %s (v%d): applied %d object + %d resource delta(s), %d orphan(s) skipped."),
+		TEXT("[Branch] ApplyDeployedSave from %s (v%d): applied %d object + %d resource delta(s), re-spawned %d generated, %d orphan(s) skipped."),
 		bFromPrimary ? TEXT("primary") : TEXT("backup"),
-		Save->SaveVersion, LastApplyObjects, LastApplyResources, LastApplyOrphans);
+		Save->SaveVersion, LastApplyObjects, LastApplyResources, LastApplyGenerated, LastApplyOrphans);
+	return true;
+}
+
+bool UBranchSubsystem::RespawnGeneratedObject(const FBranchObjectState& Saved, const TArray<FGenerateCatalogEntry>& Catalog)
+{
+	UWorld* World = ResolveWorld();
+	if (!World || Saved.GenerateEntryId.IsNone())
+	{
+		return false;
+	}
+
+	const FGenerateCatalogEntry* Entry = Catalog.FindByPredicate(
+		[&Saved](const FGenerateCatalogEntry& E) { return E.EntryId == Saved.GenerateEntryId; });
+	if (!Entry)
+	{
+		// Catalog drift: the saved entry no longer exists. Don't fabricate — report it.
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Branch] Re-spawn skipped: catalog has no entry '%s' for generated object %s."),
+			*Saved.GenerateEntryId.ToString(), *Saved.ObjectId.ToString());
+		return false;
+	}
+
+	ABuildSite* Site = RespawnGeneratedSite(World, *Entry, Saved.GenerateTransform, Saved.ObjectId);
+	if (!Site)
+	{
+		return false;
+	}
+
+	// Index the re-created actor under its (saved) GUID so a REPEAT apply resolves it and
+	// restores onto it, instead of re-spawning a duplicate (P3-5 idempotency).
+	BranchablesById.Add(Saved.ObjectId, Site);
 	return true;
 }

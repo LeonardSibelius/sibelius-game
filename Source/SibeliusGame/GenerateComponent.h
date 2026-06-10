@@ -15,6 +15,24 @@
 #include "GenerateComponent.generated.h"
 
 class UMrsHallMessageWidget;
+class ABuildSite;
+class UWorld;
+struct FGenerateCatalogEntry;
+
+// SIB-30 P3 — shared generated-site spawn helpers, used by BOTH live generation
+// (UGenerateComponent::SpawnEntry) and re-spawn-on-load (UBranchSubsystem::ApplyDeployedSave)
+// so the two paths can never drift. Neither touches the generation budget — budget is the
+// caller's concern (live generation charges it; a re-spawn is a pure recreate and must not).
+
+// Author a resolved catalog entry onto an ALREADY-spawned site: catalog mesh + per-entry
+// FinalMesh transform (SIB-40-in-data), tag it generated with its EntryId, present it BUILT.
+SIBELIUSGAME_API void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry);
+
+// Re-create a generated site from a save record: spawn an ABuildSite at SavedTransform
+// VERBATIM (no placement re-trace, P3-3), force SavedId as the stable identity (P3-4), then
+// author it from Entry. Returns the new actor (null on failure).
+SIBELIUSGAME_API ABuildSite* RespawnGeneratedSite(UWorld* World, const FGenerateCatalogEntry& Entry,
+	const FTransform& SavedTransform, const FGuid& SavedId);
 
 UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))
 class SIBELIUSGAME_API UGenerateComponent : public UActorComponent
@@ -31,6 +49,10 @@ public:
 
 	int32 GetRemainingBudget() const { return RemainingBudget; }
 	int32 GetCatalogNum() const { return Catalog.Num(); }
+
+	// SIB-30 P3: restore the persisted generation budget on deploy-reload (Deploy saves it,
+	// ApplyDeployedSave writes it back). A pure restore — does NOT re-charge for re-spawns.
+	void SetRemainingBudget(int32 InBudget) { RemainingBudget = InBudget; }
 
 protected:
 	virtual void BeginPlay() override;

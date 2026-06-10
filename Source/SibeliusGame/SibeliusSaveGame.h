@@ -22,8 +22,10 @@ class SIBELIUSGAME_API USibeliusSaveGame : public USaveGame
 
 public:
 	// Bump whenever the persisted shape changes, and add a matching migration step.
-	// v1: ObjectDeltas + ResourceDeltas. v2: adds FormatNote.
-	static constexpr int32 CurrentSaveVersion = 2;
+	// v1: ObjectDeltas + ResourceDeltas. v2: adds FormatNote. v3 (SIB-30 P3): adds
+	// per-record generated provenance (FBranchObjectState::bGenerated/EntryId/Transform)
+	// + GenerateBudget.
+	static constexpr int32 CurrentSaveVersion = 3;
 
 	// Stamped to CurrentSaveVersion on write (see UBranchSubsystem::RequestDeploy).
 	// A freshly constructed (unwritten) save reads 0.
@@ -38,10 +40,18 @@ public:
 	UPROPERTY()
 	TArray<FResourceEntry> ResourceDeltas;
 
-	// Added in v2 — a small provenance tag. A fresh v2 deploy stamps "v2"; the
-	// v1->v2 migrator fills it with a marker so the migration path is observable.
+	// Added in v2 — a small provenance tag. A fresh deploy stamps the current version;
+	// the v1->v2 migrator fills it with a marker so the migration path is observable.
 	UPROPERTY()
 	FString FormatNote;
+
+	// Added in v3 (SIB-30 P3) — the remaining generation budget at deploy time. It lived
+	// only on UGenerateComponent and reset on reload; persisting it here restores the
+	// in-fiction economy. Sentinel -1 = NOT recorded (a pre-v3 save, or no generator in
+	// the world) — leave the live budget untouched. >= 0 = restore exactly (re-spawning
+	// generated objects is a pure recreate and never re-charges this).
+	UPROPERTY()
+	int32 GenerateBudget = -1;
 
 	// Upgrade this save's shape to CurrentSaveVersion via ordered migration steps.
 	// Returns true if it is now at CurrentSaveVersion (was current, or migrated up);
@@ -54,4 +64,5 @@ public:
 
 private:
 	void Migrate_v1_to_v2(); // ordered step: shape v1 -> v2
+	void Migrate_v2_to_v3(); // ordered step: shape v2 -> v3 (SIB-30 P3)
 };

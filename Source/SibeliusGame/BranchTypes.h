@@ -34,6 +34,14 @@ struct FBranchObjectState
 
 	UPROPERTY() FGuid ObjectId;       // SIB-29: stable identity (was RegistryIndex)
 	UPROPERTY() uint8 State = 0;
+
+	// SIB-30 P3: provenance for a RUNTIME-GENERATED object (a Ch6 generated ABuildSite).
+	// A placed actor leaves these default and is restored onto its existing actor; a
+	// generated object has NO placed actor on reload, so it carries enough to be fully
+	// RE-CREATED — catalog id + spawn transform — keyed by the same stable GUID.
+	UPROPERTY() bool bGenerated = false;
+	UPROPERTY() FName GenerateEntryId;          // catalog EntryId to re-spawn from (valid iff bGenerated)
+	UPROPERTY() FTransform GenerateTransform;   // saved spawn transform — applied VERBATIM on re-spawn (P3-3)
 };
 
 // The inventory ledger captured whole (2 entries today: Book, Key). The Resource
