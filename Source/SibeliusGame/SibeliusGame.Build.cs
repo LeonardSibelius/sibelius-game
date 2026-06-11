@@ -23,7 +23,12 @@ public class SibeliusGame : ModuleRules
 			"SlateCore"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		// SIB-34 Path A: the cathedral slot cabinet embeds the real Celestial
+		// Fortune web build via UE's Chromium widget (WebBrowserWidget plugin).
+		PrivateDependencyModuleNames.AddRange(new string[] {
+			"WebBrowserWidget",
+			"WebBrowser"
+		});
 
 // SIB-19 smoke-test commandlet uses UEditorLoadingAndSavingUtils (editor-only)
 if (Target.bBuildEditor)

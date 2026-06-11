@@ -15,6 +15,8 @@
 #include "SlotSmokeTestCommandlet.h"
 #include "SlotGameModel.h"
 #include "SlotTypes.h"
+#include "SlotScreenWidget.h"
+#include "Engine/Texture2D.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSlotSmoke, Log, All);
 
@@ -130,9 +132,28 @@ int32 USlotSmokeTestCommandlet::Main(const FString& /*Params*/)
 		R.Warn(RTP >= 88.0 && RTP <= 102.0, FString::Printf(TEXT("RTP %.2f%% within DESIGN band [88, 102] (tune par sheet if WARN)"), RTP));
 	}
 
+	/* ---------- S2: presentation assets (SC4) ---------- */
+	{
+		// The widget class must resolve (native class — a link/registration check).
+		R.Check(USlotScreenWidget::StaticClass() != nullptr, TEXT("S2: USlotScreenWidget class resolves"));
+
+		// All nine sprites must exist where the widget loads them. Runs AFTER
+		// Tools/Scripts/import_symbol_sprites.py per the S2/S3 notes.
+		static const TCHAR* Ids[] = { TEXT("star"), TEXT("moon"), TEXT("galaxy"), TEXT("saturn"),
+		                              TEXT("mars"), TEXT("crown"), TEXT("seven"), TEXT("wild"), TEXT("scatter") };
+		int32 Loaded = 0;
+		for (const TCHAR* Id : Ids)
+		{
+			const FString Path = FString::Printf(TEXT("/Game/SlotFactory/SymbolSprites/T_sym_%s.T_sym_%s"), Id, Id);
+			if (LoadObject<UTexture2D>(nullptr, *Path)) { ++Loaded; }
+			else { UE_LOG(LogSlotSmoke, Error, TEXT("  missing sprite: %s"), *Path); }
+		}
+		R.Check(Loaded == 9, FString::Printf(TEXT("S2: %d/9 symbol sprites resolve in /Game/SlotFactory/SymbolSprites"), Loaded));
+	}
+
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogSlotSmoke, Display, TEXT("=== SLOT SMOKE TEST PASSED (S1 green — the machine's math holds). ==="));
+		UE_LOG(LogSlotSmoke, Display, TEXT("=== SLOT SMOKE TEST PASSED (S1 math + S2 assets green). ==="));
 		return 0;
 	}
 	UE_LOG(LogSlotSmoke, Error, TEXT("=== SLOT SMOKE TEST FAILED: %d assertion(s). ==="), R.Failures);
