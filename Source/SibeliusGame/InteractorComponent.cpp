@@ -47,8 +47,14 @@ void UInteractorComponent::UpdateFocus()
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(InteractTrace), false, GetOwner());
 	Params.AddIgnoredActor(GetOwner());
 
+	// Sphere sweep instead of a razor-thin line: a 71-year-old thumb should not
+	// need sniper aim to play a slot machine. Radius 0 falls back to a line.
 	FHitResult Hit;
-	if (!World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	const bool bHit = (InteractRadius > 0.f)
+		? World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility,
+			FCollisionShape::MakeSphere(InteractRadius), Params)
+		: World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+	if (!bHit)
 	{
 		return;
 	}

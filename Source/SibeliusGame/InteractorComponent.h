@@ -22,7 +22,14 @@ public:
 
 	/** How far (cm) the interaction trace reaches from the camera. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Interaction", meta=(ClampMin="0.0"))
-	float InteractRange = 250.f;
+	float InteractRange = 450.f;
+
+	/**
+	 * Radius (cm) of the interaction sweep. The trace is a sphere, not a thin
+	 * line, so aim doesn't have to be pixel-perfect. 0 = old razor-line behavior.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Interaction", meta=(ClampMin="0.0"))
+	float InteractRadius = 30.f;
 
 	/** Activate whatever the player is currently focused on. Bind this to E. */
 	UFUNCTION(BlueprintCallable, Category="Interaction")
