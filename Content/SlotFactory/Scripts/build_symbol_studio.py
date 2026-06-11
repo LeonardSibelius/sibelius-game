@@ -1,4 +1,12 @@
-# build_symbol_studio.py — Celestial Fortune Symbol Studio (P3a build + P4 theme pass)
+# build_symbol_studio.py — Celestial Fortune Symbol Studio (P3a build + P4 theme + P5 art pass)
+#
+# P5 (June 10, 2026): seven rebuilt (loud material setters + bounds-based
+# framing — the P4 seven shipped GREY + mis-framed); star rebuilt as a true
+# camera-facing 5-point; galaxy = NASA-texture emissive card (disc fallback);
+# ROTATOR FIX on every disc tilt (positional args are roll,pitch,yaw — the P4
+# tilts landed in the wrong slots, so saturn ring / galaxy / scatter / wild
+# halo all rendered edge-on); emissive rebalanced 1.4-2.4 -> 0.25-0.55 + a
+# cubemap SkyLight so metallic gold finally reads as gold.
 #
 # Programmatically builds, for each of the 9 model symbols (star, moon, galaxy,
 # saturn, mars, crown, seven, wild, scatter):
@@ -39,7 +47,20 @@ CAM_DIST = 460.0       # cm from symbol centre
 FRAME_FILL = 0.80      # symbol fills ~80% of the square frame
 TARGET_SIZE = 175.0    # cm the frame height spans (symbol ~ FRAME_FILL of this)
 FOCAL = (CAM_DIST / TARGET_SIZE) * FILMBACK  # ~63mm
-SEVEN_GLYPH_SCALE = 1.6  # Text3D "7" scale -> ~cell height (eyeball/tune)
+
+# P5: galaxy is a textured emissive card (NASA public-domain face-on spiral).
+# Drop the image in Downloads under one of these names; it's imported to
+# /Game/SlotFactory/Textures/T_galaxy each run. Missing file -> loud log +
+# the primitive-disc fallback (now correctly tilted).
+GALAXY_TEXTURE_CANDIDATES = [
+    "C:/Users/wpark/Downloads/galaxy_m101.png",
+    "C:/Users/wpark/Downloads/galaxy_m101.jpg",
+    "C:/Users/wpark/Downloads/galaxy.png",
+    "C:/Users/wpark/Downloads/galaxy.jpg",
+]
+GALAXY_TINT = (0.80, 0.55, 1.10)   # push the photo toward the celestial purple identity
+GALAXY_EMISSIVE = 1.4              # card brightness (unlit material)
+SKYLIGHT_INTENSITY = 1.0           # SY7: keep low so golds stay warm
 
 # P4 theme knobs. Per symbol: color = base linear rgb; em = emissive strength;
 # met/rough = PBR; optional rim = (rgb, strength) Fresnel rim light; optional
@@ -48,23 +69,28 @@ SEVEN_GLYPH_SCALE = 1.6  # Text3D "7" scale -> ~cell height (eyeball/tune)
 # "celestial gold" family; moon keeps a cool rim per its icy identity. Emissive
 # is balanced so every symbol reads at reel-cell (~100px) size without blowing out.
 GOLD_RIM = (1.00, 0.86, 0.52)
+# P5 emissive rebalance (SY6): the P4 values (1.4-2.4) were UNSHADED glow that
+# flattened every metallic form into a pastel cutout — that's why star/wild/
+# scatter/galaxy read flat and the moon's craters vanished. Emissive now sits
+# at 0.25-0.55 (accent, not paint) and a SkyLight gives metallic something to
+# reflect, so the gold reads as gold.
 SYMBOLS = [
-    dict(id="star",    builder="star",    color=(1.00, 0.80, 0.25), em=2.0, met=1.0,  rough=0.22, rim=(GOLD_RIM, 0.6)),
-    dict(id="moon",    builder="moon",    color=(0.80, 0.84, 0.92), em=0.5, met=0.15, rough=0.60,
+    dict(id="star",    builder="star",    color=(1.00, 0.80, 0.25), em=0.45, met=1.0,  rough=0.22, rim=(GOLD_RIM, 0.6)),
+    dict(id="moon",    builder="moon",    color=(0.80, 0.84, 0.92), em=0.25, met=0.15, rough=0.60,
          mottle=((0.20, 0.22, 0.30), 0.030, 0.85), rim=((0.75, 0.86, 1.00), 0.9)),
-    dict(id="galaxy",  builder="galaxy",  color=(0.55, 0.32, 0.95), em=1.8, met=0.30, rough=0.40, rim=(GOLD_RIM, 0.5)),
-    dict(id="saturn",  builder="saturn",  color=(0.95, 0.76, 0.40), em=0.9, met=0.85, rough=0.30, rim=(GOLD_RIM, 0.5)),
+    dict(id="galaxy",  builder="galaxy",  color=(0.55, 0.32, 0.95), em=0.50, met=0.30, rough=0.40, rim=(GOLD_RIM, 0.5)),
+    dict(id="saturn",  builder="saturn",  color=(0.95, 0.76, 0.40), em=0.30, met=0.85, rough=0.30, rim=(GOLD_RIM, 0.5)),
     # polar = (iceColor, smoothstep lo, hi on normal.Z, edgeNoiseAmt, noiseFreq).
     # Small cap (top ~10%) with a noise-broken, feathered edge — a frosty patch,
     # not a clean latitude line.
-    dict(id="mars",    builder="mars",    color=(0.70, 0.18, 0.06), em=0.8, met=0.20, rough=0.70,
+    dict(id="mars",    builder="mars",    color=(0.70, 0.18, 0.06), em=0.30, met=0.20, rough=0.70,
          mottle=((0.16, 0.04, 0.02), 0.035, 0.85),
          polar=((0.84, 0.91, 1.00), 0.78, 0.88, 0.10, 0.05),
          rim=((1.00, 0.62, 0.36), 0.5)),
-    dict(id="crown",   builder="crown",   color=(1.00, 0.84, 0.32), em=1.4, met=1.0,  rough=0.18, rim=(GOLD_RIM, 0.6)),
-    dict(id="seven",   builder="seven",   color=(1.00, 0.80, 0.30), em=1.6, met=1.0,  rough=0.20, rim=(GOLD_RIM, 0.6)),
-    dict(id="wild",    builder="wild",    color=(0.72, 0.32, 1.00), em=2.4, met=1.0,  rough=0.22, rim=(GOLD_RIM, 0.7)),
-    dict(id="scatter", builder="scatter", color=(0.20, 0.72, 1.00), em=2.2, met=0.40, rough=0.35, rim=(GOLD_RIM, 0.5)),
+    dict(id="crown",   builder="crown",   color=(1.00, 0.84, 0.32), em=0.40, met=1.0,  rough=0.18, rim=(GOLD_RIM, 0.6)),
+    dict(id="seven",   builder="seven",   color=(1.00, 0.80, 0.30), em=0.45, met=1.0,  rough=0.20, rim=(GOLD_RIM, 0.6)),
+    dict(id="wild",    builder="wild",    color=(0.72, 0.32, 1.00), em=0.55, met=1.0,  rough=0.22, rim=(GOLD_RIM, 0.7)),
+    dict(id="scatter", builder="scatter", color=(0.20, 0.72, 1.00), em=0.50, met=0.40, rough=0.35, rim=(GOLD_RIM, 0.5)),
 ]
 
 TAG = "###STUDIO###"
@@ -83,6 +109,7 @@ def main():
         "cube": unreal.load_asset("/Engine/BasicShapes/Cube"),
         "cylinder": unreal.load_asset("/Engine/BasicShapes/Cylinder"),
         "cone": unreal.load_asset("/Engine/BasicShapes/Cone"),
+        "plane": unreal.load_asset("/Engine/BasicShapes/Plane"),
     }
     for k, m in MESH.items():
         if m is None:
@@ -108,15 +135,37 @@ def main():
 
     # even, position-independent lighting (two directionals) so metallic shape
     # reads across every symbol; the empty level keeps the bg transparent.
-    key = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 600), unreal.Rotator(-50, -40, 0))
+    # SY3 fix: these rotations were positional too — the key got roll=-50 (a
+    # no-op on a directional light) and the FILL got pitch=135, i.e. pointing
+    # UP from below. Keyword args aim them as intended.
+    key = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 600), unreal.Rotator(roll=0, pitch=-50, yaw=-40))
     kc = key.get_component_by_class(unreal.DirectionalLightComponent)
     kc.set_mobility(unreal.ComponentMobility.MOVABLE)
     kc.set_editor_property("intensity", 6.0)
-    fill = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 600), unreal.Rotator(-18, 135, 0))
+    fill = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 600), unreal.Rotator(roll=0, pitch=-18, yaw=135))
     fc = fill.get_component_by_class(unreal.DirectionalLightComponent)
     fc.set_mobility(unreal.ComponentMobility.MOVABLE)
     fc.set_editor_property("intensity", 2.5)
     fc.set_light_color(unreal.LinearColor(0.7, 0.8, 1.0, 1.0))
+
+    # P5 (SY6/SY7): a low-intensity cubemap SkyLight so metallic=1.0 surfaces
+    # have something to reflect — in the empty level the golds previously
+    # reflected pure black and only the (overdriven) emissive was visible.
+    try:
+        sky = eas.spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 400), unreal.Rotator(0, 0, 0))
+        sc = sky.get_component_by_class(unreal.SkyLightComponent)
+        sc.set_mobility(unreal.ComponentMobility.MOVABLE)
+        sc.set_editor_property("source_type", unreal.SkyLightSourceType.SLS_SPECIFIED_CUBEMAP)
+        cubemap = unreal.load_asset("/Engine/MapTemplates/Sky/DaylightAmbientCubemap")
+        if cubemap:
+            sc.set_editor_property("cubemap", cubemap)
+            unreal.log("%s skylight: DaylightAmbientCubemap @ %.1f" % (TAG, SKYLIGHT_INTENSITY))
+        else:
+            unreal.log("%s skylight: engine cubemap missing, captured-scene source" % TAG)
+        sc.set_editor_property("intensity", SKYLIGHT_INTENSITY)
+        sc.recapture_sky()
+    except Exception as ex:
+        unreal.log("%s skylight FAILED (%s) — symbols will read flatter" % (TAG, ex))
 
     # -- helpers ------------------------------------------------------------
     def make_material(spec):
@@ -247,10 +296,27 @@ def main():
         return unreal.Vector(c.x + x, c.y + y, c.z + z)
 
     # -- per-symbol geometry (returns the body actor used for the spin) -----
+    # ⚠️ ROTATOR LESSON, THIRD STRIKE (SY3): unreal.Rotator positional args are
+    # (ROLL, PITCH, YAW) — the P3a/P4 code passed tilts positionally and every
+    # one landed in the wrong slot. The star's cones got ROLL (fanned toward/
+    # away from camera = the "chess pawn"); saturn/galaxy/scatter/wild discs got
+    # YAW, which does NOTHING to a rotationally symmetric disc = every disc
+    # rendered edge-on (the "UFOs", the brim-line halo). Keyword args ONLY here.
     def build_star(sid, c, mat):
-        body = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (0.55, 0.55, 0.55), mat, "core")
+        import math
+        # Proper 5-point star facing the camera (camera looks along +Y, so the
+        # star lives in the XZ plane). A +Z-pointing cone under pitch θ points
+        # (-sinθ, 0, cosθ); each point sits offset from the core along that
+        # same direction so the TIP faces outward.
+        body = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(roll=0, pitch=0, yaw=0), (0.50, 0.50, 0.50), mat, "core")
+        cone_scale = (0.24, 0.24, 0.60)        # 60cm tall points
+        offset_r = 25.0 + (100.0 * cone_scale[2]) / 2.0 - 10.0   # core radius + half-height - overlap
         for i in range(5):
-            add_part(sid, body, MESH["cone"], V(c), unreal.Rotator(72.0 * i, 0, 0), (0.28, 0.28, 0.85), mat, "point%d" % i)
+            theta = 72.0 * i
+            rad = math.radians(theta)
+            dx, dz = -math.sin(rad) * offset_r, math.cos(rad) * offset_r
+            add_part(sid, body, MESH["cone"], V(c, x=dx, z=dz),
+                     unreal.Rotator(roll=0, pitch=theta, yaw=0), cone_scale, mat, "point%d" % i)
         return body
 
     def build_moon(sid, c, mat):
@@ -269,9 +335,11 @@ def main():
         return body
 
     def build_saturn(sid, c, mat):
-        body = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (0.95, 0.95, 0.95), mat, "planet")
-        # ring: flattened cylinder disc, tilted so it reads as an ellipse
-        add_part(sid, body, MESH["cylinder"], V(c), unreal.Rotator(0, 0, 78.0), (1.6, 1.6, 0.05), mat, "ring")
+        body = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(roll=0, pitch=0, yaw=0), (0.95, 0.95, 0.95), mat, "planet")
+        # ring: flattened cylinder disc, tilted so it reads as an ellipse.
+        # SY3 fix: the 78° was previously passed as YAW (no-op on a disc) —
+        # the ring rendered as a flat edge-on line. ROLL tilts it toward camera.
+        add_part(sid, body, MESH["cylinder"], V(c), unreal.Rotator(roll=78.0, pitch=0, yaw=0), (1.6, 1.6, 0.05), mat, "ring")
         return body
 
     def build_crown_parts(sid, c, mat):
@@ -285,35 +353,37 @@ def main():
         return build_crown_parts(sid, c, mat)
 
     def build_seven(sid, c, mat):
-        # P4: true extruded "7" via the Text 3D plugin; box-built fallback so the
-        # other 8 (and a usable seven) survive if the plugin is unavailable.
+        # P5 REBUILD. The P4 seven shipped as a GREY SLAB: the material setters
+        # silently no-op'd (the old call() swallowed every exception) and the
+        # eyeballed glyph scale mis-framed the camera onto one stroke of a huge
+        # default-grey "7". Two fixes (SY1/SY2):
+        #   1. every setter logs tried/failed; if NO material setter lands we
+        #      RAISE to the gold box fallback — grey can never ship again;
+        #   2. framing is computed from MEASURED bounds (get_actor_bounds), and
+        #      the actor is recentred on its bounds origin — no eyeball scale.
         try:
-            # UE5.7 editor Python has no Actor.add_component_by_class; the Text 3D
-            # plugin ships AText3DActor with a Text3DComponent root — spawn it and
-            # grab the component directly.
             if not hasattr(unreal, "Text3DActor"):
                 raise RuntimeError("Text3DActor unavailable (Text 3D plugin off)")
-            actor = eas.spawn_actor_from_class(unreal.Text3DActor, V(c), unreal.Rotator(0.0, -90.0, 0.0))
+            # face the camera at -Y: keyword args (SY3)
+            actor = eas.spawn_actor_from_class(unreal.Text3DActor, V(c), unreal.Rotator(roll=0.0, pitch=0.0, yaw=-90.0))
             comp = actor.get_component_by_class(unreal.Text3DComponent)
 
-            # UE5.7: Text3DComponent UPROPERTYs (Text/Extrude/Bevel/materials) are
-            # protected and can't be set via set_editor_property — use the
-            # BlueprintCallable setters. Resolve by name so we use whatever this
-            # build of the plugin actually exposes.
             def call(names, *args):
+                tried = []
                 for n in names:
                     fn = getattr(comp, n, None)
                     if callable(fn):
                         try:
                             fn(*args)
                             return True
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            tried.append("%s!%s" % (n, e))
+                    else:
+                        tried.append("%s?missing" % n)
+                if tried:
+                    unreal.log("%s seven setter FAILED: %s" % (TAG, "; ".join(tried)))
                 return False
 
-            # `text` has no BlueprintSetter (no set_text in dir) -> unlike the
-            # protected Extrude/Bevel/etc it IS directly settable here; the rest
-            # must go through their set_* methods.
             try:
                 comp.set_editor_property("text", "7")
             except Exception as ex:
@@ -322,47 +392,86 @@ def main():
             call(["set_bevel"], 3.0)
             call(["set_bevel_segments"], 4)
             if hasattr(unreal, "Text3DBevelType"):
-                try:
-                    call(["set_bevel_type"], unreal.Text3DBevelType.CONVEX)
-                except Exception:
-                    pass
-            # centre the glyph on the actor pivot so the camera framing holds
+                call(["set_bevel_type"], unreal.Text3DBevelType.CONVEX)
             if hasattr(unreal, "Text3DHorizontalTextAlignment"):
                 call(["set_horizontal_alignment"], unreal.Text3DHorizontalTextAlignment.CENTER)
             if hasattr(unreal, "Text3DVerticalTextAlignment"):
                 call(["set_vertical_alignment"], unreal.Text3DVerticalTextAlignment.CENTER)
+
+            # SY1: the gold MUST land. Try the per-face setters, then property
+            # spellings; zero successes -> fallback (never ship default grey).
+            mat_hits = 0
             for setter in ("set_front_material", "set_back_material", "set_extrude_material", "set_bevel_material"):
-                call([setter], mat)
+                if call([setter], mat):
+                    mat_hits += 1
+            if mat_hits == 0:
+                for prop in ("front_material", "back_material", "extrude_material", "bevel_material"):
+                    try:
+                        comp.set_editor_property(prop, mat)
+                        mat_hits += 1
+                    except Exception:
+                        pass
+            unreal.log("%s seven: %d material slot(s) set to M_seven" % (TAG, mat_hits))
+            if mat_hits == 0:
+                raise RuntimeError("NO material setter landed — would ship grey")
+
+            # SY2: measured framing. Scale so glyph height = FRAME_FILL of the
+            # frame, then recentre the actor on its measured bounds origin.
+            origin, extent = actor.get_actor_bounds(False)
+            if extent.z < 1.0:
+                raise RuntimeError("glyph bounds degenerate (extent.z=%.2f) — text never built" % extent.z)
+            desired_half = (TARGET_SIZE * FRAME_FILL) / 2.0
+            s = desired_half / extent.z
+            actor.set_actor_scale3d(unreal.Vector(s, s, s))
+            origin, extent = actor.get_actor_bounds(False)
+            target = V(c)
+            actor.add_actor_world_offset(unreal.Vector(target.x - origin.x, target.y - origin.y, target.z - origin.z), False, False)
+            unreal.log("%s seven: Text3D glyph scaled %.2f, bounds %.0fx%.0fcm, recentred" % (TAG, s, extent.x * 2, extent.z * 2))
+
             actor.set_actor_label("%s_glyph" % sid)
             try:
                 actor.set_folder_path("SlotFactory/%s" % sid)
             except Exception:
                 pass
-            actor.set_actor_scale3d(unreal.Vector(SEVEN_GLYPH_SCALE, SEVEN_GLYPH_SCALE, SEVEN_GLYPH_SCALE))
-            unreal.log("%s seven: Text3D extruded glyph (Text3DActor)" % TAG)
             return actor
         except Exception as ex:
-            unreal.log("%s seven: Text3D failed (%s) -> box fallback" % (TAG, ex))
-            bar = add_part(sid, None, MESH["cube"], V(c, x=0, z=48), unreal.Rotator(0, 0, 0), (1.0, 0.18, 0.16), mat, "bar")
-            add_part(sid, bar, MESH["cube"], V(c, x=10, z=-12), unreal.Rotator(20.0, 0, 0), (0.16, 0.18, 0.95), mat, "stem")
+            unreal.log("%s seven: Text3D failed (%s) -> GOLD box fallback" % (TAG, ex))
+            bar = add_part(sid, None, MESH["cube"], V(c, x=0, z=48), unreal.Rotator(roll=0, pitch=0, yaw=0), (1.0, 0.18, 0.16), mat, "bar")
+            add_part(sid, bar, MESH["cube"], V(c, x=10, z=-12), unreal.Rotator(roll=0, pitch=20.0, yaw=0), (0.16, 0.18, 0.95), mat, "stem")
             return bar
 
     def build_galaxy(sid, c, mat):
-        disc = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 68.0), (1.55, 1.55, 0.22), mat, "disc")
-        add_part(sid, disc, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (0.45, 0.45, 0.45), mat, "core")
+        # P5: textured emissive card — a NASA face-on spiral on a camera-facing
+        # plane (engine Plane normal is +Z; roll=90 turns it toward the camera
+        # at -Y). The card material comes from make_galaxy_card_material via
+        # ctx; if the texture file was missing we fall back to the primitive
+        # disc — with the SY3 tilt actually applied this time (roll, not yaw).
+        if ctx.get("galaxy_card_mat") is not None:
+            card = add_part(sid, None, MESH["plane"], V(c),
+                            unreal.Rotator(roll=90.0, pitch=0, yaw=0), (1.6, 1.6, 1.0),
+                            ctx["galaxy_card_mat"], "card")
+            unreal.log("%s galaxy: textured card (T_galaxy)" % TAG)
+            return card
+        unreal.log("%s galaxy: NO texture -> primitive disc fallback (tilted)" % TAG)
+        disc = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(roll=68.0, pitch=0, yaw=0), (1.55, 1.55, 0.22), mat, "disc")
+        add_part(sid, disc, MESH["sphere"], V(c), unreal.Rotator(roll=0, pitch=0, yaw=0), (0.45, 0.45, 0.45), mat, "core")
         return disc
 
     def build_wild(sid, c, mat):
         band = build_crown_parts(sid, c, mat)
-        # glow halo ring facing camera, behind the crown
-        add_part(sid, band, MESH["cylinder"], V(c, y=40, z=15), unreal.Rotator(0, 0, 90.0), (1.7, 1.7, 0.05), mat, "halo")
+        # glow halo ring facing camera, behind the crown.
+        # SY3 fix: 90° was YAW (no-op on a cylinder) — the halo rendered as a
+        # horizontal brim-line above the band. ROLL turns it to face the camera.
+        add_part(sid, band, MESH["cylinder"], V(c, y=40, z=15), unreal.Rotator(roll=90.0, pitch=0, yaw=0), (1.7, 1.7, 0.05), mat, "halo")
         return band
 
     def build_scatter(sid, c, mat):
-        disc = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(0, 0, 68.0), (1.45, 1.45, 0.22), mat, "disc")
-        add_part(sid, disc, MESH["sphere"], V(c), unreal.Rotator(0, 0, 0), (0.4, 0.4, 0.4), mat, "core")
+        # SY3 fix: 68° tilt was YAW (no-op on a flattened sphere) — the disc
+        # rendered edge-on, the "UFO". ROLL tilts it toward the camera.
+        disc = add_part(sid, None, MESH["sphere"], V(c), unreal.Rotator(roll=68.0, pitch=0, yaw=0), (1.45, 1.45, 0.22), mat, "disc")
+        add_part(sid, disc, MESH["sphere"], V(c), unreal.Rotator(roll=0, pitch=0, yaw=0), (0.4, 0.4, 0.4), mat, "core")
         for i, (dx, dz) in enumerate(((70, 35), (-65, 45), (60, -50), (-55, -40))):
-            add_part(sid, disc, MESH["sphere"], V(c, x=dx, z=dz), unreal.Rotator(0, 0, 0), (0.16, 0.16, 0.16), mat, "spark%d" % i)
+            add_part(sid, disc, MESH["sphere"], V(c, x=dx, z=dz), unreal.Rotator(roll=0, pitch=0, yaw=0), (0.16, 0.16, 0.16), mat, "spark%d" % i)
         return disc
 
     BUILDERS = {
@@ -370,6 +479,74 @@ def main():
         "mars": build_mars, "crown": build_crown, "seven": build_seven, "wild": build_wild,
         "scatter": build_scatter,
     }
+
+    # -- P5: galaxy texture import + unlit masked card material (SY4/SY5) ---
+    def import_galaxy_texture():
+        import os
+        for p in GALAXY_TEXTURE_CANDIDATES:
+            if os.path.exists(p):
+                task = unreal.AssetImportTask()
+                task.filename = p
+                task.destination_path = ROOT + "/Textures"
+                task.destination_name = "T_galaxy"
+                task.automated = True
+                task.save = True
+                task.replace_existing = True
+                unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+                tex = unreal.load_asset(ROOT + "/Textures/T_galaxy")
+                if tex:
+                    unreal.log("%s galaxy texture imported: %s -> T_galaxy" % (TAG, p))
+                    return tex
+                unreal.log_error("%s galaxy texture import FAILED from %s" % (TAG, p))
+        unreal.log("%s galaxy texture: NO source file found (tried %d paths) -> disc fallback" % (TAG, len(GALAXY_TEXTURE_CANDIDATES)))
+        return None
+
+    def make_galaxy_card_material(tex):
+        # Unlit + MASKED (SY5): masked pixels write clean alpha through MRQ's
+        # Alpha Output; unlit means only emissive matters — a photo card, not a
+        # lit surface. Mask = luminance with a low clip so the black background
+        # of the NASA image cuts away.
+        full = "%s/M_galaxy_card" % MAT_DIR
+        if eal.does_asset_exist(full):
+            eal.delete_asset(full)
+        mat = asset_tools.create_asset("M_galaxy_card", MAT_DIR, unreal.Material, unreal.MaterialFactoryNew())
+        mat.set_editor_property("blend_mode", unreal.BlendMode.BLEND_MASKED)
+        mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+        mat.set_editor_property("two_sided", True)
+        mat.set_editor_property("opacity_mask_clip_value", 0.06)
+
+        ts = mel.create_material_expression(mat, unreal.MaterialExpressionTextureSample, -800, 0)
+        ts.set_editor_property("texture", tex)
+
+        def c3(rgb, x, y):
+            n = mel.create_material_expression(mat, unreal.MaterialExpressionConstant3Vector, x, y)
+            n.set_editor_property("constant", unreal.LinearColor(rgb[0], rgb[1], rgb[2], 1.0))
+            return n
+
+        def c1(v, x, y):
+            n = mel.create_material_expression(mat, unreal.MaterialExpressionConstant, x, y)
+            n.set_editor_property("r", v)
+            return n
+
+        tint = mel.create_material_expression(mat, unreal.MaterialExpressionMultiply, -560, 0)
+        mel.connect_material_expressions(ts, "", tint, "A")
+        mel.connect_material_expressions(c3(GALAXY_TINT, -800, 160), "", tint, "B")
+        glow = mel.create_material_expression(mat, unreal.MaterialExpressionMultiply, -380, 0)
+        mel.connect_material_expressions(tint, "", glow, "A")
+        mel.connect_material_expressions(c1(GALAXY_EMISSIVE, -560, 160), "", glow, "B")
+        mel.connect_material_property(glow, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+
+        lum = mel.create_material_expression(mat, unreal.MaterialExpressionDotProduct, -560, 320)
+        mel.connect_material_expressions(ts, "", lum, "A")
+        mel.connect_material_expressions(c3((0.333, 0.333, 0.333), -800, 380), "", lum, "B")
+        mel.connect_material_property(lum, "", unreal.MaterialProperty.MP_OPACITY_MASK)
+
+        mel.recompile_material(mat)
+        eal.save_asset(full)
+        return mat
+
+    galaxy_tex = import_galaxy_texture()
+    ctx = {"galaxy_card_mat": make_galaxy_card_material(galaxy_tex) if galaxy_tex else None}
 
     def add_root_track(seq, cls):
         return seq.add_track(cls) if hasattr(seq, "add_track") else seq.add_master_track(cls)
@@ -448,6 +625,7 @@ def main():
     unreal.log("%s DONE  built %d/9: %s" % (TAG, len(built), ", ".join(built)))
     unreal.log("%s focal=%.1fmm  filmback=%.0fx%.0f  camDist=%.0f" % (TAG, FOCAL, FILMBACK, FILMBACK, CAM_DIST))
     unreal.log("%s next: open %s, scrub each SEQ_<id>, then MRQ-render with the coin recipe." % (TAG, LEVEL_PATH))
+    unreal.log("%s P4b STANDING RULE: delete + re-add ALL MRQ jobs before rendering — stale jobs point at dead assets." % TAG)
 
 
 main()
