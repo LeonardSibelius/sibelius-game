@@ -9,8 +9,12 @@
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMaterialLibrary.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "GameFramework/Pawn.h"
 #include "Engine/World.h"
@@ -48,6 +52,47 @@ AHiddenDoor::AHiddenDoor()
 	BlockingBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	BlockingBox->SetCollisionObjectType(ECC_WorldStatic);
 	BlockingBox->SetCollisionResponseToAllChannels(ECR_Block);
+
+	// SIB-44: the inscription. Child of DoorMesh so ApplyState's propagated
+	// SetVisibility reveals/hides it with the door. No mesh assigned unless a
+	// SignTexture is set (null mesh renders nothing).
+	SignMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SignMesh"));
+	SignMesh->SetupAttachment(DoorMesh);
+	SignMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SignMesh->SetCastShadow(false);
+}
+
+void AHiddenDoor::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	if (!SignTexture || !SignMesh)
+	{
+		return;
+	}
+
+	UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
+	UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/SlotFactory/Materials/M_fate_base.M_fate_base"));
+	if (!Plane || !Base)
+	{
+		UE_LOG(LogHiddenDoor, Error, TEXT("[%s] sign needs Plane + M_fate_base (run build_fate_altar.py first)."), *GetName());
+		return;
+	}
+
+	SignMesh->SetStaticMesh(Plane);
+	SignMesh->SetRelativeLocation(SignRelativeLocation);
+	SignMesh->SetRelativeRotation(SignRelativeRotation);
+	// Engine plane is 100x100 cm; art is 2:1 (1024x512). SignHeight 0 = keep
+	// the art's native shape; otherwise stretch vertically as asked.
+	const float SignH = (SignHeight > 0.0f) ? SignHeight : SignWidth * 0.5f;
+	SignMesh->SetRelativeScale3D(FVector(SignWidth / 100.0f, SignH / 100.0f, 1.0f));
+
+	UMaterialInstanceDynamic* MID = SignMesh->CreateDynamicMaterialInstance(0, Base);
+	if (MID)
+	{
+		MID->SetTextureParameterValue(TEXT("Sprite"), SignTexture);
+		MID->SetScalarParameterValue(TEXT("Glow"), 3.0f);   // legible, not blinding
+	}
 }
 
 void AHiddenDoor::BeginPlay()

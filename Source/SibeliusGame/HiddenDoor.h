@@ -18,6 +18,7 @@
 class UStaticMeshComponent;
 class UBoxComponent;
 class UMaterialParameterCollection;
+class UTexture2D;
 
 UCLASS()
 class SIBELIUSGAME_API AHiddenDoor : public AActor
@@ -56,6 +57,42 @@ protected:
 	// collision disabled when ON (passable).
 	UPROPERTY(VisibleAnywhere, Category = "Hidden Door")
 	TObjectPtr<UBoxComponent> BlockingBox;
+
+	// --- SIB-44: the inscription (world-two gate sign) -----------------------
+	// "AI is the Sauce of All Knowledge. It is cooking behind this door."
+	// A glowing unlit plane ATTACHED TO DoorMesh — ApplyState's
+	// SetVisibility(..., propagate=true) reveals it with the door, so the sign
+	// exists only in Code Vision (speak-friend-and-enter). Configured in
+	// OnConstruction only when SignTexture is assigned; assignment on the
+	// placed actor is also what gets the texture COOKED (the PK16 lesson).
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Sign")
+	TObjectPtr<UTexture2D> SignTexture;
+
+	// Defaults = the values Walt scrubbed to on HiddenDoor_1 (June 12, the
+	// great axis hunt). Future doors are born with their sign hung straight.
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Sign")
+	FVector SignRelativeLocation = FVector(0.0f, 70.0f, 10.0f);
+
+	// Explicit FRotator(Pitch, Yaw, Roll). WARNING from the hunt: pitch=90
+	// combos gimbal-lock the other two knobs — roll-only (90,0,0 in the
+	// Details X field) is the working orientation for the engine Plane on
+	// this door. Nudge in Details, never recompile.
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Sign")
+	FRotator SignRelativeRotation = FRotator(0.0f, 0.0f, 90.0f);   // Details shows X(roll)=90
+
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Sign")
+	float SignWidth = 100.0f;   // cm; art is 2:1 (height = width/2 when SignHeight=0)
+
+	// 0 = automatic (width/2, the art's native shape). Set a value to stretch
+	// the plaque vertically — the lettering stretches with it (320 on the
+	// tall office door reads as stately rather than distorted).
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Sign")
+	float SignHeight = 320.0f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Hidden Door|Sign")
+	TObjectPtr<UStaticMeshComponent> SignMesh;
 
 private:
 	// Binds to the player's UCodeVisionComponent; retries for a late pawn spawn
