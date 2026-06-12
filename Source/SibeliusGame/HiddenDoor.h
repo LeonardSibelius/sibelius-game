@@ -13,6 +13,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interactable.h"
 #include "HiddenDoor.generated.h"
 
 class UStaticMeshComponent;
@@ -21,7 +22,7 @@ class UMaterialParameterCollection;
 class UTexture2D;
 
 UCLASS()
-class SIBELIUSGAME_API AHiddenDoor : public AActor
+class SIBELIUSGAME_API AHiddenDoor : public AActor, public IInteractable
 {
 	GENERATED_BODY()
 
@@ -32,6 +33,20 @@ public:
 	// visibility track the state in BOTH directions) without needing a spawned
 	// player pawn. Leaves the door in the inactive (wall) state.
 	bool RunCollisionSelfTest();
+
+	// --- SIB-44: the obelisk IS the gate to world two -----------------------
+	// When revealed (Code Vision held) AND TravelTargetLevel is set, the
+	// revealed panel takes E directly: prompt shows, E travels. Unrevealed =
+	// no prompt, no travel — the secret keeps itself. Same branch guard as
+	// the cathedral doors.
+	virtual void Interact_Implementation(AActor* Interactor) override;
+	virtual FText GetInteractionPrompt_Implementation() const override;
+
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Travel")
+	FName TravelTargetLevel = NAME_None;   // e.g. L_Stacks; None = no travel
+
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Travel")
+	FText TravelPromptText = NSLOCTEXT("Sibelius", "HiddenDoorTravelPrompt", "Enter the Stacks [E]");
 
 protected:
 	virtual void BeginPlay() override;

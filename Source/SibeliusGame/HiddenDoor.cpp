@@ -4,8 +4,11 @@
 
 #include "HiddenDoor.h"
 
+#include "BranchSubsystem.h"
+#include "CathedralDoor.h"          // SIB-44: reuse the static travel guard
 #include "CodeVisionComponent.h"
 #include "CodeVisionStencil.h"
+#include "Engine/GameInstance.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
@@ -187,8 +190,49 @@ void AHiddenDoor::ApplyState(bool bRevealed)
 
 	// ONE path drives BOTH the visual and the collision (CV4/CV8).
 	DoorMesh->SetVisibility(bRevealed, /*bPropagateToChildren=*/true);
-	BlockingBox->SetCollisionEnabled(bRevealed ? ECollisionEnabled::NoCollision
-	                                           : ECollisionEnabled::QueryAndPhysics);
+
+	// SIB-44: when revealed the box stops the PAWN no longer, but keeps
+	// blocking ECC_Visibility so the interaction trace can FOCUS the obelisk
+	// (the panel itself takes E now). Unrevealed = solid wall as ever.
+	if (bRevealed)
+	{
+		BlockingBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		BlockingBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+		BlockingBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	}
+	else
+	{
+		BlockingBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		BlockingBox->SetCollisionResponseToAllChannels(ECR_Block);
+	}
+}
+
+FText AHiddenDoor::GetInteractionPrompt_Implementation() const
+{
+	return (bRevealedState && !TravelTargetLevel.IsNone()) ? TravelPromptText : FText::GetEmpty();
+}
+
+void AHiddenDoor::Interact_Implementation(AActor* Interactor)
+{
+	if (!bRevealedState || TravelTargetLevel.IsNone())
+	{
+		return;   // unrevealed wall keeps its secret; no target = plain reveal door
+	}
+
+	const UWorld* World = GetWorld();
+	UBranchSubsystem* Branch = World ? World->GetSubsystem<UBranchSubsystem>() : nullptr;
+	if (!ACathedralDoor::IsTravelAllowed(Branch))
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Red,
+				TEXT("Merge or discard your branches before leaving this world"));
+		}
+		return;
+	}
+
+	UE_LOG(LogHiddenDoor, Display, TEXT("[%s] the wall opens: travel to %s"), *GetName(), *TravelTargetLevel.ToString());
+	UGameplayStatics::OpenLevel(this, TravelTargetLevel);
 }
 
 bool AHiddenDoor::RunCollisionSelfTest()
@@ -199,10 +243,12 @@ bool AHiddenDoor::RunCollisionSelfTest()
 		(BlockingBox->GetCollisionEnabled() == ECollisionEnabled::QueryAndPhysics) &&
 		!DoorMesh->IsVisible();
 
-	// ON: passable + visible.
+	// ON: pawn-passable + visible. (SIB-44: revealed is QueryOnly — it still
+	// blocks the interaction trace so the panel can take E, but never a pawn.)
 	ApplyState(true);
 	const bool bOnOK =
-		(BlockingBox->GetCollisionEnabled() == ECollisionEnabled::NoCollision) &&
+		(BlockingBox->GetCollisionEnabled() == ECollisionEnabled::QueryOnly) &&
+		(BlockingBox->GetCollisionResponseToChannel(ECC_Pawn) == ECR_Ignore) &&
 		DoorMesh->IsVisible();
 
 	ApplyState(false); // restore to wall
