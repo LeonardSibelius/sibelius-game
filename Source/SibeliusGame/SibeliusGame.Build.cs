@@ -8,6 +8,15 @@ public class SibeliusGame : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
+		// SIB-42 / PK11: the GAME target failed to package with error C2971
+		// ("TAtArgPos ... non-static storage duration") — UE's compile-time
+		// format-string validator (FormatStringSan) miscompiling checkf() in
+		// engine MovieScene headers under MSVC 14.44 + C++20. Known engine/
+		// toolchain bug (same family as Inkpot #98). The editor target doesn't
+		// trip it. Validation is a dev-time lint, safe to disable for this
+		// module; revisit when Epic fixes the header or we bump toolchains.
+		bValidateFormatStrings = false;
+
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"Core",
 			"CoreUObject",

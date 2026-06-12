@@ -50,10 +50,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Slot Cabinet")
 	bool bUseWebScreen = true;
 
-	// SW6: dev-machine path for now; packaging stages dist into Content later
-	// (parked with SIB-42).
+	// SW6/SIB-42: dev-machine FALLBACK only. At runtime ResolveWebGameURL()
+	// prefers the staged copy at Content/WebGame/index.html (packaged as a
+	// loose NonUFS file so Chromium can read it from disk on any machine);
+	// this property is the dev override when the staged copy is absent.
 	UPROPERTY(EditAnywhere, Category = "Slot Cabinet")
 	FString WebGameURL = TEXT("file:///C:/Users/wpark/projects/celestial-fortune/dist/index.html");
+
+	// Staged-first, dev-fallback URL resolution (PK1 in docs/sib-42-packaging-notes.md).
+	FString ResolveWebGameURL() const;
 
 private:
 	void OpenScreen(APlayerController* PC);

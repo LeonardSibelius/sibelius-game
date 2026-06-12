@@ -101,6 +101,11 @@ def main():
 
     app = eas.spawn_actor_from_class(cls, loc, unreal.Rotator(roll=0, pitch=0, yaw=0))
     app.set_actor_label("AIApparition")
+    # PK16: ASSIGN the voice so the map references it — the cooker only ships
+    # referenced assets; a runtime LoadObject ships nothing and plays silence.
+    if eal.does_asset_exist(snd):
+        app.set_editor_property("voice_line", unreal.load_asset(snd))
+        unreal.log("%s voice line assigned (cook-safe)." % TAG)
     unreal.log("%s spawned at (%.0f, %.0f, %.0f) — 350cm ahead of PlayerStart. Ctrl+S, then PIE." % (TAG, loc.x, loc.y, loc.z))
 
 

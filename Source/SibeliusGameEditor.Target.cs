@@ -11,5 +11,6 @@ public class SibeliusGameEditorTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V6;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_7;
 		ExtraModuleNames.Add("SibeliusGame");
+		ExtraModuleNames.Add("SibeliusGameEditor");   // SIB-42/PK12: the smoke-test gates
 	}
 }

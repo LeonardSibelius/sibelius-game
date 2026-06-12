@@ -20,7 +20,9 @@ class UInteractable : public UInterface
 	GENERATED_BODY()
 };
 
-class IInteractable
+// SIBELIUSGAME_API (SIB-42/PK13): the Execute_ thunks are static members of
+// this class; the editor module's commandlets link against them cross-module.
+class SIBELIUSGAME_API IInteractable
 {
 	GENERATED_BODY()
 

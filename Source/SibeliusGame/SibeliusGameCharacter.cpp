@@ -21,6 +21,7 @@
 #include "Blueprint/UserWidget.h" // CreateWidget
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
+#include "Kismet/KismetSystemLibrary.h" // SIB-42: Q-to-quit
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -145,6 +146,10 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 	// SIB-30 P1 generate/ask panel toggle: G.
 	PlayerInputComponent->BindKey(EKeys::G, IE_Pressed, this, &ASibeliusGameCharacter::ToggleGenerate);
+
+	// SIB-42: Q to quit, double-press confirm. Packaged builds had NO exit
+	// (Walt alt-tabbed to Task Manager like a hostage).
+	PlayerInputComponent->BindKey(EKeys::Q, IE_Pressed, this, &ASibeliusGameCharacter::RequestQuit);
 }
 
 
@@ -211,6 +216,21 @@ void ASibeliusGameCharacter::DoInteract()
 void ASibeliusGameCharacter::ToggleDevOverlay()
 {
 	ASibeliusHUD::bOverlayVisible = !ASibeliusHUD::bOverlayVisible;
+}
+
+void ASibeliusGameCharacter::RequestQuit()
+{
+	const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+	if (Now - LastQuitPressTime <= 2.0f)
+	{
+		UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, false);
+		return;
+	}
+	LastQuitPressTime = Now;
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(0xACE0F2, 2.0f, FColor::Yellow, TEXT("Press Q again to quit"));
+	}
 }
 
 void ASibeliusGameCharacter::ToggleJournal()

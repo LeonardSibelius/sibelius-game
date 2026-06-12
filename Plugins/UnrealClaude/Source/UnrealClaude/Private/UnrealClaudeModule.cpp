@@ -145,7 +145,18 @@ void FUnrealClaudeModule::StartupModule()
 		UE_LOG(LogUnrealClaude, Warning, TEXT("Claude CLI not found. Please install with: npm install -g @anthropic-ai/claude-code"));
 	}
 
-	StartMCPServer();
+	// SIB-42/PK15: never start the MCP server in a commandlet (cook, smoke
+	// tests). The cook spawns a second editor while the interactive editor
+	// holds port 3000; the bind fails with a logged ERROR, and any logged
+	// error FAILS THE COOK. A cooker doesn't need a chat server anyway.
+	if (!IsRunningCommandlet())
+	{
+		StartMCPServer();
+	}
+	else
+	{
+		UE_LOG(LogUnrealClaude, Log, TEXT("Commandlet detected — skipping MCP server startup."));
+	}
 
 	// Kick off project-context gather; first GetContext call after this will use the cached result
 	FProjectContextManager::Get().RefreshContext();

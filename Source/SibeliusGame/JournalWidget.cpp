@@ -70,7 +70,14 @@ void UJournalWidget::ApplyText()
 
 void UJournalWidget::RefreshFromNarrative()
 {
-	const FString FullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("docs/NARRATIVE.md"));
+	// PK17: staged-first, dev-fallback (the ResolveWebGameURL pattern).
+	// Content/Journal/NARRATIVE.md ships as a NonUFS loose file; docs/ is the
+	// editor-time source of truth.
+	FString FullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Journal/NARRATIVE.md"));
+	if (!FPaths::FileExists(FullPath))
+	{
+		FullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("docs/NARRATIVE.md"));
+	}
 
 	FString Raw;
 	if (FFileHelper::LoadFileToString(Raw, *FullPath))

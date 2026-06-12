@@ -152,6 +152,15 @@ protected:
 	void HandleGenerateSubmit(const FString& Text); // Enter in the panel
 	void CloseGenerate();                           // Esc / after submit
 
+	/** SIB-42: quit the game (bound to Q, double-press within 2s to confirm —
+	    a packaged build with no exit is a hostage situation). */
+	void RequestQuit();
+
+private:
+	float LastQuitPressTime = -100.0f;   // double-press confirm window
+
+public:
+
 protected:
 
 	/** Set up input action bindings */

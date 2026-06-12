@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Misc/DateTime.h"
+#include "Misc/Paths.h"
 #include "SlotScreenWidget.h"
 #include "SlotWebScreenWidget.h"
 
@@ -69,7 +70,7 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 			WebScreen->OnClosed.BindUObject(this, &ASlotCabinet::CloseScreen);
 		}
 		WebScreen->AddToViewport(60);
-		WebScreen->LoadGame(WebGameURL);
+		WebScreen->LoadGame(ResolveWebGameURL());
 
 		// Focus the browser itself so Space reaches the page's spin handler (SW3).
 		if (TSharedPtr<SWidget> Focus = WebScreen->GetFocusTarget())
@@ -111,6 +112,22 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 
 	bScreenOpen = true;
 	UE_LOG(LogSlotCabinet, Display, TEXT("[SlotCabinet] screen opened (%s)."), bUseWebScreen ? TEXT("web") : TEXT("native"));
+}
+
+FString ASlotCabinet::ResolveWebGameURL() const
+{
+	// PK1: the staged copy ships with the game (NonUFS loose file — Chromium
+	// needs a real on-disk path, it cannot read out of a .pak). Works in
+	// editor AND packaged builds; the EditAnywhere URL is the dev fallback.
+	const FString Staged = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("WebGame/index.html"));
+	if (FPaths::FileExists(Staged))
+	{
+		FString Abs = FPaths::ConvertRelativePathToFull(Staged);
+		Abs.ReplaceInline(TEXT("\\"), TEXT("/"));
+		return FString::Printf(TEXT("file:///%s"), *Abs);
+	}
+	UE_LOG(LogSlotCabinet, Warning, TEXT("[SlotCabinet] no staged Content/WebGame/index.html — falling back to dev URL %s"), *WebGameURL);
+	return WebGameURL;
 }
 
 void ASlotCabinet::CloseScreen()
