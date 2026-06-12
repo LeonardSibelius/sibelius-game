@@ -102,6 +102,18 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Apparition|Voice")
 	TObjectPtr<USoundBase> VoiceLine;
 
+	// SIB-43: auto-play the opening bang on BeginPlay. Even when true, the
+	// bang fires only once per session (USibeliusProgressSubsystem::
+	// bIntroPlayed — CL1: returning to the office must not replay the intro).
+	UPROPERTY(EditAnywhere, Category = "Apparition|Timing")
+	bool bAutoStart = true;
+
+	// SIB-43: the oracle path. Plays the FULL ceremony (halo, gaze-steal,
+	// voice, input lock — the Mount Sinai episode, every time, Walt's call)
+	// with an optional voice override. Re-entrant calls while a ceremony is
+	// already running are ignored (CL5).
+	void TriggerApparition(USoundBase* OverrideVoice = nullptr);
+
 private:
 	void BuildVisuals();                       // OnConstruction — ring + core
 	void SetPhase(EApparitionPhase NewPhase);

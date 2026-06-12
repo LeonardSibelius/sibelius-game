@@ -44,6 +44,17 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
 	FName TargetLevelName = TEXT("L_Cathedral");
 
+	// SIB-43 / CL10: prompt promoted to a property so the cathedral's RETURN
+	// door can say where it goes. Default preserves the attic door verbatim.
+	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
+	FText PromptText = NSLOCTEXT("Sibelius", "CathedralDoorPrompt", "Enter the cathedral [E]");
+
+	// SIB-43 (Walt QA): arriving players spawn within reach of the return
+	// door — a reflexive E bounced him straight back. The door refuses to
+	// travel for this many seconds after level load. Invisible in normal play.
+	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
+	float TravelGraceSeconds = 2.5f;
+
 	// When true the door stays hidden + non-interactable until the player's
 	// UGenerateComponent has spawned at least once this session. v1 ships ungated.
 	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
@@ -72,6 +83,8 @@ private:
 	UBranchSubsystem* GetBranch() const;
 
 	bool bRevealed = true;
+
+	double TravelReadyTime = 0.0;   // world seconds; set in BeginPlay
 
 	FTimerHandle GatePollHandle;
 };

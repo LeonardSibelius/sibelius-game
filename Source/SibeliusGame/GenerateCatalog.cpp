@@ -16,6 +16,13 @@ static const TCHAR* GGenerateCatalogAssetPath = TEXT("/Game/Data/GenerateCatalog
 
 FString GetGenerateCatalogCsvPath()
 {
+	// SIB-43/PK20: staged-first (Content/Data ships as loose NonUFS files —
+	// the Journal/WebGame pattern), dev fallback to <ProjectDir>/Data.
+	const FString Staged = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Data/GenerateCatalog.csv"));
+	if (FPaths::FileExists(Staged))
+	{
+		return Staged;
+	}
 	return FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("Data/GenerateCatalog.csv"));
 }
 

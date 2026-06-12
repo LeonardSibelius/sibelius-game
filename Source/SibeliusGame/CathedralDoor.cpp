@@ -32,6 +32,12 @@ void ACathedralDoor::BeginPlay()
 		return;
 	}
 
+	// SIB-43: arrival grace — players can spawn within reach of this door.
+	if (UWorld* World = GetWorld())
+	{
+		TravelReadyTime = World->GetTimeSeconds() + TravelGraceSeconds;
+	}
+
 	if (bRequireGenerateUse)
 	{
 		ApplyRevealed(false);
@@ -46,6 +52,15 @@ void ACathedralDoor::Interact_Implementation(AActor* Interactor)
 	// against a direct Execute_Interact regardless.
 	if (!bRevealed)
 	{
+		return;
+	}
+
+	// SIB-43: swallow the spawn-adjacent fat-finger E (Walt bounced straight
+	// back to the office on arrival). Silent — within 2.5s of load, the press
+	// simply doesn't count.
+	if (UWorld* World = GetWorld(); World && World->GetTimeSeconds() < TravelReadyTime)
+	{
+		UE_LOG(LogTemp, Display, TEXT("[CathedralDoor] E within arrival grace — ignored"));
 		return;
 	}
 
@@ -73,9 +88,7 @@ void ACathedralDoor::Interact_Implementation(AActor* Interactor)
 
 FText ACathedralDoor::GetInteractionPrompt_Implementation() const
 {
-	return bRevealed
-		? NSLOCTEXT("Sibelius", "CathedralDoorPrompt", "Enter the cathedral [E]")
-		: FText::GetEmpty();
+	return bRevealed ? PromptText : FText::GetEmpty();
 }
 
 bool ACathedralDoor::IsTravelAllowed(const UBranchSubsystem* Branch)

@@ -50,6 +50,34 @@ later) and play start to finish: office bang → powers → cathedral → slot c
   don't stage. Fine — gates run pre-package, not post.
 - PK10 STALE SNAPSHOT. The staged index.html will silently lag the web repo.
   Loose end: a pre-package checklist item (re-copy dist → Content/WebGame).
+- PK21 (HIT, FIXED — supersedes PK20's approach; the REAL PK19/PK20 cure).
+  PK20's staged CSVs shipped fine but the packaged log confessed: "[Generate]
+  ... CSV fallback is editor-only" — UDataTable CSV PARSING DOES NOT EXIST in
+  cooked builds. Loose CSVs can never work at runtime; the loaders require
+  real DataTable ASSETS at /Game/Data. Fix: Tools/Scripts/
+  import_generate_tables.py imports the 3 CSVs with their exact row structs
+  (GenerateCatalogEntry / MrsHallLineRow / GenerateBlocklistRow; expected
+  6/9/8 rows, verified by the script) + /Game/Data added to
+  DirectoriesToAlwaysCook (runtime-loaded, nothing references them — PK16's
+  trap pre-dodged). The PK20 staged-CSV plumbing stays (harmless; editor
+  still reads CSVs; assets win when present). LESSON: the editor/runtime
+  capability split bites a FOURTH way — not just files (PK17/20) and
+  reflection (PK12), but whole ENGINE FEATURES (CSV import) vanish in
+  Shipping; in-editor success proves nothing about a package until the
+  packaged LOG says so. Diagnosis ritual: builds\...\SibeliusGame\Saved\Logs\
+  SibeliusGame.log is the packaged game's testimony — copy and grep it FIRST.
+- PK20 (HIT, FIXED — and it SOLVES PK19). Packaged Generate answered EVERY
+  request "Absolutely not," still voiceless; PIE fine. Root: ALL Generate
+  data is loose CSVs in <ProjectDir>/Data (GenerateCatalog, MrsHallLines —
+  which carries the AudioKeys — MrsHallBlocklist), never staged → empty
+  catalog fails closed to the harshest refusal with no AudioKey → silence.
+  THE SAME ROOT AS PK19's "missing" voice: the clips were cooked fine; the
+  LINES file that names them never shipped. Fix: staged-first path resolution
+  in GenerateCatalog.cpp + MrsHallLines.cpp (×2), CSVs copied to
+  Content/Data/, +DirectoriesToAlwaysStageAsNonUFS=(Path="Data").
+  THE LAW (three strikes — WebGame, Journal, Data): ANY FFileHelper/CSV read
+  from ProjectDir is a packaging bug waiting; audit grep `FPaths::ProjectDir`
+  before every release.
 - PK19 (HIT, OPEN — deferred to v0.2, Walt's call). Mrs. Hall's 9 voice clips
   (/Game/Audio/MrsHall, confirmed on disk, work in PIE) stay SILENT in the
   package even after +DirectoriesToAlwaysCook included them in a fresh cook.

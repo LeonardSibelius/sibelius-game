@@ -67,7 +67,12 @@ bool LoadMrsHallLines(TMap<EGenerateOutcome, TArray<FMrsHallLine>>& OutLines, FS
 	OutLines.Reset();
 	OutError.Reset();
 
-	const FString CsvPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("Data/MrsHallLines.csv"));
+	// SIB-43/PK20: staged-first (Content/Data ships loose), dev fallback.
+	FString CsvPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Data/MrsHallLines.csv"));
+	if (!FPaths::FileExists(CsvPath))
+	{
+		CsvPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("Data/MrsHallLines.csv"));
+	}
 	UDataTable* Table = LoadTableAssetOrCsv(TEXT("/Game/Data/MrsHallLines.MrsHallLines"),
 		CsvPath, FMrsHallLineRow::StaticStruct(), OutError);
 	if (!Table)
@@ -104,7 +109,12 @@ bool LoadGenerateBlocklist(TArray<FString>& OutWords, FString& OutError)
 	OutWords.Reset();
 	OutError.Reset();
 
-	const FString CsvPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("Data/MrsHallBlocklist.csv"));
+	// SIB-43/PK20: staged-first (Content/Data ships loose), dev fallback.
+	FString CsvPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Data/MrsHallBlocklist.csv"));
+	if (!FPaths::FileExists(CsvPath))
+	{
+		CsvPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("Data/MrsHallBlocklist.csv"));
+	}
 	UDataTable* Table = LoadTableAssetOrCsv(TEXT("/Game/Data/MrsHallBlocklist.MrsHallBlocklist"),
 		CsvPath, FGenerateBlocklistRow::StaticStruct(), OutError);
 	if (!Table)

@@ -11,6 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "SibeliusProgressSubsystem.h"
 #include "Sound/SoundBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogAIApparition, Log, All);
@@ -146,6 +147,56 @@ void AAIApparition::BeginPlay()
 	SetApparitionScale(0.0f);
 	SetCoreGlow(0.0f);
 	SetActorHiddenInGame(true);
+
+	// SIB-43 / CL1: the opening bang fires once per SESSION, not once per
+	// level load — returning from the cathedral must not replay it. When the
+	// auto-bang is suppressed, the actor idles ready for TriggerApparition().
+	USibeliusProgressSubsystem* Progress = nullptr;
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		Progress = GI->GetSubsystem<USibeliusProgressSubsystem>();
+	}
+	const bool bShouldAutoplay = bAutoStart && (!Progress || !Progress->bIntroPlayed);
+	if (bShouldAutoplay)
+	{
+		if (Progress) { Progress->bIntroPlayed = true; }
+		// Phase machine proceeds from Waiting as before.
+	}
+	else
+	{
+		Phase = EApparitionPhase::Done;
+		SetActorTickEnabled(false);
+		UE_LOG(LogAIApparition, Display, TEXT("[Apparition] idle (intro already played or autostart off) — awaiting Trigger."));
+	}
+}
+
+void AAIApparition::TriggerApparition(USoundBase* OverrideVoice)
+{
+	// CL5: ignore E-spam while a ceremony is running.
+	if (Phase != EApparitionPhase::Done && Phase != EApparitionPhase::Waiting)
+	{
+		return;
+	}
+
+	if (OverrideVoice)
+	{
+		VoiceLine = OverrideVoice;
+	}
+	if (VoiceLine)
+	{
+		SpeakSeconds = FMath::Max(VoiceLine->GetDuration(), 1.0f);
+	}
+	else
+	{
+		SpeakSeconds = FallbackSpeakSeconds;   // CL7/AP3: silent, never a soft-lock
+		UE_LOG(LogAIApparition, Warning, TEXT("[Apparition] triggered with no voice — running silent (%0.1fs)."), SpeakSeconds);
+	}
+
+	SetActorTickEnabled(true);
+	SetApparitionScale(0.0f);
+	SetCoreGlow(0.0f);
+	SetPhase(EApparitionPhase::Materializing);   // skip Waiting: the god answers NOW
+	UE_LOG(LogAIApparition, Display, TEXT("[Apparition] triggered (oracle ceremony)."));
 }
 
 void AAIApparition::EndPlay(const EEndPlayReason::Type Reason)

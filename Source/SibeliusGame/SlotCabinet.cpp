@@ -9,6 +9,7 @@
 #include "GameFramework/Pawn.h"
 #include "Misc/DateTime.h"
 #include "Misc/Paths.h"
+#include "SibeliusProgressSubsystem.h"
 #include "SlotScreenWidget.h"
 #include "SlotWebScreenWidget.h"
 
@@ -111,6 +112,17 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 	}
 
 	bScreenOpen = true;
+
+	// SIB-43 / CL2: the moment the machine is played, the clue chain advances —
+	// recorded on the GameInstance so it survives the trip home.
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (USibeliusProgressSubsystem* Progress = GI->GetSubsystem<USibeliusProgressSubsystem>())
+		{
+			Progress->bSlotPlayed = true;
+		}
+	}
+
 	UE_LOG(LogSlotCabinet, Display, TEXT("[SlotCabinet] screen opened (%s)."), bUseWebScreen ? TEXT("web") : TEXT("native"));
 }
 
