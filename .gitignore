@@ -86,6 +86,9 @@ Content/Cinematics/Generated/
 # back up manually. Regenerable from the Line->AudioKey manifest. Clear the synthetic-voice
 # commercial license before any shipped build.
 Content/Audio/MrsHall/
+# AI Apparition clue voice (World 3) — AI-generated (ElevenLabs etc.); same policy as
+# MrsHall: local-only + Drive backup, regenerable. Keep AI audio out of the public repo.
+Content/AIApparition/S_ai_*
 
 # --- Custom commissioned art (unless commissioned with full assignment) ---
 Content/Commissioned/
