@@ -2,9 +2,11 @@
 //
 // Bar (docs/sib-31-cathedral-door-notes.md, D1-D6):
 // [HARD] L_Office_v02 loads
-// [HARD] >= 1 placed ACathedralDoor in the level. PRE-PLACEMENT escape: pass
-//        -allowunplaced to downgrade this to WARN and run the remaining checks on a
-//        transient spawn (Walt places the instance by hand AFTER the C++ gate).
+// [HARD] the ACathedralDoor CLASS CONTRACT holds. SIB-44: the attic door is now an
+//        AHiddenDoor (the "Carousel of Fates" world-gate), so a placed ACathedralDoor in
+//        L_Office_v02 is no longer required — the class still ships on the cathedral's
+//        RETURN doors, so the contract is exercised on any placed instances here and
+//        otherwise on a transient spawn (its defaults match the per-door checks below).
 // [HARD] the door's TargetLevelName package exists on disk (D2 — OpenLevel on a
 //        bad name is a silent no-op)
 // [HARD] ACathedralDoor does NOT implement IBranchable (D3 — never in deploy saves)
@@ -52,11 +54,6 @@ namespace CathedralDoorSmokeTestNS
 				UE_LOG(LogCathedralDoorSmoke, Error, TEXT("  [FAIL] %s"), *Label);
 			}
 		}
-		void Warn(bool bCondition, const FString& Label)
-		{
-			UE_LOG(LogCathedralDoorSmoke, Display, TEXT("  [%s] %s"),
-				bCondition ? TEXT("PASS") : TEXT("WARN"), *Label);
-		}
 	};
 
 	// Resolve the door's TargetLevelName to a package path: a short name (the
@@ -86,8 +83,6 @@ int32 UCathedralDoorSmokeTestCommandlet::Main(const FString& Params)
 	// Function-scoped so the namespace doesn't leak into other TUs under unity build.
 	using namespace CathedralDoorSmokeTestNS;
 
-	const bool bAllowUnplaced = FParse::Param(*Params, TEXT("allowunplaced"));
-
 	UE_LOG(LogCathedralDoorSmoke, Display, TEXT("=== SIB-31 cathedral door smoke test: %s ==="), *DefaultMapPackage);
 
 	FResult R;
@@ -100,27 +95,32 @@ int32 UCathedralDoorSmokeTestCommandlet::Main(const FString& Params)
 		return 1;
 	}
 
-	// --- 1) Placed instance (strict by default; -allowunplaced = pre-placement run).
+	// --- 1) ACathedralDoor class contract.
+	// SIB-44: the attic door is now an AHiddenDoor (the "Carousel of Fates" world-gate), so a
+	// placed ACathedralDoor in L_Office_v02 is NO LONGER REQUIRED. The class still ships on the
+	// cathedral's RETURN doors, so its contract still matters — exercise it on whatever placed
+	// instances exist here (the office should now have none) and otherwise on a transient spawn.
+	// The transient's class defaults (TargetLevelName=L_Cathedral, prompt "Enter the cathedral
+	// [E]") are exactly what the per-door checks below assert, so the contract stays gated.
 	TArray<ACathedralDoor*> Doors;
 	for (TActorIterator<ACathedralDoor> It(World); It; ++It)
 	{
 		Doors.Add(*It);
 	}
 
-	if (bAllowUnplaced && Doors.Num() == 0)
+	UE_LOG(LogCathedralDoorSmoke, Display,
+		TEXT("  [INFO] placed ACathedralDoor in %s: %d (attic door is now AHiddenDoor — SIB-44 carousel swap)"),
+		*DefaultMapPackage, Doors.Num());
+
+	if (Doors.Num() == 0)
 	{
-		R.Warn(false, TEXT("No placed ACathedralDoor yet (-allowunplaced: Walt's editor step pending) — checking a transient spawn instead"));
 		ACathedralDoor* TransientDoor = World->SpawnActor<ACathedralDoor>();
-		R.Check(TransientDoor != nullptr, TEXT("Transient ACathedralDoor spawns in the loaded world"));
+		R.Check(TransientDoor != nullptr,
+			TEXT("ACathedralDoor class still spawnable — contract checked on a transient (return doors still ship the class)"));
 		if (TransientDoor)
 		{
 			Doors.Add(TransientDoor);
 		}
-	}
-	else
-	{
-		R.Check(Doors.Num() >= 1,
-			FString::Printf(TEXT("At least one placed ACathedralDoor in L_Office_v02 (found %d)"), Doors.Num()));
 	}
 
 	// --- 2) D3 class invariant: never IBranchable, so it can never enter a deploy save.
