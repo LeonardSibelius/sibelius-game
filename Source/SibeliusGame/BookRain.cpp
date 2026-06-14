@@ -24,10 +24,15 @@ void ABookRain::BeginPlay()
 	{
 		FFallingBook Book;
 		UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this);
-		Comp->SetupAttachment(SceneRoot);
+		// Runtime-created components default to Static mobility, which silently drops the
+		// per-tick SetWorldLocation in Tick() — the books pile invisibly at the actor origin.
+		Comp->SetMobility(EComponentMobility::Movable);
 		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);   // cosmetic only
 		Comp->SetCastShadow(false);
 		Comp->RegisterComponent();
+		// Runtime components attach AFTER RegisterComponent (SetupAttachment is the
+		// constructor-only path and doesn't take effect for these).
+		Comp->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		Comp->SetVisibility(false);
 		if (BookMeshes.Num() > 0 && BookMeshes[0])
 		{
@@ -36,6 +41,9 @@ void ABookRain::BeginPlay()
 		Book.Comp = Comp;
 		Pool.Add(Book);
 	}
+
+	UE_LOG(LogTemp, Display, TEXT("[BookRain] %s built pool of %d movable book component(s) (sources=%d, meshes=%d)."),
+		*GetName(), Pool.Num(), SourceLocations.Num(), BookMeshes.Num());
 }
 
 int32 ABookRain::FindFreeIndex() const
@@ -93,6 +101,9 @@ void ABookRain::SpawnOne()
 	Book.Comp->SetWorldLocation(StartW);
 	Book.Comp->SetWorldRotation(FRotator(FMath::FRandRange(0.f, 360.f), FMath::FRandRange(0.f, 360.f), 0.f));
 	Book.Comp->SetVisibility(true);
+
+	UE_LOG(LogTemp, Display, TEXT("[BookRain] %s spawn book #%d at world %s -> mouth %s."),
+		*GetName(), Idx, *StartW.ToString(), *EndW.ToString());
 }
 
 void ABookRain::Tick(float DeltaSeconds)
