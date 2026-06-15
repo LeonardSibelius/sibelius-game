@@ -100,3 +100,7 @@ Content/Commissioned/
 Plugins/UnrealClaude/Binaries/
 Plugins/UnrealClaude/Intermediate/
 Plugins/UnrealClaude/Resources/mcp-bridge/node_modules/
+
+# Python bytecode cache (ue_bridge client runs under the engine's Python)
+__pycache__/
+*.pyc
