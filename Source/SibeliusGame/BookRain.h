@@ -1,8 +1,12 @@
 // BookRain.h — World Three book-rain spawner.
-// P0/P1 (June 13, 2026). Drop in Source/SibeliusGame/ (RUNTIME module).
-// Pooled mesh-component spawner: books fall from SourceLocations into the cauldron MouthLocation and recycle.
-// This is the consume-on-build float-and-vanish primitive (SIB-27) RUN IN REVERSE (fall + vanish at the pot).
+// P0/P1 (June 13, 2026). Source/SibeliusGame/ (RUNTIME module).
+// Books fall from SourceLocations into the cauldron MouthLocation along a quadratic arc and recycle.
 // Books are COSMETIC + TRANSIENT — never IBranchable, never saved (SS3).
+//
+// SIB-44 RENDER NOTE: runtime-created-and-attached UStaticMeshComponents would not draw in PIE even
+// with Movable mobility, mesh-before-Register, correct world transforms and non-zero bounds (a
+// component bounds/culling gremlin). So each book is a tiny ACTOR (ABookRainBook) whose mesh is a
+// constructor default subobject — it registers + culls through the normal per-actor path and draws.
 
 #pragma once
 
@@ -14,12 +18,38 @@ class UStaticMesh;
 class UStaticMeshComponent;
 class ASauceCauldron;
 
+// One falling book: a lightweight actor that is nothing but a renderable static mesh. ABookRain
+// drives its world transform each tick. Mesh is a constructor default subobject (the whole point —
+// it renders where a hand-pooled runtime component refused to).
+UCLASS()
+class SIBELIUSGAME_API ABookRainBook : public AActor
+{
+	GENERATED_BODY()
+
+public:
+	ABookRainBook();
+
+	void SetBookMesh(UStaticMesh* InMesh);
+	UStaticMeshComponent* GetMeshComponent() const { return Mesh; }
+
+	// Launch: assign the mesh, make the component visible, and force the scene proxy to (re)build.
+	// Actor-level un-hide alone left the mesh in a null-proxy state (the SIB-44 invisible-rain bug);
+	// this drives the component's visibility + render state directly.
+	void Reveal(UStaticMesh* InMesh);
+	// Retire: hide once when the book reaches the mouth and returns to the pool.
+	void Retire();
+
+private:
+	UPROPERTY(VisibleAnywhere, Category = "BookRain")
+	TObjectPtr<UStaticMeshComponent> Mesh;
+};
+
 USTRUCT()
 struct FFallingBook
 {
 	GENERATED_BODY()
 
-	UPROPERTY() TObjectPtr<UStaticMeshComponent> Comp = nullptr;
+	UPROPERTY() TObjectPtr<ABookRainBook> Actor = nullptr;
 	bool     bActive  = false;
 	float    Elapsed  = 0.f;
 	float    Duration = 1.6f;
@@ -106,9 +136,10 @@ protected:
 private:
 	UPROPERTY() TArray<FFallingBook> Pool;
 	float SpawnAccum = 0.f;
+	int32 LastSpawnIndex = INDEX_NONE;   // round-robin reuse so a just-retired book isn't relaunched instantly (the ~1Hz flash)
 
 	void SpawnOne();
-	int32 FindFreeIndex() const;
+	int32 FindFreeIndex();
 
 	// TODO (parked, P3.5): per-book random color tint via a dynamic material instance param.
 };
