@@ -4,8 +4,18 @@
 #include "CarouselCharm.h"
 #include "UObject/Package.h"
 #include "Misc/App.h"
+#include "HAL/IConsoleManager.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCarousel, Log, All);
+
+// Live tuning levers (also reachable from the SIB-45 bridge via exec-console). 100 = the baked
+// defaults. Read at BuildDefaultSlice / SimRuns time so a change takes effect on the next run.
+static TAutoConsoleVariable<int32> CVarCarouselPayoutScalePct(
+	TEXT("carousel.PayoutScalePct"), 100,
+	TEXT("Scale ALL line payouts by this percent (tuning lever; 100 = baked defaults)."));
+static TAutoConsoleVariable<int32> CVarCarouselQuotaScalePct(
+	TEXT("carousel.QuotaScalePct"), 100,
+	TEXT("Scale round quotas by this percent (last-resort tuning lever; 100 = baked curve)."));
 
 namespace CarouselSliceNS
 {
@@ -72,19 +82,36 @@ void FCarouselSim::BuildDefaultSlice(TMap<FName, FSymbolDef>& OutSymbols, FMachi
 	OutSymbols.Reset();
 
 	// 12 Sibelius-flavored symbols (placeholder payouts/weights — tune via carousel.SimRuns).
-	//          Id            Type                      P3  P4   P5   Wt  wild  scat  mult
-	AddSymbol(OutSymbols, TEXT("Cog"),       ESymbolType::Normal,      3,   8,  20,  9);
-	AddSymbol(OutSymbols, TEXT("Key"),       ESymbolType::Normal,      3,   8,  20,  8);
-	AddSymbol(OutSymbols, TEXT("Coin"),      ESymbolType::Normal,      3,   8,  20,  8);
-	AddSymbol(OutSymbols, TEXT("Gear"),      ESymbolType::Normal,      5,  15,  40,  6);
-	AddSymbol(OutSymbols, TEXT("Book"),      ESymbolType::Normal,      5,  15,  40,  6);
-	AddSymbol(OutSymbols, TEXT("Eye"),       ESymbolType::Normal,      6,  18,  45,  5);
-	AddSymbol(OutSymbols, TEXT("Flame"),     ESymbolType::Normal,      6,  18,  45,  5);
-	AddSymbol(OutSymbols, TEXT("Star"),      ESymbolType::Multiplier,  5,  12,  30,  3, false, false, 2);
-	AddSymbol(OutSymbols, TEXT("Dragon"),    ESymbolType::Normal,     20,  60, 200,  2);
-	AddSymbol(OutSymbols, TEXT("SauceDrop"), ESymbolType::Normal,     25,  80, 300,  1);
-	AddSymbol(OutSymbols, TEXT("Fate"),      ESymbolType::Wild,       15,  50, 150,  1, true);
-	AddSymbol(OutSymbols, TEXT("Carousel"),  ESymbolType::Scatter,     5,  15,  40,  2, false, true);
+	// Tuned starter baseline (SIB-46, sim seed 7, 3000 runs): hit frequency 50.4% (dud ~49.6%),
+	// round-1 clear ~55%, EV ~105/spin. Weights set hit frequency (Wild is the dominant lever +
+	// denser commons); payouts (the 9x baseline below) set EV/clear; the quota curve was left alone
+	// (last lever, untouched). carousel.PayoutScalePct / QuotaScalePct stay as live tuning knobs.
+	//          Id            Type                       P3    P4    P5   Wt  wild  scat  mult
+	AddSymbol(OutSymbols, TEXT("Cog"),       ESymbolType::Normal,      27,   72,  180, 16);
+	AddSymbol(OutSymbols, TEXT("Key"),       ESymbolType::Normal,      27,   72,  180, 14);
+	AddSymbol(OutSymbols, TEXT("Coin"),      ESymbolType::Normal,      27,   72,  180, 14);
+	AddSymbol(OutSymbols, TEXT("Gear"),      ESymbolType::Normal,      45,  135,  360, 10);
+	AddSymbol(OutSymbols, TEXT("Book"),      ESymbolType::Normal,      45,  135,  360, 10);
+	AddSymbol(OutSymbols, TEXT("Eye"),       ESymbolType::Normal,      54,  162,  405,  6);
+	AddSymbol(OutSymbols, TEXT("Flame"),     ESymbolType::Normal,      54,  162,  405,  6);
+	AddSymbol(OutSymbols, TEXT("Star"),      ESymbolType::Multiplier,  45,  108,  270,  3, false, false, 2);
+	AddSymbol(OutSymbols, TEXT("Dragon"),    ESymbolType::Normal,     180,  540, 1800,  2);
+	AddSymbol(OutSymbols, TEXT("SauceDrop"), ESymbolType::Normal,     225,  720, 2700,  1);
+	AddSymbol(OutSymbols, TEXT("Fate"),      ESymbolType::Wild,       135,  450, 1350, 12, true);
+	AddSymbol(OutSymbols, TEXT("Carousel"),  ESymbolType::Scatter,     45,  135,  360,  2, false, true);
+
+	// Live payout scaling (tuning / bridge lever).
+	const int32 PayoutScale = FMath::Max(1, CVarCarouselPayoutScalePct.GetValueOnAnyThread());
+	if (PayoutScale != 100)
+	{
+		for (TPair<FName, FSymbolDef>& Pair : OutSymbols)
+		{
+			for (TPair<int32, int32>& P : Pair.Value.LinePayouts)
+			{
+				P.Value = FMath::Max(1, P.Value * PayoutScale / 100);
+			}
+		}
+	}
 
 	OutBuild = FMachineBuild();
 	OutBuild.NumReels = 5;
@@ -370,7 +397,9 @@ FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
 	Sim.Build = &Build;
 	Sim.Symbols = &Symbols;
 
-	const TArray<int32>& Quotas = DefaultQuotas();
+	const int32 QuotaScale = FMath::Max(1, CVarCarouselQuotaScalePct.GetValueOnAnyThread());
+	TArray<int32> Quotas = DefaultQuotas();
+	if (QuotaScale != 100) { for (int32& Q : Quotas) { Q = FMath::Max(1, Q * QuotaScale / 100); } }
 	const int32 Budget = DefaultSpinBudget();
 	const bool bOwnsHighRoller = Build.OwnedCharms.Contains(FName(TEXT("HighRoller")));
 
@@ -385,6 +414,8 @@ FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
 	int64 TotalSpins = 0, TotalChips = 0, ClearedRoundSpins = 0;
 	int32 RunWins = 0, ClearedRounds = 0;
 	TArray<int32> BustHist; BustHist.Init(0, Quotas.Num());
+	TArray<int32> ReachedRound; ReachedRound.Init(0, Quotas.Num());   // runs that started round r
+	TArray<int32> ClearedRound; ClearedRound.Init(0, Quotas.Num());   // runs that cleared round r
 	const int32 Buckets[] = { 0, 1, 11, 51, 201, 1001 };   // payout distribution edges
 	int32 Dist[6] = { 0,0,0,0,0,0 };
 
@@ -412,6 +443,7 @@ FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
 			if (RoundIdx == 7) { Ctx.Curse.bScattersDisabled = true; }
 
 			for (UCarouselCharm* C : Charms) { if (C) C->OnEvent(ECharmTrigger::OnRoundStart, Ctx); }
+			++ReachedRound[RoundIdx];
 
 			int32 RoundChips = 0, SpinsUsed = 0;
 			for (int32 s = 0; s < Budget; ++s)
@@ -432,7 +464,7 @@ FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
 
 			if (RoundChips >= Quota)
 			{
-				ClearedRoundSpins += SpinsUsed; ++ClearedRounds;
+				ClearedRoundSpins += SpinsUsed; ++ClearedRounds; ++ClearedRound[RoundIdx];
 			}
 			else
 			{
@@ -447,6 +479,8 @@ FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
 	const double WinRate = 100.0 * RunWins / NumRuns;
 	const double EvPerSpin = (TotalSpins > 0) ? (double)TotalChips / TotalSpins : 0.0;
 	const double AvgSpinsToClear = (ClearedRounds > 0) ? (double)ClearedRoundSpins / ClearedRounds : 0.0;
+	const double HitFreq = (TotalSpins > 0) ? 100.0 * (TotalSpins - Dist[0]) / TotalSpins : 0.0;
+	const double Round1Clear = (ReachedRound[0] > 0) ? 100.0 * ClearedRound[0] / ReachedRound[0] : 0.0;
 
 	FString Charmstr;
 	for (const FName& Id : Build.OwnedCharms) { Charmstr += Id.ToString() + TEXT(" "); }
@@ -455,9 +489,17 @@ FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
 	Out += TEXT("\n===== carousel.SimRuns report =====\n");
 	Out += FString::Printf(TEXT("runs=%d  seed=%d  charms=[ %s]  paylines=%d  budget=%d/round\n"),
 		NumRuns, Seed, *Charmstr, Build.ActivePaylines.Num(), Budget);
-	Out += FString::Printf(TEXT("WIN RATE (cleared all %d rounds): %.2f%% (%d/%d)\n"), Quotas.Num(), WinRate, RunWins, NumRuns);
+	Out += FString::Printf(TEXT("ROUND-1 CLEAR RATE: %.1f%% (%d/%d)   [target ~50-60%%]\n"), Round1Clear, ClearedRound[0], ReachedRound[0]);
+	Out += FString::Printf(TEXT("HIT FREQUENCY (spins that pay): %.1f%%   [target ~45-55%% dud => 45-55%% hit]\n"), HitFreq);
 	Out += FString::Printf(TEXT("EV per spin: %.3f chips   (total %lld chips over %lld spins)\n"), EvPerSpin, TotalChips, TotalSpins);
+	Out += FString::Printf(TEXT("WIN RATE (cleared all %d rounds): %.2f%% (%d/%d)\n"), Quotas.Num(), WinRate, RunWins, NumRuns);
 	Out += FString::Printf(TEXT("avg spins-to-clear a round: %.2f / %d\n"), AvgSpinsToClear, Budget);
+	Out += TEXT("per-round clear rate (cleared / reached):\n");
+	for (int32 i = 0; i < Quotas.Num(); ++i)
+	{
+		const double Pct = (ReachedRound[i] > 0) ? 100.0 * ClearedRound[i] / ReachedRound[i] : 0.0;
+		Out += FString::Printf(TEXT("  round %d (quota %5d): %5.1f%%  (%d/%d)\n"), i + 1, Quotas[i], Pct, ClearedRound[i], ReachedRound[i]);
+	}
 	Out += TEXT("payout distribution per spin:\n");
 	const TCHAR* Labels[6] = { TEXT("0 (dud)"), TEXT("1-10"), TEXT("11-50"), TEXT("51-200"), TEXT("201-1000"), TEXT("1001+") };
 	for (int32 i = 0; i < 6; ++i)
