@@ -160,6 +160,38 @@ struct FCharmDef : public FTableRowBase
 	int32 Triggers = 0;
 };
 
+// Where a run currently is (run/round/shop state machine).
+UENUM(BlueprintType)
+enum class ECarouselRunPhase : uint8
+{
+	NotStarted  UMETA(DisplayName = "Not Started"),
+	Spinning    UMETA(DisplayName = "Spinning"),     // playing the current round
+	Shop        UMETA(DisplayName = "Shop"),          // cleared a round; spending currency
+	Won         UMETA(DisplayName = "Won"),           // cleared the final round
+	Lost        UMETA(DisplayName = "Lost")           // missed a quota
+};
+
+UENUM(BlueprintType)
+enum class EShopItemType : uint8
+{
+	Charm      UMETA(DisplayName = "Charm"),
+	Payline    UMETA(DisplayName = "Payline"),
+	Symbol     UMETA(DisplayName = "Symbol")          // added to a chosen reel strip
+};
+
+// One purchasable offering in the shop. Currency (not chips) buys these.
+USTRUCT(BlueprintType)
+struct FShopItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "Shop") EShopItemType Type = EShopItemType::Charm;
+	UPROPERTY(BlueprintReadOnly, Category = "Shop") FName Id;            // charm or symbol id
+	UPROPERTY(BlueprintReadOnly, Category = "Shop") int32 Cost = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Shop") int32 TargetReel = 0; // Symbol: which reel strip it joins
+	UPROPERTY(BlueprintReadOnly, Category = "Shop") FText Label;
+};
+
 // Working state threaded by reference through all 7 phases. PLAIN struct (not reflected): it holds a
 // live FRandomStream and raw Charm pointers, and only the sim touches it — Presentation reads
 // FSpinResult instead. Charms read/mutate this to do their thing.
