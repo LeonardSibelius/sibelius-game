@@ -213,6 +213,7 @@ struct FSpinContext
 	bool  bBonusTriggered = false;
 	bool  bWasFreeSpin = false;
 	int32 FreeSpinsRemaining = 0;
+	int32 ScatterThreshold = 3;          // scatters needed to trigger the bonus; Scatter Shrine lowers it
 	int32 CascadeCount = 0;
 	int32 CurrentLineWinIndex = -1;      // set before firing OnLineWin so a Charm can read LineWins[idx]
 	int32 EventReel = -1;                // set before OnReelResolved / OnSymbolLanded

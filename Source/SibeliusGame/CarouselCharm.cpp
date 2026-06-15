@@ -12,6 +12,11 @@ UCarouselCharm* UCarouselCharm::Make(const FName& Id, UObject* Outer)
 	else if (Id == TEXT("HighRoller"))     { Charm = NewObject<UCharm_HighRoller>(Outer); }
 	else if (Id == TEXT("Compounder"))     { Charm = NewObject<UCharm_Compounder>(Outer); }
 	else if (Id == TEXT("Cascade"))        { Charm = NewObject<UCharm_Cascade>(Outer); }
+	else if (Id == TEXT("ScatterShrine"))  { Charm = NewObject<UCharm_ScatterShrine>(Outer); }
+	else if (Id == TEXT("TwinReels"))      { Charm = NewObject<UCharm_TwinReels>(Outer); }
+	else if (Id == TEXT("StickyFate"))     { Charm = NewObject<UCharm_StickyFate>(Outer); }
+	else if (Id == TEXT("NearMissMercy"))  { Charm = NewObject<UCharm_NearMissMercy>(Outer); }  // effect in FCarouselRun
+	else if (Id == TEXT("Hoarder"))        { Charm = NewObject<UCharm_Hoarder>(Outer); }         // effect in FCarouselRun
 	else
 	{
 		// Not-yet-coded Charm (e.g. ScatterShrine, NearMissMercy, Hoarder, TwinReels, StickyFate):
@@ -67,5 +72,63 @@ void UCharm_Cascade::OnEvent(ECharmTrigger Trigger, FSpinContext& Ctx)
 	{
 		// Re-spin the rightmost reel to chase a longer chain. Depth-capped by the sim (no infinite loop).
 		Ctx.ReelsToRespin.Add(Ctx.Build->NumReels - 1);
+	}
+}
+
+void UCharm_ScatterShrine::OnEvent(ECharmTrigger Trigger, FSpinContext& Ctx)
+{
+	if (Trigger == ECharmTrigger::OnSpinStart)
+	{
+		Ctx.ScatterThreshold = FMath::Min(Ctx.ScatterThreshold, 2);   // 2 scatters trigger, not 3
+	}
+}
+
+void UCharm_TwinReels::OnEvent(ECharmTrigger Trigger, FSpinContext& Ctx)
+{
+	if (Trigger != ECharmTrigger::OnReelResolved || !Ctx.Build) { return; }
+	const int32 N = Ctx.Build->NumReels;
+	const int32 Rows = Ctx.Build->RowsVisible;
+	if (Ctx.EventReel != N - 1) { return; }   // wait until every reel has landed, then twin
+
+	const int32 Center = N / 2;
+	const int32 Dest = Center + 1;
+	if (Dest >= N) { return; }
+	for (int32 Row = 0; Row < Rows; ++Row)
+	{
+		const int32 Src = Center * Rows + Row;
+		const int32 Dst = Dest * Rows + Row;
+		if (Ctx.Grid.IsValidIndex(Src) && Ctx.Grid.IsValidIndex(Dst))
+		{
+			Ctx.Grid[Dst] = Ctx.Grid[Src];   // duplicate the center reel onto its neighbor (density)
+		}
+	}
+}
+
+void UCharm_StickyFate::OnEvent(ECharmTrigger Trigger, FSpinContext& Ctx)
+{
+	if (Trigger == ECharmTrigger::OnSpinStart)
+	{
+		// Force last spin's recorded wilds to land again this spin (one spin only).
+		AppliedThisSpin.Reset();
+		for (const TPair<int32, FName>& Cell : Pending)
+		{
+			Ctx.ForcedCells.Add(Cell.Key, Cell.Value);
+			AppliedThisSpin.Add(Cell.Key);
+		}
+		Pending.Reset();
+	}
+	else if (Trigger == ECharmTrigger::OnSpinResolved)
+	{
+		// Record naturally-landed wilds for next spin; the ones we forced this spin expire (not re-stuck).
+		Pending.Reset();
+		for (int32 i = 0; i < Ctx.Grid.Num(); ++i)
+		{
+			if (AppliedThisSpin.Contains(i)) { continue; }
+			const FSymbolDef* D = Ctx.Find(Ctx.Grid[i]);
+			if (D && (D->Type == ESymbolType::Wild || D->bSubstitutesAsWild))
+			{
+				Pending.Add(i, Ctx.Grid[i]);
+			}
+		}
 	}
 }

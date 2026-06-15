@@ -55,18 +55,21 @@ struct SIBELIUSGAME_API FCarouselRun
 	int32 SymbolCost         = 3;
 
 	// --- API (the subsystem forwards to these) ---
-	void StartRun(int32 Seed);
+	// ExtraCharms are granted on top of the starter loadout (debug/tuning: test specific Charm combos).
+	void StartRun(int32 Seed, const TArray<FName>& ExtraCharms = TArray<FName>());
 	bool Spin();                 // one spin in the current round; resolves clear/bust
 	bool Reroll();               // re-roll the shop (costs RerollCost)
 	bool Buy(int32 OfferIndex);  // purchase an offering, applying it to the build
 	bool AdvanceToNextRound();   // leave the shop into the next round (or Won)
 
-	bool CanSpin() const { return Phase == ECarouselRunPhase::Spinning && SpinsRemaining > 0; }
+	// Free spins (from scatters) let you keep spinning without paying a budget spin.
+	bool CanSpin() const { return Phase == ECarouselRunPhase::Spinning && (SpinsRemaining > 0 || SpinCtx.FreeSpinsRemaining > 0); }
 	int32 NumRounds() const { return Quotas.Num(); }
 
 private:
 	FRandomStream Rng;
 	int32 Budget = 5;
+	bool bMercyUsedThisRound = false;   // Near-Miss Mercy: one refund per round
 	TArray<int32> Quotas;
 	TArray<FPaylineDef> PaylinePool;                         // patterns not yet active (buyable)
 	TArray<TStrongObjectPtr<UCarouselCharm>> CharmInstances; // kept alive without a UPROPERTY

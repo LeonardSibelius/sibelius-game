@@ -47,10 +47,11 @@ void FCarouselRun::RebuildCharms()
 	RepointContext();
 }
 
-void FCarouselRun::StartRun(int32 Seed)
+void FCarouselRun::StartRun(int32 Seed, const TArray<FName>& ExtraCharms)
 {
 	Rng.Initialize(Seed);
 	FCarouselSim::BuildDefaultSlice(Symbols, Build);
+	for (const FName& Id : ExtraCharms) { Build.OwnedCharms.AddUnique(Id); }
 
 	Quotas = FCarouselSim::DefaultQuotas();
 	Budget = FCarouselSim::DefaultSpinBudget();
@@ -86,6 +87,8 @@ void FCarouselRun::BeginRound()
 
 	SpinsRemaining = Budget;
 	RoundChips = 0;
+	bMercyUsedThisRound = false;
+	SpinCtx.FreeSpinsRemaining = 0;   // free spins are a within-round bonus; start each round fresh
 	Phase = ECarouselRunPhase::Spinning;
 }
 
@@ -97,15 +100,31 @@ bool FCarouselRun::Spin()
 	Sim.Spin(SpinCtx);
 	LastSpin = FCarouselSim::MakeResult(SpinCtx);
 	RoundChips += SpinCtx.SpinPayout;
-	--SpinsRemaining;
+	if (!LastSpin.bWasFreeSpin)
+	{
+		--SpinsRemaining;   // a free spin (from a scatter) doesn't cost a budget spin
+	}
 
 	if (RoundChips >= CurrentQuota)
 	{
 		ClearRound();
 	}
-	else if (SpinsRemaining <= 0)
+	else if (SpinsRemaining <= 0 && SpinCtx.FreeSpinsRemaining <= 0)
 	{
-		Phase = ECarouselRunPhase::Lost;
+		// Near-Miss Mercy: missed by < 10% -> refund one spin (once per round) instead of busting.
+		if (!bMercyUsedThisRound
+			&& Build.OwnedCharms.Contains(FName(TEXT("NearMissMercy")))
+			&& RoundChips * 10 >= CurrentQuota * 9)
+		{
+			bMercyUsedThisRound = true;
+			SpinsRemaining += 1;   // stay in Spinning for one more shot
+			UE_LOG(LogCarouselRun, Display, TEXT("    Near-Miss Mercy: refunded a spin (%d/%d, within 10%%)"),
+				RoundChips, CurrentQuota);
+		}
+		else
+		{
+			Phase = ECarouselRunPhase::Lost;
+		}
 	}
 	return true;
 }
@@ -113,7 +132,10 @@ bool FCarouselRun::Spin()
 void FCarouselRun::ClearRound()
 {
 	const int32 Unused = FMath::Max(0, SpinsRemaining);
-	const int32 Interest = FMath::Min(Currency * InterestRatePct / 100, InterestCap);
+	// Hoarder: + interest rate and cap on the banked currency (economy archetype).
+	int32 Rate = InterestRatePct, Cap = InterestCap;
+	if (Build.OwnedCharms.Contains(FName(TEXT("Hoarder")))) { Rate += 20; Cap += 5; }
+	const int32 Interest = FMath::Min(Currency * Rate / 100, Cap);
 	LastReward = ClearBaseReward + PerUnusedSpinBonus * Unused + Interest;
 	Currency += LastReward;
 	GenerateOfferings();
@@ -235,10 +257,22 @@ static void CarouselRunDemoConsole(const TArray<FString>& Args)
 {
 	const int32 Seed = (Args.Num() >= 1) ? FCString::Atoi(*Args[0]) : 7;
 
+	// Optional 2nd arg: comma-separated Charm Ids granted at start (debug/tuning a specific combo).
+	TArray<FName> Extra;
+	if (Args.Num() >= 2)
+	{
+		TArray<FString> Parts;
+		Args[1].ParseIntoArray(Parts, TEXT(","));
+		for (const FString& P : Parts) { const FString T = P.TrimStartAndEnd(); if (!T.IsEmpty()) { Extra.Add(FName(*T)); } }
+	}
+
 	FCarouselRun Run;
-	Run.StartRun(Seed);
-	UE_LOG(LogCarouselRun, Display, TEXT("[Carousel] RunDemo seed=%d: %d rounds, starting currency=%d (auto-buy cheapest)."),
-		Seed, Run.NumRounds(), Run.Currency);
+	Run.StartRun(Seed, Extra);
+
+	FString CharmStr;
+	for (const FName& Id : Run.Build.OwnedCharms) { CharmStr += Id.ToString() + TEXT(" "); }
+	UE_LOG(LogCarouselRun, Display, TEXT("[Carousel] RunDemo seed=%d charms=[ %s]: %d rounds, currency=%d (auto-buy cheapest)."),
+		Seed, *CharmStr, Run.NumRounds(), Run.Currency);
 
 	int32 Guard = 0;
 	int32 RoundSpins = 0;

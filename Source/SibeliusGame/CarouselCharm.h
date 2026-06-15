@@ -84,3 +84,53 @@ class UCharm_Cascade : public UCarouselCharm
 public:
 	virtual void OnEvent(ECharmTrigger Trigger, FSpinContext& Ctx) override;
 };
+
+// Scatter Shrine — Carousel scatter triggers on 2 instead of 3. (Free-spin loop). OnSpinStart.
+UCLASS()
+class UCharm_ScatterShrine : public UCarouselCharm
+{
+	GENERATED_BODY()
+public:
+	virtual void OnEvent(ECharmTrigger Trigger, FSpinContext& Ctx) override;
+};
+
+// Twin Reels — duplicate the center reel onto its neighbor for more matching density. (Density).
+// OnReelResolved (after the last reel lands, so the copy isn't overwritten by a later draw).
+UCLASS()
+class UCharm_TwinReels : public UCarouselCharm
+{
+	GENERATED_BODY()
+public:
+	virtual void OnEvent(ECharmTrigger Trigger, FSpinContext& Ctx) override;
+};
+
+// Sticky Fate — Wilds lock in place for the NEXT spin (one spin only). (Setup). Stateful: records
+// naturally-landed wild cells OnSpinResolved, forces them OnSpinStart, then they expire.
+UCLASS()
+class UCharm_StickyFate : public UCarouselCharm
+{
+	GENERATED_BODY()
+public:
+	virtual void OnEvent(ECharmTrigger Trigger, FSpinContext& Ctx) override;
+	virtual void Reset() override { Pending.Reset(); AppliedThisSpin.Reset(); }
+private:
+	TMap<int32, FName> Pending;       // wild cells to force on the next spin
+	TSet<int32> AppliedThisSpin;      // cells we forced this spin (so they expire, not re-stick)
+};
+
+// Near-Miss Mercy — miss the Quota by <10% -> refund one spin (once per round). (Comeback).
+// RUN-LEVEL: the effect lives in FCarouselRun (it needs the round's quota + refund state), so the
+// spin-pipeline OnEvent is intentionally empty. This shell just makes the Charm a known, ownable Id.
+UCLASS()
+class UCharm_NearMissMercy : public UCarouselCharm
+{
+	GENERATED_BODY()
+};
+
+// Hoarder — +interest rate (and cap) on banked currency. (Economy). RUN-LEVEL: applied in
+// FCarouselRun::ClearRound; the spin-pipeline OnEvent is intentionally empty.
+UCLASS()
+class UCharm_Hoarder : public UCarouselCharm
+{
+	GENERATED_BODY()
+};

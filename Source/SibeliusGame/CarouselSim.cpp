@@ -268,7 +268,7 @@ void FCarouselSim::ResolveScatters(FSpinContext& Ctx) const
 		if (D && D->bPaysAnywhere) { ++Ctx.ScatterCount; ScatterId = S; }
 	}
 
-	const int32 Threshold = 3;   // Scatter Shrine (not yet coded) would lower to 2
+	const int32 Threshold = FMath::Max(1, Ctx.ScatterThreshold);   // Scatter Shrine lowers this to 2
 	if (Ctx.ScatterCount >= Threshold && !ScatterId.IsNone())
 	{
 		Ctx.bBonusTriggered = true;
@@ -347,6 +347,7 @@ void FCarouselSim::Spin(FSpinContext& Ctx) const
 	Ctx.GlobalMultiplierPercent = 100;
 	Ctx.SpinPayout = 0;
 	Ctx.ScatterCount = 0;
+	Ctx.ScatterThreshold = 3;
 	Ctx.bBonusTriggered = false;
 	Ctx.CascadeCount = 0;
 	Ctx.CurrentLineWinIndex = -1;
