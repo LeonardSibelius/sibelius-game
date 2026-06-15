@@ -49,10 +49,28 @@ Every verb prints a JSON object (parseable + readable).
 - `read-log [--lines N] [--grep STR]` — tail `Saved/Logs/SibeliusGame.log` (pure file read; works
   mid-PIE). e.g. `read-log --grep "[BookRain]"`.
 
-Write/act verbs (`set-actor-transform`, `set-property`, `place-actor`, `duplicate-actor`,
-`delete-actor`, `run-pie`/`stop-pie`, `exec-console`, `screenshot`, `save-level`, `exec-python`)
-are the next phase. `delete-actor` and `save-level`/`save-asset` will require an explicit flag —
-Walt's hand-placed work is precious.
+### WRITE (target the EDITOR world / persistent placement)
+- `set-actor-transform LABEL [--location x,y,z] [--rotation pitch,yaw,roll] [--scale x,y,z]`.
+- `set-property LABEL PROP VALUE` — coerced to the property's existing type; supports array
+  elements, e.g. `set-property BookRain "SourceLocations[0]" "(0,0,750)"`.
+- `set-component-property LABEL COMPONENT PROP VALUE`.
+- `place-actor CLASS_PATH [--location] [--rotation] [--scale] [--label]` — e.g.
+  `place-actor /Script/Engine.PointLight --location 0,0,200`.
+- `duplicate-actor LABEL`.
+- `delete-actor LABEL --confirm` — **requires `--confirm`**.
+
+### ACT
+- `run-pie` / `stop-pie` (simulate via `LevelEditorSubsystem`).
+- `exec-console COMMAND` — any console command.
+- `screenshot [--res WxH] [--timeout S]` — fires `HighResShot`, polls `Saved/Screenshots/`, returns
+  the new PNG path (async write handled). **Closes the visual loop** — the PNG can then be viewed.
+- `save-level --confirm` / `save-asset PATH --confirm` — **require `--confirm`** (don't clobber
+  hand-work).
+- `exec-python "SNIPPET"` — raw escape hatch.
+
+All verbs verified live against `L_AI_Temple` (the full book-rain session — read transforms, set
+ScaleRange/SourceLocations, run sim, scrape `[BookRain]` log, screenshot the falling books, stop —
+reproduced with no human relay). Writes use the editor world, so they take effect on the next PIE.
 
 ## Editor-vs-PIE world (baked in)
 Reads resolve the **PIE/game world while playing**, else the **editor world**
