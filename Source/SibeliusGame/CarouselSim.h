@@ -14,6 +14,18 @@
 
 class UCarouselCharm;
 
+// Aggregated result of a SimRuns batch. The gate (CarouselSmokeTest) asserts on these fields;
+// SimRuns() formats them into the human report.
+struct FCarouselSimReport
+{
+	int32 NumRuns = 0, Seed = 0, Budget = 0, RunWins = 0, NumPaylines = 0;
+	int64 TotalSpins = 0, TotalChips = 0;
+	double EvPerSpin = 0.0, HitFreqPct = 0.0, WinRatePct = 0.0, Round1ClearPct = 0.0, AvgSpinsToClear = 0.0;
+	TArray<int32> Dist;                                       // 6 payout buckets
+	TArray<int32> Quotas, ReachedRound, ClearedRound, BustHist;
+	FString CharmList;
+};
+
 // Per-build spin engine. Bind a build + symbol registry + resolved Charms, then Spin() repeatedly.
 struct SIBELIUSGAME_API FCarouselSim
 {
@@ -39,8 +51,12 @@ struct SIBELIUSGAME_API FCarouselSim
 	static const TArray<int32>& DefaultQuotas();
 	static int32 DefaultSpinBudget();
 
-	// carousel.SimRuns: headless auto-play of NumRuns runs against the default slice; returns a report
-	// (win-rate, avg spins-to-clear, EV/spin, payout distribution, bust-round histogram) and logs it.
+	// Headless auto-play of NumRuns runs against the default slice; returns the aggregated metrics.
+	// Deterministic for a fixed (NumRuns, Seed). The gate asserts on this directly.
+	static FCarouselSimReport RunSim(int32 NumRuns, int32 Seed);
+
+	// carousel.SimRuns: RunSim + format the human report (win-rate, EV/spin, hit frequency, per-round
+	// clear, payout distribution, bust histogram), log it, and return it.
 	static FString SimRuns(int32 NumRuns, int32 Seed);
 
 private:

@@ -385,7 +385,7 @@ FSpinResult FCarouselSim::MakeResult(const FSpinContext& Ctx)
 
 /* ------------------------------------------------------------------ SimRuns */
 
-FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
+FCarouselSimReport FCarouselSim::RunSim(int32 NumRuns, int32 Seed)
 {
 	NumRuns = FMath::Max(1, NumRuns);
 
@@ -476,41 +476,52 @@ FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
 		if (!bBusted) { ++RunWins; }
 	}
 
-	const double WinRate = 100.0 * RunWins / NumRuns;
-	const double EvPerSpin = (TotalSpins > 0) ? (double)TotalChips / TotalSpins : 0.0;
-	const double AvgSpinsToClear = (ClearedRounds > 0) ? (double)ClearedRoundSpins / ClearedRounds : 0.0;
-	const double HitFreq = (TotalSpins > 0) ? 100.0 * (TotalSpins - Dist[0]) / TotalSpins : 0.0;
-	const double Round1Clear = (ReachedRound[0] > 0) ? 100.0 * ClearedRound[0] / ReachedRound[0] : 0.0;
+	FCarouselSimReport Rep;
+	Rep.NumRuns = NumRuns; Rep.Seed = Seed; Rep.Budget = Budget; Rep.RunWins = RunWins;
+	Rep.NumPaylines = Build.ActivePaylines.Num();
+	Rep.TotalSpins = TotalSpins; Rep.TotalChips = TotalChips;
+	Rep.EvPerSpin = (TotalSpins > 0) ? (double)TotalChips / TotalSpins : 0.0;
+	Rep.HitFreqPct = (TotalSpins > 0) ? 100.0 * (TotalSpins - Dist[0]) / TotalSpins : 0.0;
+	Rep.WinRatePct = 100.0 * RunWins / NumRuns;
+	Rep.Round1ClearPct = (ReachedRound[0] > 0) ? 100.0 * ClearedRound[0] / ReachedRound[0] : 0.0;
+	Rep.AvgSpinsToClear = (ClearedRounds > 0) ? (double)ClearedRoundSpins / ClearedRounds : 0.0;
+	Rep.Dist.Append(Dist, UE_ARRAY_COUNT(Dist));
+	Rep.Quotas = Quotas; Rep.ReachedRound = ReachedRound; Rep.ClearedRound = ClearedRound; Rep.BustHist = BustHist;
+	for (const FName& Id : Build.OwnedCharms) { Rep.CharmList += Id.ToString() + TEXT(" "); }
+	return Rep;
+}
 
-	FString Charmstr;
-	for (const FName& Id : Build.OwnedCharms) { Charmstr += Id.ToString() + TEXT(" "); }
+FString FCarouselSim::SimRuns(int32 NumRuns, int32 Seed)
+{
+	const FCarouselSimReport R = RunSim(NumRuns, Seed);
 
 	FString Out;
 	Out += TEXT("\n===== carousel.SimRuns report =====\n");
 	Out += FString::Printf(TEXT("runs=%d  seed=%d  charms=[ %s]  paylines=%d  budget=%d/round\n"),
-		NumRuns, Seed, *Charmstr, Build.ActivePaylines.Num(), Budget);
-	Out += FString::Printf(TEXT("ROUND-1 CLEAR RATE: %.1f%% (%d/%d)   [target ~50-60%%]\n"), Round1Clear, ClearedRound[0], ReachedRound[0]);
-	Out += FString::Printf(TEXT("HIT FREQUENCY (spins that pay): %.1f%%   [target ~45-55%% dud => 45-55%% hit]\n"), HitFreq);
-	Out += FString::Printf(TEXT("EV per spin: %.3f chips   (total %lld chips over %lld spins)\n"), EvPerSpin, TotalChips, TotalSpins);
-	Out += FString::Printf(TEXT("WIN RATE (cleared all %d rounds): %.2f%% (%d/%d)\n"), Quotas.Num(), WinRate, RunWins, NumRuns);
-	Out += FString::Printf(TEXT("avg spins-to-clear a round: %.2f / %d\n"), AvgSpinsToClear, Budget);
+		R.NumRuns, R.Seed, *R.CharmList, R.NumPaylines, R.Budget);
+	Out += FString::Printf(TEXT("ROUND-1 CLEAR RATE: %.1f%% (%d/%d)   [target ~50-60%%]\n"),
+		R.Round1ClearPct, R.ClearedRound.IsValidIndex(0) ? R.ClearedRound[0] : 0, R.ReachedRound.IsValidIndex(0) ? R.ReachedRound[0] : 0);
+	Out += FString::Printf(TEXT("HIT FREQUENCY (spins that pay): %.1f%%   [target ~45-55%% dud => 45-55%% hit]\n"), R.HitFreqPct);
+	Out += FString::Printf(TEXT("EV per spin: %.3f chips   (total %lld chips over %lld spins)\n"), R.EvPerSpin, R.TotalChips, R.TotalSpins);
+	Out += FString::Printf(TEXT("WIN RATE (cleared all %d rounds): %.2f%% (%d/%d)\n"), R.Quotas.Num(), R.WinRatePct, R.RunWins, R.NumRuns);
+	Out += FString::Printf(TEXT("avg spins-to-clear a round: %.2f / %d\n"), R.AvgSpinsToClear, R.Budget);
 	Out += TEXT("per-round clear rate (cleared / reached):\n");
-	for (int32 i = 0; i < Quotas.Num(); ++i)
+	for (int32 i = 0; i < R.Quotas.Num(); ++i)
 	{
-		const double Pct = (ReachedRound[i] > 0) ? 100.0 * ClearedRound[i] / ReachedRound[i] : 0.0;
-		Out += FString::Printf(TEXT("  round %d (quota %5d): %5.1f%%  (%d/%d)\n"), i + 1, Quotas[i], Pct, ClearedRound[i], ReachedRound[i]);
+		const double Pct = (R.ReachedRound[i] > 0) ? 100.0 * R.ClearedRound[i] / R.ReachedRound[i] : 0.0;
+		Out += FString::Printf(TEXT("  round %d (quota %5d): %5.1f%%  (%d/%d)\n"), i + 1, R.Quotas[i], Pct, R.ClearedRound[i], R.ReachedRound[i]);
 	}
 	Out += TEXT("payout distribution per spin:\n");
 	const TCHAR* Labels[6] = { TEXT("0 (dud)"), TEXT("1-10"), TEXT("11-50"), TEXT("51-200"), TEXT("201-1000"), TEXT("1001+") };
-	for (int32 i = 0; i < 6; ++i)
+	for (int32 i = 0; i < 6 && i < R.Dist.Num(); ++i)
 	{
-		const double Pct = (TotalSpins > 0) ? 100.0 * Dist[i] / TotalSpins : 0.0;
-		Out += FString::Printf(TEXT("  %-10s : %6.2f%%  (%d)\n"), Labels[i], Pct, Dist[i]);
+		const double Pct = (R.TotalSpins > 0) ? 100.0 * R.Dist[i] / R.TotalSpins : 0.0;
+		Out += FString::Printf(TEXT("  %-10s : %6.2f%%  (%d)\n"), Labels[i], Pct, R.Dist[i]);
 	}
 	Out += TEXT("bust-round histogram (round where the run died):\n");
-	for (int32 i = 0; i < Quotas.Num(); ++i)
+	for (int32 i = 0; i < R.Quotas.Num(); ++i)
 	{
-		Out += FString::Printf(TEXT("  round %d (quota %5d): %d\n"), i + 1, Quotas[i], BustHist[i]);
+		Out += FString::Printf(TEXT("  round %d (quota %5d): %d\n"), i + 1, R.Quotas[i], R.BustHist[i]);
 	}
 	Out += TEXT("===================================\n");
 
