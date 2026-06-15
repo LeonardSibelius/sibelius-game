@@ -79,6 +79,9 @@ private:
 	void BeginRound();             // set quota/curse/budget for RoundIndex, Phase=Spinning
 	void ClearRound();             // award currency, open the shop
 	void GenerateOfferings();
+	void LoadCharmCosts();         // content-as-data: per-charm shop cost from DT_CarouselCharms (fallback: flat)
+
+	TMap<FName, int32> CharmCostById;   // from the charm DataTable; empty -> flat CharmCost
 	void ApplyItem(const FShopItem& Item);
 	void RebuildCharms();          // (re)create charm instances from Build.OwnedCharms; repoint SpinCtx
 	void RepointContext();         // point SpinCtx at Build/Symbols/Rng/charms (stable across edits)

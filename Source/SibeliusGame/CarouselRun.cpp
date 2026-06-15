@@ -5,6 +5,7 @@
 #include "UObject/Package.h"   // GetTransientPackage
 #include "Misc/App.h"
 #include "HAL/IConsoleManager.h"
+#include "Engine/DataTable.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCarouselRun, Log, All);
 
@@ -47,10 +48,27 @@ void FCarouselRun::RebuildCharms()
 	RepointContext();
 }
 
+void FCarouselRun::LoadCharmCosts()
+{
+	CharmCostById.Reset();
+	UDataTable* Table = LoadObject<UDataTable>(nullptr, TEXT("/Game/Data/DT_CarouselCharms.DT_CarouselCharms"));
+	if (!Table) { return; }   // fallback: GenerateOfferings uses the flat CharmCost
+	TArray<FCharmDef*> Rows;
+	Table->GetAllRows<FCharmDef>(TEXT("CarouselRun"), Rows);
+	for (const FCharmDef* Row : Rows)
+	{
+		if (Row && !Row->Id.IsNone())
+		{
+			CharmCostById.Add(Row->Id, Row->ShopCost > 0 ? Row->ShopCost : CharmCost);
+		}
+	}
+}
+
 void FCarouselRun::StartRun(int32 Seed, const TArray<FName>& ExtraCharms)
 {
 	Rng.Initialize(Seed);
 	FCarouselSim::BuildDefaultSlice(Symbols, Build);
+	LoadCharmCosts();
 	for (const FName& Id : ExtraCharms) { Build.OwnedCharms.AddUnique(Id); }
 
 	Quotas = FCarouselSim::DefaultQuotas();
@@ -166,7 +184,8 @@ void FCarouselRun::GenerateOfferings()
 			if (Roll == 0 && BuyableCharms.Num() > 0)
 			{
 				const int32 Idx = Rng.RandRange(0, BuyableCharms.Num() - 1);
-				FShopItem It; It.Type = EShopItemType::Charm; It.Id = BuyableCharms[Idx]; It.Cost = CharmCost;
+				FShopItem It; It.Type = EShopItemType::Charm; It.Id = BuyableCharms[Idx];
+				It.Cost = CharmCostById.Contains(It.Id) ? CharmCostById[It.Id] : CharmCost;
 				It.Label = FText::FromString(FString::Printf(TEXT("Charm: %s"), *It.Id.ToString()));
 				Offerings.Add(It);
 				BuyableCharms.RemoveAt(Idx);   // no dupes in one shop

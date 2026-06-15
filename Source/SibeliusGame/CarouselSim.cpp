@@ -5,6 +5,7 @@
 #include "UObject/Package.h"
 #include "Misc/App.h"
 #include "HAL/IConsoleManager.h"
+#include "Engine/DataTable.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCarousel, Log, All);
 
@@ -72,6 +73,39 @@ namespace CarouselSliceNS
 		}
 		return Strip;
 	}
+
+	// Fallback symbol set — the tuned baseline literals, used when DT_CarouselSymbols is absent
+	// (fresh project / headless contexts that can't load content) so the sim always works.
+	static void AddFallbackSymbols(TMap<FName, FSymbolDef>& Out)
+	{
+		//          Id            Type                       P3    P4    P5   Wt  wild  scat  mult
+		AddSymbol(Out, TEXT("Cog"),       ESymbolType::Normal,      27,   72,  180, 16);
+		AddSymbol(Out, TEXT("Key"),       ESymbolType::Normal,      27,   72,  180, 14);
+		AddSymbol(Out, TEXT("Coin"),      ESymbolType::Normal,      27,   72,  180, 14);
+		AddSymbol(Out, TEXT("Gear"),      ESymbolType::Normal,      45,  135,  360, 10);
+		AddSymbol(Out, TEXT("Book"),      ESymbolType::Normal,      45,  135,  360, 10);
+		AddSymbol(Out, TEXT("Eye"),       ESymbolType::Normal,      54,  162,  405,  6);
+		AddSymbol(Out, TEXT("Flame"),     ESymbolType::Normal,      54,  162,  405,  6);
+		AddSymbol(Out, TEXT("Star"),      ESymbolType::Multiplier,  45,  108,  270,  3, false, false, 2);
+		AddSymbol(Out, TEXT("Dragon"),    ESymbolType::Normal,     180,  540, 1800,  2);
+		AddSymbol(Out, TEXT("SauceDrop"), ESymbolType::Normal,     225,  720, 2700,  1);
+		AddSymbol(Out, TEXT("Fate"),      ESymbolType::Wild,       135,  450, 1350, 12, true);
+		AddSymbol(Out, TEXT("Carousel"),  ESymbolType::Scatter,     45,  135,  360,  2, false, true);
+	}
+
+	// Content-as-data: load the symbol set from the DataTable. Returns false if absent/empty.
+	static bool LoadSymbolsFromTable(TMap<FName, FSymbolDef>& Out)
+	{
+		UDataTable* Table = LoadObject<UDataTable>(nullptr, TEXT("/Game/Data/DT_CarouselSymbols.DT_CarouselSymbols"));
+		if (!Table) { return false; }
+		TArray<FSymbolDef*> Rows;
+		Table->GetAllRows<FSymbolDef>(TEXT("CarouselSim"), Rows);
+		for (const FSymbolDef* Row : Rows)
+		{
+			if (Row && !Row->Id.IsNone()) { Out.Add(Row->Id, *Row); }
+		}
+		return Out.Num() > 0;
+	}
 }
 
 /* ------------------------------------------------------------------ content */
@@ -81,24 +115,19 @@ void FCarouselSim::BuildDefaultSlice(TMap<FName, FSymbolDef>& OutSymbols, FMachi
 	using namespace CarouselSliceNS;
 	OutSymbols.Reset();
 
-	// 12 Sibelius-flavored symbols (placeholder payouts/weights — tune via carousel.SimRuns).
-	// Tuned starter baseline (SIB-46, sim seed 7, 3000 runs): hit frequency 50.4% (dud ~49.6%),
-	// round-1 clear ~55%, EV ~105/spin. Weights set hit frequency (Wild is the dominant lever +
-	// denser commons); payouts (the 9x baseline below) set EV/clear; the quota curve was left alone
-	// (last lever, untouched). carousel.PayoutScalePct / QuotaScalePct stay as live tuning knobs.
-	//          Id            Type                       P3    P4    P5   Wt  wild  scat  mult
-	AddSymbol(OutSymbols, TEXT("Cog"),       ESymbolType::Normal,      27,   72,  180, 16);
-	AddSymbol(OutSymbols, TEXT("Key"),       ESymbolType::Normal,      27,   72,  180, 14);
-	AddSymbol(OutSymbols, TEXT("Coin"),      ESymbolType::Normal,      27,   72,  180, 14);
-	AddSymbol(OutSymbols, TEXT("Gear"),      ESymbolType::Normal,      45,  135,  360, 10);
-	AddSymbol(OutSymbols, TEXT("Book"),      ESymbolType::Normal,      45,  135,  360, 10);
-	AddSymbol(OutSymbols, TEXT("Eye"),       ESymbolType::Normal,      54,  162,  405,  6);
-	AddSymbol(OutSymbols, TEXT("Flame"),     ESymbolType::Normal,      54,  162,  405,  6);
-	AddSymbol(OutSymbols, TEXT("Star"),      ESymbolType::Multiplier,  45,  108,  270,  3, false, false, 2);
-	AddSymbol(OutSymbols, TEXT("Dragon"),    ESymbolType::Normal,     180,  540, 1800,  2);
-	AddSymbol(OutSymbols, TEXT("SauceDrop"), ESymbolType::Normal,     225,  720, 2700,  1);
-	AddSymbol(OutSymbols, TEXT("Fate"),      ESymbolType::Wild,       135,  450, 1350, 12, true);
-	AddSymbol(OutSymbols, TEXT("Carousel"),  ESymbolType::Scatter,     45,  135,  360,  2, false, true);
+	// Content-as-data (SIB-46): the tuned 12-symbol set lives in DT_CarouselSymbols so it's tunable
+	// live via the bridge with no recompile. The baked literals remain as a safe fallback (identical
+	// values) if the table is missing. The tuned baseline (seed 7, ~50% hit / ~55% round-1 clear) is
+	// preserved either way.
+	if (!LoadSymbolsFromTable(OutSymbols))
+	{
+		AddFallbackSymbols(OutSymbols);
+		UE_LOG(LogCarousel, Display, TEXT("[Carousel] symbols: baked fallback (%d) — DT_CarouselSymbols not found"), OutSymbols.Num());
+	}
+	else
+	{
+		UE_LOG(LogCarousel, Display, TEXT("[Carousel] symbols: loaded DT_CarouselSymbols (%d rows)"), OutSymbols.Num());
+	}
 
 	// Live payout scaling (tuning / bridge lever).
 	const int32 PayoutScale = FMath::Max(1, CVarCarouselPayoutScalePct.GetValueOnAnyThread());
