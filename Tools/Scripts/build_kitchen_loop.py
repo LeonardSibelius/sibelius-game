@@ -17,16 +17,36 @@ import unreal
 
 MAP = "/Game/L_Office_v02"
 TAG = "###KITCHEN-LOOP###"
+SIGN_SRC = "C:/Users/wpark/projects/walt-cowork-memory/sibelius-art/signs/T_Sign_ManyWorlds.png"
+SIGN_ASSET = "/Game/Signs/T_Sign_ManyWorlds"   # "MANY WORLDS / no two alike", 1024x640 (1.6:1)
 
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 ues = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
+
+
+def import_sign():
+    """Import the Many Worlds sign PNG as a Texture2D (Walt's art — committed)."""
+    if unreal.EditorAssetLibrary.does_asset_exist(SIGN_ASSET):
+        return unreal.load_asset(SIGN_ASSET)
+    task = unreal.AssetImportTask()
+    task.filename = SIGN_SRC
+    task.destination_path = "/Game/Signs"
+    task.destination_name = "T_Sign_ManyWorlds"
+    task.automated = True
+    task.replace_existing = True
+    task.save = True
+    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+    return unreal.load_asset(SIGN_ASSET)
+
 
 door_cls = unreal.load_class(None, "/Script/SibeliusGame.SauceDoor")
 cab_cls = unreal.load_class(None, "/Script/SibeliusGame.CabinetOfCuriosities")
 if door_cls is None or cab_cls is None:
     unreal.log_error("%s C++ classes not found — Build.bat the editor target first." % TAG)
 else:
+    sign_tex = import_sign()
+    unreal.log("%s sign texture: %s" % (TAG, sign_tex))
     les.load_level(MAP)
     world = ues.get_editor_world()
 
@@ -58,6 +78,18 @@ else:
         door_loc = unreal.Vector(cx, cy, fz + 110.0)
         door = eas.spawn_actor_from_class(door_cls, door_loc, unreal.Rotator(0.0, 0.0, 0.0))
         door.set_actor_label("SauceDoor_Kitchen")
+
+        # "Many Worlds" sign — same AHiddenDoor SignTexture path the office Sauce /
+        # attic Carousel signs use (flat unlit M_fate_base plaque, revealed with the
+        # door). Sized 1.6:1 to match the 1024x640 art so the gold text stays crisp.
+        if sign_tex:
+            door.set_editor_property("SignTexture", sign_tex)
+            door.set_editor_property("SignWidth", 160.0)
+            door.set_editor_property("SignHeight", 100.0)
+            try:
+                door.rerun_construction_scripts()   # build the SignMesh now (else on load)
+            except Exception as e:
+                unreal.log_warning("%s rerun_construction_scripts: %r (sign builds on load)" % (TAG, e))
 
         # Cabinet: a bit away, accessible. ISM slots grow along +Y from its origin.
         cab_loc = unreal.Vector(cx - 300.0, cy + 300.0, fz)
