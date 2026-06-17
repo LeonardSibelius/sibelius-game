@@ -75,6 +75,49 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 	MakePlace(TEXT("InvertedKitchen"), TEXT("The Inverted Kitchen"),
 		FLinearColor(0.06f, 0.05f, 0.05f), FLinearColor(1.0f, 0.5f, 0.3f), 0.015f, 1.8f,
 		{ TEXT("UpsideSpoon"), TEXT("RecursiveRecipe"), TEXT("SauceThatDreams") });
+
+	// --- The Server Cathedral (§5) — the AI's "mind" as a temple. This is the FIRST
+	// dressed place-type (SIB-47 dressing handoff): its kit palette points at a
+	// Crebotoly modular sci-fi set. The paths below are the EXPECTED import location —
+	// after `Fab -> Add to Project`, repoint the palette in DT_ElsewherePlaces to the
+	// kit's real meshes (editor step). Until then the builder falls back to engine
+	// shapes (real room structure, gray art) and the gate stays green. Marketplace
+	// bytes are NOT committed (asset policy). See docs/sib-47-sauce-door-notes.md.
+	{
+		FPlaceTypeDef Cathedral;
+		Cathedral.Id = TEXT("ServerCathedral");
+		Cathedral.DisplayName = FText::FromString(TEXT("The Server Cathedral"));
+		Cathedral.Weight = 10;
+		Cathedral.AmbientColor   = FLinearColor(0.03f, 0.05f, 0.09f);   // cold server-glow blue
+		Cathedral.CurioGlowColor = FLinearColor(0.3f, 0.9f, 1.0f);
+		Cathedral.FogDensity = 0.03f;
+		Cathedral.LightIntensity = 1.6f;
+		Cathedral.RoomExtent = FVector(1000.f, 1000.f, 500.f);          // a hall, not a closet
+		Cathedral.PropCountMin = 8;
+		Cathedral.PropCountMax = 16;
+		Cathedral.CurioPool = { TEXT("CachedPrayer"), TEXT("TheFirstPacket"), TEXT("KernelRelic") };
+
+		// Crebotoly sci-fi kit palette (expected paths — repoint in the DataTable to the
+		// real meshes after import). KitTileSize matches the kit's ~400cm modules.
+		Cathedral.KitTileSize = 400.f;
+		Cathedral.KitWallHeight = 400.f;
+		Cathedral.KitMeshScale = 1.f;
+		auto Mesh = [](const TCHAR* Path) { return TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(Path)); };
+		Cathedral.FloorMeshes = {
+			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Floor_A.SM_Floor_A")),
+			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Floor_B.SM_Floor_B")) };
+		Cathedral.WallMeshes = {
+			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Wall_A.SM_Wall_A")),
+			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Wall_B.SM_Wall_B")) };
+		Cathedral.CeilingMeshes = {
+			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Ceiling_A.SM_Ceiling_A")) };
+		Cathedral.PropMeshes = {
+			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_ServerRack_A.SM_ServerRack_A")),
+			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Pillar_A.SM_Pillar_A")),
+			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Console_A.SM_Console_A")) };
+
+		OutPlaces.Add(MoveTemp(Cathedral));
+	}
 }
 
 void FElsewhereGen::BuildDefaultCurios(TArray<FCurioDef>& OutCurios)
@@ -114,6 +157,11 @@ void FElsewhereGen::BuildDefaultCurios(TArray<FCurioDef>& OutCurios)
 	MakeCurio(TEXT("UpsideSpoon"),     TEXT("An Upside-Down Spoon"), EElsewhereRarity::Common,    16, TEXT("It stirs the ceiling. The ceiling doesn't mind."));
 	MakeCurio(TEXT("RecursiveRecipe"), TEXT("A Recursive Recipe"),   EElsewhereRarity::Rare,       7, TEXT("Step one: prepare the dish from step one."));
 	MakeCurio(TEXT("SauceThatDreams"), TEXT("The Sauce That Dreams"),EElsewhereRarity::Legendary,  2, TEXT("A spoonful of the thing behind the door. It's looking back."));
+
+	// --- Server Cathedral ---
+	MakeCurio(TEXT("CachedPrayer"),   TEXT("A Cached Prayer"),       EElsewhereRarity::Common,    16, TEXT("Someone asked the machine for grace. It kept the request warm."));
+	MakeCurio(TEXT("TheFirstPacket"), TEXT("The First Packet"),      EElsewhereRarity::Rare,       7, TEXT("The very first thing it ever heard. Still unread receipts."));
+	MakeCurio(TEXT("KernelRelic"),    TEXT("The Kernel Relic"),      EElsewhereRarity::Legendary,  2, TEXT("Warm to the touch, and it remembers being switched on."));
 }
 
 const FPlaceTypeDef* FElsewhereGen::FindPlace(const TArray<FPlaceTypeDef>& Places, const FName& Id)

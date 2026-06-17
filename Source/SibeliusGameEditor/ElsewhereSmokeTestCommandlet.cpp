@@ -217,6 +217,32 @@ int32 UElsewhereSmokeTestCommandlet::Main(const FString& Params)
 				TEXT("spawned curio matches the plan's curio id"));
 			R.Check(B1->GetSpawnedReturnDoor() != nullptr, TEXT("a return door is spawned (always a way home)"));
 		}
+
+		// The dressed place-type specifically (Server Cathedral / Crebotoly palette):
+		// it must build a real room deterministically even though the kit bytes aren't
+		// installed here (palette soft-refs fail to load -> engine-shape fallback).
+		R.Check(FElsewhereGen::FindPlace(Places, TEXT("ServerCathedral")) != nullptr,
+			TEXT("Server Cathedral place-type exists (the first dressed place)"));
+		{
+			FElsewherePlan Cath;
+			Cath.Seed = 4242;
+			Cath.PlaceTypeId = TEXT("ServerCathedral");
+			Cath.CurioId = TEXT("KernelRelic");
+			Cath.LayoutSeed = 4242;
+			Cath.MoodSeed = 99;
+			AElsewhereBuilder* C1 = World->SpawnActor<AElsewhereBuilder>(AElsewhereBuilder::StaticClass(), SpawnParams);
+			AElsewhereBuilder* C2 = World->SpawnActor<AElsewhereBuilder>(AElsewhereBuilder::StaticClass(), SpawnParams);
+			if (C1 && C2)
+			{
+				const int32 CathProps1 = C1->BuildFromPlan(Cath, Places, Curios);
+				const int32 CathProps2 = C2->BuildFromPlan(Cath, Places, Curios);
+				R.Check(CathProps1 > 0 && CathProps1 == CathProps2,
+					FString::Printf(TEXT("Server Cathedral builds deterministically with kit-absent fallback (%d props)"), CathProps1));
+				R.Check(C1->GetSpawnedCurio() && C1->GetSpawnedCurio()->CurioId == TEXT("KernelRelic"),
+					TEXT("Server Cathedral spawns its curio"));
+				R.Check(C1->GetSpawnedReturnDoor() != nullptr, TEXT("Server Cathedral spawns a return door"));
+			}
+		}
 	}
 
 	// --- Cabinet: fills as the owned set grows. --------------------------------------

@@ -6,12 +6,16 @@
 // floor, scattered props, mood lighting, the ONE curio, and a return door. Everything
 // is built from the seed and discarded when the level unloads (§4).
 //
-// PCG SEAM: the design calls for UE5's PCG framework to assemble the geometry. That's
-// a graph asset (editor-authored) the runtime can't create headlessly, so the MVP
-// ships a deterministic C++ assembly here instead — same inputs (place-type + seed),
-// same throwaway-room contract, fully gate-testable. AssembleGeometry() is the single
-// method a PCGComponent later replaces; the rest of the loop (plan -> curio -> return
-// -> discard) is unchanged when it does. See docs/sib-47-sauce-door-notes.md.
+// AssembleGeometry() lays a real modular room from the place-type's KIT PALETTE:
+// a tiled floor + ceiling, perimeter walls with a doorway, and scattered props — all
+// chosen deterministically from the run seed (same seed -> same room). Kit meshes come
+// from the data (DT_ElsewherePlaces); when a kit isn't installed each slot falls back
+// to an engine shape, so the room STRUCTURE always renders and the headless gate stays
+// green with zero marketplace bytes.
+//
+// PCG SEAM: AssembleGeometry() is the single method a UPCGComponent->Generate() can
+// later replace for richer scatter; the rest of the loop (plan -> curio -> return ->
+// discard) is unchanged when it does. See docs/sib-47-sauce-door-notes.md.
 
 #pragma once
 
@@ -50,22 +54,46 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FVector CurioOffset = FVector(0.f, 0.f, 80.f);
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FVector ReturnDoorOffset = FVector(-300.f, 0.f, 0.f);
 
+	// Dev/preview: when no Elsewhere is staged (opening L_Elsewhere directly instead of
+	// arriving via the Sauce Door), build this place-type anyway so the map renders a
+	// real room on its own — for dressing review. A real arrival always has a staged
+	// plan, so this branch never fires in the actual loop.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Preview") bool bPreviewWhenUnstaged = false;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Preview") FName PreviewPlaceType = TEXT("ServerCathedral");
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Preview") int32 PreviewSeed = 4242;
+
 protected:
 	virtual void BeginPlay() override;
 
-	// THE geometry step — the PCG seam (see header). Lays the modular floor + scatters
-	// props from the place-type + LayoutSeed. Returns the prop count.
+	// THE geometry step — the PCG seam (see header). Lays floor + ceiling tiles,
+	// perimeter walls with a doorway, and scatters props from the place-type kit +
+	// LayoutSeed. Returns the scattered-prop count (the gate's determinism handle).
 	int32 AssembleGeometry(const FPlaceTypeDef& Place, int32 LayoutSeed);
 
 	// Mood pass: tints the ambient glow from the place + MoodSeed jitter.
 	void ApplyMood(const FPlaceTypeDef& Place, int32 MoodSeed);
 
 	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<USceneComponent> SceneRoot;
-	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UInstancedStaticMeshComponent> FloorISM;
-	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UInstancedStaticMeshComponent> PropISM;
 	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UPointLightComponent> MoodLight;
 
 private:
+	// One ISM per distinct mesh used this build (a kit piece or a fallback shape).
+	// Created on demand; cleared at the start of each AssembleGeometry.
+	UInstancedStaticMeshComponent* GetOrCreateISM(UStaticMesh* Mesh);
+
+	// Place one tile/segment: resolves a mesh from the palette (deterministic pick),
+	// or the fallback engine shape. A kit mesh is placed at the place's KitMeshScale;
+	// a fallback shape is stretched to FitScale so it fills the tile/segment.
+	void PlacePiece(
+		const TArray<TSoftObjectPtr<UStaticMesh>>& Palette,
+		UStaticMesh* Fallback,
+		float KitMeshScale,
+		const FTransform& KitXform,
+		const FVector& FitScale,
+		FRandomStream& Rng);
+
+	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> KitISMs;
+
 	UPROPERTY() TObjectPtr<ACurio> SpawnedCurio;
 	UPROPERTY() TObjectPtr<AReturnDoor> SpawnedReturnDoor;
 };

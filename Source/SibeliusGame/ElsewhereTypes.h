@@ -64,10 +64,28 @@ struct FPlaceTypeDef : public FTableRowBase
 	// one required; the generator rarity-weights the choice among these.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place") TArray<FName> CurioPool;
 
-	// Presentation refs (soft — generator never touches them). The modular kit tile
-	// (floor/wall) and an optional hero piece for signature flair (§4).
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Art") TSoftObjectPtr<UStaticMesh> TileMesh;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Art") TSoftObjectPtr<UStaticMesh> PropMesh;
+	// --- Modular kit palette (the place's actual LOOK). Soft refs: the headless
+	// generator never loads them; only AElsewhereBuilder does, and it falls back to
+	// engine shapes per-slot when a kit isn't installed — so the smoke gate is green
+	// with zero marketplace bytes, and PIE shows a real room STRUCTURE (floor/walls/
+	// ceiling) even before the art is wired. Point these at a real kit (e.g. a
+	// Crebotoly sci-fi set for the Server Cathedral) in DT_ElsewherePlaces. A kit
+	// mesh is placed at scale 1 (authored to its grid); an engine-shape fallback is
+	// stretched to the tile. The builder picks within each list deterministically. ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit") TArray<TSoftObjectPtr<UStaticMesh>> FloorMeshes;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit") TArray<TSoftObjectPtr<UStaticMesh>> WallMeshes;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit") TArray<TSoftObjectPtr<UStaticMesh>> CeilingMeshes;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit") TArray<TSoftObjectPtr<UStaticMesh>> PropMeshes;
+
+	// The kit's module grid: one floor/ceiling tile is KitTileSize cm square; one wall
+	// segment is KitTileSize wide × KitWallHeight tall. Match these to the kit's
+	// authored module size (Crebotoly sci-fi tiles are ~400cm) so pieces seam cleanly.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit", meta = (ClampMin = "50.0")) float KitTileSize = 400.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit", meta = (ClampMin = "50.0")) float KitWallHeight = 400.f;
+
+	// Uniform scale applied to KIT meshes only (fallback engine shapes are auto-fit to
+	// the tile regardless). Lets a kit authored in different units snap to the grid.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit", meta = (ClampMin = "0.01")) float KitMeshScale = 1.f;
 };
 
 // One curio = a strange, impossible artifact fitting its place (§6). DataTable row.
