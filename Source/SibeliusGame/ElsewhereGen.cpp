@@ -76,13 +76,13 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 		FLinearColor(0.06f, 0.05f, 0.05f), FLinearColor(1.0f, 0.5f, 0.3f), 0.015f, 1.8f,
 		{ TEXT("UpsideSpoon"), TEXT("RecursiveRecipe"), TEXT("SauceThatDreams") });
 
-	// --- The Server Cathedral (§5) — the AI's "mind" as a temple. This is the FIRST
-	// dressed place-type (SIB-47 dressing handoff): its kit palette points at a
-	// Crebotoly modular sci-fi set. The paths below are the EXPECTED import location —
-	// after `Fab -> Add to Project`, repoint the palette in DT_ElsewherePlaces to the
-	// kit's real meshes (editor step). Until then the builder falls back to engine
-	// shapes (real room structure, gray art) and the gate stays green. Marketplace
-	// bytes are NOT committed (asset policy). See docs/sib-47-sauce-door-notes.md.
+	// --- The Server Cathedral (§5) — the AI's "mind" as a temple. The FIRST dressed
+	// place-type (SIB-47 dressing): its kit palette points at the REAL Crebotoly
+	// ModularSciFiEnv_K meshes (the cohesive kit chosen for the MVP — matching 4x4m
+	// floor/ceiling, 4m wall mids, industrial props). The kit's .uasset bytes are NOT
+	// committed (asset policy); installed via Fab -> Add to Project and referenced by
+	// path. These same paths are in DT_ElsewherePlaces (the DataTable wins when present;
+	// this code default keeps a fresh clone honest). See docs/sib-47-sauce-door-notes.md.
 	{
 		FPlaceTypeDef Cathedral;
 		Cathedral.Id = TEXT("ServerCathedral");
@@ -97,24 +97,21 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 		Cathedral.PropCountMax = 16;
 		Cathedral.CurioPool = { TEXT("CachedPrayer"), TEXT("TheFirstPacket"), TEXT("KernelRelic") };
 
-		// Crebotoly sci-fi kit palette (expected paths — repoint in the DataTable to the
-		// real meshes after import). KitTileSize matches the kit's ~400cm modules.
+		// Crebotoly ModularSciFiEnv_K. KitTileSize matches the kit's 4x4m (400cm) modules.
 		Cathedral.KitTileSize = 400.f;
 		Cathedral.KitWallHeight = 400.f;
 		Cathedral.KitMeshScale = 1.f;
 		auto Mesh = [](const TCHAR* Path) { return TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(Path)); };
 		Cathedral.FloorMeshes = {
-			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Floor_A.SM_Floor_A")),
-			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Floor_B.SM_Floor_B")) };
+			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Floors/SM_Floor_A_4x4m.SM_Floor_A_4x4m")) };
 		Cathedral.WallMeshes = {
-			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Wall_A.SM_Wall_A")),
-			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Wall_B.SM_Wall_B")) };
+			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_4x4m.SM_Wall_A_Mid_4x4m")) };
 		Cathedral.CeilingMeshes = {
-			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Ceiling_A.SM_Ceiling_A")) };
+			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Ceilings/SM_Ceiling_A_4x4m.SM_Ceiling_A_4x4m")) };
 		Cathedral.PropMeshes = {
-			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_ServerRack_A.SM_ServerRack_A")),
-			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Pillar_A.SM_Pillar_A")),
-			Mesh(TEXT("/Game/Crebotoly/Meshes/SM_Console_A.SM_Console_A")) };
+			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Base.SM_Lamp_AA_Base")),
+			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_A_4m.SM_Pipes_A_4m")),
+			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_4m_A.SM_Railings_A_4m_A")) };
 
 		OutPlaces.Add(MoveTemp(Cathedral));
 	}

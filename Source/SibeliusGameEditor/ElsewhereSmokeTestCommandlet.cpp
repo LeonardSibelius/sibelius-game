@@ -237,7 +237,7 @@ int32 UElsewhereSmokeTestCommandlet::Main(const FString& Params)
 				const int32 CathProps1 = C1->BuildFromPlan(Cath, Places, Curios);
 				const int32 CathProps2 = C2->BuildFromPlan(Cath, Places, Curios);
 				R.Check(CathProps1 > 0 && CathProps1 == CathProps2,
-					FString::Printf(TEXT("Server Cathedral builds deterministically with kit-absent fallback (%d props)"), CathProps1));
+					FString::Printf(TEXT("Server Cathedral builds deterministically (kit meshes when installed, else fallback) (%d props)"), CathProps1));
 				R.Check(C1->GetSpawnedCurio() && C1->GetSpawnedCurio()->CurioId == TEXT("KernelRelic"),
 					TEXT("Server Cathedral spawns its curio"));
 				R.Check(C1->GetSpawnedReturnDoor() != nullptr, TEXT("Server Cathedral spawns a return door"));

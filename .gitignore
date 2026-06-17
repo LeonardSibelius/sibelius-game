@@ -62,6 +62,13 @@ Content/Modular_House/
 Content/ModularHouses/
 Content/ModularHousePack/
 
+# --- Crebotoly modular sci-fi kits (SIB-47 Sauce Door "Server Cathedral") ---
+#     Four kits, purchased from Fab. Referenced by asset path only; bytes stay
+#     local (install via Fab -> Add to Project). The DataTable/CSV that point at
+#     them ARE committed (they're our content, not the kit).
+Content/ModularSciFiEnv_*/
+Content/Crebotoly*/
+
 # --- Generic paid-asset zones (policy's predefined partition) ---
 Content/Paid/
 Content/Fab/

@@ -41,12 +41,23 @@ mesh is placed at `KitMeshScale` (authored to its grid); a **missing** kit mesh 
 fails to load) falls back to a stretched engine shape — so the room **structure always
 renders** and the headless gate is green with **zero marketplace bytes**.
 
-**First dressed place-type: The Server Cathedral → a Crebotoly modular sci-fi kit.** Its
-palette points at the kit's *expected* import paths (`/Game/Crebotoly/Meshes/SM_*`). After
-`Fab → Add to Project`, **repoint the palette in `DT_ElsewherePlaces`** to the kit's real
-meshes (the soft-refs are data, so no recompile). Until then it renders as a real gray-box
-hall. **Asset policy: the Crebotoly `.uasset` bytes are NOT committed** — referenced by
-path only, same discipline as the Dragon Temple / cathedral packs.
+**First dressed place-type: The Server Cathedral → the Crebotoly `ModularSciFiEnv_K` kit**
+(chosen from the four installed kits — `_1`/`_F`/`_J`/`_K` — as the most cohesive, with
+matching square 4×4m floor + ceiling, 4m wall mids, and industrial props). The palette is
+wired to the kit's real meshes (`KitTileSize=400` for the 4m grid):
+
+| Slot | Mesh |
+|---|---|
+| Floor | `/Game/ModularSciFiEnv_K/Meshes/Floors/SM_Floor_A_4x4m` |
+| Wall | `/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_4x4m` |
+| Ceiling | `/Game/ModularSciFiEnv_K/Meshes/Ceilings/SM_Ceiling_A_4x4m` |
+| Props | `…/Lamps/SM_Lamp_AA_Base`, `…/Pipes/SM_Pipes_A_4m`, `…/Railings/SM_Railings_A_4m_A` |
+
+These paths live in both `DT_ElsewherePlaces` (the runtime source of truth) and the
+`ElsewhereGen` code default (fresh-clone fallback). **Asset policy: the kit `.uasset` bytes
+are NOT committed** (gitignored `Content/ModularSciFiEnv_*/`) — referenced by path only,
+same discipline as the Dragon Temple / cathedral packs. Vertical pivot/orientation per kit
+mesh is an eyeball-and-nudge step (the builder places on a centered grid).
 
 ## The PCG seam
 
@@ -78,12 +89,12 @@ owned set; the Sauce Door arm-gate (unarmed wall vs. armed travel door).
    `AElsewhereBuilder` at origin with `bPreviewWhenUnstaged=true`. PIE it directly to walk the
    Server Cathedral; arriving via the Sauce Door uses the real staged plan instead. Re-run the
    script (`py "Tools/Scripts/build_elsewhere_map.py"`) to regenerate (it's idempotent).
-2. **Add the Crebotoly kit:** in-editor **Fab → My Library → Add to Project**. Then import
-   `Data/ElsewherePlaces.csv` → `DT_ElsewherePlaces` and `Data/ElsewhereCurios.csv` →
-   `DT_ElsewhereCurios` into `Content/Data/` (runtime uses them if present, else the identical
-   code defaults — same setup as `DT_Carousel*`), and **set the Server Cathedral row's
-   `FloorMeshes`/`WallMeshes`/`CeilingMeshes`/`PropMeshes` to the kit's real meshes**
-   (`KitTileSize` to the kit's module size). The gray-box hall becomes the real sci-fi room.
+2. **Kit + DataTables — DONE.** The four Crebotoly kits are installed (`ModularSciFiEnv_*`,
+   gitignored). `DT_ElsewherePlaces` + `DT_ElsewhereCurios` are built from the CSVs by
+   `Tools/Scripts/build_elsewhere_datatables.py` (committed `.uasset`s, in `Content/Data/`),
+   with the Server Cathedral row's mesh palette already pointed at the `ModularSciFiEnv_K`
+   meshes (verified via `get_data_table_column_as_string`). Re-run the script to regenerate
+   from the CSVs if they change (it's idempotent — drops + recreates).
 3. **Kitchen wiring (in `L_Office_v02`):** place an `ASauceDoor` in the kitchen wall and set its
    `Cauldron` to the kitchen's `ASauceCauldron` (using the Sauce arms the door). Place an
    `ACabinetOfCuriosities` somewhere in the house.
