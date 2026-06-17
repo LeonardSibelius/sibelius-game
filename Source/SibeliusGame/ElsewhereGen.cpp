@@ -108,12 +108,11 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_4x4m.SM_Wall_A_Mid_4x4m")) };
 		Cathedral.CeilingMeshes = {
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Ceilings/SM_Ceiling_A_4x4m.SM_Ceiling_A_4x4m")) };
-		// Floor-standing props only — NO pipes (those are wall/ceiling runs and read as
-		// heaped clutter when scattered flat on the floor). Lamps + a railing.
+		// Floor-standing props only — NO pipes (wall/ceiling runs that heap up flat) and
+		// NO railings (they lie flat on the centered grid). Lamp fixtures only.
 		Cathedral.PropMeshes = {
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Base.SM_Lamp_AA_Base")),
-			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Base.SM_Lamp_AB_Base")),
-			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_4m_A.SM_Railings_A_4m_A")) };
+			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Base.SM_Lamp_AB_Base")) };
 
 		OutPlaces.Add(MoveTemp(Cathedral));
 	}
@@ -161,11 +160,12 @@ void FElsewhereGen::BuildDefaultCurios(TArray<FCurioDef>& OutCurios)
 	MakeCurio(TEXT("RecursiveRecipe"), TEXT("A Recursive Recipe"),   EElsewhereRarity::Rare,       7, TEXT("Step one: prepare the dish from step one."));
 	MakeCurio(TEXT("SauceThatDreams"), TEXT("The Sauce That Dreams"),EElsewhereRarity::Legendary,  2, TEXT("A spoonful of the thing behind the door. It's looking back."));
 
-	// --- Server Cathedral --- (Mesh: _K lamp covers read as small glowing relics on the
-	// pedestal — the curio's own glow light sits behind them.)
-	MakeCurio(TEXT("CachedPrayer"),   TEXT("A Cached Prayer"),       EElsewhereRarity::Common,    16, TEXT("Someone asked the machine for grace. It kept the request warm."), TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Cover.SM_Lamp_AA_Cover"));
-	MakeCurio(TEXT("TheFirstPacket"), TEXT("The First Packet"),      EElsewhereRarity::Rare,       7, TEXT("The very first thing it ever heard. Still unread receipts."), TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Cover.SM_Lamp_AB_Cover"));
-	MakeCurio(TEXT("KernelRelic"),    TEXT("The Kernel Relic"),      EElsewhereRarity::Legendary,  2, TEXT("Warm to the touch, and it remembers being switched on."), TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AC_Cover.SM_Lamp_AC_Cover"));
+	// --- Server Cathedral --- (No Mesh override: the curio renders as a glowing orb —
+	// engine sphere + the emissive M_LampEmiss_MAT tinted to the place's CurioGlowColor,
+	// see ACurio::Configure. The kit's lamp parts are flat fixtures, not hero relics.)
+	MakeCurio(TEXT("CachedPrayer"),   TEXT("A Cached Prayer"),       EElsewhereRarity::Common,    16, TEXT("Someone asked the machine for grace. It kept the request warm."));
+	MakeCurio(TEXT("TheFirstPacket"), TEXT("The First Packet"),      EElsewhereRarity::Rare,       7, TEXT("The very first thing it ever heard. Still unread receipts."));
+	MakeCurio(TEXT("KernelRelic"),    TEXT("The Kernel Relic"),      EElsewhereRarity::Legendary,  2, TEXT("Warm to the touch, and it remembers being switched on."));
 }
 
 const FPlaceTypeDef* FElsewhereGen::FindPlace(const TArray<FPlaceTypeDef>& Places, const FName& Id)

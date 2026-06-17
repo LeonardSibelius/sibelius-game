@@ -5,9 +5,11 @@
 // collect (no dupes within a room). Unlike a book it writes to the persistent
 // UCurioCollectionSubsystem (the Cabinet), not the run inventory.
 //
-// The "glow" is a child point light tinted to the place's mood color — reads as the
-// hero object with zero authored materials (runtime-safe; the null-proxy lesson: the
-// mesh is a default subobject so it actually renders).
+// The curio reads as treasure two ways: a child point light tinted to the place's mood
+// color (a colored halo), AND an emissive glow MATERIAL on the mesh (a dynamic instance
+// of GlowMaterial tinted to that color) so the payoff object actually glows and never
+// shows the missing-material checker. Mesh is a default-subobject sphere (the null-proxy
+// lesson) — a clean glowing orb; SetDisplayMesh can swap in real art per curio later.
 
 #pragma once
 
@@ -18,6 +20,7 @@
 
 class UStaticMeshComponent;
 class UPointLightComponent;
+class UMaterialInterface;
 
 UCLASS()
 class SIBELIUSGAME_API ACurio : public AActor, public IInteractable
@@ -50,6 +53,15 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Curio") TObjectPtr<UStaticMeshComponent> Mesh;
 	UPROPERTY(VisibleAnywhere, Category = "Curio") TObjectPtr<UPointLightComponent> Glow;
+
+	// Emissive base for the glowing-relic look (tinted to the curio color in Configure).
+	// Defaults to the Server Cathedral kit's emissive material; overridable in editor.
+	// If it fails to load (kit absent), the mesh keeps its valid default material — a
+	// grey orb, never the checker.
+	UPROPERTY(EditAnywhere, Category = "Curio") TSoftObjectPtr<UMaterialInterface> GlowMaterial;
+
+	// Emissive strength fed to the material's "Intens" param.
+	UPROPERTY(EditAnywhere, Category = "Curio") float GlowEmissiveIntensity = 6.0f;
 
 private:
 	bool bCollected = false;   // re-entrancy guard

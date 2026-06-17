@@ -11,6 +11,6 @@ SingingComet,SingingComet,"A Singing Comet",Legendary,2,"One note, held since be
 UpsideSpoon,UpsideSpoon,"An Upside-Down Spoon",Common,16,"It stirs the ceiling. The ceiling doesn't mind.",
 RecursiveRecipe,RecursiveRecipe,"A Recursive Recipe",Rare,7,"Step one: prepare the dish from step one.",
 SauceThatDreams,SauceThatDreams,"The Sauce That Dreams",Legendary,2,"A spoonful of the thing behind the door. It's looking back.",
-CachedPrayer,CachedPrayer,"A Cached Prayer",Common,16,"Someone asked the machine for grace. It kept the request warm.","/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Cover.SM_Lamp_AA_Cover"
-TheFirstPacket,TheFirstPacket,"The First Packet",Rare,7,"The very first thing it ever heard. Still unread receipts.","/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Cover.SM_Lamp_AB_Cover"
-KernelRelic,KernelRelic,"The Kernel Relic",Legendary,2,"Warm to the touch, and it remembers being switched on.","/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AC_Cover.SM_Lamp_AC_Cover"
+CachedPrayer,CachedPrayer,"A Cached Prayer",Common,16,"Someone asked the machine for grace. It kept the request warm.",
+TheFirstPacket,TheFirstPacket,"The First Packet",Rare,7,"The very first thing it ever heard. Still unread receipts.",
+KernelRelic,KernelRelic,"The Kernel Relic",Legendary,2,"Warm to the touch, and it remembers being switched on.",
