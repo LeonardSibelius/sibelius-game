@@ -17,7 +17,7 @@ go again* (§9).
 | Generation core | `ElsewhereGen.{h,cpp}` | **pure + headless**: `RollPlan(seed)` → deterministic place + curio + layout/mood sub-seeds; the code-default registry of 5 place-types × 15 curios (works on a fresh clone). The `FCarouselSim` of this feature. |
 | Generation brain | `ElsewhereSubsystem.{h,cpp}` | `UGameInstanceSubsystem`: loads the registry (DataTable-or-default), **stages** a plan that survives the level travel, **discards** it on return. |
 | Collection / Cabinet truth | `CurioCollectionSubsystem.{h,cpp}` + `ElsewhereSaveGame.h` | owns the collection + score; saves **curios + score only** through `FSibeliusSaveIO`. The save type structurally can't hold a room (the discard rule, §4). |
-| Kitchen trigger | `SauceDoor.{h,cpp}` | sibling of `AHiddenDoor`: reveal pattern, but **armed by the Sauce** (binds `ASauceCauldron::OnSauceComplete`). On E it **stages an Elsewhere + travels**, instead of opening a fixed level. |
+| Kitchen trigger | `SauceDoor.{h,cpp}` | **subclass of `AHiddenDoor`** — reuses the game's Code-Vision reveal exactly (hold **V**, the panel shimmers in, like the office/attic hidden doors). The only override: when revealed, **E stages an Elsewhere + travels** instead of opening a fixed `TravelTargetLevel`. Reveal == armed (no separate Sauce-completion gate). |
 | The collectable | `Curio.{h,cpp}` | the one glowing curio (`ABookPickup` pattern); E writes to the collection subsystem, then destroys. |
 | Room assembler | `ElsewhereBuilder.{h,cpp}` | reads the staged plan, assembles a seeded modular room — **floor + ceiling tiles, perimeter walls with a doorway, scattered props** from the place-type's **kit palette** (one ISM per mesh), mood light — spawns the curio + the return door. Kit-absent → engine-shape fallback. |
 | The way home | `ReturnDoor.{h,cpp}` | E discards the staged plan and travels back to the house. |
@@ -106,9 +106,12 @@ owned set; the Sauce Door arm-gate (unarmed wall vs. armed travel door).
    with the Server Cathedral row's mesh palette already pointed at the `ModularSciFiEnv_K`
    meshes (verified via `get_data_table_column_as_string`). Re-run the script to regenerate
    from the CSVs if they change (it's idempotent — drops + recreates).
-3. **Kitchen wiring (in `L_Office_v02`):** place an `ASauceDoor` in the kitchen wall and set its
-   `Cauldron` to the kitchen's `ASauceCauldron` (using the Sauce arms the door). Place an
-   `ACabinetOfCuriosities` somewhere in the house.
+3. **Kitchen wiring (in `L_Office_v02`) — DONE** (`Tools/Scripts/build_kitchen_loop.py`):
+   `SauceDoor_Kitchen` at the kitchen centre (-1728, 9240, 169) — **hold V to reveal it**, then
+   E steps through to `L_Elsewhere`; `CabinetOfCuriosities` at (-2028, 9540, 59). Both are
+   placeholder spots to nudge by eye (e.g. slide the door flush to a wall). No cauldron here
+   (the office has no Sauce-feed; the cauldron is a World-Three / `L_AI_Temple` actor) — the
+   door is reveal-gated like every other hidden door.
 4. **Return target:** `ReturnDoor.HomeLevelName` defaults to `L_Office_v02`; set it to whatever
    the house map is.
 5. **Polish (PIE-tunable):** a curio-glow material, a filled/dim Cabinet-slot material reading the per-instance custom

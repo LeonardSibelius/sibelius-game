@@ -12,6 +12,7 @@
 #include "ReturnDoor.h"
 #include "CabinetOfCuriosities.h"
 #include "SauceDoor.h"
+#include "HiddenDoor.h"
 #include "SibeliusSaveIO.h"
 
 #include "Engine/World.h"
@@ -269,12 +270,15 @@ int32 UElsewhereSmokeTestCommandlet::Main(const FString& Params)
 		}
 	}
 
-	// --- Sauce Door arm gate + class resolution. -------------------------------------
-	UE_LOG(LogElsewhereSmokeTest, Display, TEXT("--- ASSERT 7: sauce door arm gate + classes resolve ---"));
+	// --- Sauce Door: it's a hidden door (Code Vision reveal) + classes resolve. -------
+	UE_LOG(LogElsewhereSmokeTest, Display, TEXT("--- ASSERT 7: sauce door reveals like a hidden door + classes resolve ---"));
 	{
 		ASauceDoor* Door = World->SpawnActor<ASauceDoor>(ASauceDoor::StaticClass(), SpawnParams);
 		R.Check(Door != nullptr, TEXT("ASauceDoor spawns"));
-		R.Check(Door && Door->RunArmGateSelfTest(), TEXT("unarmed = no prompt + blocks; armed = prompt + passable + visible"));
+		R.Check(Door && Door->IsA(AHiddenDoor::StaticClass()),
+			TEXT("ASauceDoor IS an AHiddenDoor (reuses the Code Vision reveal/shimmer)"));
+		R.Check(Door && Door->RunCollisionSelfTest(),
+			TEXT("reveal drives collision both ways: hidden+blocking <-> revealed+passable"));
 		R.Check(
 			ACurio::StaticClass() && AReturnDoor::StaticClass() && AElsewhereBuilder::StaticClass() &&
 			ACabinetOfCuriosities::StaticClass() && ASauceDoor::StaticClass(),

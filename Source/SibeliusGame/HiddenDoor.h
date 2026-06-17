@@ -61,6 +61,10 @@ protected:
 	// THE single path: drives visual + collision together.
 	void ApplyState(bool bRevealed);
 
+	// Current reveal state — for subclasses (ASauceDoor) that gate their Interact on the
+	// Code-Vision reveal the base class drives.
+	bool IsRevealed() const { return bRevealedState; }
+
 	UPROPERTY(VisibleAnywhere, Category = "Hidden Door")
 	TObjectPtr<USceneComponent> SceneRoot;
 
