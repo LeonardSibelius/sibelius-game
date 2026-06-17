@@ -44,6 +44,15 @@ void ACurio::Configure(FName InCurioId, FName InPlaceTypeId, FLinearColor GlowCo
 	}
 }
 
+void ACurio::SetDisplayMesh(UStaticMesh* InMesh, float UniformScale)
+{
+	if (InMesh && Mesh)
+	{
+		Mesh->SetStaticMesh(InMesh);
+		Mesh->SetRelativeScale3D(FVector(UniformScale));
+	}
+}
+
 bool ACurio::Collect(UObject* WorldContext)
 {
 	if (bCollected)

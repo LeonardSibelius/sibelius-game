@@ -34,8 +34,16 @@ else:
 
     sun = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 800), unreal.Rotator(-55.0, -40.0, 0.0))
     sun.set_actor_label("Sun")
+    # Dimmed so the enclosed hall + ceiling don't blow out (the builder's MoodLight
+    # carries the interior). Tune to taste.
+    sun_comp = sun.get_component_by_class(unreal.DirectionalLightComponent)
+    if sun_comp:
+        sun_comp.set_intensity(2.0)
     sky = eas.spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 800))
     sky.set_actor_label("SkyLight")
+    sky_comp = sky.get_component_by_class(unreal.SkyLightComponent)
+    if sky_comp:
+        sky_comp.set_intensity(0.4)
 
     # Just inside the west doorway gap (room is centered on the builder at origin),
     # facing +X into the hall.

@@ -93,8 +93,8 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 		Cathedral.FogDensity = 0.03f;
 		Cathedral.LightIntensity = 1.6f;
 		Cathedral.RoomExtent = FVector(1000.f, 1000.f, 500.f);          // a hall, not a closet
-		Cathedral.PropCountMin = 8;
-		Cathedral.PropCountMax = 16;
+		Cathedral.PropCountMin = 3;                                      // sparse — a few hero props, spread out
+		Cathedral.PropCountMax = 6;
 		Cathedral.CurioPool = { TEXT("CachedPrayer"), TEXT("TheFirstPacket"), TEXT("KernelRelic") };
 
 		// Crebotoly ModularSciFiEnv_K. KitTileSize matches the kit's 4x4m (400cm) modules.
@@ -108,9 +108,11 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_4x4m.SM_Wall_A_Mid_4x4m")) };
 		Cathedral.CeilingMeshes = {
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Ceilings/SM_Ceiling_A_4x4m.SM_Ceiling_A_4x4m")) };
+		// Floor-standing props only — NO pipes (those are wall/ceiling runs and read as
+		// heaped clutter when scattered flat on the floor). Lamps + a railing.
 		Cathedral.PropMeshes = {
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Base.SM_Lamp_AA_Base")),
-			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_A_4m.SM_Pipes_A_4m")),
+			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Base.SM_Lamp_AB_Base")),
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_4m_A.SM_Railings_A_4m_A")) };
 
 		OutPlaces.Add(MoveTemp(Cathedral));
@@ -122,7 +124,7 @@ void FElsewhereGen::BuildDefaultCurios(TArray<FCurioDef>& OutCurios)
 	OutCurios.Reset();
 
 	auto MakeCurio = [&OutCurios](FName Id, const FString& Name, EElsewhereRarity Rarity,
-		int32 Weight, const FString& Note)
+		int32 Weight, const FString& Note, const TCHAR* MeshPath = nullptr)
 	{
 		FCurioDef C;
 		C.Id = Id;
@@ -130,6 +132,10 @@ void FElsewhereGen::BuildDefaultCurios(TArray<FCurioDef>& OutCurios)
 		C.Rarity = Rarity;
 		C.Weight = Weight;
 		C.FlavorNote = FText::FromString(Note);
+		if (MeshPath)
+		{
+			C.Mesh = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(MeshPath));
+		}
 		OutCurios.Add(MoveTemp(C));
 	};
 
@@ -155,10 +161,11 @@ void FElsewhereGen::BuildDefaultCurios(TArray<FCurioDef>& OutCurios)
 	MakeCurio(TEXT("RecursiveRecipe"), TEXT("A Recursive Recipe"),   EElsewhereRarity::Rare,       7, TEXT("Step one: prepare the dish from step one."));
 	MakeCurio(TEXT("SauceThatDreams"), TEXT("The Sauce That Dreams"),EElsewhereRarity::Legendary,  2, TEXT("A spoonful of the thing behind the door. It's looking back."));
 
-	// --- Server Cathedral ---
-	MakeCurio(TEXT("CachedPrayer"),   TEXT("A Cached Prayer"),       EElsewhereRarity::Common,    16, TEXT("Someone asked the machine for grace. It kept the request warm."));
-	MakeCurio(TEXT("TheFirstPacket"), TEXT("The First Packet"),      EElsewhereRarity::Rare,       7, TEXT("The very first thing it ever heard. Still unread receipts."));
-	MakeCurio(TEXT("KernelRelic"),    TEXT("The Kernel Relic"),      EElsewhereRarity::Legendary,  2, TEXT("Warm to the touch, and it remembers being switched on."));
+	// --- Server Cathedral --- (Mesh: _K lamp covers read as small glowing relics on the
+	// pedestal — the curio's own glow light sits behind them.)
+	MakeCurio(TEXT("CachedPrayer"),   TEXT("A Cached Prayer"),       EElsewhereRarity::Common,    16, TEXT("Someone asked the machine for grace. It kept the request warm."), TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Cover.SM_Lamp_AA_Cover"));
+	MakeCurio(TEXT("TheFirstPacket"), TEXT("The First Packet"),      EElsewhereRarity::Rare,       7, TEXT("The very first thing it ever heard. Still unread receipts."), TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Cover.SM_Lamp_AB_Cover"));
+	MakeCurio(TEXT("KernelRelic"),    TEXT("The Kernel Relic"),      EElsewhereRarity::Legendary,  2, TEXT("Warm to the touch, and it remembers being switched on."), TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AC_Cover.SM_Lamp_AC_Cover"));
 }
 
 const FPlaceTypeDef* FElsewhereGen::FindPlace(const TArray<FPlaceTypeDef>& Places, const FName& Id)

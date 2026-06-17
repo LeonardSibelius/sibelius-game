@@ -219,7 +219,9 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 		}
 	}
 
-	// --- Scattered props (the determinism handle the gate reads). ---
+	// --- Scattered props: few + spread, standing ON the floor (Z=Origin.Z). The kit
+	// props are placed at KitMeshScale (PlacePiece); the FitScale only stretches the
+	// fallback cylinder. Count is the gate's determinism handle. ---
 	const int32 PropCount = Rng.RandRange(Place.PropCountMin, Place.PropCountMax);
 	const float InnerX = FMath::Max(0.f, GridHalfX - Tile);
 	const float InnerY = FMath::Max(0.f, GridHalfY - Tile);
@@ -228,10 +230,9 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 		const float PX = Origin.X + Rng.FRandRange(-InnerX, InnerX);
 		const float PY = Origin.Y + Rng.FRandRange(-InnerY, InnerY);
 		const float Yaw = Rng.FRandRange(0.f, 360.f);
-		const float S = Rng.FRandRange(0.7f, 1.6f);
-		const float H = Rng.FRandRange(1.0f, 3.0f);
-		const FTransform PropXf(FRotator(0.f, Yaw, 0.f), FVector(PX, PY, Origin.Z + H * 50.f));
-		PlacePiece(Place.PropMeshes, CylFallback, Scale, PropXf, FVector(S, S, H), Rng);
+		const float S = Rng.FRandRange(0.9f, 1.3f);
+		const FTransform PropXf(FRotator(0.f, Yaw, 0.f), FVector(PX, PY, Origin.Z));
+		PlacePiece(Place.PropMeshes, CylFallback, Scale, PropXf, FVector(S, S, S), Rng);
 	}
 
 	UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] assembled '%s': %dx%d tiles, walls+ceiling, %d props (seed=%d)."),
@@ -274,6 +275,11 @@ int32 AElsewhereBuilder::BuildFromPlan(
 	if (SpawnedCurio)
 	{
 		SpawnedCurio->Configure(Plan.CurioId, Plan.PlaceTypeId, Place->CurioGlowColor);
+		// Real curio art from the data (else the default sphere placeholder).
+		if (!CurioDef->Mesh.IsNull())
+		{
+			SpawnedCurio->SetDisplayMesh(CurioDef->Mesh.LoadSynchronous());
+		}
 	}
 
 	// The way home (§3 step 6) — at the west doorway gap.

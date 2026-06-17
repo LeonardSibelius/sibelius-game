@@ -32,6 +32,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Curio")
 	void Configure(FName InCurioId, FName InPlaceTypeId, FLinearColor GlowColor);
 
+	// Swap the placeholder sphere for the curio's real mesh (from FCurioDef::Mesh).
+	// Null leaves the default sphere (an undressed curio still reads as collectable).
+	UFUNCTION(BlueprintCallable, Category = "Curio")
+	void SetDisplayMesh(UStaticMesh* InMesh, float UniformScale = 0.6f);
+
 	// Adds to the collection subsystem and destroys this curio. Returns true if it
 	// actually collected (false if already collected or no game instance). Split out
 	// so the smoke gate can drive it without an interactor pawn.
