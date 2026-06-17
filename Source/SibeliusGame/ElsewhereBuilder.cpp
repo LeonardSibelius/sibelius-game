@@ -269,21 +269,27 @@ int32 AElsewhereBuilder::BuildFromPlan(
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	// The ONE curio (§6), placed + configured from the plan.
-	const FTransform CurioXf(FRotator::ZeroRotator, GetActorLocation() + CurioOffset);
+	const FVector Origin = GetActorLocation();
+
+	// The ONE curio (§6): a glowing orb floating in the centre of the hall (the single
+	// focal object). CurioOffset is the floating height above the builder origin.
+	const FTransform CurioXf(FRotator::ZeroRotator, Origin + CurioOffset);
 	SpawnedCurio = World->SpawnActor<ACurio>(ACurio::StaticClass(), CurioXf, SpawnParams);
 	if (SpawnedCurio)
 	{
 		SpawnedCurio->Configure(Plan.CurioId, Plan.PlaceTypeId, Place->CurioGlowColor);
-		// Real curio art from the data (else the default sphere placeholder).
+		// Real curio art from the data (else the default glowing-orb sphere).
 		if (!CurioDef->Mesh.IsNull())
 		{
 			SpawnedCurio->SetDisplayMesh(CurioDef->Mesh.LoadSynchronous());
 		}
 	}
 
-	// The way home (§3 step 6) — at the west doorway gap.
-	const FTransform ReturnXf(FRotator::ZeroRotator, GetActorLocation() + ReturnDoorOffset);
+	// The way home (§3 step 6) — seated IN the west wall doorway gap (X = -RoomExtent.X,
+	// Y = 0 where AssembleGeometry leaves the gap), facing along the wall (yaw 90). This
+	// is BEHIND the player's spawn, so it never sits between the camera and the curio.
+	const FVector ReturnLoc = Origin + FVector(-Place->RoomExtent.X + 50.f, 0.f, 0.f) + ReturnDoorOffset;
+	const FTransform ReturnXf(FRotator(0.f, 90.f, 0.f), ReturnLoc);
 	SpawnedReturnDoor = World->SpawnActor<AReturnDoor>(AReturnDoor::StaticClass(), ReturnXf, SpawnParams);
 
 	UE_LOG(LogElsewhereBuilder, Display,

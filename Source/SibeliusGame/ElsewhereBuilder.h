@@ -50,9 +50,12 @@ public:
 	ACurio* GetSpawnedCurio() const { return SpawnedCurio; }
 	AReturnDoor* GetSpawnedReturnDoor() const { return SpawnedReturnDoor; }
 
-	// Where to drop the return door + curio relative to the builder (cm).
-	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FVector CurioOffset = FVector(0.f, 0.f, 80.f);
-	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FVector ReturnDoorOffset = FVector(-300.f, 0.f, 0.f);
+	// The curio's floating height above the builder origin (it hangs in the hall centre
+	// as the single focal object).
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FVector CurioOffset = FVector(0.f, 0.f, 150.f);
+
+	// Optional nudge added to the computed west-doorway position of the return door.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FVector ReturnDoorOffset = FVector(0.f, 0.f, 0.f);
 
 	// Dev/preview: when no Elsewhere is staged (opening L_Elsewhere directly instead of
 	// arriving via the Sauce Door), build this place-type anyway so the map renders a
