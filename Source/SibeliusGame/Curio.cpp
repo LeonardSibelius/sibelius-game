@@ -25,14 +25,14 @@ ACurio::ACurio()
 	if (UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")))
 	{
 		Mesh->SetStaticMesh(Sphere);
-		Mesh->SetRelativeScale3D(FVector(0.4f));
+		Mesh->SetRelativeScale3D(FVector(0.6f));   // reads as treasure alone in the empty hall
 	}
 
 	// The glow — reads as "the one collectable" without an authored emissive material.
 	Glow = CreateDefaultSubobject<UPointLightComponent>(TEXT("Glow"));
 	Glow->SetupAttachment(Mesh);
-	Glow->SetIntensity(3000.f);
-	Glow->SetAttenuationRadius(600.f);
+	Glow->SetIntensity(5000.f);
+	Glow->SetAttenuationRadius(800.f);
 	Glow->CastShadows = false;   // public UPROPERTY on ULightComponentBase
 
 	// Default emissive base for the glowing-relic look (kit material; referenced by

@@ -22,8 +22,10 @@ TAG = "###ELSEWHERE###"
 
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+ues = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
 
 builder_cls = unreal.load_class(None, "/Script/SibeliusGame.ElsewhereBuilder")
+gm_cls = unreal.load_class(None, "/Script/SibeliusGame.ElsewhereGameMode")
 if builder_cls is None:
     unreal.log_error("%s AElsewhereBuilder not found — Build.bat the SibeliusGameEditor target first." % TAG)
 else:
@@ -55,6 +57,13 @@ else:
     # Standalone preview of the dressed place-type; a real arrival stages its own plan.
     builder.set_editor_property("bPreviewWhenUnstaged", True)
     builder.set_editor_property("PreviewPlaceType", "ServerCathedral")
+
+    # Clean GameMode override: no build HUD overlay, and UBranchPIEComponent skips the
+    # deploy-save restore here (no stray generated build sites on the curio).
+    if gm_cls:
+        world = ues.get_editor_world()
+        for ws in unreal.GameplayStatics.get_all_actors_of_class(world, unreal.WorldSettings):
+            ws.set_editor_property("default_game_mode", gm_cls)
 
     les.save_current_level()
     unreal.log("%s built %s (preview=ServerCathedral). PIE it to walk the room; "

@@ -61,7 +61,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Curio") TSoftObjectPtr<UMaterialInterface> GlowMaterial;
 
 	// Emissive strength fed to the material's "Intens" param.
-	UPROPERTY(EditAnywhere, Category = "Curio") float GlowEmissiveIntensity = 6.0f;
+	UPROPERTY(EditAnywhere, Category = "Curio") float GlowEmissiveIntensity = 9.0f;
 
 private:
 	bool bCollected = false;   // re-entrancy guard

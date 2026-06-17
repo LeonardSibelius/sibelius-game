@@ -85,10 +85,21 @@ owned set; the Sauce Door arm-gate (unarmed wall vs. armed travel door).
 ## Editor follow-up (the assembly Walt does in-editor)
 
 1. **`L_Elsewhere` map — already built** by `Tools/Scripts/build_elsewhere_map.py` (committed
-   `.umap`): a sun + skylight, a `PlayerStart` inside the west doorway, and one
-   `AElsewhereBuilder` at origin with `bPreviewWhenUnstaged=true`. PIE it directly to walk the
-   Server Cathedral; arriving via the Sauce Door uses the real staged plan instead. Re-run the
-   script (`py "Tools/Scripts/build_elsewhere_map.py"`) to regenerate (it's idempotent).
+   `.umap`): a sun + skylight, a `PlayerStart` inside the west doorway, one
+   `AElsewhereBuilder` at origin with `bPreviewWhenUnstaged=true`, and a **GameMode override
+   = `AElsewhereGameMode`**. PIE it directly to walk the Server Cathedral; arriving via the
+   Sauce Door uses the real staged plan instead. Re-run the script
+   (`py "Tools/Scripts/build_elsewhere_map.py"`) to regenerate (it's idempotent).
+
+   **Clean GameMode (`AElsewhereGameMode` + `AElsewhereHUD`):** the wonder room must be free
+   of the main build system. The GameMode reuses the FirstPerson pawn + controller (so
+   movement/look/E keep working — the input contexts live on the BP controller) but swaps in
+   a crosshair-only HUD (no INVENTORY/PROGRESS/GENERATE/CONTROLS overlay). Crucially,
+   `UBranchPIEComponent` checks for this GameMode and **skips `ApplyDeployedSave()` in the
+   Elsewhere** — otherwise the character's deploy-restore re-spawns the main game's saved
+   *generated* build sites into the throwaway room (a stray checker cube on the curio). The
+   interaction prompt is drawn by `UInteractorComponent` (on-screen, not the HUD), so E-prompts
+   still show.
 2. **Kit + DataTables — DONE.** The four Crebotoly kits are installed (`ModularSciFiEnv_*`,
    gitignored). `DT_ElsewherePlaces` + `DT_ElsewhereCurios` are built from the CSVs by
    `Tools/Scripts/build_elsewhere_datatables.py` (committed `.uasset`s, in `Content/Data/`),
