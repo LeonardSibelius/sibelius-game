@@ -15,6 +15,8 @@
 #include "PCGGraph.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/GameInstance.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/RandomStream.h"
 
@@ -412,15 +414,41 @@ bool AElsewhereBuilder::RunPCGScatter(const FPlaceTypeDef& Place, int32 LayoutSe
 		return false;
 	}
 
-	// Real UE5 PCG: run the graph, seeded from the run so scatter is deterministic
-	// (same seed -> same scatter), which keeps the determinism contract.
+	// Real UE5 PCG: assign the graph + seed now (deterministic: same seed -> same scatter).
 	PCGComponent->SetGraph(Graph);
 	PCGComponent->Seed = LayoutSeed;
-	PCGComponent->Generate(/*bForce=*/true);
 
-	UE_LOG(LogElsewhereBuilder, Display, TEXT("[%s] PCG scatter via '%s' (seed=%d) for place '%s'."),
+	// DEFER Generate() one tick. We're mid-AssembleGeometry inside BeginPlay: the floor/wall
+	// ISMs were just built but their world bounds haven't been recomputed yet, so the actor's
+	// aggregate bounds are still invalid. UPCGComponent::CreateGenerateTask aborts on an
+	// invalid GetGridBounds() ("Component has invalid bounds, not registered nor updated") and
+	// the graph never runs -> 0 props. One tick later the ISM bounds are valid, the component
+	// registers, and the graph executes. (The graph itself no longer raycasts the floor — see
+	// build_pcg_scatter_graph.py — so this is purely about valid bounds, not live collision.)
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimerForNextTick(
+			FTimerDelegate::CreateUObject(this, &AElsewhereBuilder::GeneratePCGScatterDeferred));
+	}
+	else
+	{
+		PCGComponent->Generate(/*bForce=*/true);   // no world (shouldn't happen in PIE) — best effort
+	}
+
+	UE_LOG(LogElsewhereBuilder, Display, TEXT("[%s] PCG scatter scheduled (deferred 1 tick) via '%s' (seed=%d) for place '%s'."),
 		*GetName(), *Graph->GetName(), LayoutSeed, *Place.Id.ToString());
 	return true;
+}
+
+void AElsewhereBuilder::GeneratePCGScatterDeferred()
+{
+	// Fires one tick after RunPCGScatter scheduled it (see why there). By now the runtime ISM
+	// bounds are valid, so GetGridBounds() is valid and generation won't abort.
+	if (PCGComponent && PCGComponent->GetGraph())
+	{
+		PCGComponent->Generate(/*bForce=*/true);
+		UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] deferred PCG Generate fired."), *GetName());
+	}
 }
 
 void AElsewhereBuilder::ApplyMood(const FPlaceTypeDef& Place, int32 MoodSeed)

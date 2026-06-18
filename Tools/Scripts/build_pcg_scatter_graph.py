@@ -1,22 +1,26 @@
 # build_pcg_scatter_graph.py — SIB-47 PCG spike. Authors /Game/PCG/PCG_ElsewhereScatter
 # headless (re-runnable, rebuilds from scratch):
-#   World Ray Hit Query -> Surface Sampler -> Transform Points (seeded) -> Static Mesh
+#   Create Points Grid (component-relative) -> Transform Points (seeded) -> Static Mesh
 #   Spawner (_K detail meshes) -> Output.
 #
-# WHY World Ray Hit (the empty-floor fix): the Surface Sampler's "Surface" pin needs real
-# UPCGSurfaceData. The graph used to feed it the Input node's "In" (the component's actor
-# data) — which is NOT a surface, so the sampler logged "No surfaces found from which to
-# generate", aborted, and the floor came up EMPTY. World Ray Hit Query produces a
-# UPCGSurfaceData by tracing world collision: with default params it casts a ray straight
-# DOWN from the top of the PCG component's own actor bounds to the bottom, so it lands on
-# the Elsewhere floor mesh (the floor ISMs use a BlockAll profile -> they block the node's
-# default ECC_WorldStatic channel). No manual Z/extent tuning — it's all derived from the
-# builder actor's bounds, and the Surface Sampler (Unbounded=false, no Bounding Shape wired)
-# uses those same bounds as the sampling footprint.
+# WHY Create Points Grid (the empty-floor fix, take 2): PIE showed an EMPTY floor and the
+# log gave the real cause — "LogPCG: Error: [RegisterOrUpdatePCGComponent] Component has
+# invalid bounds, not registered nor updated" -> "0 props". At BeginPlay (mid-AssembleGeometry)
+# the runtime-built floor ISMs haven't had their world bounds recomputed yet, so the actor's
+# aggregate bounds are INVALID. UPCGComponent::CreateGenerateTask aborts on invalid
+# GetGridBounds() BEFORE the graph runs, so NO sampler (World Ray Hit included) ever executes.
+# Two independent fixes, both applied:
+#   (1) HERE: sample explicit bounds at a known floor Z instead of tracing the world. Create
+#       Points Grid with CoordinateSpace=OriginalComponent centers a flat grid on the builder
+#       actor's transform (its location is floor-stand Z) using its own GridExtents/CellSize —
+#       no dependency on component bounds, world collision, or the physics scene.
+#   (2) C++: AElsewhereBuilder::RunPCGScatter defers Generate() one tick (SetTimerForNextTick),
+#       so by the time it runs the ISM bounds are valid and the component registers cleanly.
+#       (Mandatory: without valid bounds, generation aborts regardless of the graph.)
 #
-# Determinism comes from the UPCGComponent Seed (AElsewhereBuilder::RunPCGScatter sets it
-# = the run's LayoutSeed); World Ray Hit is a pure function of the (fixed) geometry. Run
-# editor-closed:
+# Determinism: Create Points Grid is a pure function of its settings; the per-prop yaw + XY
+# jitter come from Transform Points seeded by the UPCGComponent Seed (RunPCGScatter sets it =
+# the run's LayoutSeed), so same seed -> same layout. Run editor-closed:
 #   UnrealEditor-Cmd SibeliusGame.uproject -run=pythonscript -script=".../build_pcg_scatter_graph.py"
 import unreal
 
@@ -37,8 +41,7 @@ def add(cls):
     n = G.add_node_of_type(cls)
     return n[0] if isinstance(n, (tuple, list)) else n
 
-worldray = add(unreal.PCGWorldRayHitSettings)   # the Surface for the sampler (traces the floor)
-samp = add(unreal.PCGSurfaceSamplerSettings)
+grid = add(unreal.PCGCreatePointsGridSettings)   # explicit bounds at floor Z (no surface/raycast)
 xform = add(unreal.PCGTransformPointsSettings)
 spawn = add(unreal.PCGStaticMeshSpawnerSettings)
 
@@ -47,25 +50,30 @@ def wire(a, ap, b, bp):
         G.add_edge(a, ap, b, bp); log("edge %s.%s -> %s.%s OK" % (a.get_name(), ap, b.get_name(), bp))
     except Exception as e:
         unreal.log_error("###PCG### edge %s.%s -> %s.%s FAIL %r" % (a.get_name(), ap, b.get_name(), bp, e))
-# World Ray Hit produces the surface (NOT the Input node — that was the empty-floor bug).
-wire(worldray, "Out", samp, "Surface")
-wire(samp, "Out", xform, "In")
+# Create Points Grid generates the points itself (no Surface input -> no World Ray Hit, no
+# dependency on the floor's collision being live). The Input node stays unwired.
+wire(grid, "Out", xform, "In")
 wire(xform, "Out", spawn, "In")
 wire(spawn, "Out", outp, "Out")
 
-sS = samp.get_settings()
-# COUNT KNOB: points ~= density * floor_area_m². ServerCathedral floor is ~20x20m = 400 m²,
-# so 0.01/m² -> ~4 hero props (matches the C++ fallback's 3-6). The old 0.0008 gave an
-# expected 0.32 points -> usually ZERO, which read as "empty floor" even when sampling worked.
-sS.set_editor_property("points_per_squared_meter", 0.01)
-sS.set_editor_property("point_extents", unreal.Vector(50, 50, 50))
-sS.set_editor_property("unbounded", False)   # use the component (room) bounds as the footprint
+gS = grid.get_settings()
+# Centered on the builder actor's transform (its location is the floor-stand Z, same Z the
+# C++ fallback used for props). GridExtents 600 (half) fits inside every place-type's room
+# (smallest is 800 half-extent); CellSize 600 -> a 2x2 grid = ~4 hero props (matches the C++
+# fallback's 3-6). Flat: Z extent 0 -> one layer at floor height. COUNT KNOB: CellSize (down
+# = more) and GridExtents. No culling -> no dependency on the (initially invalid) actor bounds.
+gS.set_editor_property("coordinate_space", unreal.PCGCoordinateSpace.ORIGINAL_COMPONENT)
+gS.set_editor_property("grid_extents", unreal.Vector(600, 600, 0))
+gS.set_editor_property("cell_size", unreal.Vector(600, 600, 600))
+gS.set_editor_property("cull_points_outside_volume", False)
 
 tS = xform.get_settings()
+# Break the grid look: random yaw + a generous XY jitter (seeded by the component Seed, so
+# same seed -> same scatter). Z offset 0 keeps props on the floor.
 tS.set_editor_property("rotation_min", unreal.Rotator(0, 0, 0))
 tS.set_editor_property("rotation_max", unreal.Rotator(0, 0, 360))
-tS.set_editor_property("offset_min", unreal.Vector(-40, -40, 0))
-tS.set_editor_property("offset_max", unreal.Vector(40, 40, 0))
+tS.set_editor_property("offset_min", unreal.Vector(-200, -200, 0))
+tS.set_editor_property("offset_max", unreal.Vector(200, 200, 0))
 
 spS = spawn.get_settings()
 spS.set_mesh_selector_type(unreal.PCGMeshSelectorWeighted)
@@ -82,7 +90,7 @@ sel.set_editor_property("mesh_entries", entries)
 
 # Count edges (input-pin side) for a final tally.
 ne = 0
-for n in (samp, xform, spawn, outp):
+for n in (grid, xform, spawn, outp):
     for p in n.input_pins:
         ne += len(p.edges)
 unreal.EditorAssetLibrary.save_asset(GRAPH)

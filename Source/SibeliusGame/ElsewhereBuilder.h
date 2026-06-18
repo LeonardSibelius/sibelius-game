@@ -133,9 +133,13 @@ private:
 	void SpawnGodRayShafts(const FPlaceTypeDef& Place);
 	UPROPERTY() TArray<TObjectPtr<USpotLightComponent>> ShaftLights;
 
-	// PCG spike: run the ScatterGraph (seeded) for the floor props. Returns true if it ran
-	// (graph valid); false -> caller uses the C++ scatter fallback.
+	// PCG spike: assign the ScatterGraph + seed and SCHEDULE generation for next tick (the
+	// actor's runtime ISM bounds aren't valid yet this frame -> PCG would abort). Returns true
+	// if scheduled (graph valid); false -> caller uses the C++ scatter fallback.
 	bool RunPCGScatter(const FPlaceTypeDef& Place, int32 LayoutSeed);
+
+	// Deferred Generate() target (next-tick timer set by RunPCGScatter), once bounds are valid.
+	void GeneratePCGScatterDeferred();
 
 	UPROPERTY() TObjectPtr<ACurio> SpawnedCurio;
 	UPROPERTY() TObjectPtr<AReturnDoor> SpawnedReturnDoor;

@@ -82,52 +82,57 @@ incrementally, without ever breaking the playable loop.
   `SibeliusGame.Build.cs`.
 - **Real `UPCGComponent`** on `AElsewhereBuilder` (`PCGScatter`, `GenerateOnDemand`).
 - **Seam wired** in `AssembleGeometry`'s prop step: `if (bUsePCGScatter && RunPCGScatter())
-  -> PCG owns the props; else the C++ seeded scatter (fallback)`. `RunPCGScatter` sets the
-  graph, sets `Seed = LayoutSeed` (deterministic), and calls `Generate(true)`.
+  -> PCG owns the props; else the C++ seeded scatter (fallback)`. `RunPCGScatter` assigns the
+  graph + `Seed = LayoutSeed` (deterministic) and **schedules `Generate()` for next tick**.
 - **The graph `/Game/PCG/PCG_ElsewhereScatter` is AUTHORED** (headless, via
-  `Tools/Scripts/build_pcg_scatter_graph.py`): **`World Ray Hit Query → Surface Sampler →
-  Transform Points → Static Mesh Spawner → Output`**, all edges wired (4 nodes, 4 edges,
-  2 meshes — verified on reload). Transform randomizes yaw 0–360 + ±40cm offset (seeded by
-  the component Seed); Spawner = weighted selector with two `_K` meshes (`SM_Lamp_AA_Base`,
-  `SM_Lamp_AB_Base`).
-- **THE EMPTY-FLOOR FIX (this session).** Two bugs, both fixed in the rebuild script:
-  1. **No surface.** The Surface Sampler's `Surface` pin needs real `UPCGSurfaceData`; it was
-     fed the **Input node's `In`** (the component's *actor* data — NOT a surface), so the
-     sampler logged "No surfaces found from which to generate", aborted, and scattered
-     nothing. Fixed by inserting a **World Ray Hit Query** node → `Surface Sampler.Surface`.
-     With default params it ray-casts straight **down from the top of the PCG component's own
-     actor bounds to the bottom**, landing points on the Elsewhere floor mesh (the floor ISMs
-     use a `BlockAll` profile → they block the node's default `ECC_WorldStatic` channel). No
-     manual Z/extent tuning — both the ray and the sampler footprint derive from the builder
-     actor's bounds (`Surface Sampler` `Unbounded=false`, no Bounding Shape wired → uses the
-     component/room bounds).
-  2. **Density too sparse to ever show.** `points_per_squared_meter` was `0.0008`; the
-     ServerCathedral floor is ~20×20 m = 400 m², so the *expected* count was 0.32 points —
-     usually **zero**, which also read as "empty floor." Raised to **`0.01/m²` → ~4 hero
-     props** (matches the C++ fallback's 3–6). This is the COUNT KNOB to tune in the script.
+  `Tools/Scripts/build_pcg_scatter_graph.py`): **`Create Points Grid → Transform Points →
+  Static Mesh Spawner → Output`**, all edges wired (3 nodes, 3 edges, 2 meshes — verified on
+  reload). Grid: `CoordinateSpace=OriginalComponent`, `GridExtents=600`, `CellSize=600`
+  (→ a 2×2 ≈ 4-prop layout centered on the builder at floor Z); Transform randomizes yaw
+  0–360 + ±200cm XY jitter (seeded by the component Seed); Spawner = weighted selector with
+  two `_K` meshes (`SM_Lamp_AA_Base`, `SM_Lamp_AB_Base`).
+- **THE EMPTY-FLOOR FIX (root cause + 2 fixes).** PIE showed an empty floor; the log gave the
+  real cause — **`LogPCG: Error: [RegisterOrUpdatePCGComponent] Component has invalid bounds,
+  not registered nor updated` → `0 props`**. At BeginPlay (mid-`AssembleGeometry`) the
+  runtime-built floor/wall ISMs haven't had their world bounds recomputed yet, so the actor's
+  aggregate bounds are **invalid**. `UPCGComponent::CreateGenerateTask` does
+  `if (!GetGridBounds().IsValid) { OnProcessGraphAborted(); return InvalidPCGTaskId; }` —
+  **generation aborts before the graph runs**, so *no* sampler (the earlier World Ray Hit
+  included) ever executes. Two fixes, both applied:
+  1. **Defer generation (C++, mandatory).** `RunPCGScatter` now sets the graph + seed, then
+     `World->GetTimerManager().SetTimerForNextTick(... GeneratePCGScatterDeferred)`. One tick
+     later the ISM bounds are valid → the component registers and the graph runs.
+  2. **Sample explicit bounds, not the world (graph).** Swapped World Ray Hit + Surface
+     Sampler for **Create Points Grid** (`OriginalComponent` space → grid sits on the builder
+     actor's transform at floor-stand Z, using its own extents). Removes the dependency on
+     world collision / the physics scene entirely — timing-immune and deterministic.
 - **`L_Elsewhere` builder has `bUsePCGScatter = true`** (graph wired via the C++ default).
   The **gate's** builder uses the CDO default `false` → C++ path → `ElsewhereSmokeTest`
-  stays green (3 deterministic props). Floor/walls/ceiling, curio, return door, shafts stay C++.
+  stays green (verified: 11 props + Server Cathedral 3 props, deterministic). The deferred
+  PCG path can't affect the gate (CDO off, and the commandlet world doesn't tick).
+  Floor/walls/ceiling, curio, return door, shafts stay C++.
 
 ### ▶ RESUME HERE — Walt's PIE-verify (the render gate; can't be done headless)
-The surface fix + density are authored and the graph is rebuilt (editor-closed). PCG
-**generation output can't be rendered/verified headless**, so this is a PIE eyeball:
-1. PIE `L_Elsewhere` (the builder has `bUsePCGScatter=true`). **Expect ~4 lamp props scattered
-   on the floor** (`SM_Lamp_AA/AB_Base`), random yaw, standing on the floor surface.
-2. **Determinism:** re-enter / re-PIE → **identical layout** (component Seed = the run's
-   LayoutSeed drives sampler jitter + transform; World Ray Hit is a pure function of the
-   fixed geometry). Confirm same-seed → same-scatter.
-3. **If still empty,** check the PIE log (filter `LogPCG`/`Surface`): the likely culprits are
-   now (a) the floor ISM collision not present at Generate time, or (b) `Generate(true)`
-   running before the floor instances are added. Both point at *ordering/collision*, not the
-   graph. Quick probes: raise `points_per_squared_meter` in the script + rebuild; or confirm
-   the floor's `BlockAll` blocks `WorldStatic`.
+Graph rebuilt + C++ rebuilt (editor-closed), gate green. PCG **generation output can't be
+rendered/verified headless**, so this is a PIE eyeball:
+1. PIE `L_Elsewhere` (the builder has `bUsePCGScatter=true`). **Expect ~4 lamp props
+   (`SM_Lamp_AA/AB_Base`) appear on the floor one tick after load** (deferred Generate),
+   random yaw, near the room centre.
+2. **Determinism:** re-enter / re-PIE → **identical layout** (Create Points Grid is fixed;
+   the component Seed = the run's LayoutSeed drives the Transform jitter). Same-seed → same.
+3. **No more invalid-bounds abort:** the log should NOT show
+   `[RegisterOrUpdatePCGComponent] Component has invalid bounds`. If props are still missing,
+   confirm the deferred `Generate` fired (`LogElsewhereBuilder: ... deferred PCG Generate
+   fired`, Verbose) and check `LogPCG` for a new reason.
 4. **Tune knobs** (rebuild with `py Tools/Scripts/build_pcg_scatter_graph.py`, editor closed):
-   count = `points_per_squared_meter`; nicer meshes = the Spawner's weighted `MESHES` list.
+   count = grid `cell_size` (smaller = more) / `grid_extents`; scatter spread = Transform
+   `offset_*`; nicer meshes = the Spawner's `MESHES` list.
 5. **Instant revert if needed:** set `bUsePCGScatter=false` on the builder → C++ props return.
 6. Optionally make `ElsewhereSmokeTest` assert the PCG path deterministically (it currently
    keeps the C++ path as the determinism handle, per the spike note).
 7. Then migrate further (walls/ceiling via PCG) only after the scatter slice is proven.
+   Later refinement: drive grid extents from the place-type `RoomExtent` (override the PCG
+   param from C++) so the scatter fills each room instead of a fixed 6 m half-extent.
 
 Everything else in the loop — plan → curio → return → discard, the save rule, the Cabinet —
 is untouched; the seam keeps the swap isolated and additive.
