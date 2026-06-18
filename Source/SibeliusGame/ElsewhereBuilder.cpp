@@ -224,29 +224,56 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 	}
 
 	// --- Perimeter walls, with a doorway gap on the west (-X) edge. ---
-	const FVector WallFit(Tile / 100.f, 0.2f, WallH / 100.f);   // wide along local X, thin, tall
+	// WALL ORIENTATION CONVENTION: a wall PANEL's face-normal is along local +X and its
+	// width runs along local +Y (thin in X, wide in Y, tall in Z) — this matches the kit
+	// wall mesh SM_Wall_A_Mid_4x4m (bounds X≈[-20,5], Y=[-200,200], Z=[0,400]). So a panel
+	// at yaw 0 faces ±X and spans Y — naturally an EAST/WEST wall. A NORTH/SOUTH wall needs
+	// yaw 90 (face ±Y, span X). The fallback cube's WallFit is shaped to the same convention
+	// (thin X, wide Y) so kit and fallback orient identically. (Earlier code used the opposite
+	// convention, which left the kit walls rotated 90° — thin fins poking into the room with
+	// gaps between them that let the void/sky show through.)
+	const FVector WallFit(0.2f, Tile / 100.f, WallH / 100.f);   // thin along local X, wide along Y, tall Z
 	const float WallZ = Origin.Z + WallH * 0.5f;
 	const int32 DoorJ = NY / 2;   // the gap tile on the west edge
 
 	// Walls rest their base on the floor (bRestBaseOnFloor) so they seal the wall-to-floor
 	// band — the WallZ in the transform is overridden by the floor-rest.
-	for (int32 i = 0; i < NX; ++i)   // north (+Y) and south (-Y) edges run along X (yaw 0)
+	for (int32 i = 0; i < NX; ++i)   // north (+Y) and south (-Y) edges run along X -> face ±Y -> yaw 90
 	{
 		const float CX = X0 + i * Tile;
-		const FTransform North(FRotator(0.f, 0.f, 0.f), FVector(CX, Origin.Y + GridHalfY, WallZ));
+		const FTransform North(FRotator(0.f, 90.f, 0.f), FVector(CX, Origin.Y + GridHalfY, WallZ));
 		PlacePiece(Place.WallMeshes, CubeFallback, Scale, North, WallFit, Rng, true, Origin.Z);
-		const FTransform South(FRotator(0.f, 0.f, 0.f), FVector(CX, Origin.Y - GridHalfY, WallZ));
+		const FTransform South(FRotator(0.f, 90.f, 0.f), FVector(CX, Origin.Y - GridHalfY, WallZ));
 		PlacePiece(Place.WallMeshes, CubeFallback, Scale, South, WallFit, Rng, true, Origin.Z);
 	}
-	for (int32 j = 0; j < NY; ++j)   // east (+X) and west (-X) edges run along Y (yaw 90)
+	for (int32 j = 0; j < NY; ++j)   // east (+X) and west (-X) edges run along Y -> face ±X -> yaw 0
 	{
 		const float CY = Y0 + j * Tile;
-		const FTransform East(FRotator(0.f, 90.f, 0.f), FVector(Origin.X + GridHalfX, CY, WallZ));
+		const FTransform East(FRotator(0.f, 0.f, 0.f), FVector(Origin.X + GridHalfX, CY, WallZ));
 		PlacePiece(Place.WallMeshes, CubeFallback, Scale, East, WallFit, Rng, true, Origin.Z);
 		if (j != DoorJ)   // leave the doorway open (the way home stands here)
 		{
-			const FTransform West(FRotator(0.f, 90.f, 0.f), FVector(Origin.X - GridHalfX, CY, WallZ));
+			const FTransform West(FRotator(0.f, 0.f, 0.f), FVector(Origin.X - GridHalfX, CY, WallZ));
 			PlacePiece(Place.WallMeshes, CubeFallback, Scale, West, WallFit, Rng, true, Origin.Z);
+		}
+	}
+
+	// --- Dark-void backdrop behind the west doorway ---
+	// The doorway is intentionally open (the way home), but the level has no sky actor, so
+	// the open portal otherwise looks out onto the engine's default blue backdrop ("daytime
+	// sky"). Drop a tall, wide unlit slab well WEST of the doorway: it sits outside the room
+	// in the unlit void, so the faint skylight leaves it dark navy — occluding the bright
+	// background in the doorway's view cone. Added directly to the fallback-cube ISM (NO RNG
+	// draw, NO palette pick) so the prop scatter + gate determinism are untouched. Placed far
+	// past the return door, so it never blocks the way home.
+	if (CubeFallback)
+	{
+		if (UInstancedStaticMeshComponent* Void = GetOrCreateISM(CubeFallback))
+		{
+			FTransform BackXf;
+			BackXf.SetLocation(FVector(Origin.X - GridHalfX - 700.f, Origin.Y, Origin.Z + WallH));
+			BackXf.SetScale3D(FVector(0.4f, (2.f * GridHalfY + 600.f) / 100.f, (WallH * 3.f) / 100.f));
+			Void->AddInstance(BackXf, /*bWorldSpace=*/true);
 		}
 	}
 
