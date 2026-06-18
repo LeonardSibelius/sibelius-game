@@ -27,6 +27,7 @@
 class UInstancedStaticMeshComponent;
 class UPointLightComponent;
 class USpotLightComponent;
+class UBoxComponent;
 class UPCGComponent;
 class UPCGGraphInterface;
 class ACurio;
@@ -149,6 +150,13 @@ private:
 
 	// Warm beacon seated at the return doorway (the "way home" affordance).
 	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UPointLightComponent> ReturnBeacon;
+
+	// Don't-fall-out safety (invisible blockers, seated in AssembleGeometry):
+	//   DoorwayBlocker — seals the west doorway OPENING so the player can't walk into the void
+	//                    (the return is still via the beacon / E-interact, not a walk-through).
+	//   VoidCatchFloor — a huge catch-floor just below the room so a slip-out can't fall forever.
+	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UBoxComponent> DoorwayBlocker;
+	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UBoxComponent> VoidCatchFloor;
 
 	// PCG spike: assign the ScatterGraph + seed and SCHEDULE generation for next tick (the
 	// actor's runtime ISM bounds aren't valid yet this frame -> PCG would abort). Returns true
