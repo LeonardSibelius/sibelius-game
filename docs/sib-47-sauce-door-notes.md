@@ -137,6 +137,31 @@ rendered/verified headless**, so this is a PIE eyeball:
 Everything else in the loop — plan → curio → return → discard, the save rule, the Cabinet —
 is untouched; the seam keeps the swap isolated and additive.
 
+## Regression fix — vertical sealed walls + dark-void doorway (PIE-verified via ue_bridge)
+Three branch regressions vs main, all traced to ONE real bug + its knock-ons (commit after
+the PCG work):
+- **Walls mis-oriented (root cause).** The kit wall mesh `SM_Wall_A_Mid_4x4m` has its
+  face-normal along local +X / width along local +Y (bounds `X∈[-20,5]`, `Y=[-200,200]`,
+  `Z=[0,400]`), but `AssembleGeometry` placed walls with the fallback-cube convention (width
+  along X) → every kit wall came out **rotated 90°**: thin fins poking into the room with
+  ~375cm gaps. Fixed: panel convention (face +X / span Y) → **E/W edges yaw 0, N/S edges yaw
+  90**, and the fallback cube's `WallFit` reshaped to match. See [[kit-mesh-axis-convention]].
+- **"Daytime blue sky" = the wall gaps** leaking the engine default backdrop (the level has
+  no sun/SkyAtmosphere by design). Sealing the walls stops the flooding; the open west
+  doorway is now backed by a tall unlit **void backdrop slab** (added to the fallback-cube
+  ISM with NO RNG draw, far west of the return door) so the portal reads dark.
+- **"Collect/return does nothing" = the broken room**, not code. Curio/ReturnDoor/Subsystem
+  are byte-identical to main; driving `ReturnDoor.Interact` live discarded the plan and
+  traveled to `L_Office_v02` cleanly. The mis-oriented wall fins were blocking the interact
+  trace / making the door unreachable; fixing the walls restores a navigable hall.
+
+Verified live (Simulate + bridge): ISM instance transforms (sealed perimeter), screenshots
+(interior dark, doorway dark), return travel, 4 PCG lamp props. **Still needs Walt's
+hands-on PIE:** the interactive playthrough with real input — V-reveal at the kitchen Sauce
+Door → step through → aim+E to collect the orb → E the return door (the bridge can only
+Simulate, no player pawn, so keyboard interaction wasn't exercised). All constituent pieces
+are verified.
+
 ## Running the gate (editor CLOSED)
 
 ```
