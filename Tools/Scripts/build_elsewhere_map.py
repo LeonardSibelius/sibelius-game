@@ -1,11 +1,12 @@
 # build_elsewhere_map.py — SIB-47 Sauce Door: the Elsewhere generation level + mood.
 #
-# Builds /Game/Maps/L_Elsewhere: a dim sun + skylight, a PlayerStart inside the west
-# doorway, one AElsewhereBuilder at origin (preview = Server Cathedral), the clean
-# ElsewhereGameMode override, and dressing-pass-1 ATMOSPHERE (static):
-#   - ExponentialHeightFog with volumetric scattering (so the god-ray shafts read).
+# Builds /Game/Maps/L_Elsewhere: a faint cool skylight (NO directional sun — dark void),
+# a PlayerStart inside the west doorway, one AElsewhereBuilder at origin (preview =
+# Server Cathedral), the clean ElsewhereGameMode override, and the ATMOSPHERE (static):
+#   - ExponentialHeightFog with volumetric scattering (so the god-ray shafts read), dark
+#     navy inscattering so anything past the walls is darkness, not a day sky.
 #   - A cinematic PostProcessVolume (navy + gold grade, gentle bloom + vignette).
-#   - Dropped Sun/SkyLight so the shafts + curio glow carry the room.
+#   - The enclosed temple sits in a dark void; warm-gold shafts + the curio glow carry it.
 # The slot-aligned god-ray shafts themselves are spawned by AElsewhereBuilder (so they
 # line up with the room grid). This pass is BY-EYE — see the TUNE KNOBS below.
 #
@@ -18,8 +19,12 @@ MAP = "/Game/Maps/L_Elsewhere"
 TAG = "###ELSEWHERE###"
 
 # --- TUNE KNOBS (static atmosphere) — Walt tweaks these by eye ---
-SUN_INTENSITY  = 1.0     # directional sun (lux); lower = darker hall
-SKY_INTENSITY  = 0.20    # skylight ambient; lower = the shafts/glow carry more
+# NOTE: no directional sun — the enclosed temple sits in a DARK VOID. A directional
+# sun lit a bright day-sky through the fog/gaps ("outdoors at noon"); removing it makes
+# anything past the walls read as dark navy fog, and the warm-gold shafts carry the
+# light. (If you want a faint directional fill later, add a DirectionalLight at low
+# intensity with Atmosphere-Sun OFF.)
+SKY_INTENSITY  = 0.15    # faint cool skylight ambient; lower = the shafts/glow carry more
 FOG_DENSITY    = 0.02    # exponential height fog density (subtle = light has body)
 BLOOM          = 0.8     # gentle bloom
 VIGNETTE       = 0.4     # cinematic edge darkening
@@ -51,12 +56,8 @@ else:
         unreal.EditorAssetLibrary.delete_asset(MAP)
     les.new_level(MAP)
 
-    # Dim sun + skylight (the shafts + curio glow carry the mood).
-    sun = eas.spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 800), unreal.Rotator(-55.0, -40.0, 0.0))
-    sun.set_actor_label("Sun")
-    sc = sun.get_component_by_class(unreal.DirectionalLightComponent)
-    if sc:
-        sc.set_intensity(SUN_INTENSITY)
+    # No directional sun — dark void. Faint cool skylight only; the shafts + curio glow
+    # carry the mood.
     sky = eas.spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 800))
     sky.set_actor_label("SkyLight")
     kc = sky.get_component_by_class(unreal.SkyLightComponent)

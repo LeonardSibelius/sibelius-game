@@ -80,7 +80,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") bool bGodRayShafts = true;
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere", meta = (ClampMin = "0", ClampMax = "12")) int32 ShaftsPerWall = 3;
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") float ShaftIntensity = 9000.f;
-	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") FLinearColor ShaftColor = FLinearColor(0.35f, 0.6f, 1.0f);
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") FLinearColor ShaftColor = FLinearColor(1.0f, 0.78f, 0.42f); // warm gold shafts vs the cool/dark ambient
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") float ShaftVolumetricScattering = 2.5f;
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere", meta = (ClampMin = "1", ClampMax = "80")) float ShaftOuterConeDeg = 22.f;
 
@@ -112,7 +112,9 @@ private:
 		float KitMeshScale,
 		const FTransform& KitXform,
 		const FVector& FitScale,
-		FRandomStream& Rng);
+		FRandomStream& Rng,
+		bool bRestBaseOnFloor = false,   // seal: drop the piece so its mesh bottom sits at FloorZ
+		float FloorZ = 0.f);
 
 	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> KitISMs;
 
