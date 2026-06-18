@@ -71,6 +71,24 @@ walls sealed floor-to-ceiling so no sky/void band shows). Tuning knobs: builder
 — the room is mid-dressing. Real prop dressing is the next pass, and is exactly what the
 PCG spike below replaces.
 
+## Dressing pass 2 — structural machinery + way-home beacon (banked)
+The hall now reads as a real built space (PIE-verified live via ue_bridge screenshots):
+- **Structural props** (`AElsewhereBuilder::SpawnStructuralProps`, toggle `bStructuralProps`):
+  bulkhead **arch-ribs** (`SM_Bulkhead_A_Gate_A`) in rows at the 1/4 + 3/4 marks down the hall
+  (span the width, player walks through, frame the curio) + **pipe runs** (`SM_Pipes_A_4m`)
+  along both long-wall bases. Deterministic from the room grid (no RNG → doesn't perturb the
+  scatter seed/gate). Kit-by-path, graceful skip when the kit's absent.
+- **Richer PCG scatter**: the spawner weights **6** varied `_K` lamp bases (was 2) — the
+  scattered detail layer. Big machinery is the C++ structural pass; small detail is PCG.
+- **Return-door affordance**: a warm amber **beacon** (`ReturnBeacon`, tunable) at the doorway
+  + prompt "`<- Back to the kitchen [E]`" (ASCII arrow — non-ASCII trips C4566 under -WX).
+
+Known/by-design: rendering kit meshes through ISMs makes the editor prompt to save the kit's
+shared `M_Base_MAT` (auto-sets `bUsedWithInstancedStaticMeshes`). It's **editor-only cosmetic**
+— the cooker sets the flag at cook, and "Don't Save" is the fine workaround. We do NOT modify
+the gitignored kit. (An in-memory auto-flag helper was tried and reverted — it forced the
+default checker material; not worth the complexity.)
+
 ## The PCG seam → real PCG (spike in progress)
 
 `AssembleGeometry()` was always the **single method** a `UPCGComponent->Generate()` replaces.
