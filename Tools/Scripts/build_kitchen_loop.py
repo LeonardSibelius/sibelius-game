@@ -84,7 +84,11 @@ else:
         # door). Sized 1.6:1 to match the 1024x640 art so the gold text stays crisp.
         if sign_tex:
             door.set_editor_property("SignTexture", sign_tex)
-            door.set_editor_property("SignWidth", 160.0)
+            # Walt's hand-dialed placement, baked so a re-run reproduces it exactly.
+            # unreal.Rotator args are (roll, pitch, yaw) -> (90, 0, 90) == Details X/Y/Z.
+            door.set_editor_property("SignRelativeLocation", unreal.Vector(-90.0, 0.0, 10.0))
+            door.set_editor_property("SignRelativeRotation", unreal.Rotator(90.0, 0.0, 90.0))
+            door.set_editor_property("SignWidth", 450.0)
             door.set_editor_property("SignHeight", 100.0)
             try:
                 door.rerun_construction_scripts()   # build the SignMesh now (else on load)

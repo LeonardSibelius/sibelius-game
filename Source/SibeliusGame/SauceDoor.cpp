@@ -25,6 +25,15 @@ ASauceDoor::ASauceDoor()
 			DoorMesh->SetRelativeScale3D(FVector(0.2f, 1.2f, 2.2f));   // a doorway slab
 		}
 	}
+
+	// "Many Worlds" sign placement Walt dialed in by hand — baked as ASauceDoor defaults
+	// so a placement-script re-run can't reset it (the office/attic signs keep AHiddenDoor's
+	// own defaults). FRotator(Pitch, Yaw, Roll): Details X(roll)=90, Z(yaw)=90 (a wide
+	// plaque rotated flat onto this kitchen-facing door).
+	SignRelativeLocation = FVector(-90.0f, 0.0f, 10.0f);
+	SignRelativeRotation = FRotator(0.0f, 90.0f, 90.0f);
+	SignWidth = 450.0f;
+	SignHeight = 100.0f;
 }
 
 void ASauceDoor::Interact_Implementation(AActor* /*Interactor*/)
