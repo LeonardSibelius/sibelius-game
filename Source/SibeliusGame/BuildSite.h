@@ -15,6 +15,8 @@ class UStaticMeshComponent;
 class USceneComponent;
 class UInventoryComponent;
 class ANavLinkProxy;
+class UPointLightComponent;
+class UMaterialInterface;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuildStateChanged, bool, bIsBuilt);
 
@@ -114,6 +116,11 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Build")
 	TObjectPtr<UStaticMeshComponent> FinalMesh; // hidden + no collision until built
 
+	// SIB-27 art polish (orb ghost): a glow light for the floating-orb preview, lit only
+	// while the orb ghost is shown. Inert unless bGhostAsOrb (below).
+	UPROPERTY(VisibleAnywhere, Category = "Build|Art")
+	TObjectPtr<UPointLightComponent> GhostGlow;
+
 	UPROPERTY(EditAnywhere, Category = "Build")
 	EBuildOutput Output = EBuildOutput::Structure;
 
@@ -148,12 +155,34 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Build", meta = (ClampMin = "50.0"))
 	float InteractRadius = 350.f;
 
+	// --- SIB-27 art polish: render the ghost/preview as a floating glowing ORB (matching
+	// the Sauce Door curio) instead of the placeholder cube. Per-instance opt-in — set on
+	// the KeyBuildSite; plain build sites keep their cube ghost. Visual ONLY: the build/
+	// consume mechanic is untouched. ---
+	UPROPERTY(EditAnywhere, Category = "Build|Art")
+	bool bGhostAsOrb = false;
+
+	// Warm gold/amber so a buildable key reads distinct from the curio's cyan.
+	UPROPERTY(EditAnywhere, Category = "Build|Art")
+	FLinearColor GhostOrbColor = FLinearColor(1.0f, 0.6f, 0.12f);
+
+	// Emissive base for the orb (tinted to GhostOrbColor). Defaults to the kit's lamp
+	// emissive material — graceful fallback (plain sphere) if it can't load.
+	UPROPERTY(EditAnywhere, Category = "Build|Art")
+	TSoftObjectPtr<UMaterialInterface> GhostOrbMaterial;
+
 	UPROPERTY(BlueprintAssignable, Category = "Build")
 	FOnBuildStateChanged OnBuildStateChanged;
 
 private:
 	void ApplyBuiltState(bool bBuilt);
 	void SetNavLinkEnabled(bool bEnabled);
+
+	// SIB-27 art: restyle GhostMesh into a floating glowing orb (sphere + emissive MID +
+	// glow light) when bGhostAsOrb. Called once on BeginPlay for an unbuilt orb site.
+	void SetupGhostOrb();
+	FVector OrbBaseRelLoc = FVector::ZeroVector; // GhostMesh rel loc the bob oscillates around
+	float OrbBobTime = 0.f;
 
 	// SIB-27 consume-on-build reveal. BeginReveal starts the float-and-spin (PIE) or
 	// consumes synchronously (headless, K3); EnterConsumed is the terminal hide + tick-off.
