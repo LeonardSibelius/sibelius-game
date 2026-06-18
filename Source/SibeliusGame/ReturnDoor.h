@@ -31,8 +31,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Return Door")
 	FName HomeLevelName = TEXT("L_Office_v02");
 
+	// ASCII "<-" arrow on purpose: the project builds warnings-as-errors and a non-ASCII glyph
+	// in a source literal trips MSVC C4566. The warm beacon at the door carries the visual cue.
 	UPROPERTY(EditAnywhere, Category = "Return Door")
-	FText ReturnPromptText = NSLOCTEXT("Sibelius", "ReturnDoorPrompt", "Return through the door [E]");
+	FText ReturnPromptText = NSLOCTEXT("Sibelius", "ReturnDoorPrompt", "<- Back to the kitchen  [E]");
 
 	UPROPERTY(VisibleAnywhere, Category = "Return Door")
 	TObjectPtr<UStaticMeshComponent> DoorMesh;

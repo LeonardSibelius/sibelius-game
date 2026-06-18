@@ -25,10 +25,19 @@
 import unreal
 
 GRAPH = "/Game/PCG/PCG_ElsewhereScatter"
-MESHES = [
-    "/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Base.SM_Lamp_AA_Base",
-    "/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Base.SM_Lamp_AB_Base",
+# Richer scatter: a weighted mix of varied _K lamp/fixture bases (small detail props). The
+# big deliberate machinery (pipe runs, bulkhead arch-ribs) is placed by the C++ structural
+# pass — AElsewhereBuilder::SpawnStructuralProps — so this stays the "scattered detail" layer.
+# (mesh_path, weight)
+MESH_WEIGHTS = [
+    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Base.SM_Lamp_AA_Base", 3),
+    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Base.SM_Lamp_AB_Base", 3),
+    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AC_Base.SM_Lamp_AC_Base", 2),
+    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AD_Base.SM_Lamp_AD_Base", 2),
+    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_BA_Base.SM_Lamp_BA_Base", 1),
+    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_BB_Base.SM_Lamp_BB_Base", 1),
 ]
+MESHES = [m for m, _ in MESH_WEIGHTS]   # kept for the DONE tally
 def log(s): unreal.log("###PCG### " + str(s))
 
 G = unreal.load_object(None, GRAPH + "." + GRAPH.split("/")[-1])
@@ -79,9 +88,9 @@ spS = spawn.get_settings()
 spS.set_mesh_selector_type(unreal.PCGMeshSelectorWeighted)
 sel = spS.get_editor_property("mesh_selector_parameters")
 entries = []
-for mp in MESHES:
+for mp, w in MESH_WEIGHTS:
     e = unreal.PCGMeshSelectorWeightedEntry()
-    e.set_editor_property("weight", 1)
+    e.set_editor_property("weight", w)
     d = e.get_editor_property("descriptor")
     d.set_editor_property("static_mesh", unreal.load_asset(mp))
     e.set_editor_property("descriptor", d)

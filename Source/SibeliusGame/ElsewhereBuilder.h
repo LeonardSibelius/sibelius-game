@@ -86,6 +86,16 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") float ShaftVolumetricScattering = 2.5f;
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere", meta = (ClampMin = "1", ClampMax = "80")) float ShaftOuterConeDeg = 22.f;
 
+	// --- Dressing pass 2: deliberate kit machinery so the hall reads as a real built space —
+	// bulkhead arch-ribs the player walks through + pipe runs along the walls. Deterministic
+	// (grid positions, no RNG), kit-by-path with graceful skip when the kit isn't installed
+	// (so the gate stays green with zero kit bytes). Master toggle: ---
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") bool bStructuralProps = true;
+
+	// Return-door beacon (the "this way home" affordance): a warm amber glow at the doorway.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") FLinearColor ReturnBeaconColor = FLinearColor(1.0f, 0.55f, 0.2f);
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") float ReturnBeaconIntensity = 6000.f;
+
 	// --- SIB-47 PCG spike (incremental — see docs "PCG spike — resume here"): replace the
 	// C++ seeded prop scatter with a REAL UPCGComponent running a PCG graph. Behind a flag
 	// with the C++ scatter as fallback, so the working loop + ElsewhereSmokeTest stay green
@@ -132,6 +142,13 @@ private:
 	// Atmosphere: spawn volumetric spot-light shafts down the long walls (deterministic).
 	void SpawnGodRayShafts(const FPlaceTypeDef& Place);
 	UPROPERTY() TArray<TObjectPtr<USpotLightComponent>> ShaftLights;
+
+	// Dressing pass 2: deterministic kit machinery (bulkhead arch-ribs + wall pipe runs).
+	// Uses GetOrCreateISM, so its ISMs live in KitISMs and clear on the next build.
+	void SpawnStructuralProps(const FPlaceTypeDef& Place);
+
+	// Warm beacon seated at the return doorway (the "way home" affordance).
+	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UPointLightComponent> ReturnBeacon;
 
 	// PCG spike: assign the ScatterGraph + seed and SCHEDULE generation for next tick (the
 	// actor's runtime ISM bounds aren't valid yet this frame -> PCG would abort). Returns true

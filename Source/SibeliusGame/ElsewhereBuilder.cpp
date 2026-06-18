@@ -34,6 +34,13 @@ AElsewhereBuilder::AElsewhereBuilder()
 	MoodLight->SetAttenuationRadius(4000.f);
 	MoodLight->CastShadows = false;   // public UPROPERTY on ULightComponentBase
 
+	// Return-door beacon: a warm amber glow seated at the doorway so the way home reads as an
+	// obvious exit ("this way to the kitchen"). Off until BuildFromPlan seats it at the door.
+	ReturnBeacon = CreateDefaultSubobject<UPointLightComponent>(TEXT("ReturnBeacon"));
+	ReturnBeacon->SetupAttachment(SceneRoot);
+	ReturnBeacon->SetIntensity(0.f);
+	ReturnBeacon->CastShadows = false;
+
 	// SIB-47 PCG spike: a real PCG component. We drive it manually (set graph + seed,
 	// then Generate in RunPCGScatter), so it doesn't auto-generate on load.
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGScatter"));
@@ -331,6 +338,10 @@ int32 AElsewhereBuilder::BuildFromPlan(
 	{
 		SpawnGodRayShafts(*Place); // deterministic; visual-only (doesn't touch PropCount)
 	}
+	if (bStructuralProps)
+	{
+		SpawnStructuralProps(*Place); // deterministic kit machinery; doesn't touch PropCount/seed
+	}
 
 	UWorld* World = GetWorld();
 	if (!World)
@@ -363,6 +374,16 @@ int32 AElsewhereBuilder::BuildFromPlan(
 	const FVector ReturnLoc = Origin + FVector(-Place->RoomExtent.X + 50.f, 0.f, 0.f) + ReturnDoorOffset;
 	const FTransform ReturnXf(FRotator(0.f, 90.f, 0.f), ReturnLoc);
 	SpawnedReturnDoor = World->SpawnActor<AReturnDoor>(AReturnDoor::StaticClass(), ReturnXf, SpawnParams);
+
+	// Light the way home: warm amber beacon just inside the doorway, raised to head height, so
+	// the exit is unmistakable against the cool/dark hall.
+	if (ReturnBeacon)
+	{
+		ReturnBeacon->SetWorldLocation(ReturnLoc + FVector(120.f, 0.f, 200.f));
+		ReturnBeacon->SetLightColor(ReturnBeaconColor);
+		ReturnBeacon->SetIntensity(ReturnBeaconIntensity);
+		ReturnBeacon->SetAttenuationRadius(1000.f);
+	}
 
 	UE_LOG(LogElsewhereBuilder, Display,
 		TEXT("[%s] built '%s' (seed=%d): %d props, curio='%s', return door=%s"),
@@ -423,6 +444,74 @@ void AElsewhereBuilder::SpawnGodRayShafts(const FPlaceTypeDef& Place)
 	SpawnRow(-HalfY, 90.0f);  // south wall, point toward +Y
 
 	UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] %d god-ray shafts."), *GetName(), ShaftLights.Num());
+}
+
+void AElsewhereBuilder::SpawnStructuralProps(const FPlaceTypeDef& Place)
+{
+	// Deliberate, deterministic kit machinery so the hall reads as a REAL built space rather
+	// than an empty box: rows of bulkhead arch-ribs the player walks through down the hall,
+	// plus pipe runs along the base of both long walls. Kit-by-path (the kit is gitignored);
+	// if a mesh isn't installed we simply skip it — structure is optional dressing, so the
+	// headless gate stays green with zero kit bytes. Positions are pure functions of the room
+	// grid (no RNG), so they line up every visit and never perturb the prop-scatter seed.
+	// The arch/pipe ISMs are tracked in KitISMs (via GetOrCreateISM) so the next build clears them.
+	const FVector Origin = GetActorLocation();
+	const float Tile  = FMath::Max(50.f, Place.KitTileSize);
+	const float Scale = Place.KitMeshScale;
+	const float HalfX = FMath::Max(Tile, Place.RoomExtent.X);
+	const float HalfY = FMath::Max(Tile, Place.RoomExtent.Y);
+	const int32 NX = FMath::Max(1, FMath::RoundToInt((2.f * HalfX) / Tile));
+	const int32 NY = FMath::Max(1, FMath::RoundToInt((2.f * HalfY) / Tile));
+	const float GridHalfX = (NX * Tile) * 0.5f;
+	const float GridHalfY = (NY * Tile) * 0.5f;
+	const float X0 = Origin.X - GridHalfX + Tile * 0.5f;
+	const float Y0 = Origin.Y - GridHalfY + Tile * 0.5f;
+
+	// --- Arch-ribs: rows of bulkhead gates spanning the room width (yaw 90 -> the gate's wide
+	// axis runs along Y), at the 1/4 and 3/4 marks along X so they frame — not block — the
+	// central curio. The player walks through the arch openings down the hall. ---
+	if (UStaticMesh* Gate = LoadObject<UStaticMesh>(nullptr,
+		TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_Gate_A.SM_Bulkhead_A_Gate_A")))
+	{
+		if (UInstancedStaticMeshComponent* GateISM = GetOrCreateISM(Gate))
+		{
+			const int32 RowsX[] = { FMath::Clamp(NX / 4, 0, NX - 1), FMath::Clamp((3 * NX) / 4, 0, NX - 1) };
+			for (int32 RowI : RowsX)
+			{
+				const float RX = X0 + RowI * Tile;
+				for (int32 j = 0; j < NY; ++j)
+				{
+					FTransform Xf(FRotator(0.f, 90.f, 0.f), FVector(RX, Y0 + j * Tile, Origin.Z));
+					Xf.SetScale3D(FVector(Scale));
+					GateISM->AddInstance(Xf, /*bWorldSpace=*/true);
+				}
+			}
+		}
+	}
+
+	// --- Pipe runs along the base of both long walls (machinery texture). The 4m pipe section
+	// runs along Y by default; yaw 90 turns it to run along X (the wall direction). Inset just
+	// inside the wall. ---
+	if (UStaticMesh* Pipe = LoadObject<UStaticMesh>(nullptr,
+		TEXT("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_A_4m.SM_Pipes_A_4m")))
+	{
+		if (UInstancedStaticMeshComponent* PipeISM = GetOrCreateISM(Pipe))
+		{
+			const float Inset = Tile * 0.4f;
+			for (int32 i = 0; i < NX; ++i)
+			{
+				const float CX = X0 + i * Tile;
+				FTransform North(FRotator(0.f, 90.f, 0.f), FVector(CX, Origin.Y + GridHalfY - Inset, Origin.Z + 10.f));
+				North.SetScale3D(FVector(Scale));
+				PipeISM->AddInstance(North, /*bWorldSpace=*/true);
+				FTransform South(FRotator(0.f, 90.f, 0.f), FVector(CX, Origin.Y - GridHalfY + Inset, Origin.Z + 10.f));
+				South.SetScale3D(FVector(Scale));
+				PipeISM->AddInstance(South, /*bWorldSpace=*/true);
+			}
+		}
+	}
+
+	UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] structural props placed (arch-ribs + pipe runs)."), *GetName());
 }
 
 bool AElsewhereBuilder::RunPCGScatter(const FPlaceTypeDef& Place, int32 LayoutSeed)
