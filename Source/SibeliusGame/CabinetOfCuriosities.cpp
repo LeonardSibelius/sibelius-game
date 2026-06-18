@@ -8,6 +8,8 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogCabinet, Log, All);
 
@@ -27,10 +29,13 @@ ACabinetOfCuriosities::ACabinetOfCuriosities()
 	{
 		SlotISM->SetStaticMesh(Cube);
 	}
-	// Per-instance custom data drives a filled/dim tint in the material (set up in the
-	// editor follow-up); until then the count IS the visible fill (slots added only
-	// for the registry, scaled up when owned — see RefreshFrom).
-	SlotISM->NumCustomDataFloats = 1;
+	// Force a VALID material so the slots never render as the WorldGridMaterial checker
+	// (the engine cube ISM defaulted to it). BasicShapeMaterial is engine-always-present
+	// and exposes a "Color" param we tint in BeginPlay — no kit dependency.
+	if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial")))
+	{
+		SlotISM->SetMaterial(0, Base);
+	}
 }
 
 void ACabinetOfCuriosities::BeginPlay()
@@ -44,6 +49,16 @@ void ACabinetOfCuriosities::BeginPlay()
 			Collection->OnCollectionChanged.AddDynamic(this, &ACabinetOfCuriosities::HandleCollectionChanged);
 		}
 	}
+
+	// Tint the slot material to the cabinet's filled colour (gold by default).
+	if (SlotISM)
+	{
+		if (UMaterialInstanceDynamic* MID = SlotISM->CreateDynamicMaterialInstance(0))
+		{
+			MID->SetVectorParameterValue(TEXT("Color"), FilledColor);
+		}
+	}
+
 	Refresh();
 }
 
@@ -83,20 +98,20 @@ FCabinetState ACabinetOfCuriosities::RefreshFrom(const TArray<FName>& AllCurioId
 	const FVector Origin = GetActorLocation();
 	int32 Filled = 0;
 
+	// Render ONLY owned curios — the cabinet starts empty (no cubes) and fills as you
+	// collect. (Previously it drew a cube per KNOWN curio, so an unplayed cabinet was a
+	// long row of empty placeholder cubes — the "hallway trail".) Owned slots pack into
+	// a tidy growing row.
 	for (int32 i = 0; i < AllCurioIds.Num(); ++i)
 	{
-		const bool bOwned = OwnedIds.Contains(AllCurioIds[i]);
-		if (bOwned)
+		if (!OwnedIds.Contains(AllCurioIds[i]))
 		{
-			++Filled;
+			continue;
 		}
-
-		// A row of slots; owned ones stand tall + bright, empty ones sit low + dim.
-		const FVector Loc = Origin + FVector(0.f, i * SlotSpacing, 0.f);
-		const float Height = bOwned ? 1.0f : 0.3f;
-		const FTransform Slot(FRotator::ZeroRotator, Loc, FVector(0.4f, 0.4f, Height));
-		const int32 Idx = SlotISM->AddInstance(Slot, /*bWorldSpace=*/true);
-		SlotISM->SetCustomDataValue(Idx, 0, bOwned ? 1.0f : 0.0f);   // material reads this for tint
+		const FVector Loc = Origin + FVector(0.f, Filled * SlotSpacing, 0.f);
+		const FTransform Slot(FRotator::ZeroRotator, Loc, FVector(0.4f, 0.4f, 0.4f));
+		SlotISM->AddInstance(Slot, /*bWorldSpace=*/true);
+		++Filled;
 	}
 
 	LastState.Filled = Filled;
