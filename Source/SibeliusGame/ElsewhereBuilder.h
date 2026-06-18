@@ -26,6 +26,7 @@
 
 class UInstancedStaticMeshComponent;
 class UPointLightComponent;
+class USpotLightComponent;
 class ACurio;
 class AReturnDoor;
 
@@ -65,6 +66,24 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Preview") FName PreviewPlaceType = TEXT("ServerCathedral");
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Preview") int32 PreviewSeed = 4242;
 
+	// --- Atmosphere (dressing pass 1): god-ray light shafts down the long walls, so the
+	// hall reads as a sacred temple. Visual only; deterministic positions from the room
+	// grid (no RNG), so they always line up. TUNE THESE on the builder instance:
+	//   bGodRayShafts        — master on/off
+	//   ShaftsPerWall        — how many shafts per long (north/south) wall
+	//   ShaftIntensity       — brightness of each shaft
+	//   ShaftColor           — cool teal/blue
+	//   ShaftVolumetricScattering — how solid the visible beam is (needs the map's
+	//                          volumetric height fog enabled to show)
+	//   ShaftOuterConeDeg    — beam width
+	// Needs the map's ExponentialHeightFog volumetric scattering ON to render as beams. ---
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") bool bGodRayShafts = true;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere", meta = (ClampMin = "0", ClampMax = "12")) int32 ShaftsPerWall = 3;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") float ShaftIntensity = 9000.f;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") FLinearColor ShaftColor = FLinearColor(0.35f, 0.6f, 1.0f);
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") float ShaftVolumetricScattering = 2.5f;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere", meta = (ClampMin = "1", ClampMax = "80")) float ShaftOuterConeDeg = 22.f;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -96,6 +115,10 @@ private:
 		FRandomStream& Rng);
 
 	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> KitISMs;
+
+	// Atmosphere: spawn volumetric spot-light shafts down the long walls (deterministic).
+	void SpawnGodRayShafts(const FPlaceTypeDef& Place);
+	UPROPERTY() TArray<TObjectPtr<USpotLightComponent>> ShaftLights;
 
 	UPROPERTY() TObjectPtr<ACurio> SpawnedCurio;
 	UPROPERTY() TObjectPtr<AReturnDoor> SpawnedReturnDoor;

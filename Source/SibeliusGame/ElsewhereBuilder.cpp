@@ -10,6 +10,7 @@
 
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -259,6 +260,10 @@ int32 AElsewhereBuilder::BuildFromPlan(
 
 	const int32 PropCount = AssembleGeometry(*Place, Plan.LayoutSeed);
 	ApplyMood(*Place, Plan.MoodSeed);
+	if (bGodRayShafts)
+	{
+		SpawnGodRayShafts(*Place); // deterministic; visual-only (doesn't touch PropCount)
+	}
 
 	UWorld* World = GetWorld();
 	if (!World)
@@ -298,6 +303,59 @@ int32 AElsewhereBuilder::BuildFromPlan(
 		SpawnedReturnDoor ? TEXT("ok") : TEXT("FAILED"));
 
 	return PropCount;
+}
+
+void AElsewhereBuilder::SpawnGodRayShafts(const FPlaceTypeDef& Place)
+{
+	// Clear any prior build's shafts (the gate builds on fresh actors; BeginPlay builds once).
+	for (USpotLightComponent* S : ShaftLights)
+	{
+		if (S) { S->DestroyComponent(); }
+	}
+	ShaftLights.Reset();
+
+	if (ShaftsPerWall <= 0)
+	{
+		return;
+	}
+
+	const FVector Origin = GetActorLocation();
+	const float HalfX = FMath::Max(FMath::Max(50.f, Place.KitTileSize), Place.RoomExtent.X);
+	const float HalfY = FMath::Max(FMath::Max(50.f, Place.KitTileSize), Place.RoomExtent.Y);
+	const float WallH = FMath::Max(50.f, Place.KitWallHeight);
+	const float ShaftZ = Origin.Z + WallH * 0.85f;     // high on the wall, raking down
+
+	// One row of shafts down each long wall (+Y north, -Y south), angled into the hall and
+	// down — reads as light raking through the upper wall. Positions are pure functions of
+	// the room grid (no RNG), so they always line up across visits.
+	auto SpawnRow = [&](float WallY, float Yaw)
+	{
+		for (int32 i = 0; i < ShaftsPerWall; ++i)
+		{
+			const float T = (i + 1.0f) / (ShaftsPerWall + 1.0f);   // even, avoid corners
+			const float X = Origin.X - HalfX + T * (2.0f * HalfX);
+			USpotLightComponent* Spot = NewObject<USpotLightComponent>(this);
+			Spot->SetupAttachment(SceneRoot);
+			Spot->RegisterComponent();
+			Spot->AttachToComponent(SceneRoot, FAttachmentTransformRules::KeepWorldTransform);
+			Spot->SetWorldLocation(FVector(X, Origin.Y + WallY, ShaftZ));
+			Spot->SetWorldRotation(FRotator(-55.0f, Yaw, 0.0f));   // pitch down, into the room
+			Spot->SetLightColor(ShaftColor);
+			Spot->SetIntensity(ShaftIntensity);
+			Spot->SetInnerConeAngle(0.0f);
+			Spot->SetOuterConeAngle(ShaftOuterConeDeg);
+			Spot->SetAttenuationRadius(WallH * 4.0f);
+			Spot->VolumetricScatteringIntensity = ShaftVolumetricScattering; // the visible beam
+			Spot->CastShadows = false;                                       // god-rays, cheap
+			AddInstanceComponent(Spot);
+			ShaftLights.Add(Spot);
+		}
+	};
+
+	SpawnRow(+HalfY, -90.0f); // north wall, point toward -Y (into the room)
+	SpawnRow(-HalfY, 90.0f);  // south wall, point toward +Y
+
+	UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] %d god-ray shafts."), *GetName(), ShaftLights.Num());
 }
 
 void AElsewhereBuilder::ApplyMood(const FPlaceTypeDef& Place, int32 MoodSeed)

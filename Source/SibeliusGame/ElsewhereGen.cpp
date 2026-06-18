@@ -89,9 +89,9 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 		Cathedral.DisplayName = FText::FromString(TEXT("The Server Cathedral"));
 		Cathedral.Weight = 10;
 		Cathedral.AmbientColor   = FLinearColor(0.03f, 0.05f, 0.09f);   // cold server-glow blue
-		Cathedral.CurioGlowColor = FLinearColor(0.3f, 0.9f, 1.0f);
+		Cathedral.CurioGlowColor = FLinearColor(0.83f, 0.66f, 0.21f);  // warm gold (#D3A836) — the warm focal point vs the cool hall
 		Cathedral.FogDensity = 0.03f;
-		Cathedral.LightIntensity = 1.6f;
+		Cathedral.LightIntensity = 0.9f;                                // dim cool fill; the shafts + curio glow carry the room
 		Cathedral.RoomExtent = FVector(1000.f, 1000.f, 500.f);          // a hall, not a closet
 		Cathedral.PropCountMin = 3;                                      // sparse — a few hero props, spread out
 		Cathedral.PropCountMax = 6;
