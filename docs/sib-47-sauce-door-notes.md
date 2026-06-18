@@ -77,33 +77,41 @@ PCG spike below replaces.
 The PCG spike (branch `feat/sib-47-pcg-spike`) is making the "UE5 PCG" claim literally true,
 incrementally, without ever breaking the playable loop.
 
-### Done this session (the plumbing — compiles, gate green)
+### Done (plumbing + graph — compiles, gate green, graph authored headless)
 - **PCG plugin enabled** (`SibeliusGame.uproject`) + `"PCG"` module dep in
   `SibeliusGame.Build.cs`.
 - **Real `UPCGComponent`** on `AElsewhereBuilder` (`PCGScatter`, `GenerateOnDemand`).
 - **Seam wired** in `AssembleGeometry`'s prop step: `if (bUsePCGScatter && RunPCGScatter())
   -> PCG owns the props; else the C++ seeded scatter (fallback)`. `RunPCGScatter` sets the
   graph, sets `Seed = LayoutSeed` (deterministic), and calls `Generate(true)`.
-- **A PCG graph asset** `/Game/PCG/PCG_ElsewhereScatter` (currently EMPTY) is created and
-  wired as the builder's default `ScatterGraph`.
-- **Flag-gated, default OFF** (`bUsePCGScatter=false`): the loop + `ElsewhereSmokeTest` run
-  the C++ path unchanged (3 deterministic props), so nothing is broken. Floor/walls/ceiling,
-  curio, return door, shafts all stay C++.
+- **The graph `/Game/PCG/PCG_ElsewhereScatter` is AUTHORED** (headless, via
+  `Tools/Scripts/build_pcg_scatter_*.py`): `Input → Surface Sampler → Transform Points →
+  Static Mesh Spawner → Output`, all edges wired. Sampler `points_per_squared_meter=0.0008`
+  (sparse), `unbounded=false`; Transform randomizes yaw 0–360 + ±40cm offset (seeded by the
+  component Seed); Spawner = weighted selector with two `_K` meshes (`SM_Lamp_AA_Base`,
+  `SM_Lamp_AB_Base`). Verified on reload (3 nodes, 2 meshes).
+- **`L_Elsewhere` builder has `bUsePCGScatter = true`** (graph wired via the C++ default).
+  The **gate's** builder uses the CDO default `false` → C++ path → `ElsewhereSmokeTest`
+  stays green (3 deterministic props). Floor/walls/ceiling, curio, return door, shafts stay C++.
 
-### ▶ RESUME HERE (next session) — author the graph, then flip the flag
-1. Open `/Game/PCG/PCG_ElsewhereScatter` in the PCG graph editor and build a minimal scatter:
-   **Get Actor Data / Surface Sampler** on the floor (or a Bounds → Surface Sampler) →
-   **Density / Transform Points** → **Static Mesh Spawner** (a few _K detail meshes). Use the
-   input **Seed** so output is deterministic.
-2. On the `ElsewhereBuilder` in `L_Elsewhere`, set **`bUsePCGScatter = true`** (graph is
-   already wired via the C++ default).
-3. Verify: PIE shows PCG-scattered props on the floor; **same seed → same scatter**.
-4. Make `ElsewhereSmokeTest` assert the PCG path deterministically (or keep the C++ path as
-   the gate's determinism handle and add a separate PCG check) — keep it green.
-5. Then migrate further (walls/ceiling via PCG) only after the scatter slice is proven.
+### ▶ RESUME HERE — PIE-verify + tune (the part that needs the editor/render)
+The graph is built headless, but PCG **generation output can't be rendered/verified headless**
+— so the remaining work is a PIE eyeball + likely tuning:
+1. PIE `L_Elsewhere`. Expect PCG-scattered lamp props on the floor. **Same seed → same
+   scatter** (the component Seed = the run's LayoutSeed drives it — re-enter to confirm).
+2. **Most likely tune (if the floor is empty):** the Surface Sampler is fed the component's
+   actor data via `Input → Surface Sampler.Surface`. If it samples nothing (no real surface)
+   or the points land at the wrong Z, either (a) add a **Get Actor Data / Bounds → Surface
+   Sampler** with the floor as the surface, or (b) project points to floor Z. Tune
+   `points_per_squared_meter` for count.
+3. Swap the scatter meshes for nicer `_K` detail in the Spawner's weighted entries.
+4. **Instant revert if needed:** set `bUsePCGScatter=false` on the builder → C++ props return.
+5. Optionally make `ElsewhereSmokeTest` assert the PCG path deterministically (it currently
+   keeps the C++ path as the determinism handle, per the spike note).
+6. Then migrate further (walls/ceiling via PCG) only after the scatter slice is proven.
 
 Everything else in the loop — plan → curio → return → discard, the save rule, the Cabinet —
-is untouched by this; the seam keeps the swap isolated and additive.
+is untouched; the seam keeps the swap isolated and additive.
 
 ## Running the gate (editor CLOSED)
 
