@@ -1,9 +1,22 @@
 # build_pcg_scatter_graph.py — SIB-47 PCG spike. Authors /Game/PCG/PCG_ElsewhereScatter
 # headless (re-runnable, rebuilds from scratch):
-#   Input(actor data) -> Surface Sampler -> Transform Points (seeded) -> Static Mesh
+#   World Ray Hit Query -> Surface Sampler -> Transform Points (seeded) -> Static Mesh
 #   Spawner (_K detail meshes) -> Output.
+#
+# WHY World Ray Hit (the empty-floor fix): the Surface Sampler's "Surface" pin needs real
+# UPCGSurfaceData. The graph used to feed it the Input node's "In" (the component's actor
+# data) — which is NOT a surface, so the sampler logged "No surfaces found from which to
+# generate", aborted, and the floor came up EMPTY. World Ray Hit Query produces a
+# UPCGSurfaceData by tracing world collision: with default params it casts a ray straight
+# DOWN from the top of the PCG component's own actor bounds to the bottom, so it lands on
+# the Elsewhere floor mesh (the floor ISMs use a BlockAll profile -> they block the node's
+# default ECC_WorldStatic channel). No manual Z/extent tuning — it's all derived from the
+# builder actor's bounds, and the Surface Sampler (Unbounded=false, no Bounding Shape wired)
+# uses those same bounds as the sampling footprint.
+#
 # Determinism comes from the UPCGComponent Seed (AElsewhereBuilder::RunPCGScatter sets it
-# = the run's LayoutSeed). Run editor-closed:
+# = the run's LayoutSeed); World Ray Hit is a pure function of the (fixed) geometry. Run
+# editor-closed:
 #   UnrealEditor-Cmd SibeliusGame.uproject -run=pythonscript -script=".../build_pcg_scatter_graph.py"
 import unreal
 
@@ -24,6 +37,7 @@ def add(cls):
     n = G.add_node_of_type(cls)
     return n[0] if isinstance(n, (tuple, list)) else n
 
+worldray = add(unreal.PCGWorldRayHitSettings)   # the Surface for the sampler (traces the floor)
 samp = add(unreal.PCGSurfaceSamplerSettings)
 xform = add(unreal.PCGTransformPointsSettings)
 spawn = add(unreal.PCGStaticMeshSpawnerSettings)
@@ -33,15 +47,19 @@ def wire(a, ap, b, bp):
         G.add_edge(a, ap, b, bp); log("edge %s.%s -> %s.%s OK" % (a.get_name(), ap, b.get_name(), bp))
     except Exception as e:
         unreal.log_error("###PCG### edge %s.%s -> %s.%s FAIL %r" % (a.get_name(), ap, b.get_name(), bp, e))
-wire(inp, "In", samp, "Surface")
+# World Ray Hit produces the surface (NOT the Input node — that was the empty-floor bug).
+wire(worldray, "Out", samp, "Surface")
 wire(samp, "Out", xform, "In")
 wire(xform, "Out", spawn, "In")
 wire(spawn, "Out", outp, "Out")
 
 sS = samp.get_settings()
-sS.set_editor_property("points_per_squared_meter", 0.0008)
+# COUNT KNOB: points ~= density * floor_area_m². ServerCathedral floor is ~20x20m = 400 m²,
+# so 0.01/m² -> ~4 hero props (matches the C++ fallback's 3-6). The old 0.0008 gave an
+# expected 0.32 points -> usually ZERO, which read as "empty floor" even when sampling worked.
+sS.set_editor_property("points_per_squared_meter", 0.01)
 sS.set_editor_property("point_extents", unreal.Vector(50, 50, 50))
-sS.set_editor_property("unbounded", False)
+sS.set_editor_property("unbounded", False)   # use the component (room) bounds as the footprint
 
 tS = xform.get_settings()
 tS.set_editor_property("rotation_min", unreal.Rotator(0, 0, 0))
