@@ -5,9 +5,11 @@
 #include "BookPickup.h"
 #include "RefuserController.h"
 #include "SibeliusGameCharacter.h"
+#include "ElsewhereGameMode.h"      // SIB-47: skip deploy restore in the throwaway Elsewhere
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h" // input gate on load (SIB-37)
 #include "BrainComponent.h"
 #include "EngineUtils.h"            // TActorIterator
@@ -51,12 +53,21 @@ void UBranchPIEComponent::BeginPlay()
 
 void UBranchPIEComponent::ApplyDeployedOnLoad()
 {
-	if (UBranchSubsystem* Branch = GetBranch())
+	// SIB-47: the Elsewhere is a throwaway wonder room, NOT the deployed main world —
+	// applying the deploy save here re-spawns the main game's generated build sites into
+	// it (a stray cube on the curio). Skip the restore when we're in an Elsewhere.
+	const UWorld* World = GetWorld();
+	const bool bElsewhere = World && Cast<AElsewhereGameMode>(World->GetAuthGameMode()) != nullptr;
+
+	if (!bElsewhere)
 	{
-		// Load is always at Main; never overlay a deploy onto an open branch.
-		if (Branch->GetDepth() == 0)
+		if (UBranchSubsystem* Branch = GetBranch())
 		{
-			Branch->ApplyDeployedSave();
+			// Load is always at Main; never overlay a deploy onto an open branch.
+			if (Branch->GetDepth() == 0)
+			{
+				Branch->ApplyDeployedSave();
+			}
 		}
 	}
 	SetPlayerInputEnabled(true); // ungate — the world is now in its deployed state

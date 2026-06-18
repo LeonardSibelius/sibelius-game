@@ -43,7 +43,7 @@ Gameplay logic is **C++-first** (`Source/SibeliusGame/`). Blueprints and the lev
 
 ## Test discipline
 
-Every chapter has a headless smoke-test commandlet. They run as ship gates — `SibeliusSmokeTest` (the office baseline), `CodeVisionSmokeTest`, `RefactorSmokeTest`, `CompileSmokeTest`, `RefuserSmokeTest`, `BranchSmokeTest` (Ch4 + Ch5 deploy), `GenerateSmokeTest`, and `CathedralDoorSmokeTest`. Each loads the real level, runs in-process self-tests (inventory round-trips, build/dismantle/refund, lock state, door collision, branch enter/merge/discard, deploy save/reload, catalog matching) and asserts level invariants (actor-count band, required assets, soft-lock resource surplus).
+Every chapter has a headless smoke-test commandlet. They run as ship gates — `SibeliusSmokeTest` (the office baseline), `CodeVisionSmokeTest`, `RefactorSmokeTest`, `CompileSmokeTest`, `RefuserSmokeTest`, `BranchSmokeTest` (Ch4 + Ch5 deploy), `GenerateSmokeTest`, `CathedralDoorSmokeTest`, `CarouselSmokeTest`, and `ElsewhereSmokeTest` (the Sauce Door wonder loop). Each loads the real level, runs in-process self-tests (inventory round-trips, build/dismantle/refund, lock state, door collision, branch enter/merge/discard, deploy save/reload, catalog matching, deterministic generation + curio collection round-trip) and asserts level invariants (actor-count band, required assets, soft-lock resource surplus).
 
 Before every ship they run with the editor closed:
 

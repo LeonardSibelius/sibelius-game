@@ -1,7 +1,11 @@
 #include "BuildSite.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PointLightComponent.h"
 #include "InventoryComponent.h"
 #include "Navigation/NavLinkProxy.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/App.h" // SIB-27: FApp::CanEverRender — headless guard for the reveal (K3)
 
 // SIB-27 reveal feel (PIE-only). Named namespace, never anonymous (CP3 lesson #6).
@@ -34,6 +38,16 @@ ABuildSite::ABuildSite()
 	FinalMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FinalMesh->SetCanEverAffectNavigation(false); // nav comes from the NavLink, not the mesh (C2)
 	FinalMesh->SetHiddenInGame(true);
+
+	// SIB-27 art: orb-ghost glow (inert unless bGhostAsOrb). Lit with the ghost.
+	GhostGlow = CreateDefaultSubobject<UPointLightComponent>(TEXT("GhostGlow"));
+	GhostGlow->SetupAttachment(GhostMesh);
+	GhostGlow->SetIntensity(4000.f);
+	GhostGlow->SetAttenuationRadius(700.f);
+	GhostGlow->CastShadows = false;
+	GhostGlow->SetVisibility(false);
+	GhostOrbMaterial = TSoftObjectPtr<UMaterialInterface>(
+		FSoftObjectPath(TEXT("/Game/ModularSciFiEnv_K/Materials/Base/M_LampEmiss_MAT.M_LampEmiss_MAT")));
 }
 
 void ABuildSite::BeginPlay()
@@ -41,6 +55,14 @@ void ABuildSite::BeginPlay()
 	Super::BeginPlay();
 	GetOrCreateBranchId();     // SIB-29: runtime fallback — only fills an invalid (unbaked) id
 	ApplyBuiltState(bIsBuilt); // enforce ghost/final/nav-link coherence from one source of truth
+
+	// SIB-27 art: an unbuilt orb-ghost site restyles its preview to a floating glow orb
+	// and ticks to bob it. (A site already built/consumed shows no ghost — skip.)
+	if (bGhostAsOrb && !bIsBuilt)
+	{
+		SetupGhostOrb();
+		SetActorTickEnabled(true);
+	}
 }
 
 void ABuildSite::OnConstruction(const FTransform& Transform)
@@ -165,6 +187,42 @@ void ABuildSite::SetGhostVisible(bool bVisible)
 	if (!bIsBuilt && GhostMesh)
 	{
 		GhostMesh->SetHiddenInGame(!bVisible);
+		if (bGhostAsOrb && GhostGlow)
+		{
+			GhostGlow->SetVisibility(bVisible); // the orb's glow follows the preview
+		}
+	}
+}
+
+void ABuildSite::SetupGhostOrb()
+{
+	if (!GhostMesh)
+	{
+		return;
+	}
+	// Floating glowing orb — the same sphere + emissive-MID approach as ACurio, so the
+	// buildable key reads like the Sauce Door curio (warm gold vs the curio's cyan).
+	if (UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")))
+	{
+		GhostMesh->SetStaticMesh(Sphere);
+	}
+	GhostMesh->SetRelativeScale3D(FVector(0.4f));
+	OrbBaseRelLoc = FVector(0.f, 0.f, 90.f);          // hovers above the site origin
+	GhostMesh->SetRelativeLocation(OrbBaseRelLoc);
+
+	if (UMaterialInterface* Base = GhostOrbMaterial.LoadSynchronous())
+	{
+		if (UMaterialInstanceDynamic* MID = GhostMesh->CreateDynamicMaterialInstance(0, Base))
+		{
+			MID->SetVectorParameterValue(TEXT("Emissive"), GhostOrbColor);
+			MID->SetVectorParameterValue(TEXT("BaseColor"), GhostOrbColor);
+			MID->SetScalarParameterValue(TEXT("Intens"), 9.0f);
+			MID->SetScalarParameterValue(TEXT("TurnOn"), 1.0f);
+		}
+	}
+	if (GhostGlow)
+	{
+		GhostGlow->SetLightColor(GhostOrbColor);       // glow is a child of GhostMesh — bobs with it
 	}
 }
 
@@ -181,6 +239,10 @@ void ABuildSite::ApplyBuiltState(bool bBuilt)
 	{
 		GhostMesh->SetHiddenInGame(true); // ghost never lingers (C8)
 		GhostMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	if (GhostGlow)
+	{
+		GhostGlow->SetVisibility(false); // orb glow off once built/restored
 	}
 
 	// SIB-27 (K5): this is the RAW restore path (BeginPlay + RestoreBranchState). A
@@ -214,6 +276,15 @@ void ABuildSite::SetNavLinkEnabled(bool bEnabled)
 void ABuildSite::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	// SIB-27 art: gently bob the floating orb ghost while it's the unbuilt preview (the
+	// reveal/consume below takes over once built). Cheap; only orb sites tick here.
+	if (bGhostAsOrb && !bIsBuilt && GhostMesh)
+	{
+		OrbBobTime += DeltaSeconds;
+		const float Bob = FMath::Sin(OrbBobTime * 2.0f) * 8.0f; // ±8cm hover
+		GhostMesh->SetRelativeLocation(OrbBaseRelLoc + FVector(0.f, 0.f, Bob));
+	}
 
 	// K6: only the reveal drives Tick. Once Consumed (or never revealing), bail — and
 	// EnterConsumed also disables the tick outright, so this is belt-and-braces.
@@ -295,6 +366,10 @@ void ABuildSite::EnterConsumed()
 	{
 		GhostMesh->SetHiddenInGame(true);
 		GhostMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	if (GhostGlow)
+	{
+		GhostGlow->SetVisibility(false); // orb glow gone with the consumed key
 	}
 	SetNavLinkEnabled(false); // key sites carry no NavLink, but stay coherent regardless
 }
