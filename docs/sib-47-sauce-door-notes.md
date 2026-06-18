@@ -59,6 +59,18 @@ are NOT committed** (gitignored `Content/ModularSciFiEnv_*/`) — referenced by 
 same discipline as the Dragon Temple / cathedral packs. Vertical pivot/orientation per kit
 mesh is an eyeball-and-nudge step (the builder places on a centered grid).
 
+## Dressing status (atmosphere pass 1 — banked)
+
+Server Cathedral mood is in: `CathedralGrade` PostProcessVolume (navy + gold grade,
+bloom + vignette), builder-spawned warm-gold god-ray shafts (deterministic, down both
+long walls), volumetric height fog, and a **dark void** exterior (no directional sun;
+walls sealed floor-to-ceiling so no sky/void band shows). Tuning knobs: builder
+`Shaft*` props + the top of `Tools/Scripts/build_elsewhere_map.py`.
+
+**Still placeholder:** the scattered PROPS are engine cylinders (the C++ seeded scatter)
+— the room is mid-dressing. Real prop dressing is the next pass, and is exactly what the
+PCG spike below replaces.
+
 ## The PCG seam
 
 `AssembleGeometry()` is the **single method** a `UPCGComponent->Generate()` call can replace
