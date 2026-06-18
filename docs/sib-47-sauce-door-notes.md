@@ -71,14 +71,39 @@ walls sealed floor-to-ceiling so no sky/void band shows). Tuning knobs: builder
 — the room is mid-dressing. Real prop dressing is the next pass, and is exactly what the
 PCG spike below replaces.
 
-## The PCG seam
+## The PCG seam → real PCG (spike in progress)
 
-`AssembleGeometry()` is the **single method** a `UPCGComponent->Generate()` call can replace
-for richer scatter once the loop's proven (the PCG plugin isn't enabled yet, and a PCG graph
-is an editor-authored asset). Everything else in the loop — plan → curio → return → discard,
-the save rule, the Cabinet — is unchanged when PCG drops in. That's the seam: the wonder
-loop is proven in code today; swapping the geometry backend to PCG is an isolated, additive
-step (enable the PCG plugin, author one graph per place-type, point the builder at it).
+`AssembleGeometry()` was always the **single method** a `UPCGComponent->Generate()` replaces.
+The PCG spike (branch `feat/sib-47-pcg-spike`) is making the "UE5 PCG" claim literally true,
+incrementally, without ever breaking the playable loop.
+
+### Done this session (the plumbing — compiles, gate green)
+- **PCG plugin enabled** (`SibeliusGame.uproject`) + `"PCG"` module dep in
+  `SibeliusGame.Build.cs`.
+- **Real `UPCGComponent`** on `AElsewhereBuilder` (`PCGScatter`, `GenerateOnDemand`).
+- **Seam wired** in `AssembleGeometry`'s prop step: `if (bUsePCGScatter && RunPCGScatter())
+  -> PCG owns the props; else the C++ seeded scatter (fallback)`. `RunPCGScatter` sets the
+  graph, sets `Seed = LayoutSeed` (deterministic), and calls `Generate(true)`.
+- **A PCG graph asset** `/Game/PCG/PCG_ElsewhereScatter` (currently EMPTY) is created and
+  wired as the builder's default `ScatterGraph`.
+- **Flag-gated, default OFF** (`bUsePCGScatter=false`): the loop + `ElsewhereSmokeTest` run
+  the C++ path unchanged (3 deterministic props), so nothing is broken. Floor/walls/ceiling,
+  curio, return door, shafts all stay C++.
+
+### ▶ RESUME HERE (next session) — author the graph, then flip the flag
+1. Open `/Game/PCG/PCG_ElsewhereScatter` in the PCG graph editor and build a minimal scatter:
+   **Get Actor Data / Surface Sampler** on the floor (or a Bounds → Surface Sampler) →
+   **Density / Transform Points** → **Static Mesh Spawner** (a few _K detail meshes). Use the
+   input **Seed** so output is deterministic.
+2. On the `ElsewhereBuilder` in `L_Elsewhere`, set **`bUsePCGScatter = true`** (graph is
+   already wired via the C++ default).
+3. Verify: PIE shows PCG-scattered props on the floor; **same seed → same scatter**.
+4. Make `ElsewhereSmokeTest` assert the PCG path deterministically (or keep the C++ path as
+   the gate's determinism handle and add a separate PCG check) — keep it green.
+5. Then migrate further (walls/ceiling via PCG) only after the scatter slice is proven.
+
+Everything else in the loop — plan → curio → return → discard, the save rule, the Cabinet —
+is untouched by this; the seam keeps the swap isolated and additive.
 
 ## Running the gate (editor CLOSED)
 

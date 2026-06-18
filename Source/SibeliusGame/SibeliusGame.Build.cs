@@ -29,7 +29,9 @@ public class SibeliusGame : ModuleRules
 			"GameplayStateTreeModule",
 			"UMG",
 			"Slate",
-			"SlateCore"
+			"SlateCore",
+			// SIB-47 PCG spike: real UPCGComponent in the Elsewhere builder (runtime module).
+			"PCG"
 		});
 
 		// SIB-34 Path A: the cathedral slot cabinet embeds the real Celestial

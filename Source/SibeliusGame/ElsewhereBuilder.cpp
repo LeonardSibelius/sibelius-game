@@ -11,6 +11,8 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SpotLightComponent.h"
+#include "PCGComponent.h"      // SIB-47 PCG spike
+#include "PCGGraph.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -29,6 +31,15 @@ AElsewhereBuilder::AElsewhereBuilder()
 	MoodLight->SetupAttachment(SceneRoot);
 	MoodLight->SetAttenuationRadius(4000.f);
 	MoodLight->CastShadows = false;   // public UPROPERTY on ULightComponentBase
+
+	// SIB-47 PCG spike: a real PCG component. We drive it manually (set graph + seed,
+	// then Generate in RunPCGScatter), so it doesn't auto-generate on load.
+	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGScatter"));
+	PCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand;
+	// Point the seam at the (currently empty) Elsewhere scatter graph. Loaded only when
+	// bUsePCGScatter is ON; authoring the graph's nodes + flipping the flag is next session.
+	ScatterGraph = TSoftObjectPtr<UPCGGraphInterface>(
+		FSoftObjectPath(TEXT("/Game/PCG/PCG_ElsewhereScatter.PCG_ElsewhereScatter")));
 }
 
 void AElsewhereBuilder::BeginPlay()
@@ -237,9 +248,19 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 		}
 	}
 
-	// --- Scattered props: few + spread, standing ON the floor (Z=Origin.Z). The kit
+	// --- Scattered props ---
+	// PCG spike (incremental): when enabled AND a graph is assigned, the floor props come
+	// from a REAL UPCGComponent (seeded), replacing the C++ scatter below. The C++ path is
+	// the fallback (flag off, or no graph) so the loop + gate never break.
+	if (bUsePCGScatter && RunPCGScatter(Place, LayoutSeed))
+	{
+		UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] props via PCG (C++ scatter skipped)."), *GetName());
+		return 0; // prop count is owned by PCG now
+	}
+
+	// C++ fallback scatter: few + spread, standing ON the floor (Z=Origin.Z). The kit
 	// props are placed at KitMeshScale (PlacePiece); the FitScale only stretches the
-	// fallback cylinder. Count is the gate's determinism handle. ---
+	// fallback cylinder. Count is the gate's determinism handle.
 	const int32 PropCount = Rng.RandRange(Place.PropCountMin, Place.PropCountMax);
 	const float InnerX = FMath::Max(0.f, GridHalfX - Tile);
 	const float InnerY = FMath::Max(0.f, GridHalfY - Tile);
@@ -373,6 +394,33 @@ void AElsewhereBuilder::SpawnGodRayShafts(const FPlaceTypeDef& Place)
 	SpawnRow(-HalfY, 90.0f);  // south wall, point toward +Y
 
 	UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] %d god-ray shafts."), *GetName(), ShaftLights.Num());
+}
+
+bool AElsewhereBuilder::RunPCGScatter(const FPlaceTypeDef& Place, int32 LayoutSeed)
+{
+	if (!PCGComponent)
+	{
+		return false;
+	}
+	UPCGGraphInterface* Graph = ScatterGraph.LoadSynchronous();
+	if (!Graph)
+	{
+		// Flag on but no graph wired yet — fall back to the C++ scatter (caller handles it).
+		UE_LOG(LogElsewhereBuilder, Warning,
+			TEXT("[%s] bUsePCGScatter is on but no ScatterGraph is assigned — using C++ scatter fallback."),
+			*GetName());
+		return false;
+	}
+
+	// Real UE5 PCG: run the graph, seeded from the run so scatter is deterministic
+	// (same seed -> same scatter), which keeps the determinism contract.
+	PCGComponent->SetGraph(Graph);
+	PCGComponent->Seed = LayoutSeed;
+	PCGComponent->Generate(/*bForce=*/true);
+
+	UE_LOG(LogElsewhereBuilder, Display, TEXT("[%s] PCG scatter via '%s' (seed=%d) for place '%s'."),
+		*GetName(), *Graph->GetName(), LayoutSeed, *Place.Id.ToString());
+	return true;
 }
 
 void AElsewhereBuilder::ApplyMood(const FPlaceTypeDef& Place, int32 MoodSeed)

@@ -27,6 +27,8 @@
 class UInstancedStaticMeshComponent;
 class UPointLightComponent;
 class USpotLightComponent;
+class UPCGComponent;
+class UPCGGraphInterface;
 class ACurio;
 class AReturnDoor;
 
@@ -84,6 +86,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere") float ShaftVolumetricScattering = 2.5f;
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Atmosphere", meta = (ClampMin = "1", ClampMax = "80")) float ShaftOuterConeDeg = 22.f;
 
+	// --- SIB-47 PCG spike (incremental — see docs "PCG spike — resume here"): replace the
+	// C++ seeded prop scatter with a REAL UPCGComponent running a PCG graph. Behind a flag
+	// with the C++ scatter as fallback, so the working loop + ElsewhereSmokeTest stay green
+	// (default OFF). When ON *and* ScatterGraph is assigned, the floor props come from PCG,
+	// seeded from the run (deterministic). Floor/walls/ceiling/curio/return door stay C++. ---
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|PCG") bool bUsePCGScatter = false;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|PCG") TSoftObjectPtr<UPCGGraphInterface> ScatterGraph;
+	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder|PCG") TObjectPtr<UPCGComponent> PCGComponent;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -121,6 +132,10 @@ private:
 	// Atmosphere: spawn volumetric spot-light shafts down the long walls (deterministic).
 	void SpawnGodRayShafts(const FPlaceTypeDef& Place);
 	UPROPERTY() TArray<TObjectPtr<USpotLightComponent>> ShaftLights;
+
+	// PCG spike: run the ScatterGraph (seeded) for the floor props. Returns true if it ran
+	// (graph valid); false -> caller uses the C++ scatter fallback.
+	bool RunPCGScatter(const FPlaceTypeDef& Place, int32 LayoutSeed);
 
 	UPROPERTY() TObjectPtr<ACurio> SpawnedCurio;
 	UPROPERTY() TObjectPtr<AReturnDoor> SpawnedReturnDoor;
