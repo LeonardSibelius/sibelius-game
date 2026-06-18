@@ -148,15 +148,31 @@ private:
 	// Uses GetOrCreateISM, so its ISMs live in KitISMs and clear on the next build.
 	void SpawnStructuralProps(const FPlaceTypeDef& Place);
 
-	// Warm beacon seated at the return doorway (the "way home" affordance).
+	// Warm beacon seated at the return doorway — purely the visual "exit here" cue now.
 	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UPointLightComponent> ReturnBeacon;
 
-	// Don't-fall-out safety (invisible blockers, seated in AssembleGeometry):
-	//   DoorwayBlocker — seals the west doorway OPENING so the player can't walk into the void
-	//                    (the return is still via the beacon / E-interact, not a walk-through).
-	//   VoidCatchFloor — a huge catch-floor just below the room so a slip-out can't fall forever.
-	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UBoxComponent> DoorwayBlocker;
-	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UBoxComponent> VoidCatchFloor;
+	// THE RETURN, as an OVERLAP trigger (not E-interact): an invisible box spanning the west
+	// doorway threshold, seated INSIDE the edge so the player walks into it BEFORE reaching the
+	// drop. On the player Pawn entering, we discard the Elsewhere and travel home — no key, no
+	// aim, no interact trace to be blocked by the structural props/beacon, and no fall (you
+	// leave before the edge). Seated in AssembleGeometry once the doorway position is known.
+	void SeatReturnTrigger(const FVector& Origin, float GridHalfX, float DoorCY, float WallH);
+
+	UFUNCTION()
+	void OnReturnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder") TObjectPtr<UBoxComponent> ReturnTrigger;
+
+	// Where "home" is (mirrors AReturnDoor) — used by the overlap return.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FName HomeLevelName = TEXT("L_Office_v02");
+
+	// Brief arm delay so the trigger can't fire on the spawn frame (the fixed PlayerStart can
+	// sit at the doorway in smaller rooms — without this it could instant-return-loop).
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") float ReturnArmDelay = 1.0f;
+
+	bool bReturnArmed = false;     // false until ReturnArmDelay elapses after the build
+	bool bReturningHome = false;   // re-entry guard (OpenLevel is async)
 
 	// PCG spike: assign the ScatterGraph + seed and SCHEDULE generation for next tick (the
 	// actor's runtime ISM bounds aren't valid yet this frame -> PCG would abort). Returns true

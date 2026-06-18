@@ -17,6 +17,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
+#include "GameFramework/Pawn.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/RandomStream.h"
@@ -41,24 +42,6 @@ AElsewhereBuilder::AElsewhereBuilder()
 	ReturnBeacon->SetupAttachment(SceneRoot);
 	ReturnBeacon->SetIntensity(0.f);
 	ReturnBeacon->CastShadows = false;
-
-	// Don't-fall-out blockers (invisible). Sized + seated in AssembleGeometry once the room
-	// dimensions are known. Both block movement like a solid wall/floor (QueryAndPhysics +
-	// WorldStatic + block-all), mirroring AHiddenDoor's BlockingBox.
-	auto MakeBlocker = [this](const TCHAR* Name) -> UBoxComponent*
-	{
-		UBoxComponent* Box = CreateDefaultSubobject<UBoxComponent>(Name);
-		Box->SetupAttachment(SceneRoot);
-		Box->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		Box->SetCollisionObjectType(ECC_WorldStatic);
-		Box->SetCollisionResponseToAllChannels(ECR_Block);
-		Box->SetCanEverAffectNavigation(false);
-		Box->SetHiddenInGame(true);
-		Box->SetVisibility(false);
-		return Box;
-	};
-	DoorwayBlocker = MakeBlocker(TEXT("DoorwayBlocker"));   // seals the west doorway opening
-	VoidCatchFloor = MakeBlocker(TEXT("VoidCatchFloor"));   // safety net below/around the room
 
 	// SIB-47 PCG spike: a real PCG component. We drive it manually (set graph + seed,
 	// then Generate in RunPCGScatter), so it doesn't auto-generate on load.
@@ -303,28 +286,11 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 		}
 	}
 
-	// --- DON'T-FALL-OUT safety (three layers; see header) ---
-	// Layer 1: seal the west doorway OPENING with an invisible blocking box (mirrors the
-	// kitchen SauceDoor's BlockingBox). The floor ends at the west wall line, so the open
-	// doorway gap was a walk-through hole into the void. This box spans the full gap (width +
-	// floor-to-ceiling) at the wall line, just WEST of the return door (X=-RoomExtent.X+50),
-	// so the player can still stand at and E the door — they just can't walk out through it.
-	if (DoorwayBlocker)
-	{
-		const float DoorCY = Y0 + DoorJ * Tile;   // the gap tile's centre (west edge)
-		DoorwayBlocker->SetWorldLocation(FVector(Origin.X - GridHalfX, DoorCY, Origin.Z + WallH * 0.5f));
-		DoorwayBlocker->SetBoxExtent(FVector(20.f, Tile * 0.5f + 60.f, WallH * 0.5f + 40.f), /*bUpdateOverlaps=*/false);
-	}
-	// Layer 3: a huge invisible catch-floor just below the room floor, extending far past the
-	// walls in every direction — so if anything ever slips out (a wall seam, a doorway edge),
-	// the player lands seamlessly instead of falling forever / soft-locking, and can walk back.
-	if (VoidCatchFloor)
-	{
-		VoidCatchFloor->SetWorldLocation(FVector(Origin.X, Origin.Y, Origin.Z - 55.f)); // top ~5cm below floor
-		VoidCatchFloor->SetBoxExtent(FVector(8000.f, 8000.f, 50.f), /*bUpdateOverlaps=*/false);
-	}
-	// (Layer 2 — continuous floor — is the floor-tile grid above: every NX*NY tile is placed
-	// with a BlockAll ISM, including the threshold tile under the doorway, so there's no gap.)
+	// --- THE RETURN, as an overlap trigger across the west doorway threshold ---
+	// (Replaces the old E-interact / blocking approach.) Walking into the doorway returns the
+	// player home — no key-press, no aim, no interact trace to be blocked, and no fall: the
+	// trigger sits INSIDE the edge so they leave before reaching the drop. See SeatReturnTrigger.
+	SeatReturnTrigger(Origin, GridHalfX, /*DoorCY=*/Y0 + DoorJ * Tile, WallH);
 
 	// --- Scattered props ---
 	// PCG spike (incremental): when enabled AND a graph is assigned, the floor props come
@@ -554,6 +520,73 @@ void AElsewhereBuilder::SpawnStructuralProps(const FPlaceTypeDef& Place)
 	}
 
 	UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] structural props placed (arch-ribs + pipe runs)."), *GetName());
+}
+
+void AElsewhereBuilder::SeatReturnTrigger(const FVector& Origin, float GridHalfX, float DoorCY, float WallH)
+{
+	// Create ONCE, born with the correct extent BEFORE registration (runtime-resized boxes are
+	// unreliable — that bit the old blocker), then only reposition on rebuilds. It's an OVERLAP
+	// volume (QueryOnly, ignore everything except a Pawn overlap), so it never blocks movement
+	// or any trace — it just detects the player entering the doorway.
+	if (!ReturnTrigger)
+	{
+		ReturnTrigger = NewObject<UBoxComponent>(this, TEXT("ReturnTrigger"));
+		ReturnTrigger->SetBoxExtent(FVector(70.f, 240.f, FMath::Max(60.f, WallH * 0.5f + 50.f)));
+		ReturnTrigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		ReturnTrigger->SetCollisionObjectType(ECC_WorldStatic);
+		ReturnTrigger->SetCollisionResponseToAllChannels(ECR_Ignore);
+		ReturnTrigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+		ReturnTrigger->SetGenerateOverlapEvents(true);
+		ReturnTrigger->SetCanEverAffectNavigation(false);
+		ReturnTrigger->SetHiddenInGame(true);
+		ReturnTrigger->SetVisibility(false);
+		ReturnTrigger->OnComponentBeginOverlap.AddDynamic(this, &AElsewhereBuilder::OnReturnTriggerBeginOverlap);
+		ReturnTrigger->SetupAttachment(SceneRoot);
+		ReturnTrigger->RegisterComponent();
+	}
+	// Seat at the doorway threshold, ~30cm INSIDE the west edge: east of the drop (so the player
+	// returns before falling) and east of the PlayerStart (so it never fires on spawn). Spans
+	// the gap width and floor-to-ceiling so any approach to the doorway trips it.
+	ReturnTrigger->SetWorldLocation(FVector(Origin.X - GridHalfX + 30.f, DoorCY, Origin.Z + WallH * 0.5f));
+
+	// Arm after a short delay so a spawn-frame overlap (the fixed PlayerStart can land in the
+	// doorway in smaller rooms) can't instant-return.
+	bReturnArmed = false;
+	if (UWorld* World = GetWorld())
+	{
+		FTimerHandle ArmTimer;
+		World->GetTimerManager().SetTimer(ArmTimer,
+			FTimerDelegate::CreateWeakLambda(this, [this]() { bReturnArmed = true; }),
+			FMath::Max(0.05f, ReturnArmDelay), /*bLoop=*/false);
+	}
+}
+
+void AElsewhereBuilder::OnReturnTriggerBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, AActor* OtherActor,
+	UPrimitiveComponent* /*OtherComp*/, int32 /*OtherBodyIndex*/, bool /*bFromSweep*/, const FHitResult& /*SweepResult*/)
+{
+	if (bReturningHome || !bReturnArmed)
+	{
+		return;   // already returning (OpenLevel is async), or still in the spawn-frame arm delay
+	}
+	const APawn* Pawn = Cast<APawn>(OtherActor);
+	if (!Pawn || !Pawn->IsPlayerControlled())
+	{
+		return;   // only the player returns home
+	}
+	bReturningHome = true;
+
+	// Same contract as AReturnDoor::Interact: the room is throwaway (§4), so drop the staged
+	// plan, then travel home.
+	if (UGameInstance* GI = UGameplayStatics::GetGameInstance(this))
+	{
+		if (UElsewhereSubsystem* Elsewhere = GI->GetSubsystem<UElsewhereSubsystem>())
+		{
+			Elsewhere->DiscardStagedElsewhere();
+		}
+	}
+	UE_LOG(LogElsewhereBuilder, Display, TEXT("[%s] doorway return trigger entered -> home to %s; Elsewhere discarded."),
+		*GetName(), *HomeLevelName.ToString());
+	UGameplayStatics::OpenLevel(this, HomeLevelName);
 }
 
 bool AElsewhereBuilder::RunPCGScatter(const FPlaceTypeDef& Place, int32 LayoutSeed)
