@@ -25,17 +25,28 @@
 import unreal
 
 GRAPH = "/Game/PCG/PCG_ElsewhereScatter"
-# Richer scatter: a weighted mix of varied _K lamp/fixture bases (small detail props). The
-# big deliberate machinery (pipe runs, bulkhead arch-ribs) is placed by the C++ structural
-# pass — AElsewhereBuilder::SpawnStructuralProps — so this stays the "scattered detail" layer.
+# Richer scatter: a weighted mix of bounds-verified FLOOR-STANDING _K detail props (machinery
+# cabinets / junction boxes / posts / console greebles). KEPT IN LOCKSTEP with the C++ curated
+# palette in ElsewhereGen.cpp (Cathedral.ScatterMeshes) so the PCG path and the C++ fallback read
+# as the same place. (The old set used the lamp "_Base" meshes — bounds proved those are flat
+# ~5cm strip-light plates, not props.) The big deliberate machinery (4m pipe runs, bulkhead
+# arch-ribs) is the C++ structural pass — SpawnStructuralProps — so this stays the detail layer.
+#
+# NB: the PCG path does NOT do the C++ path's exclusion zones / open corridor / per-seed subset
+# (those are C++-only — see the C++ scatter + docs). It's behind bUsePCGScatter (default OFF; the
+# C++ path is what ships + what the gate verifies). Its LOOK is Walt's PIE gate, not headless.
 # (mesh_path, weight)
 MESH_WEIGHTS = [
-    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Base.SM_Lamp_AA_Base", 3),
-    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Base.SM_Lamp_AB_Base", 3),
-    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AC_Base.SM_Lamp_AC_Base", 2),
-    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AD_Base.SM_Lamp_AD_Base", 2),
-    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_BA_Base.SM_Lamp_BA_Base", 1),
-    ("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_BB_Base.SM_Lamp_BB_Base", 1),
+    ("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Mid_1m.SM_Bulkhead_A_End_Mid_1m", 4),
+    ("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Mid_2m.SM_Bulkhead_A_End_Mid_2m", 3),
+    ("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_B_1m_End.SM_Pipes_B_1m_End", 3),
+    ("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_B_Handler_A.SM_Pipes_B_Handler_A", 2),
+    ("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Top.SM_Bulkhead_A_End_Top", 1),
+    ("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Low.SM_Bulkhead_A_End_Low", 1),
+    ("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_Pillar_A.SM_Railings_A_Pillar_A", 3),
+    ("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_Pillar_A_Long.SM_Railings_A_Pillar_A_Long", 2),
+    ("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_1x1m_B.SM_Wall_A_Mid_1x1m_B", 2),
+    ("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_1x1m_B_Handle.SM_Wall_A_Mid_1x1m_B_Handle", 2),
 ]
 MESHES = [m for m, _ in MESH_WEIGHTS]   # kept for the DONE tally
 def log(s): unreal.log("###PCG### " + str(s))
@@ -46,6 +57,13 @@ for n in list(G.nodes):
     if n not in (inp, outp):
         G.remove_node(n)
 
+# Opt-in clustering experiment: spatial noise -> density filter so points bunch into lived-in
+# clumps with bare patches instead of an even grid. DEFAULT OFF: its point yield + look can't be
+# verified headlessly (PCG generation needs live PIE bounds), and a mis-tuned density filter could
+# cull the whole set (empty floor). The guaranteed PCG win is the curated-mesh swap above; the C++
+# path already does deterministic, gate-verified clustering. Flip this to experiment in PIE.
+ADD_NOISE = False
+
 def add(cls):
     n = G.add_node_of_type(cls)
     return n[0] if isinstance(n, (tuple, list)) else n
@@ -54,15 +72,46 @@ grid = add(unreal.PCGCreatePointsGridSettings)   # explicit bounds at floor Z (n
 xform = add(unreal.PCGTransformPointsSettings)
 spawn = add(unreal.PCGStaticMeshSpawnerSettings)
 
+# Build the optional noise/density-filter nodes defensively (class names can differ across engine
+# builds) — only when ADD_NOISE; any failure falls back to the core grid->transform->spawner chain.
+noise = densf = None
+if ADD_NOISE:
+    try:
+        noise = add(unreal.PCGSpatialNoiseSettings)
+        densf = add(unreal.PCGDensityFilterSettings)
+    except Exception as e:
+        unreal.log_warning("###PCG### noise/density-filter node unavailable (%r) — core chain only" % e)
+        noise = densf = None
+
 def wire(a, ap, b, bp):
     try:
         G.add_edge(a, ap, b, bp); log("edge %s.%s -> %s.%s OK" % (a.get_name(), ap, b.get_name(), bp))
     except Exception as e:
         unreal.log_error("###PCG### edge %s.%s -> %s.%s FAIL %r" % (a.get_name(), ap, b.get_name(), bp, e))
+
 # Create Points Grid generates the points itself (no Surface input -> no World Ray Hit, no
 # dependency on the floor's collision being live). The Input node stays unwired.
 wire(grid, "Out", xform, "In")
-wire(xform, "Out", spawn, "In")
+if noise is not None and densf is not None:
+    wire(xform, "Out", noise, "In")
+    wire(noise, "Out", densf, "In")
+    wire(densf, "Out", spawn, "In")
+    # Noise -> $Density; conservative lower bound so the worst case is a near-no-op (never an
+    # empty floor). The noise reads the component Seed (= LayoutSeed) -> per-seed + deterministic.
+    try:
+        nS = noise.get_settings()
+        nS.set_editor_property("mode", unreal.PCGSpatialNoiseMode.VORONOI2D)
+        vt = nS.get_editor_property("value_target")
+        vt.set_editor_property("point_property", unreal.PCGPointProperties.DENSITY)
+        nS.set_editor_property("value_target", vt)
+        dS = densf.get_settings()
+        dS.set_editor_property("lower_bound", 0.20)
+        dS.set_editor_property("upper_bound", 1.0)
+        log("noise/density clustering wired (Voronoi2D -> $Density, keep [0.20,1.0])")
+    except Exception as e:
+        unreal.log_warning("###PCG### noise/filter config skipped (%r) — nodes present, defaults" % e)
+else:
+    wire(xform, "Out", spawn, "In")
 wire(spawn, "Out", outp, "Out")
 
 gS = grid.get_settings()
@@ -99,7 +148,7 @@ sel.set_editor_property("mesh_entries", entries)
 
 # Count edges (input-pin side) for a final tally.
 ne = 0
-for n in (grid, xform, spawn, outp):
+for n in [x for x in (grid, xform, noise, densf, spawn, outp) if x is not None]:
     for p in n.input_pins:
         ne += len(p.edges)
 unreal.EditorAssetLibrary.save_asset(GRAPH)
