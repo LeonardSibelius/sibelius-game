@@ -6,9 +6,11 @@ The arc follows a software-engineering lifecycle — **Code Vision → Refactor 
 
 > Part of **Leonard Sibelius, Inc. — an anything machine. Software with AI in it.** · [leonardsibelius.com](https://leonardsibelius.com)
 
-## Status — v0.2
+## Status — v0.4
 
 **Chapters 1–6 are shipped and playable on `main`**, each gated by a passing headless smoke test. **Chapter 7 — Three-Part Synthesis** is in progress: its cathedral environment is built and walkable, and the **office → attic → cathedral path is playable end to end** (collect books → build the staircase → earn the key → unlock the attic hatch → climb up → open a gothic door → arrive in the cathedral of light). The remaining Ch7 work is the in-cathedral finale itself.
+
+**Many Worlds (v0.4).** A hidden **Sauce Door** in the kitchen (hold **V** to reveal) opens onto a procedurally-generated **Elsewhere** — a seeded sci-fi hall dressed by UE5 **PCG** — holding one collectable **curio**. Step through, collect it, walk back through the doorway to the office, and the **Cabinet of Curiosities** fills. Wonder, not greed: you always find a curio; rarity is a bonus.
 
 ### Shipped chapters
 
