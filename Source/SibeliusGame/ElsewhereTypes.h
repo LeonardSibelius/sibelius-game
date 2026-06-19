@@ -30,6 +30,39 @@ enum class EElsewhereRarity : uint8
 	Legendary  UMETA(DisplayName = "Legendary")
 };
 
+// One entry in a place's SCATTER palette (SIB-47 richer scatter): a kit detail prop +
+// the rules for how it scatters. Data-driven so the set + weights + per-mesh rules are
+// tunable by eye, not hardcoded. SOFT ref: the headless gate never loads it (kit-absent ->
+// engine-shape fallback), and the run seed is consumed IDENTICALLY whether or not the mesh
+// loads (see AElsewhereBuilder::PlaceScatter). This is the SMALL detail layer — it
+// complements, never duplicates, the big structural machinery (bulkhead arch-ribs + 4m pipe
+// runs) placed deterministically by AElsewhereBuilder::SpawnStructuralProps.
+USTRUCT(BlueprintType)
+struct FScatterMeshDef
+{
+	GENERATED_BODY()
+
+	// The kit detail mesh to scatter. Soft — kit-absent falls back to an engine cylinder.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scatter") TSoftObjectPtr<UStaticMesh> Mesh;
+
+	// Relative likelihood within the per-seed ACTIVE subset (weighted pick). 0 disables.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scatter", meta = (ClampMin = "0")) int32 Weight = 10;
+
+	// Upright (true): yaw-only + the mesh bottom rested on the floor (machinery/posts stand
+	// up). Free (false): full random yaw + a small pitch/roll lean (loose clutter/debris).
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scatter") bool bUpright = true;
+
+	// Per-instance uniform scale band; a MULTIPLIER on top of the place's KitMeshScale for
+	// kit meshes (engine-shape fallbacks use it directly). Kit meshes are authored ~1.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scatter", meta = (ClampMin = "0.05")) float ScaleMin = 0.9f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scatter", meta = (ClampMin = "0.05")) float ScaleMax = 1.2f;
+
+	// Free props only (bUpright == false): max |pitch| and |roll| degrees of lean. Still
+	// DRAWN (then zeroed) when upright, so the RNG budget per prop is constant — the
+	// determinism contract (see PlaceScatter's draw order).
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Scatter", meta = (ClampMin = "0", ClampMax = "45")) float LeanJitterDeg = 0.f;
+};
+
 // One place-type = a mood + a modular kit + variation rules + the curios it tends to
 // hold (§5). A DataTable row so adding place-types is content work, not a recompile —
 // the ongoing (fun) job per the design. The mesh/material refs are SOFT: the headless
@@ -76,6 +109,20 @@ struct FPlaceTypeDef : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit") TArray<TSoftObjectPtr<UStaticMesh>> WallMeshes;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit") TArray<TSoftObjectPtr<UStaticMesh>> CeilingMeshes;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Kit") TArray<TSoftObjectPtr<UStaticMesh>> PropMeshes;
+
+	// --- Richer scatter (SIB-47): the per-place curated detail palette + density. When
+	// ScatterMeshes is non-empty the builder uses it (weighted, per-mesh rules, per-seed
+	// varying); EMPTY -> the builder synthesises a basic palette from PropMeshes (upright,
+	// default scale) so older data still scatters. Loads from DT/CSV like the soft-ref
+	// arrays above (a row without ScatterMeshes deserialises to empty -> no migration). ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Layout") TArray<FScatterMeshDef> ScatterMeshes;
+
+	// Density multiplier on the per-seed prop count (1.0 = PropCountMin/Max as authored).
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Layout", meta = (ClampMin = "0.1", ClampMax = "4.0")) float ScatterDensity = 1.0f;
+
+	// Half-width (cm) of the prop-free central corridor from the west doorway to the curio,
+	// so the player can always walk to the curio + the way home. 0 -> no carved path.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Layout", meta = (ClampMin = "0")) float CorridorHalfWidth = 250.f;
 
 	// The kit's module grid: one floor/ceiling tile is KitTileSize cm square; one wall
 	// segment is KitTileSize wide × KitWallHeight tall. Match these to the kit's

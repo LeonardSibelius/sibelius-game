@@ -15,6 +15,7 @@
 #include "PCGComponent.h"      // SIB-47 PCG spike
 #include "PCGGraph.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
@@ -51,6 +52,47 @@ AElsewhereBuilder::AElsewhereBuilder()
 	// bUsePCGScatter is ON; authoring the graph's nodes + flipping the flag is next session.
 	ScatterGraph = TSoftObjectPtr<UPCGGraphInterface>(
 		FSoftObjectPath(TEXT("/Game/PCG/PCG_ElsewhereScatter.PCG_ElsewhereScatter")));
+
+	// Floor material quick win: default the override at the real _K floor base MI (BY PATH —
+	// we never modify the kit). Kit-absent -> the soft ref is null -> ApplyFloorMaterial skips,
+	// so the headless gate is unaffected. Clear it to restore the floor mesh's own 2-slot kit
+	// materials (base + border trim).
+	FloorMaterialOverride = TSoftObjectPtr<UMaterialInterface>(
+		FSoftObjectPath(TEXT("/Game/ModularSciFiEnv_K/Materials/Instances/MI_Floor_A_Base.MI_Floor_A_Base")));
+
+	// --- The curated _K detail scatter palette (SIB-47 richer scatter). Bounds-verified
+	// FLOOR-STANDING, self-contained, base-on-floor objects (the lamp "_Base" meshes are flat
+	// ~5cm strip-light plates, excluded). Two visual families — machinery cabinets/junction-boxes
+	// and posts/console greebles — so a per-seed subset reads visibly different each visit. The
+	// builder default so it drives the look whether the DataTable or the code-default registry is
+	// loaded (a place can still override per-place via FPlaceTypeDef::ScatterMeshes). KEPT IN
+	// LOCKSTEP with build_pcg_scatter_graph.py's MESH_WEIGHTS. KitMeshScale=1, so ScaleMin/Max is
+	// the per-instance band; all upright (rest-base-on-floor handles the few non-base pivots). ---
+	auto MakeScatter = [](const TCHAR* Path, int32 Weight, float SMin, float SMax)
+	{
+		FScatterMeshDef D;
+		D.Mesh = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(Path));
+		D.Weight = Weight;
+		D.bUpright = true;
+		D.ScaleMin = SMin;
+		D.ScaleMax = SMax;
+		D.LeanJitterDeg = 0.f;
+		return D;
+	};
+	ScatterSet = {
+		// Machinery cabinets / columns / junction boxes (the bulk of the clutter).
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Mid_1m.SM_Bulkhead_A_End_Mid_1m"), 4, 0.90f, 1.15f),
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Mid_2m.SM_Bulkhead_A_End_Mid_2m"), 3, 0.85f, 1.10f),
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_B_1m_End.SM_Pipes_B_1m_End"),                   3, 0.90f, 1.15f),
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_B_Handler_A.SM_Pipes_B_Handler_A"),             2, 0.90f, 1.15f),
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Top.SM_Bulkhead_A_End_Top"),       1, 0.80f, 1.00f), // tall hero, rare
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Low.SM_Bulkhead_A_End_Low"),       1, 0.80f, 1.00f), // wide hero, rare
+		// Posts / console greebles (vertical accents, lighter).
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_Pillar_A.SM_Railings_A_Pillar_A"),      3, 0.90f, 1.20f),
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_Pillar_A_Long.SM_Railings_A_Pillar_A_Long"), 2, 0.90f, 1.15f),
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_1x1m_B.SM_Wall_A_Mid_1x1m_B"),             2, 0.90f, 1.10f),
+		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_1x1m_B_Handle.SM_Wall_A_Mid_1x1m_B_Handle"), 2, 0.90f, 1.30f),
+	};
 }
 
 void AElsewhereBuilder::BeginPlay()
@@ -192,6 +234,8 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 			ISM->ClearInstances();
 		}
 	}
+	ScatterISMs.Reset();          // re-tracked as PlaceScatter places (gate read-back)
+	bScatterZonesValid = false;
 
 	UStaticMesh* CubeFallback = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
 	UStaticMesh* CylFallback  = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
@@ -232,6 +276,10 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 		}
 	}
 
+	// Floor material quick win — reskin the (kit) floor ISM with the real _K floor material
+	// (project-side ref; no kit edit). No-op when the kit is absent (override won't load).
+	ApplyFloorMaterial(Place);
+
 	// --- Perimeter walls, with a doorway gap on the west (-X) edge. ---
 	// WALL ORIENTATION CONVENTION: a wall PANEL's face-normal is along local +X and its
 	// width runs along local +Y (thin in X, wide in Y, tall in Z) — this matches the kit
@@ -244,6 +292,7 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 	const FVector WallFit(0.2f, Tile / 100.f, WallH / 100.f);   // thin along local X, wide along Y, tall Z
 	const float WallZ = Origin.Z + WallH * 0.5f;
 	const int32 DoorJ = NY / 2;   // the gap tile on the west edge
+	const float DoorCY = Y0 + DoorJ * Tile;   // doorway centre Y (return trigger + scatter carve)
 
 	// Walls rest their base on the floor (bRestBaseOnFloor) so they seal the wall-to-floor
 	// band — the WallZ in the transform is overridden by the floor-rest.
@@ -290,35 +339,20 @@ int32 AElsewhereBuilder::AssembleGeometry(const FPlaceTypeDef& Place, int32 Layo
 	// (Replaces the old E-interact / blocking approach.) Walking into the doorway returns the
 	// player home — no key-press, no aim, no interact trace to be blocked, and no fall: the
 	// trigger sits INSIDE the edge so they leave before reaching the drop. See SeatReturnTrigger.
-	SeatReturnTrigger(Origin, GridHalfX, /*DoorCY=*/Y0 + DoorJ * Tile, WallH);
+	SeatReturnTrigger(Origin, GridHalfX, DoorCY, WallH);
 
-	// --- Scattered props ---
-	// PCG spike (incremental): when enabled AND a graph is assigned, the floor props come
-	// from a REAL UPCGComponent (seeded), replacing the C++ scatter below. The C++ path is
-	// the fallback (flag off, or no graph) so the loop + gate never break.
+	// --- Scattered DETAIL props (the small lived-in layer). PCG spike: when enabled AND a graph
+	// is assigned, a REAL UPCGComponent owns the props (seeded), replacing the C++ scatter. The
+	// C++ path (flag off, or no graph) is the fallback — and the gate's determinism handle. ---
 	if (bUsePCGScatter && RunPCGScatter(Place, LayoutSeed))
 	{
 		UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] props via PCG (C++ scatter skipped)."), *GetName());
 		return 0; // prop count is owned by PCG now
 	}
 
-	// C++ fallback scatter: few + spread, standing ON the floor (Z=Origin.Z). The kit
-	// props are placed at KitMeshScale (PlacePiece); the FitScale only stretches the
-	// fallback cylinder. Count is the gate's determinism handle.
-	const int32 PropCount = Rng.RandRange(Place.PropCountMin, Place.PropCountMax);
-	const float InnerX = FMath::Max(0.f, GridHalfX - Tile);
-	const float InnerY = FMath::Max(0.f, GridHalfY - Tile);
-	for (int32 p = 0; p < PropCount; ++p)
-	{
-		const float PX = Origin.X + Rng.FRandRange(-InnerX, InnerX);
-		const float PY = Origin.Y + Rng.FRandRange(-InnerY, InnerY);
-		const float Yaw = Rng.FRandRange(0.f, 360.f);
-		const float S = Rng.FRandRange(0.9f, 1.3f);
-		const FTransform PropXf(FRotator(0.f, Yaw, 0.f), FVector(PX, PY, Origin.Z));
-		PlacePiece(Place.PropMeshes, CylFallback, Scale, PropXf, FVector(S, S, S), Rng);
-	}
+	const int32 PropCount = PlaceScatter(Place, Origin, GridHalfX, GridHalfY, Tile, DoorCY, CylFallback, Rng);
 
-	UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] assembled '%s': %dx%d tiles, walls+ceiling, %d props (seed=%d)."),
+	UE_LOG(LogElsewhereBuilder, Verbose, TEXT("[%s] assembled '%s': %dx%d tiles, walls+ceiling, %d scattered props (seed=%d)."),
 		*GetName(), *Place.Id.ToString(), NX, NY, PropCount, LayoutSeed);
 	return PropCount;
 }
@@ -651,4 +685,300 @@ void AElsewhereBuilder::ApplyMood(const FPlaceTypeDef& Place, int32 MoodSeed)
 	MoodLight->SetLightColor(Place.AmbientColor);
 	MoodLight->SetIntensity(Place.LightIntensity * 2000.f * Jitter);
 	MoodLight->SetWorldLocation(GetActorLocation() + FVector(0.f, 0.f, Place.RoomExtent.Z * 0.5f));
+}
+
+TArray<FScatterMeshDef> AElsewhereBuilder::ResolveScatterPalette(const FPlaceTypeDef& Place) const
+{
+	// Resolution order: the place's own ScatterMeshes (per-place override, authored in DT/code) ->
+	// the builder's curated ScatterSet default (drives the look for every undressed place) -> a
+	// basic palette synthesised from the legacy PropMeshes (last resort). PURE — no RNG, no loads —
+	// so the palette SIZE is a function of DATA only (identical kit-present/absent), which the
+	// scatter's fixed draw budget depends on for determinism.
+	if (Place.ScatterMeshes.Num() > 0)
+	{
+		return Place.ScatterMeshes;
+	}
+	if (ScatterSet.Num() > 0)
+	{
+		return ScatterSet;
+	}
+	TArray<FScatterMeshDef> Out;
+	Out.Reserve(Place.PropMeshes.Num());
+	for (const TSoftObjectPtr<UStaticMesh>& M : Place.PropMeshes)
+	{
+		FScatterMeshDef D;
+		D.Mesh = M;
+		D.Weight = 10;
+		D.bUpright = true;
+		D.ScaleMin = 0.9f;
+		D.ScaleMax = 1.3f;
+		D.LeanJitterDeg = 0.f;
+		Out.Add(D);
+	}
+	return Out;
+}
+
+bool AElsewhereBuilder::IsScatterExcluded(const FVector2D& WorldXY) const
+{
+	const FVector P(WorldXY.X, WorldXY.Y, ScatterFloorZ);
+	// Carve discs: keep the focal curio clear, the doorway/return/beacon clear, and the arrival
+	// bay clear (for a big hall the door+spawn discs overlap and clear the whole west bay).
+	if (FVector::Dist2D(P, CurioCenterWS) < CurioCarveR) { return true; }
+	if (FVector::Dist2D(P, DoorCenterWS)  < DoorCarveR)  { return true; }
+	if (FVector::Dist2D(P, SpawnCenterWS) < SpawnCarveR) { return true; }
+	// Open central corridor: a clear walk-lane from the west doorway to the curio (props may
+	// still fill BEHIND the curio, framing it). Band around the doorway's Y, on the approach side.
+	if (CorridorHalfWS > 0.f && FMath::Abs(P.Y - DoorCenterWS.Y) < CorridorHalfWS && P.X < CurioCenterWS.X)
+	{
+		return true;
+	}
+	return false;
+}
+
+void AElsewhereBuilder::PlaceScatterPiece(const FScatterMeshDef& Def, UStaticMesh* CylFallback,
+	float KitMeshScale, float PerMeshScale, const FTransform& BaseXform, bool bRestBaseOnFloor, float FloorZ)
+{
+	// NO RNG drawn here: the caller already spent the selection/transform draws, so kit-present
+	// and kit-absent consume the stream identically — only WHICH mesh is added differs.
+	UStaticMesh* KitMesh = Def.Mesh.LoadSynchronous();   // null when the kit isn't installed
+	const bool bIsKit = (KitMesh != nullptr);
+	UStaticMesh* Use = bIsKit ? KitMesh : CylFallback;
+	if (!Use)
+	{
+		return;
+	}
+	UInstancedStaticMeshComponent* ISM = GetOrCreateISM(Use);
+	if (!ISM)
+	{
+		return;
+	}
+	ScatterISMs.AddUnique(ISM);   // track the scatter layer for the gate read-back
+
+	FTransform Xform = BaseXform;
+	// Kit meshes are authored to ~unit scale (× KitMeshScale × the per-instance band). The
+	// fallback cylinder gets the band directly, stretched a little taller so it reads upright.
+	const FVector Scale = bIsKit
+		? FVector(KitMeshScale * PerMeshScale)
+		: FVector(PerMeshScale, PerMeshScale, PerMeshScale * 1.4f);
+	Xform.SetScale3D(Scale);
+
+	// Rest the mesh bottom on the floor (handles base-pivot AND centered/odd pivots via Min.Z).
+	if (bRestBaseOnFloor)
+	{
+		const float BottomLocalZ = Use->GetBoundingBox().Min.Z;
+		FVector Loc = Xform.GetLocation();
+		Loc.Z = FloorZ - BottomLocalZ * Scale.Z;
+		Xform.SetLocation(Loc);
+	}
+
+	ISM->AddInstance(Xform, /*bWorldSpace=*/true);
+}
+
+int32 AElsewhereBuilder::PlaceScatter(const FPlaceTypeDef& Place, const FVector& Origin,
+	float GridHalfX, float GridHalfY, float Tile, float DoorCY,
+	UStaticMesh* CylFallback, FRandomStream& Rng)
+{
+	// Deterministic, data-driven, per-seed-varying scatter — the gate's determinism handle.
+	// Returns the INSTANCED prop count (a pure function of the seed). Every randomness source is
+	// the single passed-in Rng, drawn in the FIXED order documented below so two fresh actors from
+	// the same plan produce identical transforms AND count, and so kit-absent consumes the stream
+	// byte-identically to kit-present (the only load-dependent call, PlaceScatterPiece, draws nothing).
+
+	const TArray<FScatterMeshDef> Full = ResolveScatterPalette(Place);   // pure; size = data
+	const int32 P = Full.Num();
+
+	// Cache the carve geometry (no draws) so the gate asserts against the exact numbers used.
+	CurioCenterWS  = Origin + CurioOffset;                                    // the focal curio
+	DoorCenterWS   = FVector(Origin.X - GridHalfX, DoorCY, Origin.Z);         // west doorway / return / beacon
+	SpawnCenterWS  = Origin + FVector(-800.f, 0.f, 0.f);                      // PlayerStart (west bay, builder-relative)
+	CurioCarveR    = FMath::Max(0.f, CurioExclusionRadius);
+	DoorCarveR     = FMath::Max(0.f, DoorwayExclusionRadius);
+	SpawnCarveR    = FMath::Max(0.f, SpawnExclusionRadius);
+	CorridorHalfWS = FMath::Max(0.f, Place.CorridorHalfWidth);
+	ScatterFloorZ  = Origin.Z;
+	bScatterZonesValid = true;
+
+	// --- Phase 1: per-seed composition (subset) + density. ---
+	// 1.1 subset size (1 draw).
+	const int32 SubLo = FMath::Max(1, ScatterSubsetMin);
+	const int32 SubHi = FMath::Max(SubLo, ScatterSubsetMax);
+	int32 SubsetSize = Rng.RandRange(SubLo, SubHi);
+	SubsetSize = FMath::Clamp(SubsetSize, 1, FMath::Max(1, P));
+	// 1.2 Fisher–Yates shuffle of [0..P-1] (P-1 draws; 0 when P<=1). P is data -> count is parity-safe.
+	TArray<int32> Idx;
+	Idx.Reserve(P);
+	for (int32 i = 0; i < P; ++i) { Idx.Add(i); }
+	for (int32 i = P - 1; i >= 1; --i)
+	{
+		const int32 j = Rng.RandRange(0, i);
+		Idx.Swap(i, j);
+	}
+	// Active subset + parallel weights.
+	TArray<int32> Active;
+	TArray<int32> ActiveW;
+	Active.Reserve(SubsetSize);
+	ActiveW.Reserve(SubsetSize);
+	for (int32 k = 0; k < SubsetSize && k < P; ++k)
+	{
+		Active.Add(Idx[k]);
+		ActiveW.Add(FMath::Max(0, Full[Idx[k]].Weight));
+	}
+	int32 ActiveTotal = 0;
+	for (int32 W : ActiveW) { ActiveTotal += W; }
+	// 1.3 base count (1 draw) -> per-seed density.
+	const int32 BaseCount = Rng.RandRange(Place.PropCountMin, Place.PropCountMax);
+	const float Density   = FMath::Max(0.1f, Place.ScatterDensity);
+	const int32 TargetCount = FMath::Clamp(FMath::RoundToInt(BaseCount * Density), 0, 64);
+
+	// --- Phase 2: cluster centres (the lived-in bunching), in the interior (2 draws each). ---
+	const float InnerX = FMath::Max(Tile, GridHalfX - Tile);
+	const float InnerY = FMath::Max(Tile, GridHalfY - Tile);
+	const int32 NumClusters = FMath::Clamp(1 + TargetCount / 4, 1, 5);
+	TArray<FVector2D> Clusters;
+	Clusters.Reserve(NumClusters);
+	for (int32 c = 0; c < NumClusters; ++c)
+	{
+		const float CX = Rng.FRandRange(-InnerX, InnerX);
+		const float CY = Rng.FRandRange(-InnerY, InnerY);
+		Clusters.Add(FVector2D(CX, CY));
+	}
+
+	// --- Phase 3: per prop — a HARD-CONSTANT budget of (3K + 5) draws each, independent of
+	// exclusion hits and mesh-load state (the determinism + kit-absent-parity guarantee). ---
+	const int32 K = FMath::Clamp(ScatterPlacementTries, 1, 16);
+	const float ClusterBias = FMath::Clamp(ScatterClusterBias, 0.f, 1.f);
+	const FScatterMeshDef DefaultDef;   // weight 10, upright, 0.9–1.2 — used if the subset is empty
+	int32 Instanced = 0;
+
+	for (int32 p = 0; p < TargetCount; ++p)
+	{
+		// 3a. Pre-draw K candidate positions (3K draws ALWAYS); take the first clear one.
+		bool bFound = false;
+		FVector2D Cand(0.f, 0.f);
+		for (int32 k = 0; k < K; ++k)
+		{
+			const float Sel = Rng.FRand();              // draw
+			const float OX  = Rng.FRandRange(-1.f, 1.f); // draw
+			const float OY  = Rng.FRandRange(-1.f, 1.f); // draw
+			if (bFound)
+			{
+				continue;   // keep drawing all K (budget constant), but stop testing
+			}
+			FVector2D C;
+			if (Clusters.Num() > 0 && Sel < ClusterBias)
+			{
+				// Fold the cluster index out of Sel (no extra draw); jitter by ±Tile.
+				const int32 Ci = FMath::Clamp(
+					int32((Sel / FMath::Max(KINDA_SMALL_NUMBER, ClusterBias)) * Clusters.Num()),
+					0, Clusters.Num() - 1);
+				C = Clusters[Ci] + FVector2D(OX, OY) * Tile;
+			}
+			else
+			{
+				C = FVector2D(OX * InnerX, OY * InnerY);
+			}
+			const FVector2D WorldXY(Origin.X + C.X, Origin.Y + C.Y);
+			if (!IsScatterExcluded(WorldXY))
+			{
+				Cand = C;
+				bFound = true;
+			}
+		}
+
+		// 3b. Per-prop mesh + transform (5 draws ALWAYS, even if the prop dropped).
+		int32 Sel = INDEX_NONE;
+		if (ActiveTotal > 0)
+		{
+			Sel = FElsewhereGen::WeightedPick(Rng, ActiveW);   // 1 draw
+		}
+		else
+		{
+			Rng.RandRange(0, 0);                                // hold the slot's 1 draw
+		}
+		const FScatterMeshDef& Def = (Sel != INDEX_NONE && Sel < Active.Num()) ? Full[Active[Sel]] : DefaultDef;
+		const float S     = Rng.FRandRange(Def.ScaleMin, Def.ScaleMax);          // draw
+		const float Yaw   = Rng.FRandRange(0.f, 360.f);                          // draw
+		const float Pitch = Rng.FRandRange(-1.f, 1.f) * Def.LeanJitterDeg;       // draw (×0 if upright)
+		const float Roll  = Rng.FRandRange(-1.f, 1.f) * Def.LeanJitterDeg;       // draw (×0 if upright)
+
+		// 3c. Place (only when a clear candidate was found; no RNG here).
+		if (bFound)
+		{
+			const FRotator Rot = Def.bUpright ? FRotator(0.f, Yaw, 0.f) : FRotator(Pitch, Yaw, Roll);
+			const FTransform BaseXf(Rot, FVector(Origin.X + Cand.X, Origin.Y + Cand.Y, Origin.Z));
+			PlaceScatterPiece(Def, CylFallback, Place.KitMeshScale, S, BaseXf, Def.bUpright, Origin.Z);
+			++Instanced;
+		}
+	}
+
+	return Instanced;
+}
+
+void AElsewhereBuilder::ApplyFloorMaterial(const FPlaceTypeDef& Place)
+{
+	// Reskin the FLOOR ISM with the real _K floor material (explicit project-side reference; we
+	// never modify the kit). Applied ONLY to the kit floor ISM (the override is null when the kit
+	// is absent -> the fallback-cube floor is never touched, so the headless gate is unaffected
+	// AND we never trip the Used-With-Instanced-Static-Meshes editor prompt on a cube).
+	UMaterialInterface* FloorMat = FloorMaterialOverride.LoadSynchronous();
+	if (!FloorMat)
+	{
+		return;   // override unset, or kit absent
+	}
+	for (const TSoftObjectPtr<UStaticMesh>& FloorRef : Place.FloorMeshes)
+	{
+		UStaticMesh* FloorMesh = FloorRef.LoadSynchronous();
+		if (!FloorMesh)
+		{
+			continue;   // this floor slot is a fallback cube (kit absent) — leave it
+		}
+		if (UInstancedStaticMeshComponent* FloorISM = GetOrCreateISM(FloorMesh))   // returns the existing floor ISM
+		{
+			const int32 NumMats = FloorISM->GetNumMaterials();
+			for (int32 s = 0; s < NumMats; ++s)
+			{
+				FloorISM->SetMaterial(s, FloorMat);
+			}
+		}
+	}
+}
+
+int32 AElsewhereBuilder::GetScatterInstanceTransforms(TArray<FTransform>& OutXforms) const
+{
+	OutXforms.Reset();
+	for (const TObjectPtr<UInstancedStaticMeshComponent>& ISM : ScatterISMs)
+	{
+		if (!ISM)
+		{
+			continue;
+		}
+		const int32 N = ISM->GetInstanceCount();
+		for (int32 i = 0; i < N; ++i)
+		{
+			FTransform T;
+			if (ISM->GetInstanceTransform(i, T, /*bWorldSpace=*/true))
+			{
+				OutXforms.Add(T);
+			}
+		}
+	}
+	return OutXforms.Num();
+}
+
+bool AElsewhereBuilder::GetScatterExclusionZones(
+	FVector& OutCurioCenter, float& OutCurioRadius,
+	FVector& OutDoorCenter,  float& OutDoorRadius,
+	FVector& OutSpawnCenter, float& OutSpawnRadius,
+	float& OutCorridorHalfWidth, float& OutFloorZ) const
+{
+	if (!bScatterZonesValid)
+	{
+		return false;
+	}
+	OutCurioCenter = CurioCenterWS; OutCurioRadius = CurioCarveR;
+	OutDoorCenter  = DoorCenterWS;  OutDoorRadius  = DoorCarveR;
+	OutSpawnCenter = SpawnCenterWS; OutSpawnRadius = SpawnCarveR;
+	OutCorridorHalfWidth = CorridorHalfWS;
+	OutFloorZ = ScatterFloorZ;
+	return true;
 }

@@ -3,35 +3,33 @@
 #include "ElsewhereGen.h"
 #include "Math/RandomStream.h"
 
-namespace
+// Weighted pick over a parallel weight array using an already-seeded stream. Returns
+// INDEX_NONE only for an empty/zero-weight set. Stable ordering in + stable stream =
+// deterministic out (the whole point). Shared with AElsewhereBuilder's scatter so both
+// consume EXACTLY one RandRange draw per pick.
+int32 FElsewhereGen::WeightedPick(FRandomStream& Rng, const TArray<int32>& Weights)
 {
-	// Weighted pick over a parallel weight array using an already-seeded stream.
-	// Returns INDEX_NONE only for an empty/zero-weight set. Stable ordering in +
-	// stable stream = deterministic out (the whole point).
-	int32 WeightedPick(FRandomStream& Rng, const TArray<int32>& Weights)
+	int32 Total = 0;
+	for (int32 W : Weights)
 	{
-		int32 Total = 0;
-		for (int32 W : Weights)
-		{
-			Total += FMath::Max(0, W);
-		}
-		if (Total <= 0)
-		{
-			return INDEX_NONE;
-		}
-
-		// RandRange is inclusive; roll in [0, Total-1] and walk the cumulative band.
-		int32 Roll = Rng.RandRange(0, Total - 1);
-		for (int32 i = 0; i < Weights.Num(); ++i)
-		{
-			Roll -= FMath::Max(0, Weights[i]);
-			if (Roll < 0)
-			{
-				return i;
-			}
-		}
-		return Weights.Num() - 1;   // FP-free, but guard the boundary
+		Total += FMath::Max(0, W);
 	}
+	if (Total <= 0)
+	{
+		return INDEX_NONE;
+	}
+
+	// RandRange is inclusive; roll in [0, Total-1] and walk the cumulative band.
+	int32 Roll = Rng.RandRange(0, Total - 1);
+	for (int32 i = 0; i < Weights.Num(); ++i)
+	{
+		Roll -= FMath::Max(0, Weights[i]);
+		if (Roll < 0)
+		{
+			return i;
+		}
+	}
+	return Weights.Num() - 1;   // FP-free, but guard the boundary
 }
 
 void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
@@ -108,8 +106,12 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_4x4m.SM_Wall_A_Mid_4x4m")) };
 		Cathedral.CeilingMeshes = {
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Ceilings/SM_Ceiling_A_4x4m.SM_Ceiling_A_4x4m")) };
-		// Floor-standing props only — NO pipes (wall/ceiling runs that heap up flat) and
-		// NO railings (they lie flat on the centered grid). Lamp fixtures only.
+		// Floor-standing props (legacy PropMeshes path). NOTE: the richer per-seed scatter no
+		// longer reads these — the curated _K detail palette lives on the BUILDER's ScatterSet
+		// default (AElsewhereBuilder ctor), used for every place that doesn't author its own
+		// FPlaceTypeDef::ScatterMeshes. Kept only as the last-resort fallback. (These lamp
+		// "_Base" meshes are actually flat ~5cm strip-light plates — bounds-verified — which is
+		// why the curated ScatterSet uses machinery/posts instead.)
 		Cathedral.PropMeshes = {
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AA_Base.SM_Lamp_AA_Base")),
 			Mesh(TEXT("/Game/ModularSciFiEnv_K/Meshes/Lamps/SM_Lamp_AB_Base.SM_Lamp_AB_Base")) };

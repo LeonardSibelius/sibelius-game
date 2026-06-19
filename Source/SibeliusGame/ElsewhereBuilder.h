@@ -30,6 +30,7 @@ class USpotLightComponent;
 class UBoxComponent;
 class UPCGComponent;
 class UPCGGraphInterface;
+class UMaterialInterface;
 class ACurio;
 class AReturnDoor;
 
@@ -53,6 +54,18 @@ public:
 	// Accessors for the gate.
 	ACurio* GetSpawnedCurio() const { return SpawnedCurio; }
 	AReturnDoor* GetSpawnedReturnDoor() const { return SpawnedReturnDoor; }
+
+	// --- Gate read-back for the richer scatter (headless determinism / exclusion / open-path /
+	// per-seed-variation checks; never inspects "the look"). ---
+	// World transforms of every scattered DETAIL prop placed this build. Returns the count.
+	int32 GetScatterInstanceTransforms(TArray<FTransform>& OutXforms) const;
+	// The exact carve geometry the last scatter honoured (world space), so the gate asserts the
+	// SAME numbers the builder used — no duplicated magic constants. False if no build has run.
+	bool GetScatterExclusionZones(
+		FVector& OutCurioCenter, float& OutCurioRadius,
+		FVector& OutDoorCenter,  float& OutDoorRadius,
+		FVector& OutSpawnCenter, float& OutSpawnRadius,
+		float& OutCorridorHalfWidth, float& OutFloorZ) const;
 
 	// The curio's floating height above the builder origin (it hangs in the hall centre
 	// as the single focal object).
@@ -105,6 +118,36 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|PCG") bool bUsePCGScatter = false;
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|PCG") TSoftObjectPtr<UPCGGraphInterface> ScatterGraph;
 	UPROPERTY(VisibleAnywhere, Category = "Elsewhere Builder|PCG") TObjectPtr<UPCGComponent> PCGComponent;
+
+	// --- SIB-47 richer per-seed C++ scatter (the verifiable gate path; the PCG path mirrors it
+	// behind bUsePCGScatter). The per-place CONTENT (density + corridor) lives on FPlaceTypeDef;
+	// these are builder-global SHAPING knobs Walt nudges by eye. ---
+	// The default detail palette (the curated _K floor-standing machinery/post set, populated in
+	// the ctor; in lockstep with build_pcg_scatter_graph.py). Used for any place that doesn't
+	// author its own FPlaceTypeDef::ScatterMeshes — which is every place today, so it drives the
+	// look regardless of whether the DataTable or the code default is loaded. Tunable by eye.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter") TArray<FScatterMeshDef> ScatterSet;
+	// Clear-zone radii (cm), so props never block the curio, the doorway/return, or the spawn bay.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter") float CurioExclusionRadius = 320.f;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter") float DoorwayExclusionRadius = 450.f;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter") float SpawnExclusionRadius = 380.f;
+	// 0 = props spread evenly; 1 = props bunch into a few lived-in clumps (noise/cluster feel).
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "0", ClampMax = "1")) float ScatterClusterBias = 0.6f;
+	// Per-seed composition: each visit activates a random subset of the palette (size in this
+	// range), so the SET of objects — not just their positions — differs run to run.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "1")) int32 ScatterSubsetMin = 3;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "1")) int32 ScatterSubsetMax = 6;
+	// Candidate positions pre-drawn per prop (the first clear one is placed); a prop drops only
+	// if all reject. A constant budget -> deterministic instanced count (the gate's handle).
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "1", ClampMax = "16")) int32 ScatterPlacementTries = 8;
+
+	// --- Floor material quick win: an explicit project-side reference to the kit floor material,
+	// applied to the FLOOR ISM (does NOT modify the kit — referenced by path; default points at
+	// the _K floor base MI). Kit-absent -> the soft ref is null -> skipped, so the headless gate
+	// is unaffected. NOTE: the residual editor "checker" is the kit's shared M_Base_MAT lacking
+	// the Used-With-Instanced-Static-Meshes flag — that's the known harmless editor-prompt /
+	// cook-time concern (we deliberately do NOT toggle that flag here; see the asset-policy note). ---
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Materials") TSoftObjectPtr<UMaterialInterface> FloorMaterialOverride;
 
 protected:
 	virtual void BeginPlay() override;
@@ -181,6 +224,47 @@ private:
 
 	// Deferred Generate() target (next-tick timer set by RunPCGScatter), once bounds are valid.
 	void GeneratePCGScatterDeferred();
+
+	// --- SIB-47 richer per-seed scatter (the C++ fallback = the gate's determinism handle). ---
+	// Deterministic data-driven scatter: per-seed active subset of the curated palette + per-seed
+	// density, weighted per-mesh placement, exclusion zones (curio/doorway/spawn) + an open central
+	// corridor, and cluster bunching. Returns the INSTANCED prop count (a pure function of the
+	// seed, the gate's handle). All entropy from the passed-in Rng, in a fixed draw order so two
+	// fresh actors from the same plan match — and so kit-absent consumes the stream identically.
+	int32 PlaceScatter(const FPlaceTypeDef& Place, const FVector& Origin,
+		float GridHalfX, float GridHalfY, float Tile, float DoorCY,
+		UStaticMesh* CylFallback, FRandomStream& Rng);
+
+	// Effective palette: Place.ScatterMeshes if non-empty, else one entry per Place.PropMeshes
+	// (Weight 10, upright, default scale). PURE — no RNG, no loads — so its SIZE is a function of
+	// data only (identical kit-present/absent), which the scatter's draw count depends on.
+	TArray<FScatterMeshDef> ResolveScatterPalette(const FPlaceTypeDef& Place) const;
+
+	// Place ONE already-chosen scatter prop. Draws NO RNG (the caller spent the selection draw),
+	// so kit-present/absent consume the stream identically. Falls back to CylFallback when the kit
+	// mesh fails to load. Tracks the scatter ISM(s) in ScatterISMs for the gate read-back.
+	void PlaceScatterPiece(const FScatterMeshDef& Def, UStaticMesh* CylFallback, float KitMeshScale,
+		float PerMeshScale, const FTransform& BaseXform, bool bRestBaseOnFloor, float FloorZ);
+
+	// True if a candidate world XY lies inside any carve zone (curio / doorway / spawn disc) or
+	// the central corridor band. Pure; uses the cached zone members set by PlaceScatter.
+	bool IsScatterExcluded(const FVector2D& WorldXY) const;
+
+	// Floor material quick win: assign FloorMaterialOverride to the kit floor ISM (kit-floor only;
+	// never the fallback cube — that would trip the Used-With-ISM editor prompt on a cube).
+	void ApplyFloorMaterial(const FPlaceTypeDef& Place);
+
+	// The rich-scatter ISMs (one per distinct scatter mesh actually placed). A subset of KitISMs,
+	// tracked separately so the gate reads back ONLY the scatter layer. Reset each build.
+	UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> ScatterISMs;
+
+	// Cached carve geometry from the last scatter (world space) — surfaced to the gate so it
+	// asserts against the exact numbers used. bScatterZonesValid is false until a build runs.
+	FVector CurioCenterWS = FVector::ZeroVector;
+	FVector DoorCenterWS  = FVector::ZeroVector;
+	FVector SpawnCenterWS = FVector::ZeroVector;
+	float CurioCarveR = 0.f, DoorCarveR = 0.f, SpawnCarveR = 0.f, CorridorHalfWS = 0.f, ScatterFloorZ = 0.f;
+	bool bScatterZonesValid = false;
 
 	UPROPERTY() TObjectPtr<ACurio> SpawnedCurio;
 	UPROPERTY() TObjectPtr<AReturnDoor> SpawnedReturnDoor;

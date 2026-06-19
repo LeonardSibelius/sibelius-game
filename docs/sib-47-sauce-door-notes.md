@@ -130,11 +130,58 @@ incrementally, without ever breaking the playable loop.
   PCG path can't affect the gate (CDO off, and the commandlet world doesn't tick).
   Floor/walls/ceiling, curio, return door, shafts stay C++.
 
+### Richer per-seed scatter pass (banked — headless-verified; LOOK is Walt's PIE gate)
+The C++ scatter is no longer a uniform cylinder spray — it's a deterministic, data-driven,
+**per-seed-varying** detail layer with exclusion zones and an open path. New shape:
+- **Data model** (`FScatterMeshDef` in `ElsewhereTypes.h`): per-mesh `Weight` / `bUpright` /
+  `ScaleMin`–`Max` / `LeanJitterDeg`. The curated palette is the builder's **`ScatterSet`**
+  default (ctor) — used for any place that doesn't author its own `FPlaceTypeDef::ScatterMeshes`
+  (i.e. every place today), so it drives the look whether the **DataTable** or the code default
+  is loaded. Per-place `ScatterMeshes`/`ScatterDensity`/`CorridorHalfWidth` exist as overrides.
+- **Curated `_K` set (bounds-verified FLOOR-STANDING objects, 10 meshes, in lockstep with
+  `build_pcg_scatter_graph.py`):** bulkhead end-units (`End_Mid_1m`/`_2m`/`_Top`/`_Low`), pipe
+  junction boxes (`Pipes_B_1m_End`/`_Handler_A`), and posts/console greebles
+  (`Railings_A_Pillar_A`/`_Long`, `Wall_A_Mid_1x1m_B`/`_Handle`). **The old lamp `_Base` meshes
+  are flat ~5cm strip-light plates** (`dump_kit_bounds.py` proved it) — excluded from floor
+  scatter. See [[kit-mesh-axis-convention]].
+- **Determinism + kit-absent parity:** one `FRandomStream(LayoutSeed)`, a FIXED per-prop draw
+  budget (`3K+5`) independent of exclusion hits and mesh-load state, so two fresh builds match
+  AND kit-absent (gate) consumes the stream identically to kit-present. `PlaceScatter` returns
+  the **instanced** count.
+- **Exclusion + open path:** carve discs around the curio, the west doorway/return, and the
+  player-spawn bay; keep a central **corridor** (Y-band on the doorway→curio approach) clear so
+  the player always has a walk to the curio + the way home. Props may fill *behind* the curio.
+- **Per-seed "what's behind the door this time?":** the seed picks a random **subset** of the
+  palette (composition), a **density** wobble (count), and **cluster** centres (bunching) — so
+  different seeds give visibly different rooms; same seed → identical (the gate proves it).
+- **Tunables** (builder Details panel): `ScatterSet`, `Curio/Doorway/SpawnExclusionRadius`,
+  `ScatterClusterBias`, `ScatterSubsetMin/Max`, `ScatterPlacementTries`; per-place
+  `ScatterDensity`/`CorridorHalfWidth`; `FloorMaterialOverride` (real `_K` floor MI by path).
+- **Floor material quick win:** `FloorMaterialOverride` (default `MI_Floor_A_Base`, BY PATH —
+  no kit edit) reskins the floor ISM. Confirmed via `inspect_kit_materials.py` that the residual
+  editor "checker" is the kit's shared `M_Base_MAT` lacking `bUsedWithInstancedStaticMeshes`
+  (False on ALL kit MIs) — the known harmless editor-prompt / cook-time concern; we deliberately
+  do NOT toggle that flag (the auto-flag helper was tried + reverted).
+
+**Headless-verified** (`ElsewhereSmokeTest`, kit absent → engine-shape fallback): determinism
+at the **transform** level (not just count), no prop inside any carve disc, the corridor is
+clear, and **per-seed variation (3/3 seed-pairs differ** — e.g. seeds 101–606 → 12/13/14/6/8/10
+props). The PCG graph rebuilt clean (`nodes=3 edges=3 meshes=10`) with the curated set.
+**NOT verified (Walt's PIE gate, honestly):** that it LOOKS good / reads "different per seed" —
+the kit meshes only render with the kit installed + PIE; bridge/run-pie is Simulate-only.
+
 ### ▶ RESUME HERE — Walt's PIE-verify (the render gate; can't be done headless)
-Graph rebuilt + C++ rebuilt (editor-closed), gate green. PCG **generation output can't be
-rendered/verified headless**, so this is a PIE eyeball:
-1. PIE `L_Elsewhere` (the builder has `bUsePCGScatter=true`). **Expect ~4 lamp props
-   (`SM_Lamp_AA/AB_Base`) appear on the floor one tick after load** (deferred Generate),
+Graph rebuilt + C++ rebuilt (editor-closed), gate green. The kit meshes + PCG generation
+**can't be rendered/verified headless**, so this is a PIE eyeball:
+1. PIE `L_Elsewhere` directly (preview build, C++ scatter path — `bUsePCGScatter` defaults
+   true on that builder; set it **false** to eyeball the richer C++ scatter first). **Expect
+   the curated `_K` machinery/posts** scattered in the side bays with a **clear central walk**
+   to the curio; the floor reads as the real `_K` floor (accept the harmless save-kit-material
+   prompt / "Don't Save"). Re-enter with a different seed → a **visibly different** mix/density.
+   (Old PCG resume notes below are superseded by the curated set; the lamp-base expectation
+   no longer applies.)
+1b. PIE `L_Elsewhere` (the builder has `bUsePCGScatter=true`). **Expect ~4 props
+   (`SM_Bulkhead_*`/`SM_Pipes_B_*`) appear on the floor one tick after load** (deferred Generate),
    random yaw, near the room centre.
 2. **Determinism:** re-enter / re-PIE → **identical layout** (Create Points Grid is fixed;
    the component Seed = the run's LayoutSeed drives the Transform jitter). Same-seed → same.

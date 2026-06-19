@@ -37,4 +37,9 @@ struct SIBELIUSGAME_API FElsewhereGen
 	// Lookups (linear — the registries are tiny). Null if absent.
 	static const FPlaceTypeDef* FindPlace(const TArray<FPlaceTypeDef>& Places, const FName& Id);
 	static const FCurioDef* FindCurio(const TArray<FCurioDef>& Curios, const FName& Id);
+
+	// Weighted pick over a parallel weight array using an already-seeded stream. Returns
+	// INDEX_NONE only for an empty/all-zero-weight set. Consumes EXACTLY ONE RandRange draw
+	// (the scatter's constant per-prop RNG budget — and thus determinism — depends on this).
+	static int32 WeightedPick(FRandomStream& Rng, const TArray<int32>& Weights);
 };
