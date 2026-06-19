@@ -59,14 +59,202 @@ are NOT committed** (gitignored `Content/ModularSciFiEnv_*/`) — referenced by 
 same discipline as the Dragon Temple / cathedral packs. Vertical pivot/orientation per kit
 mesh is an eyeball-and-nudge step (the builder places on a centered grid).
 
-## The PCG seam
+## Dressing status (atmosphere pass 1 — banked)
 
-`AssembleGeometry()` is the **single method** a `UPCGComponent->Generate()` call can replace
-for richer scatter once the loop's proven (the PCG plugin isn't enabled yet, and a PCG graph
-is an editor-authored asset). Everything else in the loop — plan → curio → return → discard,
-the save rule, the Cabinet — is unchanged when PCG drops in. That's the seam: the wonder
-loop is proven in code today; swapping the geometry backend to PCG is an isolated, additive
-step (enable the PCG plugin, author one graph per place-type, point the builder at it).
+Server Cathedral mood is in: `CathedralGrade` PostProcessVolume (navy + gold grade,
+bloom + vignette), builder-spawned warm-gold god-ray shafts (deterministic, down both
+long walls), volumetric height fog, and a **dark void** exterior (no directional sun;
+walls sealed floor-to-ceiling so no sky/void band shows). Tuning knobs: builder
+`Shaft*` props + the top of `Tools/Scripts/build_elsewhere_map.py`.
+
+**Still placeholder:** the scattered PROPS are engine cylinders (the C++ seeded scatter)
+— the room is mid-dressing. Real prop dressing is the next pass, and is exactly what the
+PCG spike below replaces.
+
+## Dressing pass 2 — structural machinery + way-home beacon (banked)
+The hall now reads as a real built space (PIE-verified live via ue_bridge screenshots):
+- **Structural props** (`AElsewhereBuilder::SpawnStructuralProps`, toggle `bStructuralProps`):
+  bulkhead **arch-ribs** (`SM_Bulkhead_A_Gate_A`) in rows at the 1/4 + 3/4 marks down the hall
+  (span the width, player walks through, frame the curio) + **pipe runs** (`SM_Pipes_A_4m`)
+  along both long-wall bases. Deterministic from the room grid (no RNG → doesn't perturb the
+  scatter seed/gate). Kit-by-path, graceful skip when the kit's absent.
+- **Richer PCG scatter**: the spawner weights **6** varied `_K` lamp bases (was 2) — the
+  scattered detail layer. Big machinery is the C++ structural pass; small detail is PCG.
+- **Return-door affordance**: a warm amber **beacon** (`ReturnBeacon`, tunable) at the doorway
+  + prompt "`<- Back to the kitchen [E]`" (ASCII arrow — non-ASCII trips C4566 under -WX).
+
+Known/by-design: rendering kit meshes through ISMs makes the editor prompt to save the kit's
+shared `M_Base_MAT` (auto-sets `bUsedWithInstancedStaticMeshes`). It's **editor-only cosmetic**
+— the cooker sets the flag at cook, and "Don't Save" is the fine workaround. We do NOT modify
+the gitignored kit. (An in-memory auto-flag helper was tried and reverted — it forced the
+default checker material; not worth the complexity.)
+
+## The PCG seam → real PCG (spike in progress)
+
+`AssembleGeometry()` was always the **single method** a `UPCGComponent->Generate()` replaces.
+The PCG spike (branch `feat/sib-47-pcg-spike`) is making the "UE5 PCG" claim literally true,
+incrementally, without ever breaking the playable loop.
+
+### Done (plumbing + graph — compiles, gate green, graph authored headless)
+- **PCG plugin enabled** (`SibeliusGame.uproject`) + `"PCG"` module dep in
+  `SibeliusGame.Build.cs`.
+- **Real `UPCGComponent`** on `AElsewhereBuilder` (`PCGScatter`, `GenerateOnDemand`).
+- **Seam wired** in `AssembleGeometry`'s prop step: `if (bUsePCGScatter && RunPCGScatter())
+  -> PCG owns the props; else the C++ seeded scatter (fallback)`. `RunPCGScatter` assigns the
+  graph + `Seed = LayoutSeed` (deterministic) and **schedules `Generate()` for next tick**.
+- **The graph `/Game/PCG/PCG_ElsewhereScatter` is AUTHORED** (headless, via
+  `Tools/Scripts/build_pcg_scatter_graph.py`): **`Create Points Grid → Transform Points →
+  Static Mesh Spawner → Output`**, all edges wired (3 nodes, 3 edges, 2 meshes — verified on
+  reload). Grid: `CoordinateSpace=OriginalComponent`, `GridExtents=600`, `CellSize=600`
+  (→ a 2×2 ≈ 4-prop layout centered on the builder at floor Z); Transform randomizes yaw
+  0–360 + ±200cm XY jitter (seeded by the component Seed); Spawner = weighted selector with
+  two `_K` meshes (`SM_Lamp_AA_Base`, `SM_Lamp_AB_Base`).
+- **THE EMPTY-FLOOR FIX (root cause + 2 fixes).** PIE showed an empty floor; the log gave the
+  real cause — **`LogPCG: Error: [RegisterOrUpdatePCGComponent] Component has invalid bounds,
+  not registered nor updated` → `0 props`**. At BeginPlay (mid-`AssembleGeometry`) the
+  runtime-built floor/wall ISMs haven't had their world bounds recomputed yet, so the actor's
+  aggregate bounds are **invalid**. `UPCGComponent::CreateGenerateTask` does
+  `if (!GetGridBounds().IsValid) { OnProcessGraphAborted(); return InvalidPCGTaskId; }` —
+  **generation aborts before the graph runs**, so *no* sampler (the earlier World Ray Hit
+  included) ever executes. Two fixes, both applied:
+  1. **Defer generation (C++, mandatory).** `RunPCGScatter` now sets the graph + seed, then
+     `World->GetTimerManager().SetTimerForNextTick(... GeneratePCGScatterDeferred)`. One tick
+     later the ISM bounds are valid → the component registers and the graph runs.
+  2. **Sample explicit bounds, not the world (graph).** Swapped World Ray Hit + Surface
+     Sampler for **Create Points Grid** (`OriginalComponent` space → grid sits on the builder
+     actor's transform at floor-stand Z, using its own extents). Removes the dependency on
+     world collision / the physics scene entirely — timing-immune and deterministic.
+- **`L_Elsewhere` builder has `bUsePCGScatter = true`** (graph wired via the C++ default).
+  The **gate's** builder uses the CDO default `false` → C++ path → `ElsewhereSmokeTest`
+  stays green (verified: 11 props + Server Cathedral 3 props, deterministic). The deferred
+  PCG path can't affect the gate (CDO off, and the commandlet world doesn't tick).
+  Floor/walls/ceiling, curio, return door, shafts stay C++.
+
+### Richer per-seed scatter pass (banked — headless-verified; LOOK is Walt's PIE gate)
+The C++ scatter is no longer a uniform cylinder spray — it's a deterministic, data-driven,
+**per-seed-varying** detail layer with exclusion zones and an open path. New shape:
+- **Data model** (`FScatterMeshDef` in `ElsewhereTypes.h`): per-mesh `Weight` / `bUpright` /
+  `ScaleMin`–`Max` / `LeanJitterDeg`. The curated palette is the builder's **`ScatterSet`**
+  default (ctor) — used for any place that doesn't author its own `FPlaceTypeDef::ScatterMeshes`
+  (i.e. every place today), so it drives the look whether the **DataTable** or the code default
+  is loaded. Per-place `ScatterMeshes`/`ScatterDensity`/`CorridorHalfWidth` exist as overrides.
+- **Curated `_K` set (bounds-verified FLOOR-STANDING objects, 10 meshes, in lockstep with
+  `build_pcg_scatter_graph.py`):** bulkhead end-units (`End_Mid_1m`/`_2m`/`_Top`/`_Low`), pipe
+  junction boxes (`Pipes_B_1m_End`/`_Handler_A`), and posts/console greebles
+  (`Railings_A_Pillar_A`/`_Long`, `Wall_A_Mid_1x1m_B`/`_Handle`). **The old lamp `_Base` meshes
+  are flat ~5cm strip-light plates** (`dump_kit_bounds.py` proved it) — excluded from floor
+  scatter. See [[kit-mesh-axis-convention]].
+- **Determinism + kit-absent parity:** one `FRandomStream(LayoutSeed)`, a FIXED per-prop draw
+  budget (`3K+5`) independent of exclusion hits and mesh-load state, so two fresh builds match
+  AND kit-absent (gate) consumes the stream identically to kit-present. `PlaceScatter` returns
+  the **instanced** count.
+- **Exclusion + open path:** carve discs around the curio, the west doorway/return, and the
+  player-spawn bay; keep a central **corridor** (Y-band on the doorway→curio approach) clear so
+  the player always has a walk to the curio + the way home. Props may fill *behind* the curio.
+- **Per-seed "what's behind the door this time?":** the seed picks a random **subset** of the
+  palette (composition), a **density** wobble (count), and **cluster** centres (bunching) — so
+  different seeds give visibly different rooms; same seed → identical (the gate proves it).
+- **Tunables** (builder Details panel): `ScatterSet`, `Curio/Doorway/SpawnExclusionRadius`,
+  `ScatterClusterBias`, `ScatterSubsetMin/Max`, `ScatterPlacementTries`; per-place
+  `ScatterDensity`/`CorridorHalfWidth`; `FloorMaterialOverride` (real `_K` floor MI by path).
+- **Floor material quick win:** `FloorMaterialOverride` (default `MI_Floor_A_Base`, BY PATH —
+  no kit edit) reskins the floor ISM. Confirmed via `inspect_kit_materials.py` that the residual
+  editor "checker" is the kit's shared `M_Base_MAT` lacking `bUsedWithInstancedStaticMeshes`
+  (False on ALL kit MIs) — the known harmless editor-prompt / cook-time concern; we deliberately
+  do NOT toggle that flag (the auto-flag helper was tried + reverted).
+
+**Headless-verified** (`ElsewhereSmokeTest`, kit absent → engine-shape fallback): determinism
+at the **transform** level (not just count), no prop inside any carve disc, the corridor is
+clear, and **per-seed variation (3/3 seed-pairs differ** — e.g. seeds 101–606 → 12/13/14/6/8/10
+props). The PCG graph rebuilt clean (`nodes=3 edges=3 meshes=10`) with the curated set.
+**NOT verified (Walt's PIE gate, honestly):** that it LOOKS good / reads "different per seed" —
+the kit meshes only render with the kit installed + PIE; bridge/run-pie is Simulate-only.
+
+### Scatter pass 2 — SciFi BOXES debris pile (replaces the _K machinery scatter)
+The _K *environment* kit has no small props, so scattering it read wrong. Two dedicated **prop
+kits** were added — **SciFi Boxes A** (`/Game/SciFiBoxes_A`) and **SciFi Boxes B**
+(`/Game/SciFi_Box_B`) — crates / containers / barrels. The SCATTER layer now scatters **only**
+those box meshes; the room shell (floor, walls, ceiling, arch-ribs, pipes) is **unchanged**.
+- **Gitignored** both packs (note the two different on-disk folder names: `SciFiBoxes_A` vs
+  `SciFi_Box_B`) BEFORE any commit; referenced by `/Game/...` path only, zero kit bytes committed
+  (same policy as the Crebotoly `_K` kit). `inspect`/dump tools are read-only.
+- **Bounds-curated** (`Tools/Scripts/dump_box_bounds.py`, 59 meshes): the builder `ScatterSet`
+  default (the look-driver, since the DT has no ScatterMeshes column) is a **17-mesh box palette**
+  — a size mix from 0.3 m canisters → 2.4 m hero containers, a few `v0/v3/v4` colour recolours for
+  variety, and **two toppled** pieces (`bUpright=false` + small lean). Skipped: `Box1_Cover` (flat
+  lid), `Box1_Locker` (thin wall panel, pivot below base), `SciFiBox_B_B/_H` (near-dup / 4.3 m huge).
+- **Debris-PILE shaping** (new builder tunables, Details panel): `ScatterCountScale` (default **3.0**
+  — a DT-independent global count multiplier, because the place's `PropCount` 3–6 is tuned sparse;
+  ×3 → ~9–18 boxes), `ScatterWallBias` (default **0.5** — lerps cluster centres toward the
+  perimeter so debris gathers at walls/corners, no extra RNG draw), `ScatterClusterBias` bumped to
+  **0.78** (stronger grouping), subset **4–8**. Exclusion zones + open central corridor + per-seed
+  subset/density/clusters + determinism + kit-absent parity are all UNCHANGED (still the gate's
+  handle; the new knobs are deterministic constants, parity-safe).
+- **`build_pcg_scatter_graph.py` MESH_WEIGHTS** swapped to the same 17-box set (lockstep). The PCG
+  path still has NO exclusion/corridor/clustering (C++-only) and stays behind `bUsePCGScatter`
+  (default OFF) — view the rich pile on the **C++ path** (`bUsePCGScatter=false`).
+- **NOT verified (Walt's PIE gate):** the "nice pile of debris" LOOK and per-seed feel — the box
+  meshes only render with the kits installed + PIE. Headless can only prove build/gate/counts/
+  determinism. Tunables to nudge by eye if needed: `ScatterCountScale` (how many), `ScatterClusterBias`
+  / `ScatterWallBias` (how piled / how wall-hugging), per-mesh `Weight` in `ScatterSet`.
+
+### ▶ RESUME HERE — Walt's PIE-verify (the render gate; can't be done headless)
+Graph rebuilt + C++ rebuilt (editor-closed), gate green. The kit meshes + PCG generation
+**can't be rendered/verified headless**, so this is a PIE eyeball:
+1. PIE `L_Elsewhere` directly (preview build, C++ scatter path — `bUsePCGScatter` defaults
+   true on that builder; set it **false** to eyeball the richer C++ scatter first). **Expect a
+   pile of SciFi BOXES** (crates / containers / barrels, mixed sizes + colours, bunched into
+   wall-hugging clumps) with a **clear central walk** to the curio; the floor reads as the real
+   `_K` floor (accept the harmless save-kit-material prompt / "Don't Save"). Re-enter with a
+   different seed → a **visibly different** pile (mix/density/clusters). (Supersedes the earlier
+   `_K`-machinery and lamp-base scatter expectations.) Nudge by eye: `ScatterCountScale` (count),
+   `ScatterClusterBias`/`ScatterWallBias` (how piled / wall-hugging), per-mesh `Weight`.
+1b. PIE `L_Elsewhere` (the builder has `bUsePCGScatter=true`). **Expect ~4 props
+   (`SM_Bulkhead_*`/`SM_Pipes_B_*`) appear on the floor one tick after load** (deferred Generate),
+   random yaw, near the room centre.
+2. **Determinism:** re-enter / re-PIE → **identical layout** (Create Points Grid is fixed;
+   the component Seed = the run's LayoutSeed drives the Transform jitter). Same-seed → same.
+3. **No more invalid-bounds abort:** the log should NOT show
+   `[RegisterOrUpdatePCGComponent] Component has invalid bounds`. If props are still missing,
+   confirm the deferred `Generate` fired (`LogElsewhereBuilder: ... deferred PCG Generate
+   fired`, Verbose) and check `LogPCG` for a new reason.
+4. **Tune knobs** (rebuild with `py Tools/Scripts/build_pcg_scatter_graph.py`, editor closed):
+   count = grid `cell_size` (smaller = more) / `grid_extents`; scatter spread = Transform
+   `offset_*`; nicer meshes = the Spawner's `MESHES` list.
+5. **Instant revert if needed:** set `bUsePCGScatter=false` on the builder → C++ props return.
+6. Optionally make `ElsewhereSmokeTest` assert the PCG path deterministically (it currently
+   keeps the C++ path as the determinism handle, per the spike note).
+7. Then migrate further (walls/ceiling via PCG) only after the scatter slice is proven.
+   Later refinement: drive grid extents from the place-type `RoomExtent` (override the PCG
+   param from C++) so the scatter fills each room instead of a fixed 6 m half-extent.
+
+Everything else in the loop — plan → curio → return → discard, the save rule, the Cabinet —
+is untouched; the seam keeps the swap isolated and additive.
+
+## Regression fix — vertical sealed walls + dark-void doorway (PIE-verified via ue_bridge)
+Three branch regressions vs main, all traced to ONE real bug + its knock-ons (commit after
+the PCG work):
+- **Walls mis-oriented (root cause).** The kit wall mesh `SM_Wall_A_Mid_4x4m` has its
+  face-normal along local +X / width along local +Y (bounds `X∈[-20,5]`, `Y=[-200,200]`,
+  `Z=[0,400]`), but `AssembleGeometry` placed walls with the fallback-cube convention (width
+  along X) → every kit wall came out **rotated 90°**: thin fins poking into the room with
+  ~375cm gaps. Fixed: panel convention (face +X / span Y) → **E/W edges yaw 0, N/S edges yaw
+  90**, and the fallback cube's `WallFit` reshaped to match. See [[kit-mesh-axis-convention]].
+- **"Daytime blue sky" = the wall gaps** leaking the engine default backdrop (the level has
+  no sun/SkyAtmosphere by design). Sealing the walls stops the flooding; the open west
+  doorway is now backed by a tall unlit **void backdrop slab** (added to the fallback-cube
+  ISM with NO RNG draw, far west of the return door) so the portal reads dark.
+- **"Collect/return does nothing" = the broken room**, not code. Curio/ReturnDoor/Subsystem
+  are byte-identical to main; driving `ReturnDoor.Interact` live discarded the plan and
+  traveled to `L_Office_v02` cleanly. The mis-oriented wall fins were blocking the interact
+  trace / making the door unreachable; fixing the walls restores a navigable hall.
+
+Verified live (Simulate + bridge): ISM instance transforms (sealed perimeter), screenshots
+(interior dark, doorway dark), return travel, 4 PCG lamp props. **Still needs Walt's
+hands-on PIE:** the interactive playthrough with real input — V-reveal at the kitchen Sauce
+Door → step through → aim+E to collect the orb → E the return door (the bridge can only
+Simulate, no player pawn, so keyboard interaction wasn't exercised). All constituent pieces
+are verified.
 
 ## Running the gate (editor CLOSED)
 

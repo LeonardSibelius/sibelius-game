@@ -217,6 +217,77 @@ int32 UElsewhereSmokeTestCommandlet::Main(const FString& Params)
 			R.Check(B1->GetSpawnedCurio() && B1->GetSpawnedCurio()->CurioId == Plan.CurioId,
 				TEXT("spawned curio matches the plan's curio id"));
 			R.Check(B1->GetSpawnedReturnDoor() != nullptr, TEXT("a return door is spawned (always a way home)"));
+
+			// --- SCATTER GATE (SIB-47 richer scatter): exclusion, open path, transform-level
+			// determinism, per-seed variation. Headless + transform-only (never inspects "the
+			// look"). Kit absent -> props are the engine Cylinder; the builder tracks the scatter
+			// ISMs explicitly, and surfaces its exact carve numbers so we assert against THOSE. ---
+			TArray<FTransform> X1, X2;
+			const int32 N1 = B1->GetScatterInstanceTransforms(X1);
+			const int32 N2 = B2->GetScatterInstanceTransforms(X2);
+			R.Check(N1 > 0, FString::Printf(TEXT("scatter ISM readable (%d instances)"), N1));
+
+			FVector CurioC, DoorC, SpawnC; float CurioR = 0, DoorR = 0, SpawnR = 0, CorrHalf = 0, FloorZ = 0;
+			const bool bZones = B1->GetScatterExclusionZones(CurioC, CurioR, DoorC, DoorR, SpawnC, SpawnR, CorrHalf, FloorZ);
+			R.Check(bZones, TEXT("builder exposes its scatter exclusion zones"));
+
+			// (a) EXCLUSION: no instanced prop inside the curio / doorway / spawn carve discs.
+			bool bExcl = true;
+			for (const FTransform& T : X1)
+			{
+				const FVector L = T.GetLocation();
+				if (FVector::Dist2D(L, CurioC) < CurioR || FVector::Dist2D(L, DoorC) < DoorR ||
+					FVector::Dist2D(L, SpawnC) < SpawnR) { bExcl = false; break; }
+			}
+			R.Check(bExcl, TEXT("no scattered prop inside curio / doorway / spawn carve"));
+
+			// (b) OPEN PATH: no instance in the central corridor band on the doorway->curio approach.
+			bool bPath = true;
+			for (const FTransform& T : X1)
+			{
+				const FVector L = T.GetLocation();
+				if (CorrHalf > 0.f && FMath::Abs(L.Y - DoorC.Y) < CorrHalf && L.X < CurioC.X) { bPath = false; break; }
+			}
+			R.Check(bPath, TEXT("central corridor is clear (open path doorway -> curio)"));
+
+			// (c) DETERMINISM (stronger than count): same LayoutSeed -> identical transforms.
+			bool bSame = (N1 == N2);
+			if (bSame)
+			{
+				for (int32 i = 0; i < N1; ++i)
+				{
+					if (!X1[i].GetLocation().Equals(X2[i].GetLocation(), 0.01f) ||
+						!X1[i].GetRotation().Equals(X2[i].GetRotation(), 0.0001f) ||
+						!X1[i].GetScale3D().Equals(X2[i].GetScale3D(), 0.0001f)) { bSame = false; break; }
+				}
+			}
+			R.Check(bSame, TEXT("same LayoutSeed -> identical scatter transforms (not just count)"));
+
+			// (d) PER-SEED VARIATION (anti-flake): over 3 disjoint seed pairs, REQUIRE THE MAJORITY
+			//     to differ (count or sorted-position multiset). Never "all" (a rare collision can't flake it).
+			auto ScatterSig = [&](int32 LayoutSeed) -> TArray<FVector>
+			{
+				FElsewherePlan Pn = Plan; Pn.LayoutSeed = LayoutSeed;
+				AElsewhereBuilder* B = World->SpawnActor<AElsewhereBuilder>(AElsewhereBuilder::StaticClass(), SpawnParams);
+				TArray<FTransform> Xs; TArray<FVector> Pts;
+				if (B) { B->BuildFromPlan(Pn, Places, Curios); B->GetScatterInstanceTransforms(Xs); }
+				for (const FTransform& T : Xs) { Pts.Add(T.GetLocation()); }
+				Pts.Sort([](const FVector& LA, const FVector& LB) { return LA.X != LB.X ? LA.X < LB.X : (LA.Y != LB.Y ? LA.Y < LB.Y : LA.Z < LB.Z); });
+				return Pts;
+			};
+			const int32 VarSeeds[] = { 101, 202, 303, 404, 505, 606 };
+			const int32 NumPairs = UE_ARRAY_COUNT(VarSeeds) / 2;
+			int32 Differing = 0;
+			for (int32 k = 0; k < NumPairs; ++k)
+			{
+				const TArray<FVector> SA = ScatterSig(VarSeeds[2 * k]);
+				const TArray<FVector> SB = ScatterSig(VarSeeds[2 * k + 1]);
+				bool bDiff = (SA.Num() != SB.Num());
+				if (!bDiff) { for (int32 i = 0; i < SA.Num(); ++i) { if (!SA[i].Equals(SB[i], 0.01f)) { bDiff = true; break; } } }
+				if (bDiff) { ++Differing; }
+			}
+			R.Check(Differing >= (NumPairs + 1) / 2,
+				FString::Printf(TEXT("per-seed variation: %d/%d seed-pairs differ"), Differing, NumPairs));
 		}
 
 		// The dressed place-type specifically (Server Cathedral / Crebotoly palette):

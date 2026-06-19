@@ -4,8 +4,11 @@
 #include "ElsewhereSubsystem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogReturnDoor, Log, All);
 
@@ -30,6 +33,48 @@ AReturnDoor::AReturnDoor()
 	{
 		DoorMesh->SetStaticMesh(Cube);
 		DoorMesh->SetRelativeScale3D(FVector(0.2f, 1.2f, 2.2f));
+	}
+
+	// The way-home sign plaque — child of DoorMesh so it rides the door's facing. No mesh until
+	// OnConstruction wires it (only when SignTexture loaded).
+	SignMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SignMesh"));
+	SignMesh->SetupAttachment(DoorMesh);
+	SignMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SignMesh->SetCastShadow(false);
+
+	// "THE WAY HOME" art (Walt's, committed under /Game/Signs). Loaded by path because this door is
+	// runtime-spawned; absent on a fresh clone before import -> SignTexture null -> sign skipped.
+	SignTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Game/Signs/T_Sign_TheWayHome.T_Sign_TheWayHome"));
+}
+
+void AReturnDoor::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	if (!SignTexture || !SignMesh)
+	{
+		return;
+	}
+
+	UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
+	UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/SlotFactory/Materials/M_fate_base.M_fate_base"));
+	if (!Plane || !Base)
+	{
+		UE_LOG(LogReturnDoor, Error, TEXT("[%s] sign needs Plane + M_fate_base (run build_fate_altar.py first)."), *GetName());
+		return;
+	}
+
+	SignMesh->SetStaticMesh(Plane);
+	SignMesh->SetRelativeLocation(SignRelativeLocation);
+	SignMesh->SetRelativeRotation(SignRelativeRotation);
+	// Engine plane is 100x100 cm; art is 1.6:1. SignHeight 0 = width/2; else stretch vertically.
+	const float SignH = (SignHeight > 0.0f) ? SignHeight : SignWidth * 0.5f;
+	SignMesh->SetRelativeScale3D(FVector(SignWidth / 100.0f, SignH / 100.0f, 1.0f));
+
+	if (UMaterialInstanceDynamic* MID = SignMesh->CreateDynamicMaterialInstance(0, Base))
+	{
+		MID->SetTextureParameterValue(TEXT("Sprite"), SignTexture);
+		MID->SetScalarParameterValue(TEXT("Glow"), 3.0f);   // legible, not blinding
 	}
 }
 
