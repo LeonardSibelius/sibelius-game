@@ -69,6 +69,17 @@ Content/ModularHousePack/
 Content/ModularSciFiEnv_*/
 Content/Crebotoly*/
 
+# --- SciFi prop kits (SIB-47 scatter): boxes / crates / containers / barrels ---
+#     "SciFi Boxes A" and "SciFi Boxes B" packs, purchased from Fab. Same policy as
+#     the Crebotoly kits: referenced by /Game/... path only, bytes stay local (Fab
+#     install). Note the two different on-disk folder names the packs ship with.
+Content/SciFiBoxes_A/
+Content/SciFiBoxes_B/
+Content/SciFi_Box_A/
+Content/SciFi_Box_B/
+Content/SciFiBox_*/
+Content/SciFi_Boxes_*/
+
 # --- Generic paid-asset zones (policy's predefined partition) ---
 Content/Paid/
 Content/Fab/
