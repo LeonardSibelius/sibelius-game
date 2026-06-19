@@ -3,6 +3,13 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.4.2 — Return-door polish
+
+- The Elsewhere's **return door no longer reads sideways** — its facing is a tunable
+  `ReturnDoorRotation` on the builder, finalized by eye in PIE.
+- Added the **"THE WAY HOME"** sign over the return door, matching the kitchen Sauce
+  Door's "Many Worlds" plaque.
+
 ## v0.4.0 — Many Worlds
 
 - **Many Worlds** — a hidden Sauce Door opens onto a procedurally-generated Elsewhere
