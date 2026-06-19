@@ -74,6 +74,13 @@ public:
 	// Optional nudge added to the computed west-doorway position of the return door.
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FVector ReturnDoorOffset = FVector(0.f, 0.f, 0.f);
 
+	// Facing of the spawned return door. It fills the gap in the WEST wall, whose panels sit at
+	// yaw 0 (face +X, span Y) — so yaw 0 aligns the door with that wall and the doorway gap. The
+	// old hardcoded yaw 90 turned it sideways (thin axis across the gap, frame poking into the
+	// hall). Orientation can't be judged headless (Simulate has no player view — the wall-axis
+	// lesson), so this is Walt's to finalize by eye in PIE. FRotator(Pitch, Yaw, Roll).
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder") FRotator ReturnDoorRotation = FRotator(0.f, 0.f, 0.f);
+
 	// Dev/preview: when no Elsewhere is staged (opening L_Elsewhere directly instead of
 	// arriving via the Sauce Door), build this place-type anyway so the map renders a
 	// real room on its own — for dressing review. A real arrival always has a staged

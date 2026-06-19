@@ -424,10 +424,11 @@ int32 AElsewhereBuilder::BuildFromPlan(
 	}
 
 	// The way home (§3 step 6) — seated IN the west wall doorway gap (X = -RoomExtent.X,
-	// Y = 0 where AssembleGeometry leaves the gap), facing along the wall (yaw 90). This
-	// is BEHIND the player's spawn, so it never sits between the camera and the curio.
+	// Y = 0 where AssembleGeometry leaves the gap). Facing is the tunable ReturnDoorRotation
+	// (default yaw 0 = aligned with the west wall panels; the old hardcoded yaw 90 read
+	// sideways). It sits BEHIND the player's spawn, so it never blocks the view of the curio.
 	const FVector ReturnLoc = Origin + FVector(-Place->RoomExtent.X + 50.f, 0.f, 0.f) + ReturnDoorOffset;
-	const FTransform ReturnXf(FRotator(0.f, 90.f, 0.f), ReturnLoc);
+	const FTransform ReturnXf(ReturnDoorRotation, ReturnLoc);
 	SpawnedReturnDoor = World->SpawnActor<AReturnDoor>(AReturnDoor::StaticClass(), ReturnXf, SpawnParams);
 
 	// Light the way home: warm amber beacon just inside the doorway, raised to head height, so
