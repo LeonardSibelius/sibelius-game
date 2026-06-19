@@ -170,16 +170,45 @@ props). The PCG graph rebuilt clean (`nodes=3 edges=3 meshes=10`) with the curat
 **NOT verified (Walt's PIE gate, honestly):** that it LOOKS good / reads "different per seed" —
 the kit meshes only render with the kit installed + PIE; bridge/run-pie is Simulate-only.
 
+### Scatter pass 2 — SciFi BOXES debris pile (replaces the _K machinery scatter)
+The _K *environment* kit has no small props, so scattering it read wrong. Two dedicated **prop
+kits** were added — **SciFi Boxes A** (`/Game/SciFiBoxes_A`) and **SciFi Boxes B**
+(`/Game/SciFi_Box_B`) — crates / containers / barrels. The SCATTER layer now scatters **only**
+those box meshes; the room shell (floor, walls, ceiling, arch-ribs, pipes) is **unchanged**.
+- **Gitignored** both packs (note the two different on-disk folder names: `SciFiBoxes_A` vs
+  `SciFi_Box_B`) BEFORE any commit; referenced by `/Game/...` path only, zero kit bytes committed
+  (same policy as the Crebotoly `_K` kit). `inspect`/dump tools are read-only.
+- **Bounds-curated** (`Tools/Scripts/dump_box_bounds.py`, 59 meshes): the builder `ScatterSet`
+  default (the look-driver, since the DT has no ScatterMeshes column) is a **17-mesh box palette**
+  — a size mix from 0.3 m canisters → 2.4 m hero containers, a few `v0/v3/v4` colour recolours for
+  variety, and **two toppled** pieces (`bUpright=false` + small lean). Skipped: `Box1_Cover` (flat
+  lid), `Box1_Locker` (thin wall panel, pivot below base), `SciFiBox_B_B/_H` (near-dup / 4.3 m huge).
+- **Debris-PILE shaping** (new builder tunables, Details panel): `ScatterCountScale` (default **3.0**
+  — a DT-independent global count multiplier, because the place's `PropCount` 3–6 is tuned sparse;
+  ×3 → ~9–18 boxes), `ScatterWallBias` (default **0.5** — lerps cluster centres toward the
+  perimeter so debris gathers at walls/corners, no extra RNG draw), `ScatterClusterBias` bumped to
+  **0.78** (stronger grouping), subset **4–8**. Exclusion zones + open central corridor + per-seed
+  subset/density/clusters + determinism + kit-absent parity are all UNCHANGED (still the gate's
+  handle; the new knobs are deterministic constants, parity-safe).
+- **`build_pcg_scatter_graph.py` MESH_WEIGHTS** swapped to the same 17-box set (lockstep). The PCG
+  path still has NO exclusion/corridor/clustering (C++-only) and stays behind `bUsePCGScatter`
+  (default OFF) — view the rich pile on the **C++ path** (`bUsePCGScatter=false`).
+- **NOT verified (Walt's PIE gate):** the "nice pile of debris" LOOK and per-seed feel — the box
+  meshes only render with the kits installed + PIE. Headless can only prove build/gate/counts/
+  determinism. Tunables to nudge by eye if needed: `ScatterCountScale` (how many), `ScatterClusterBias`
+  / `ScatterWallBias` (how piled / how wall-hugging), per-mesh `Weight` in `ScatterSet`.
+
 ### ▶ RESUME HERE — Walt's PIE-verify (the render gate; can't be done headless)
 Graph rebuilt + C++ rebuilt (editor-closed), gate green. The kit meshes + PCG generation
 **can't be rendered/verified headless**, so this is a PIE eyeball:
 1. PIE `L_Elsewhere` directly (preview build, C++ scatter path — `bUsePCGScatter` defaults
-   true on that builder; set it **false** to eyeball the richer C++ scatter first). **Expect
-   the curated `_K` machinery/posts** scattered in the side bays with a **clear central walk**
-   to the curio; the floor reads as the real `_K` floor (accept the harmless save-kit-material
-   prompt / "Don't Save"). Re-enter with a different seed → a **visibly different** mix/density.
-   (Old PCG resume notes below are superseded by the curated set; the lamp-base expectation
-   no longer applies.)
+   true on that builder; set it **false** to eyeball the richer C++ scatter first). **Expect a
+   pile of SciFi BOXES** (crates / containers / barrels, mixed sizes + colours, bunched into
+   wall-hugging clumps) with a **clear central walk** to the curio; the floor reads as the real
+   `_K` floor (accept the harmless save-kit-material prompt / "Don't Save"). Re-enter with a
+   different seed → a **visibly different** pile (mix/density/clusters). (Supersedes the earlier
+   `_K`-machinery and lamp-base scatter expectations.) Nudge by eye: `ScatterCountScale` (count),
+   `ScatterClusterBias`/`ScatterWallBias` (how piled / wall-hugging), per-mesh `Weight`.
 1b. PIE `L_Elsewhere` (the builder has `bUsePCGScatter=true`). **Expect ~4 props
    (`SM_Bulkhead_*`/`SM_Pipes_B_*`) appear on the floor one tick after load** (deferred Generate),
    random yaw, near the room centre.

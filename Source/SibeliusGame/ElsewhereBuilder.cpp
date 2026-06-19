@@ -60,38 +60,51 @@ AElsewhereBuilder::AElsewhereBuilder()
 	FloorMaterialOverride = TSoftObjectPtr<UMaterialInterface>(
 		FSoftObjectPath(TEXT("/Game/ModularSciFiEnv_K/Materials/Instances/MI_Floor_A_Base.MI_Floor_A_Base")));
 
-	// --- The curated _K detail scatter palette (SIB-47 richer scatter). Bounds-verified
-	// FLOOR-STANDING, self-contained, base-on-floor objects (the lamp "_Base" meshes are flat
-	// ~5cm strip-light plates, excluded). Two visual families — machinery cabinets/junction-boxes
-	// and posts/console greebles — so a per-seed subset reads visibly different each visit. The
-	// builder default so it drives the look whether the DataTable or the code-default registry is
-	// loaded (a place can still override per-place via FPlaceTypeDef::ScatterMeshes). KEPT IN
-	// LOCKSTEP with build_pcg_scatter_graph.py's MESH_WEIGHTS. KitMeshScale=1, so ScaleMin/Max is
-	// the per-instance band; all upright (rest-base-on-floor handles the few non-base pivots). ---
-	auto MakeScatter = [](const TCHAR* Path, int32 Weight, float SMin, float SMax)
+	// --- The SciFi BOXES A & B debris palette (SIB-47 scatter pass: a believable pile of sci-fi
+	// crates/containers/barrels, replacing the _K machinery set — the _K kit has no small props).
+	// Bounds-verified (dump_box_bounds.py) FLOOR-STANDING, base-pivot objects: a size mix from
+	// 0.3m canisters → 2.4m hero containers, with a few colour variants (the v0/v3/v4 recolours)
+	// for palette variety and two toppled pieces (bUpright=false + small lean) for debris realism.
+	// Skipped: Box1_Cover (flat lid), Box1_Locker (thin wall panel), SciFiBox_B_B/_H (dup / huge).
+	// Builder default so it drives the look whether the DataTable or the code-default registry is
+	// loaded (the DT has no ScatterMeshes column). KEPT IN LOCKSTEP with build_pcg_scatter_graph.py.
+	// KitMeshScale=1 (boxes are authored at real cm), so ScaleMin/Max is the per-instance band;
+	// rest-base-on-floor seats each by its bbox Min.Z (handles the few non-base pivots). ---
+	const TCHAR* A = TEXT("/Game/SciFiBoxes_A/Meshes");      // pack A folder (note: "Boxes")
+	const TCHAR* B = TEXT("/Game/SciFi_Box_B/Meshes");       // pack B folder (note: "Box", flat)
+	auto MakeScatter = [](const FString& Path, int32 Weight, float SMin, float SMax,
+		bool bUpright = true, float Lean = 0.f)
 	{
 		FScatterMeshDef D;
 		D.Mesh = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(Path));
 		D.Weight = Weight;
-		D.bUpright = true;
+		D.bUpright = bUpright;
 		D.ScaleMin = SMin;
 		D.ScaleMax = SMax;
-		D.LeanJitterDeg = 0.f;
+		D.LeanJitterDeg = Lean;
 		return D;
 	};
 	ScatterSet = {
-		// Machinery cabinets / columns / junction boxes (the bulk of the clutter).
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Mid_1m.SM_Bulkhead_A_End_Mid_1m"), 4, 0.90f, 1.15f),
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Mid_2m.SM_Bulkhead_A_End_Mid_2m"), 3, 0.85f, 1.10f),
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_B_1m_End.SM_Pipes_B_1m_End"),                   3, 0.90f, 1.15f),
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_B_Handler_A.SM_Pipes_B_Handler_A"),             2, 0.90f, 1.15f),
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Top.SM_Bulkhead_A_End_Top"),       1, 0.80f, 1.00f), // tall hero, rare
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Low.SM_Bulkhead_A_End_Low"),       1, 0.80f, 1.00f), // wide hero, rare
-		// Posts / console greebles (vertical accents, lighter).
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_Pillar_A.SM_Railings_A_Pillar_A"),      3, 0.90f, 1.20f),
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_Pillar_A_Long.SM_Railings_A_Pillar_A_Long"), 2, 0.90f, 1.15f),
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_1x1m_B.SM_Wall_A_Mid_1x1m_B"),             2, 0.90f, 1.10f),
-		MakeScatter(TEXT("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_1x1m_B_Handle.SM_Wall_A_Mid_1x1m_B_Handle"), 2, 0.90f, 1.30f),
+		// Small / medium crates — the bulk of the pile (high weight). A few colour recolours mixed in.
+		MakeScatter(FString::Printf(TEXT("%s/Box3/Box3_v0.Box3_v0"), A),                   5, 0.85f, 1.20f),          // 0.9m cube crate
+		MakeScatter(FString::Printf(TEXT("%s/Box3/Box3_v3.Box3_v3"), A),                   3, 0.85f, 1.15f, false, 7.f), // colour variant, lightly toppled
+		MakeScatter(FString::Printf(TEXT("%s/Box2/Box2_v0.Box2_v0"), A),                   4, 0.85f, 1.20f),          // 0.8x0.8x1.3 upright box
+		MakeScatter(FString::Printf(TEXT("%s/Box2/Box2_v4.Box2_v4"), A),                   3, 0.85f, 1.15f),          // colour variant
+		MakeScatter(FString::Printf(TEXT("%s/Box1/Box1_Closed_v0.Box1_Closed_v0"), A),     3, 0.80f, 1.05f),          // 1.4x2.3x1.0 closed crate
+		MakeScatter(FString::Printf(TEXT("%s/Box1/Box1_Closed_v3.Box1_Closed_v3"), A),     2, 0.80f, 1.05f),          // colour variant
+		MakeScatter(FString::Printf(TEXT("%s/Box1/Box1_Container.Box1_Container"), A),     4, 0.85f, 1.30f, false, 12.f), // 0.3m canister, knocked over
+		MakeScatter(FString::Printf(TEXT("%s/SM_SciFiBox_B_C.SM_SciFiBox_B_C"), B),        3, 0.85f, 1.10f),          // 1x2x1.1 crate
+		MakeScatter(FString::Printf(TEXT("%s/SM_SciFiBox_B_Barrel_A.SM_SciFiBox_B_Barrel_A"), B), 3, 0.85f, 1.15f),   // barrel
+		// Mid containers (medium weight).
+		MakeScatter(FString::Printf(TEXT("%s/SM_SciFiBox_B_F.SM_SciFiBox_B_F"), B),        2, 0.80f, 1.05f),          // 1.6m cube
+		MakeScatter(FString::Printf(TEXT("%s/SM_SciFiBox_B_G.SM_SciFiBox_B_G"), B),        2, 0.80f, 1.05f),          // 1.6m cube
+		MakeScatter(FString::Printf(TEXT("%s/Box1/Box1_Base_v0.Box1_Base_v0"), A),         2, 0.85f, 1.10f),          // low pallet/skid
+		MakeScatter(FString::Printf(TEXT("%s/SM_SciFiBox_B_E.SM_SciFiBox_B_E"), B),        2, 0.80f, 1.00f),          // 2.26x2.26x1.2 squat
+		// Large hero anchors (low weight — the pile centrepieces).
+		MakeScatter(FString::Printf(TEXT("%s/SM_SciFiBox_B_A.SM_SciFiBox_B_A"), B),        1, 0.85f, 1.00f),          // 2m cube container
+		MakeScatter(FString::Printf(TEXT("%s/SM_SciFiBox_B_D.SM_SciFiBox_B_D"), B),        1, 0.80f, 1.00f),          // 1.5x1.3x2.2 tall container
+		MakeScatter(FString::Printf(TEXT("%s/SM_SciFiBox_I.SM_SciFiBox_I"), B),            1, 0.80f, 0.95f),          // 2.2x2.4x2 big container
+		MakeScatter(FString::Printf(TEXT("%s/Box1/Box1_Open_Full_v0.Box1_Open_Full_v0"), A), 1, 0.80f, 1.00f),        // 2.25m open full crate
 	};
 }
 
@@ -825,21 +838,29 @@ int32 AElsewhereBuilder::PlaceScatter(const FPlaceTypeDef& Place, const FVector&
 	}
 	int32 ActiveTotal = 0;
 	for (int32 W : ActiveW) { ActiveTotal += W; }
-	// 1.3 base count (1 draw) -> per-seed density.
+	// 1.3 base count (1 draw) -> per-seed density. The place's PropCount is tuned sparse (a few
+	// hero props); ScatterCountScale (builder-global, DT-independent) scales it up to a debris-PILE
+	// count without editing the DataTable. The per-seed Density wobble still rides on top.
 	const int32 BaseCount = Rng.RandRange(Place.PropCountMin, Place.PropCountMax);
 	const float Density   = FMath::Max(0.1f, Place.ScatterDensity);
-	const int32 TargetCount = FMath::Clamp(FMath::RoundToInt(BaseCount * Density), 0, 64);
+	const float CountScale = FMath::Max(0.f, ScatterCountScale);
+	const int32 TargetCount = FMath::Clamp(FMath::RoundToInt(BaseCount * Density * CountScale), 0, 64);
 
 	// --- Phase 2: cluster centres (the lived-in bunching), in the interior (2 draws each). ---
 	const float InnerX = FMath::Max(Tile, GridHalfX - Tile);
 	const float InnerY = FMath::Max(Tile, GridHalfY - Tile);
 	const int32 NumClusters = FMath::Clamp(1 + TargetCount / 4, 1, 5);
+	const float WallBias = FMath::Clamp(ScatterWallBias, 0.f, 1.f);
 	TArray<FVector2D> Clusters;
 	Clusters.Reserve(NumClusters);
 	for (int32 c = 0; c < NumClusters; ++c)
 	{
-		const float CX = Rng.FRandRange(-InnerX, InnerX);
-		const float CY = Rng.FRandRange(-InnerY, InnerY);
+		// Two draws each (parity-safe). Then lerp the centre toward the nearest wall/corner so the
+		// pile gathers at the perimeter where debris settles — pure math on the draws, no extra RNG.
+		float CX = Rng.FRandRange(-InnerX, InnerX);
+		float CY = Rng.FRandRange(-InnerY, InnerY);
+		CX = FMath::Lerp(CX, FMath::Sign(CX) * InnerX, WallBias);
+		CY = FMath::Lerp(CY, FMath::Sign(CY) * InnerY, WallBias);
 		Clusters.Add(FVector2D(CX, CY));
 	}
 

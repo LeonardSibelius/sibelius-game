@@ -122,21 +122,31 @@ public:
 	// --- SIB-47 richer per-seed C++ scatter (the verifiable gate path; the PCG path mirrors it
 	// behind bUsePCGScatter). The per-place CONTENT (density + corridor) lives on FPlaceTypeDef;
 	// these are builder-global SHAPING knobs Walt nudges by eye. ---
-	// The default detail palette (the curated _K floor-standing machinery/post set, populated in
-	// the ctor; in lockstep with build_pcg_scatter_graph.py). Used for any place that doesn't
-	// author its own FPlaceTypeDef::ScatterMeshes — which is every place today, so it drives the
-	// look regardless of whether the DataTable or the code default is loaded. Tunable by eye.
+	// The default scatter palette — the curated SciFi BOXES A & B crate/container/barrel set
+	// (bounds-verified, populated in the ctor; in lockstep with build_pcg_scatter_graph.py). Used
+	// for any place that doesn't author its own FPlaceTypeDef::ScatterMeshes — which is every place
+	// today (the DataTable has no ScatterMeshes column), so it drives the look regardless of whether
+	// the DataTable or the code default is loaded. Per-mesh Weight/Scale/Lean are the tunables.
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter") TArray<FScatterMeshDef> ScatterSet;
 	// Clear-zone radii (cm), so props never block the curio, the doorway/return, or the spawn bay.
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter") float CurioExclusionRadius = 320.f;
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter") float DoorwayExclusionRadius = 450.f;
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter") float SpawnExclusionRadius = 380.f;
-	// 0 = props spread evenly; 1 = props bunch into a few lived-in clumps (noise/cluster feel).
-	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "0", ClampMax = "1")) float ScatterClusterBias = 0.6f;
+	// 0 = props spread evenly; 1 = props bunch into a few lived-in clumps. Boxes read as a debris
+	// PILE, so this defaults high (strong grouping). The cluster STRENGTH knob.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "0", ClampMax = "1")) float ScatterClusterBias = 0.78f;
+	// 0 = clusters sit anywhere in the interior; 1 = clusters hug the perimeter walls/corners (where
+	// debris naturally gathers). Lerps each cluster centre toward the nearest wall. No extra RNG draw.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "0", ClampMax = "1")) float ScatterWallBias = 0.5f;
+	// Global density multiplier for the per-seed target count (BaseCount × place ScatterDensity ×
+	// this). The place's PropCountMin/Max is tuned sparse (a few hero props); a debris pile wants
+	// MANY more boxes, so this scales it up WITHOUT editing the DataTable (the runtime source). The
+	// per-seed density wobble still rides on top. Result is clamped to 0..64.
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "0", ClampMax = "12")) float ScatterCountScale = 3.0f;
 	// Per-seed composition: each visit activates a random subset of the palette (size in this
 	// range), so the SET of objects — not just their positions — differs run to run.
-	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "1")) int32 ScatterSubsetMin = 3;
-	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "1")) int32 ScatterSubsetMax = 6;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "1")) int32 ScatterSubsetMin = 4;
+	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "1")) int32 ScatterSubsetMax = 8;
 	// Candidate positions pre-drawn per prop (the first clear one is placed); a prop drops only
 	// if all reject. A constant budget -> deterministic instanced count (the gate's handle).
 	UPROPERTY(EditAnywhere, Category = "Elsewhere Builder|Scatter", meta = (ClampMin = "1", ClampMax = "16")) int32 ScatterPlacementTries = 8;
