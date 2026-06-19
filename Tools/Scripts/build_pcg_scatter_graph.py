@@ -25,28 +25,35 @@
 import unreal
 
 GRAPH = "/Game/PCG/PCG_ElsewhereScatter"
-# Richer scatter: a weighted mix of bounds-verified FLOOR-STANDING _K detail props (machinery
-# cabinets / junction boxes / posts / console greebles). KEPT IN LOCKSTEP with the C++ curated
-# palette in ElsewhereGen.cpp (Cathedral.ScatterMeshes) so the PCG path and the C++ fallback read
-# as the same place. (The old set used the lamp "_Base" meshes — bounds proved those are flat
-# ~5cm strip-light plates, not props.) The big deliberate machinery (4m pipe runs, bulkhead
-# arch-ribs) is the C++ structural pass — SpawnStructuralProps — so this stays the detail layer.
+# Debris scatter: a weighted mix of bounds-verified SciFi BOXES A & B crates/containers/barrels
+# (dump_box_bounds.py). KEPT IN LOCKSTEP with the C++ builder ScatterSet in ElsewhereBuilder.cpp
+# so the PCG path and the C++ fallback read as the same pile. (The _K kit has no small props, so
+# the scatter layer now uses the dedicated box props instead of _K machinery.)
 #
-# NB: the PCG path does NOT do the C++ path's exclusion zones / open corridor / per-seed subset
-# (those are C++-only — see the C++ scatter + docs). It's behind bUsePCGScatter (default OFF; the
-# C++ path is what ships + what the gate verifies). Its LOOK is Walt's PIE gate, not headless.
-# (mesh_path, weight)
+# NB: the PCG path does NOT do the C++ path's exclusion zones / open corridor / per-seed subset /
+# clustering / wall-bias (those are C++-only — see the C++ scatter + docs), so it can spawn near
+# the curio. It's behind bUsePCGScatter (default OFF; the C++ path is what ships + what the gate
+# verifies). Its LOOK is Walt's PIE gate, not headless. (mesh_path, weight)
+_A = "/Game/SciFiBoxes_A/Meshes"
+_B = "/Game/SciFi_Box_B/Meshes"
 MESH_WEIGHTS = [
-    ("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Mid_1m.SM_Bulkhead_A_End_Mid_1m", 4),
-    ("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Mid_2m.SM_Bulkhead_A_End_Mid_2m", 3),
-    ("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_B_1m_End.SM_Pipes_B_1m_End", 3),
-    ("/Game/ModularSciFiEnv_K/Meshes/Pipes/SM_Pipes_B_Handler_A.SM_Pipes_B_Handler_A", 2),
-    ("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Top.SM_Bulkhead_A_End_Top", 1),
-    ("/Game/ModularSciFiEnv_K/Meshes/Bulkheads/SM_Bulkhead_A_End_Low.SM_Bulkhead_A_End_Low", 1),
-    ("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_Pillar_A.SM_Railings_A_Pillar_A", 3),
-    ("/Game/ModularSciFiEnv_K/Meshes/Railings/SM_Railings_A_Pillar_A_Long.SM_Railings_A_Pillar_A_Long", 2),
-    ("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_1x1m_B.SM_Wall_A_Mid_1x1m_B", 2),
-    ("/Game/ModularSciFiEnv_K/Meshes/Walls/SM_Wall_A_Mid_1x1m_B_Handle.SM_Wall_A_Mid_1x1m_B_Handle", 2),
+    ("%s/Box3/Box3_v0.Box3_v0" % _A, 5),
+    ("%s/Box3/Box3_v3.Box3_v3" % _A, 3),
+    ("%s/Box2/Box2_v0.Box2_v0" % _A, 4),
+    ("%s/Box2/Box2_v4.Box2_v4" % _A, 3),
+    ("%s/Box1/Box1_Closed_v0.Box1_Closed_v0" % _A, 3),
+    ("%s/Box1/Box1_Closed_v3.Box1_Closed_v3" % _A, 2),
+    ("%s/Box1/Box1_Container.Box1_Container" % _A, 4),
+    ("%s/SM_SciFiBox_B_C.SM_SciFiBox_B_C" % _B, 3),
+    ("%s/SM_SciFiBox_B_Barrel_A.SM_SciFiBox_B_Barrel_A" % _B, 3),
+    ("%s/SM_SciFiBox_B_F.SM_SciFiBox_B_F" % _B, 2),
+    ("%s/SM_SciFiBox_B_G.SM_SciFiBox_B_G" % _B, 2),
+    ("%s/Box1/Box1_Base_v0.Box1_Base_v0" % _A, 2),
+    ("%s/SM_SciFiBox_B_E.SM_SciFiBox_B_E" % _B, 2),
+    ("%s/SM_SciFiBox_B_A.SM_SciFiBox_B_A" % _B, 1),
+    ("%s/SM_SciFiBox_B_D.SM_SciFiBox_B_D" % _B, 1),
+    ("%s/SM_SciFiBox_I.SM_SciFiBox_I" % _B, 1),
+    ("%s/Box1/Box1_Open_Full_v0.Box1_Open_Full_v0" % _A, 1),
 ]
 MESHES = [m for m, _ in MESH_WEIGHTS]   # kept for the DONE tally
 def log(s): unreal.log("###PCG### " + str(s))
