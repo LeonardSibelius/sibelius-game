@@ -2,6 +2,7 @@
 
 #include "Curio.h"
 #include "CurioCollectionSubsystem.h"
+#include "ElsewhereSubsystem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Engine/StaticMesh.h"
@@ -39,6 +40,44 @@ ACurio::ACurio()
 	// path, graceful fallback if absent). Tinted per-curio in Configure.
 	GlowMaterial = TSoftObjectPtr<UMaterialInterface>(
 		FSoftObjectPath(TEXT("/Game/ModularSciFiEnv_K/Materials/Base/M_LampEmiss_MAT.M_LampEmiss_MAT")));
+}
+
+void ACurio::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Builder-configured curios (the cathedral) already have an identity — leave them be.
+	if (!CurioId.IsNone())
+	{
+		return;
+	}
+
+	UGameInstance* GI = UGameplayStatics::GetGameInstance(this);
+	UElsewhereSubsystem* Elsewhere = GI ? GI->GetSubsystem<UElsewhereSubsystem>() : nullptr;
+	if (!Elsewhere)
+	{
+		return;
+	}
+
+	// Prefer the staged plan (arrived via the Sauce Door); fall back to the editor-set default
+	// (PIE-ing the level directly) so a hand-placed forest curio is always collectable.
+	const FElsewherePlan& Plan = Elsewhere->GetStagedPlan();
+	const FName WantCurio = Plan.IsValid() ? Plan.CurioId : DefaultCurioId;
+	const FName WantPlace = Plan.IsValid() ? Plan.PlaceTypeId : DefaultPlaceTypeId;
+	if (WantCurio.IsNone())
+	{
+		return;
+	}
+
+	const FCurioDef* Def = Elsewhere->FindCurio(WantCurio);
+	const FPlaceTypeDef* Place = Elsewhere->FindPlace(WantPlace);
+	const FLinearColor GlowCol = Place ? Place->CurioGlowColor : FLinearColor(0.9f, 0.8f, 0.4f);
+
+	Configure(WantCurio, WantPlace, GlowCol);
+	if (Def && !Def->Mesh.IsNull())
+	{
+		SetDisplayMesh(Def->Mesh.LoadSynchronous());
+	}
 }
 
 void ACurio::Configure(FName InCurioId, FName InPlaceTypeId, FLinearColor GlowColor)

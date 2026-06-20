@@ -79,6 +79,13 @@ struct FPlaceTypeDef : public FTableRowBase
 	// whole game (§7), so defaults keep these even.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place", meta = (ClampMin = "1")) int32 Weight = 10;
 
+	// SIB Forest — place-type routing. EMPTY = the default builder level (L_Elsewhere): the Sauce
+	// Door travels there and AElsewhereBuilder assembles this row's room (the cathedral + the code
+	// place-types). SET (e.g. "L_Elsewhere_Forest") = a PRE-MADE level: the Sauce Door OpenLevels it
+	// directly; the level brings its own scenery (PCG) + a hand-placed curio that reads its identity
+	// from the staged plan. The seeded roll is identical either way — only the travel target differs.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place") FName TravelLevelName;
+
 	// --- Mood (§4 variation levers): lighting + color + fog. The builder reads these
 	// to set the room's atmosphere; the sim ignores them. ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Place|Mood") FLinearColor AmbientColor = FLinearColor(0.05f, 0.06f, 0.08f);

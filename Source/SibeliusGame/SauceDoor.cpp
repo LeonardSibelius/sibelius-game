@@ -58,9 +58,16 @@ void ASauceDoor::Interact_Implementation(AActor* /*Interactor*/)
 		return;
 	}
 
+	// Route by place-type: a PRE-MADE level (TravelLevelName set — e.g. the forest's
+	// L_Elsewhere_Forest) vs the builder level (empty -> ElsewhereLevelName = L_Elsewhere, where
+	// AElsewhereBuilder assembles the rolled room). The roll is seeded, so which world — and thus
+	// which level — is deterministic. The staged plan rides across the travel either way.
+	const FPlaceTypeDef* Place = Elsewhere->FindPlace(Plan.PlaceTypeId);
+	const FName Level = (Place && !Place->TravelLevelName.IsNone()) ? Place->TravelLevelName : ElsewhereLevelName;
+
 	UE_LOG(LogSauceDoor, Display, TEXT("[%s] stepping through to %s (place=%s, curio=%s, seed=%d)."),
-		*GetName(), *ElsewhereLevelName.ToString(), *Plan.PlaceTypeId.ToString(), *Plan.CurioId.ToString(), Plan.Seed);
-	UGameplayStatics::OpenLevel(this, ElsewhereLevelName);
+		*GetName(), *Level.ToString(), *Plan.PlaceTypeId.ToString(), *Plan.CurioId.ToString(), Plan.Seed);
+	UGameplayStatics::OpenLevel(this, Level);
 }
 
 FText ASauceDoor::GetInteractionPrompt_Implementation() const

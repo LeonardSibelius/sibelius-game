@@ -48,6 +48,17 @@ public:
 	virtual void Interact_Implementation(AActor* Interactor) override;
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
+protected:
+	// SIB Forest: when this curio is HAND-PLACED on a pre-made level (no builder Configure), it
+	// self-configures from the staged Elsewhere plan on BeginPlay — so a forest visit's curio still
+	// varies per seed, and Collect -> the Cabinet works identically to the builder-spawned cathedral
+	// curio. Falls back to DefaultCurioId when no plan is staged (e.g. PIE-ing the level directly).
+	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, Category = "Curio") FName DefaultCurioId;
+	UPROPERTY(EditAnywhere, Category = "Curio") FName DefaultPlaceTypeId;
+
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Curio") FName CurioId;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Curio") FName PlaceTypeId;
 
