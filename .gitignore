@@ -80,6 +80,16 @@ Content/SciFi_Box_B/
 Content/SciFiBox_*/
 Content/SciFi_Boxes_*/
 
+# --- PN (Project Nature) foliage packs (SIB Forest Elsewhere) ---
+#     Spruce forest, grass, open-world foliage, foliage collection — purchased from Fab,
+#     ~4.2 GB. Same policy as the Crebotoly/SciFi kits: referenced by /Game/... path only
+#     (the PCG forest graph + grass material point at them); bytes stay local (Fab install).
+Content/PN_interactiveSpruceForest/
+Content/PN_GrassLibrary/
+Content/PN_OpenWorldFoliage/
+Content/PN_FoliageCollection/
+Content/PN_*/
+
 # --- Generic paid-asset zones (policy's predefined partition) ---
 Content/Paid/
 Content/Fab/
