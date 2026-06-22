@@ -24,7 +24,6 @@ namespace ElsewhereSmokeTestNS
 	const FString ForestMapPackage = TEXT("/Game/Maps/L_Poplar_Forest");
 	const FString OfficeMapPackage = TEXT("/Game/L_Office_v02");
 	const FString HostMapPackage   = TEXT("/Game/Maps/L_AI_Temple");
-	const FName   ForestLevelName  = TEXT("L_Poplar_Forest");
 
 	struct FResult
 	{
@@ -82,20 +81,32 @@ int32 UElsewhereSmokeTestCommandlet::Main(const FString& Params)
 
 	// --- ASSERT 2: the Back-to-Office travel path exists. ------------------------------
 	// Headless can't press O, so prove the path structurally: the O-key destination (the
-	// office) loads, AND the wander-world allowlist that gates the O key includes the forest.
+	// office) loads, AND the "away from office" rule that gates the O key is correct — live
+	// in every non-office level, a no-op in the office, PIE-prefix-safe either way.
 	UE_LOG(LogElsewhereSmokeTest, Display, TEXT("--- ASSERT 2: the back-to-office travel path exists ---"));
 	{
 		UWorld* OfficeWorld = LoadMapWorld(OfficeMapPackage);
 		R.Check(OfficeWorld != nullptr, FString::Printf(TEXT("office level (O-key destination) exists and loads (%s)"), *OfficeMapPackage));
 
 		const ASibeliusGameCharacter* CharCDO = GetDefault<ASibeliusGameCharacter>();
-		R.Check(CharCDO && CharCDO->IsWanderWorldLevel(ForestLevelName),
-			FString::Printf(TEXT("wander-world allowlist contains %s (O key + hint live there)"), *ForestLevelName.ToString()));
+		R.Check(CharCDO != nullptr, TEXT("player character CDO resolves"));
+		if (CharCDO)
+		{
+			// O / the hint are live in EVERY away-from-office level (forest, temple, cathedral, ...).
+			R.Check(CharCDO->IsAwayFromOfficeLevelName(TEXT("L_Poplar_Forest")) &&
+				CharCDO->IsAwayFromOfficeLevelName(TEXT("L_AI_Temple")) &&
+				CharCDO->IsAwayFromOfficeLevelName(TEXT("L_Cathedral")),
+				TEXT("O is live in every away-from-office level (forest / temple / cathedral)"));
 
-		// Regression guard for the PIE-prefix bug: the SAME name carrying a PIE prefix must
-		// still match via the shared prefix-safe helper (the live O-key / HUD path).
-		R.Check(CharCDO && CharCDO->IsWanderWorldLevelName(TEXT("UEDPIE_0_L_Poplar_Forest")),
-			TEXT("PIE-prefixed level name resolves to the wander world (prefix-safe match)"));
+			// ...and a no-op in the office itself.
+			R.Check(!CharCDO->IsAwayFromOfficeLevelName(TEXT("L_Office_v02")),
+				TEXT("O no-ops in the office (L_Office_v02)"));
+
+			// PIE-prefix safe: a streaming prefix must not flip either verdict.
+			R.Check(!CharCDO->IsAwayFromOfficeLevelName(TEXT("UEDPIE_0_L_Office_v02")) &&
+				CharCDO->IsAwayFromOfficeLevelName(TEXT("UEDPIE_0_L_AI_Temple")),
+				TEXT("PIE-prefixed names resolve correctly (office = no-op, temple = away)"));
+		}
 	}
 
 	// --- ASSERT 3: ASauceDoor is a plain hidden-door travel door (curio flow bypassed). -

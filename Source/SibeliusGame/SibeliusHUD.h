@@ -40,8 +40,8 @@ private:
 	void DrawCrosshair();
 	void DrawDevOverlay();
 
-	// "[O] Back to Office" — shown only while the player is standing in a wander world
-	// (ASibeliusGameCharacter::IsInWanderWorld()). Lives in the main overlay so it works
+	// "[O] Back to Office" — shown in every away-from-office level
+	// (ASibeliusGameCharacter::IsAwayFromOffice()). Lives in the main overlay so it works
 	// under the normal GameMode, independent of AElsewhereGameMode/AElsewhereHUD.
-	void DrawWanderWorldHint();
+	void DrawBackToOfficeHint();
 };

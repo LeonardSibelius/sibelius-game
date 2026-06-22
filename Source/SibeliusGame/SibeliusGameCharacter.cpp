@@ -241,26 +241,26 @@ void ASibeliusGameCharacter::RequestQuit()
 	}
 }
 
-bool ASibeliusGameCharacter::IsWanderWorldLevelName(const FString& RawLevelName) const
+bool ASibeliusGameCharacter::IsAwayFromOfficeLevelName(const FString& RawLevelName) const
 {
-	// UWorld::GetMapName() KEEPS the PIE streaming prefix in PIE ("UEDPIE_0_L_Poplar_Forest");
-	// strip it so PIE and a packaged build ("L_Poplar_Forest") compare equal.
-	return IsWanderWorldLevel(FName(*UWorld::RemovePIEPrefix(RawLevelName)));
+	// UWorld::GetMapName() KEEPS the PIE streaming prefix in PIE ("UEDPIE_0_L_AI_Temple");
+	// strip it so PIE and a packaged build compare equal. Away == anything but the office.
+	return FName(*UWorld::RemovePIEPrefix(RawLevelName)) != OfficeLevelName;
 }
 
-bool ASibeliusGameCharacter::IsInWanderWorld() const
+bool ASibeliusGameCharacter::IsAwayFromOffice() const
 {
 	const UWorld* World = GetWorld();
-	return World && IsWanderWorldLevelName(World->GetMapName());
+	return World && IsAwayFromOfficeLevelName(World->GetMapName());
 }
 
 void ASibeliusGameCharacter::ReturnToOffice()
 {
-	// O only acts inside a registered wander world; in the office (or anywhere else) it's a
-	// no-op, so a single press is safe to leave bound everywhere.
-	if (IsInWanderWorld())
+	// O acts in EVERY away-from-office level (forest, temple, cathedral, future worlds); in
+	// the office it's a no-op, so a single press is safe to leave bound everywhere.
+	if (IsAwayFromOffice())
 	{
-		UTravelTransitionSubsystem::Travel(this, FName(TEXT("L_Office_v02")));
+		UTravelTransitionSubsystem::Travel(this, OfficeLevelName);
 	}
 }
 

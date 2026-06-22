@@ -13,7 +13,7 @@
 #include "HatchLock.h"
 #include "RefactorableComponent.h"
 #include "GenerateComponent.h"                // Ch6 budget readout
-#include "SibeliusGameCharacter.h"            // IsInWanderWorld() for the Back-to-Office hint
+#include "SibeliusGameCharacter.h"            // IsAwayFromOffice() for the Back-to-Office hint
 
 bool ASibeliusHUD::bOverlayVisible = true; // default ON
 
@@ -26,7 +26,7 @@ void ASibeliusHUD::DrawHUD()
 	Super::DrawHUD();
 
 	DrawCrosshair();
-	DrawWanderWorldHint();   // independent of the dev overlay toggle — a player affordance
+	DrawBackToOfficeHint();   // independent of the dev overlay toggle — a player affordance
 
 	if (bOverlayVisible)
 	{
@@ -34,7 +34,7 @@ void ASibeliusHUD::DrawHUD()
 	}
 }
 
-void ASibeliusHUD::DrawWanderWorldHint()
+void ASibeliusHUD::DrawBackToOfficeHint()
 {
 	if (!Canvas)
 	{
@@ -42,7 +42,7 @@ void ASibeliusHUD::DrawWanderWorldHint()
 	}
 
 	const ASibeliusGameCharacter* PlayerChar = Cast<ASibeliusGameCharacter>(GetOwningPawn());
-	if (!PlayerChar || !PlayerChar->IsInWanderWorld())
+	if (!PlayerChar || !PlayerChar->IsAwayFromOffice())
 	{
 		return;
 	}

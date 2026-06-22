@@ -110,11 +110,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category ="Input")
 	UInputAction* BuildAction;
 
-	/** "Wander world" levels (the Poplar forest etc.): the O key returns to the office and
-	    the "[O] Back to Office" HUD hint appear ONLY while standing in one of these. Editable
-	    so adding a future forest is just another entry — no level-name-prefix guesswork. */
-	UPROPERTY(EditAnywhere, Category = "Wander World")
-	TArray<FName> WanderWorldLevels = { TEXT("L_Poplar_Forest") };
+	/** The home office level. The O key + "[O] Back to Office" HUD hint are live in EVERY
+	    other level and no-op here — so any new away-from-office world is covered automatically,
+	    with no allowlist to maintain. Editable in case the office map is ever renamed. */
+	UPROPERTY(EditAnywhere, Category = "Travel")
+	FName OfficeLevelName = TEXT("L_Office_v02");
 
 public:
 	ASibeliusGameCharacter();
@@ -185,21 +185,16 @@ public:
 	/** Returns first person camera component **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
-	/** True if LevelName is in the wander-world allowlist (pure membership — no world; safe
-	    to call on the CDO, which the Elsewhere smoke gate does). */
-	bool IsWanderWorldLevel(FName LevelName) const { return WanderWorldLevels.Contains(LevelName); }
+	/** True if RawLevelName (possibly PIE-prefixed) is NOT the office — i.e. an away level
+	    where O / the hint are live. Strips any PIE prefix ("UEDPIE_0_") first, so PIE and
+	    packaged both resolve. Pure (no world) so it's safe on the CDO, which the smoke gate
+	    uses. Exported per-member: the class isn't SIBELIUSGAME_API, but the editor-module
+	    gate links this (non-inline) symbol across the DLL boundary. */
+	SIBELIUSGAME_API bool IsAwayFromOfficeLevelName(const FString& RawLevelName) const;
 
-	/** Prefix-safe membership: strips any PIE prefix ("UEDPIE_0_") from RawLevelName before
-	    matching, so PIE ("UEDPIE_0_L_Poplar_Forest") and packaged ("L_Poplar_Forest") both
-	    resolve. The single comparison used by the O key, the HUD hint, and the smoke gate.
-	    Exported per-member: the class isn't SIBELIUSGAME_API, but the editor-module gate
-	    links this (non-inline) symbol across the DLL boundary. */
-	SIBELIUSGAME_API bool IsWanderWorldLevelName(const FString& RawLevelName) const;
-
-	/** True if the player is standing in a wander world right now (current map name vs the
-	    allowlist, PIE-prefix-safe). Drives both the O-key travel and the "[O] Back to Office"
-	    HUD hint. */
-	bool IsInWanderWorld() const;
+	/** True if the player is in ANY non-office level right now (current map name vs the office,
+	    PIE-prefix-safe). Drives both the O-key travel and the "[O] Back to Office" HUD hint. */
+	bool IsAwayFromOffice() const;
 
 };
 
