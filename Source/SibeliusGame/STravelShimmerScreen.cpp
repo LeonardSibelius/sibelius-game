@@ -3,6 +3,7 @@
 #include "STravelShimmerScreen.h"
 
 #include "Styling/CoreStyle.h"
+#include "Brushes/SlateColorBrush.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Images/SThrobber.h"
@@ -18,11 +19,16 @@ void STravelShimmerScreen::Construct(const FArguments& InArgs)
 	// Cosmetic only — never trap gameplay input behind the cover.
 	SetVisibility(EVisibility::HitTestInvisible);
 
+	// A self-contained OPAQUE backdrop. FCoreStyle's brush can render as a transparency
+	// checkerboard on the MoviePlayer loading thread; a baked color brush is solid in both
+	// the viewport and the loading-screen contexts. Function-local static -> stable address
+	// for the SBorder's BorderImage pointer.
+	static const FSlateColorBrush BackdropBrush(FLinearColor(0.015f, 0.015f, 0.02f, 1.0f));
+
 	ChildSlot
 	[
 		SNew(SBorder)
-		.BorderImage(FCoreStyle::Get().GetDefaultBrush())                 // solid 1x1 fill, tinted below
-		.BorderBackgroundColor(FLinearColor(0.015f, 0.015f, 0.02f, 1.0f)) // near-black
+		.BorderImage(&BackdropBrush)                                      // solid near-black, fully opaque
 		.HAlign(HAlign_Fill)
 		.VAlign(VAlign_Fill)
 		[

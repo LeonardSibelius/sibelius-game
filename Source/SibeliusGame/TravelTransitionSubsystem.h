@@ -11,6 +11,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Containers/Ticker.h"            // FTSTicker watchdog (survives the level travel)
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "TravelTransitionSubsystem.generated.h"
 
@@ -41,11 +42,15 @@ public:
 private:
 	void OnPostLoadMap(UWorld* LoadedWorld);
 	void DoOpenLevel(FName LevelName);
+	bool OnWatchdog(float DeltaTime);   // fired if the load never completes -> abort, don't trap
+	void ClearWatchdog();
 	void RemoveCover();
 	UGameViewportClient* GetViewport() const;
 
 	TSharedPtr<STravelShimmerScreen> CoverWidget;
 	bool bTravelInProgress = false;
+	FName PendingLevelName;
 	FTimerHandle OpenLevelTimer;
 	FDelegateHandle PostLoadMapHandle;
+	FTSTicker::FDelegateHandle WatchdogHandle;
 };
