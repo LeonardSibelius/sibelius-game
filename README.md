@@ -28,7 +28,7 @@ The arc follows a software-engineering lifecycle — **Code Vision → Refactor 
 
 ### Shipped features (beyond the arc)
 
-**The Many Worlds Door (Sauce Door).** Use the **Sauce of all Knowledge** in the kitchen and a hidden door shimmers into being, marked *Many Worlds — no two alike*. Step through and you arrive in an **Elsewhere**: a place assembled fresh from a seed every time you enter, holding a single glowing **curio**. Take the curio, walk back through the doorway (marked *The Way Home — back to the kitchen*), and it joins your **Cabinet of Curiosities**, a shelf that remembers everything you have ever carried home. The feature exists to chase one feeling — *I wonder what's in there this time* — and is wonder-driven, not a grind. The first shipped place-type is a **Server Cathedral**, lit like a temple to the machine's mind; more place-types are planned.
+**The Many Worlds Door.** Use the Sauce of all Knowledge in the kitchen and a hidden door shimmers into being, revealed with **Code Vision (V)** and marked *Many Worlds — no two alike*. Step through (**E**) and you arrive in an **Elsewhere** — currently a **photoscanned poplar forest** (EasyBiomes, Nanite + Lumen), with more place-types planned. Wander as far as you like; press **O — Back to Office** at any time to return. The feature chases one feeling — *I wonder what's in there this time* — wonder, not collection.
 
 ### In progress
 
@@ -41,6 +41,8 @@ The Many Worlds Door runs on **Unreal Engine 5's PCG (Procedural Content Generat
 - **Authored PCG graph** — `/Game/PCG/PCG_ElsewhereScatter` (Input → Surface Sampler / point grid → Transform Points → Static Mesh Spawner → Output). A `UPCGComponent` runs the graph; its `Seed` is driven from the room's layout seed so scatter is reproducible.
 - **Deterministic assembly** — the builder lays down modular architecture from a seed (a clean placement seam, `AssembleGeometry()`), then PCG scatter dresses the floor on top. The two paths are independent: the C++ placement path always ships, and PCG scatter is additive (gated by `bUsePCGScatter`, default off as a safe fallback), so the smoke-test gate stays green either way.
 - **Honest scope.** PCG *places* objects well — varied, plausible, deterministic — but it does not yet *compose* an art-directed scene. That gap (placement vs. composition) is the stated research mission of the project, documented in the *Outwork* notes, not a defect to hide.
+
+The Many Worlds forest is dressed with **EasyBiomes' photoscanned, Nanite full-geometry foliage** — real captured plant geometry, not alpha-mapped cards — which is why it holds up close. The engineering goal of this project is the other half of the problem: using UE5 PCG (and the PCGEx toolkit) to *compose* those assets into a scene — placement that art-directs, not just populates. The asset fidelity is EasyBiomes'; the composition is the part we're building.
 
 ## Engineering highlights
 
@@ -101,6 +103,7 @@ Without the Fab packs the levels show missing-asset placeholders. See **Credits*
 | **G** | Generate — type a request to spawn a catalog object |
 | **J** | Journal — read the in-game narrative / company doctrine |
 | **H** | Help — on-screen control reference |
+| **O** | Back to Office — return from a Many Worlds level at any time |
 
 Branch and deploy actions (Ch4/Ch5) are also bound to developer keys (enter / merge / discard / deploy) for testing. To return from an Elsewhere, simply **walk back through the doorway** — the return is an overlap trigger, not a keypress.
 
@@ -119,3 +122,4 @@ The seven-chapter arc follows a software-engineering metaphor. **Ch1–Ch6 above
 - Cathedral: **Ultimate Gothic Cathedral** by **Ultima Store** (Fab, AI-usage permitted).
 - Stained glass materials: **Stained Glass 3D** by **twins-creators** (Fab, AI-usage permitted).
 - Elsewhere kits: **Modular Sci-Fi Environment** and **SciFi Boxes** by **Crebotoly** (Fab, AI-usage permitted).
+- Many Worlds forest: **Broadleaf Poplar Forest — PCG Biome** by **EasyBiomes** (Fab) — photoscanned, **Nanite full-geometry foliage** (no alpha-card fakery), the product of 8+ years of photogrammetry R&D. Used with thanks and admiration. https://www.fab.com/listings/61f2b0fc-5656-46b7-86ef-3c2100cebcb4
