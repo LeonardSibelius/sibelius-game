@@ -189,8 +189,16 @@ public:
 	    to call on the CDO, which the Elsewhere smoke gate does). */
 	bool IsWanderWorldLevel(FName LevelName) const { return WanderWorldLevels.Contains(LevelName); }
 
+	/** Prefix-safe membership: strips any PIE prefix ("UEDPIE_0_") from RawLevelName before
+	    matching, so PIE ("UEDPIE_0_L_Poplar_Forest") and packaged ("L_Poplar_Forest") both
+	    resolve. The single comparison used by the O key, the HUD hint, and the smoke gate.
+	    Exported per-member: the class isn't SIBELIUSGAME_API, but the editor-module gate
+	    links this (non-inline) symbol across the DLL boundary. */
+	SIBELIUSGAME_API bool IsWanderWorldLevelName(const FString& RawLevelName) const;
+
 	/** True if the player is standing in a wander world right now (current map name vs the
-	    allowlist). Drives both the O-key travel and the "[O] Back to Office" HUD hint. */
+	    allowlist, PIE-prefix-safe). Drives both the O-key travel and the "[O] Back to Office"
+	    HUD hint. */
 	bool IsInWanderWorld() const;
 
 };

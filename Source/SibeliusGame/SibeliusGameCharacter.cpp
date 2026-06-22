@@ -240,12 +240,17 @@ void ASibeliusGameCharacter::RequestQuit()
 	}
 }
 
+bool ASibeliusGameCharacter::IsWanderWorldLevelName(const FString& RawLevelName) const
+{
+	// UWorld::GetMapName() KEEPS the PIE streaming prefix in PIE ("UEDPIE_0_L_Poplar_Forest");
+	// strip it so PIE and a packaged build ("L_Poplar_Forest") compare equal.
+	return IsWanderWorldLevel(FName(*UWorld::RemovePIEPrefix(RawLevelName)));
+}
+
 bool ASibeliusGameCharacter::IsInWanderWorld() const
 {
 	const UWorld* World = GetWorld();
-	// UWorld::GetMapName() returns the short package name with the PIE streaming prefix
-	// already stripped, so this matches both in PIE and a packaged build.
-	return World && IsWanderWorldLevel(FName(*World->GetMapName()));
+	return World && IsWanderWorldLevelName(World->GetMapName());
 }
 
 void ASibeliusGameCharacter::ReturnToOffice()

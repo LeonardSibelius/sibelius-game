@@ -91,6 +91,11 @@ int32 UElsewhereSmokeTestCommandlet::Main(const FString& Params)
 		const ASibeliusGameCharacter* CharCDO = GetDefault<ASibeliusGameCharacter>();
 		R.Check(CharCDO && CharCDO->IsWanderWorldLevel(ForestLevelName),
 			FString::Printf(TEXT("wander-world allowlist contains %s (O key + hint live there)"), *ForestLevelName.ToString()));
+
+		// Regression guard for the PIE-prefix bug: the SAME name carrying a PIE prefix must
+		// still match via the shared prefix-safe helper (the live O-key / HUD path).
+		R.Check(CharCDO && CharCDO->IsWanderWorldLevelName(TEXT("UEDPIE_0_L_Poplar_Forest")),
+			TEXT("PIE-prefixed level name resolves to the wander world (prefix-safe match)"));
 	}
 
 	// --- ASSERT 3: ASauceDoor is a plain hidden-door travel door (curio flow bypassed). -

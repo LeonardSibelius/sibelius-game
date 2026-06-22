@@ -13,6 +13,7 @@
 #include "HatchLock.h"
 #include "RefactorableComponent.h"
 #include "GenerateComponent.h"                // Ch6 budget readout
+#include "SibeliusGameCharacter.h"            // IsInWanderWorld() for the Back-to-Office hint
 
 bool ASibeliusHUD::bOverlayVisible = true; // default ON
 
@@ -25,11 +26,33 @@ void ASibeliusHUD::DrawHUD()
 	Super::DrawHUD();
 
 	DrawCrosshair();
+	DrawWanderWorldHint();   // independent of the dev overlay toggle — a player affordance
 
 	if (bOverlayVisible)
 	{
 		DrawDevOverlay();
 	}
+}
+
+void ASibeliusHUD::DrawWanderWorldHint()
+{
+	if (!Canvas)
+	{
+		return;
+	}
+
+	const ASibeliusGameCharacter* PlayerChar = Cast<ASibeliusGameCharacter>(GetOwningPawn());
+	if (!PlayerChar || !PlayerChar->IsInWanderWorld())
+	{
+		return;
+	}
+
+	const FString Hint = TEXT("[O] Back to Office");
+	float HintW = 0.0f, HintH = 0.0f;
+	GetTextSize(Hint, HintW, HintH, nullptr, OverlayTextScale);
+	const float HintX = (Canvas->ClipX - HintW) * 0.5f;
+	const float HintY = Canvas->ClipY - HintH - 48.0f;   // a hand above the bottom edge
+	DrawText(Hint, FLinearColor(1.0f, 1.0f, 1.0f, 0.9f), HintX, HintY, nullptr, OverlayTextScale);
 }
 
 void ASibeliusHUD::DrawCrosshair()
@@ -145,4 +168,5 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(TEXT("  R refactor    B build    G generate / ask"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
 	Line(TEXT("  J journal / story    H hide/show overlay    Q quit (press twice)"), White);
+	Line(TEXT("  O back to office (in a wander world)"), White);
 }
