@@ -38,7 +38,10 @@ public class SibeliusGame : ModuleRules
 		// Fortune web build via UE's Chromium widget (WebBrowserWidget plugin).
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"WebBrowserWidget",
-			"WebBrowser"
+			"WebBrowser",
+			// Travel-door transition: animated loading screen during the blocking level load
+			// (registered on PreLoadMap in SibeliusGame.cpp).
+			"MoviePlayer"
 		});
 
 // SIB-19 smoke-test commandlet uses UEditorLoadingAndSavingUtils (editor-only)

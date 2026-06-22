@@ -24,6 +24,7 @@
 #include "Kismet/KismetSystemLibrary.h" // SIB-42: Q-to-quit
 #include "Kismet/GameplayStatics.h"     // O-to-office: OpenLevel
 #include "Engine/World.h"               // GetMapName for the wander-world check
+#include "TravelTransitionSubsystem.h"  // O-to-office travels through the transition cover
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -259,7 +260,7 @@ void ASibeliusGameCharacter::ReturnToOffice()
 	// no-op, so a single press is safe to leave bound everywhere.
 	if (IsInWanderWorld())
 	{
-		UGameplayStatics::OpenLevel(this, FName(TEXT("L_Office_v02")));
+		UTravelTransitionSubsystem::Travel(this, FName(TEXT("L_Office_v02")));
 	}
 }
 

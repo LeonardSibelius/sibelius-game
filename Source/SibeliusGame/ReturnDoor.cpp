@@ -7,6 +7,7 @@
 #include "Engine/Texture2D.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "TravelTransitionSubsystem.h"   // route the return-door OpenLevel through the travel cover
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "Components/BoxComponent.h"
@@ -147,7 +148,7 @@ void AReturnDoor::GoHome()
 
 	UE_LOG(LogReturnDoor, Display, TEXT("[%s] returning home to %s; Elsewhere discarded."),
 		*GetName(), *HomeLevelName.ToString());
-	UGameplayStatics::OpenLevel(this, HomeLevelName);
+	UTravelTransitionSubsystem::Travel(this, HomeLevelName);
 }
 
 void AReturnDoor::Interact_Implementation(AActor* /*Interactor*/)

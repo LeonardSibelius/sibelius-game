@@ -7,6 +7,7 @@
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "TravelTransitionSubsystem.h"   // route the level-door OpenLevel through the travel cover
 
 ACathedralDoor::ACathedralDoor()
 {
@@ -83,7 +84,7 @@ void ACathedralDoor::Interact_Implementation(AActor* Interactor)
 		return;
 	}
 
-	UGameplayStatics::OpenLevel(this, TargetLevelName);
+	UTravelTransitionSubsystem::Travel(this, TargetLevelName);
 }
 
 FText ACathedralDoor::GetInteractionPrompt_Implementation() const
