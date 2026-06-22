@@ -22,6 +22,8 @@
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
 #include "Kismet/KismetSystemLibrary.h" // SIB-42: Q-to-quit
+#include "Kismet/GameplayStatics.h"     // O-to-office: OpenLevel
+#include "Engine/World.h"               // GetMapName for the wander-world check
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -150,6 +152,11 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// SIB-42: Q to quit, double-press confirm. Packaged builds had NO exit
 	// (Walt alt-tabbed to Task Manager like a hostage).
 	PlayerInputComponent->BindKey(EKeys::Q, IE_Pressed, this, &ASibeliusGameCharacter::RequestQuit);
+
+	// Wander-world return: O -> back to the office. Raw BindKey (no Input Action / IMC),
+	// same as H/J/G/Q above. ReturnToOffice no-ops unless we're standing in a wander world,
+	// so the binding is harmless in the office / other levels.
+	PlayerInputComponent->BindKey(EKeys::O, IE_Pressed, this, &ASibeliusGameCharacter::ReturnToOffice);
 }
 
 
@@ -230,6 +237,24 @@ void ASibeliusGameCharacter::RequestQuit()
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(0xACE0F2, 2.0f, FColor::Yellow, TEXT("Press Q again to quit"));
+	}
+}
+
+bool ASibeliusGameCharacter::IsInWanderWorld() const
+{
+	const UWorld* World = GetWorld();
+	// UWorld::GetMapName() returns the short package name with the PIE streaming prefix
+	// already stripped, so this matches both in PIE and a packaged build.
+	return World && IsWanderWorldLevel(FName(*World->GetMapName()));
+}
+
+void ASibeliusGameCharacter::ReturnToOffice()
+{
+	// O only acts inside a registered wander world; in the office (or anywhere else) it's a
+	// no-op, so a single press is safe to leave bound everywhere.
+	if (IsInWanderWorld())
+	{
+		UGameplayStatics::OpenLevel(this, FName(TEXT("L_Office_v02")));
 	}
 }
 

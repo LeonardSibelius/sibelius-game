@@ -51,6 +51,7 @@ Dist/
 # --- QuadArt packs: House Furniture + Modular House ---
 #     Standard tier, purchased 2026-05-27. Written AI-use permission on file
 #     (quadarthelp@gmail.com, 2026-05-26). Chapter 1 environment ONLY.
+Content/EasyBiomes/
 Content/QuadArt/
 Content/QuadArt_*/
 Content/*QuadArt*/
@@ -123,6 +124,15 @@ Content/Commissioned/
 
 # Keep folder structure visible to humans even when contents are ignored
 !**/.gitkeep
+
+# --- PCGExtendedToolkit (PCGEx) — bulky MIT third-party plugin source ---
+#     Kept out of the repo for SIZE, not license (MIT permits redistribution).
+#     Same re-clone-per-dev pattern as the Fab packs. To restore locally:
+#       git clone --branch 5.7 https://github.com/PCGEx/PCGExtendedToolkit \
+#         Plugins/PCGExtendedToolkit
+#       git -C Plugins/PCGExtendedToolkit checkout 6912a2724
+#     (UE 5.7 / EngineVersion 5.7.0; enabled via SibeliusGame.uproject.)
+Plugins/PCGExtendedToolkit/
 
 # UnrealClaude plugin build artifacts (CP2)
 Plugins/UnrealClaude/Binaries/

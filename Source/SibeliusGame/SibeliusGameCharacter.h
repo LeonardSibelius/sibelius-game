@@ -110,6 +110,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category ="Input")
 	UInputAction* BuildAction;
 
+	/** "Wander world" levels (the Poplar forest etc.): the O key returns to the office and
+	    the "[O] Back to Office" HUD hint appear ONLY while standing in one of these. Editable
+	    so adding a future forest is just another entry — no level-name-prefix guesswork. */
+	UPROPERTY(EditAnywhere, Category = "Wander World")
+	TArray<FName> WanderWorldLevels = { TEXT("L_Poplar_Forest") };
+
 public:
 	ASibeliusGameCharacter();
 
@@ -156,6 +162,10 @@ protected:
 	    a packaged build with no exit is a hostage situation). */
 	void RequestQuit();
 
+	/** O key: from a wander world, OpenLevel back to the office (L_Office_v02). A no-op
+	    anywhere else, so the same key is harmless in the office / other levels. */
+	void ReturnToOffice();
+
 private:
 	float LastQuitPressTime = -100.0f;   // double-press confirm window
 
@@ -174,6 +184,14 @@ public:
 
 	/** Returns first person camera component **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+
+	/** True if LevelName is in the wander-world allowlist (pure membership — no world; safe
+	    to call on the CDO, which the Elsewhere smoke gate does). */
+	bool IsWanderWorldLevel(FName LevelName) const { return WanderWorldLevels.Contains(LevelName); }
+
+	/** True if the player is standing in a wander world right now (current map name vs the
+	    allowlist). Drives both the O-key travel and the "[O] Back to Office" HUD hint. */
+	bool IsInWanderWorld() const;
 
 };
 

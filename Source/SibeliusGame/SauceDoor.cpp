@@ -1,15 +1,13 @@
-// SauceDoor.cpp — see header. A hidden door (Code Vision reveal, inherited) whose E
-// stages + travels to a generated Elsewhere instead of a fixed level.
+// SauceDoor.cpp — see header. A hidden door (Code Vision reveal, inherited) that travels
+// to its TravelTargetLevel on reveal + E — a plain travel door, exactly like the office
+// obelisk / its AHiddenDoor parent. The curio / cabinet / AElsewhereBuilder /
+// UElsewhereSubsystem "roll a fresh Elsewhere" flow is set aside; this door no longer
+// touches it. ASauceDoor only customises the cosmetics (slab mesh, sign, prompt).
 
 #include "SauceDoor.h"
-#include "ElsewhereSubsystem.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
-#include "Engine/GameInstance.h"
-#include "Kismet/GameplayStatics.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogSauceDoor, Log, All);
 
 ASauceDoor::ASauceDoor()
 {
@@ -34,43 +32,9 @@ ASauceDoor::ASauceDoor()
 	SignRelativeRotation = FRotator(0.0f, 90.0f, 90.0f);
 	SignWidth = 450.0f;
 	SignHeight = 100.0f;
-}
 
-void ASauceDoor::Interact_Implementation(AActor* /*Interactor*/)
-{
-	if (!IsRevealed())
-	{
-		return;   // unrevealed wall keeps its secret — hold Code Vision to reveal it
-	}
-
-	UGameInstance* GI = UGameplayStatics::GetGameInstance(this);
-	UElsewhereSubsystem* Elsewhere = GI ? GI->GetSubsystem<UElsewhereSubsystem>() : nullptr;
-	if (!Elsewhere)
-	{
-		UE_LOG(LogSauceDoor, Error, TEXT("[%s] no UElsewhereSubsystem — cannot stage an Elsewhere."), *GetName());
-		return;
-	}
-
-	const FElsewherePlan Plan = Elsewhere->StageNextElsewhere();
-	if (!Plan.IsValid())
-	{
-		UE_LOG(LogSauceDoor, Error, TEXT("[%s] staged an invalid Elsewhere — not travelling."), *GetName());
-		return;
-	}
-
-	// Route by place-type: a PRE-MADE level (TravelLevelName set — e.g. the forest's
-	// L_Elsewhere_Forest) vs the builder level (empty -> ElsewhereLevelName = L_Elsewhere, where
-	// AElsewhereBuilder assembles the rolled room). The roll is seeded, so which world — and thus
-	// which level — is deterministic. The staged plan rides across the travel either way.
-	const FPlaceTypeDef* Place = Elsewhere->FindPlace(Plan.PlaceTypeId);
-	const FName Level = (Place && !Place->TravelLevelName.IsNone()) ? Place->TravelLevelName : ElsewhereLevelName;
-
-	UE_LOG(LogSauceDoor, Display, TEXT("[%s] stepping through to %s (place=%s, curio=%s, seed=%d)."),
-		*GetName(), *Level.ToString(), *Plan.PlaceTypeId.ToString(), *Plan.CurioId.ToString(), Plan.Seed);
-	UGameplayStatics::OpenLevel(this, Level);
-}
-
-FText ASauceDoor::GetInteractionPrompt_Implementation() const
-{
-	return IsRevealed() ? StepThroughPrompt : FText::GetEmpty();
+	// The Many-Worlds travel prompt. AHiddenDoor's inherited Interact/GetInteractionPrompt
+	// now drive the travel via TravelTargetLevel (set on the placed door to L_Poplar_Forest);
+	// this just swaps the parent's "Enter the Stacks [E]" default for the kitchen door's text.
+	TravelPromptText = NSLOCTEXT("Sibelius", "SauceDoorPrompt", "Step through [E]");
 }
