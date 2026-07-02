@@ -101,6 +101,33 @@ Status: Step 2 complete (palette identified). Open items marked ⬜.
 - Seed/density quirk RESOLVED: tested seeds 10 / 1,000 / 10,000 / 50,000 — no monotonic density trend, just normal per-seed variance. Any seed is fair game.
 - Bonus discovery: the kit seeds living ambience too — BP_MeadowInsects and BP_WindDeciduous actors spawn per generation under PCGPartitionGridActor (actor count varies ~544–564; engine-managed, ignore).
 
+## Recipe Data Asset v1 (WORKING — built this session)
+
+Scope decision: **"Core + stubs"** — core fields drive generation now; stub fields are captured for later systems (lighting, budgets, surprise/Shinbi) but nothing reads them yet.
+
+- **Class:** `PDA_WorldRecipe` (Content/Elsewhere), parent **PrimaryDataAsset** — Asset-Manager friendly for future random-recipe selection. 15 variables, all **Instance Editable** (required so they show on the instance).
+- **Instance:** `DA_Recipe_01_PoplarForest` (Content/Elsewhere) — Recipe #1 values below.
+
+Schema + Recipe #1 values:
+- **Core (read by Conductor):**
+  - `BiomeDataTable` (Data Table ref) = **DT_Biome_Poplar**
+  - `RowNames` (Name[]) = **[Forest_With_Meadows, Fiedls_With_Bushes, Forest_Dense, Forest_Dead]** (kit typo on #1 preserved; order = the v2 rotation order)
+  - `CanopyDensity / MidstoryDensity / ScatterDensity` (float) = **0.6 / 0.5 / 0.8**
+  - `RecipeName` (Text) = **"Mode B Poplar Forest"**
+- **Stubs (captured, not yet read):**
+  - `LightingMood` (Name) = Mood_ForestMorning
+  - `CanopyBudget / MidstoryBudget / ScatterBudget` (int) = 400 / 1,500 / 25,000
+  - `ClearingRadiusMin / ClearingRadiusMax` (float) = 8 / 20 (m)
+  - `PathWidth` (float) = 3 (m)
+  - `SurprisePoolTag` (Name) = any
+  - `ShinbiPoseTag` (Name) = idle
+
+Conductor wiring (BP_WorldConductor):
+- Added `Recipe` variable (PDA_WorldRecipe ref, Instance Editable, **Default = DA_Recipe_01_PoplarForest** so the placed actor auto-loads it).
+- ConductWorld now reads **Recipe.BiomeDataTable** (Get Biome Data Table → Set Biome Preset's Data Table pin) and **Recipe.RowNames** (Get Row Names → the modulo GET node), replacing the hardcoded DT_Biome_Poplar dropdown and the local RowNames variable. The old local RowNames getter node was deleted; the rotation math is unchanged: `region row = RowNames[(ArrayIndex + WorldSeed) % 4]`.
+
+Verified: recipe-driven ConductWorld regenerates cleanly with no errors. **Seed 1 and Seed 2 produce clearly distinct worlds** (full re-deal of the 4 looks + PCG re-scatter), matching prior v2 behavior. Refactor is behavior-preserving — one editable data asset now drives the world without touching the graph. Actor count healthy (~472–587, engine-managed variance as before).
+
 ## Open items
 
 - ⬜ Hero candidate meshes (Step 5)
@@ -111,7 +138,9 @@ Status: Step 2 complete (palette identified). Open items marked ⬜.
 
 1. ✅ Recipe schema (fields defined)
 2. ✅ Recipe #1 on paper (this worksheet)
-3. ✅ World Conductor v1 working: one world-seed → reseed + respawn all 4 regions. Next: row permutation per region (Set Biome Preset), then recipe data asset
+3. ✅ World Conductor v1 working: one world-seed → reseed + respawn all 4 regions.
+3b. ✅ Conductor v2 — ROW ROTATION working. Each region's row = RowNames[(ArrayIndex + WorldSeed) % 4]. RowNames array var holds the 4 rows (Forest_With_Meadows / Fiedls_With_Bushes / Forest_Dense / Forest_Dead). Graph: loop → Set Seed → Set Biome Preset (Data Table=DT_Biome_Poplar, Row Name from GET(a copy) of RowNames at modulo index; struct pin split) → Spawn. Verified: region 0 reads Forest_Dense at seed 2, Fiedls_With_Bushes at seed 1. Every world contains all 4 looks, dealt to different regions.
+3c. ✅ Recipe data asset (PDA_WorldRecipe + DA_Recipe_01_PoplarForest) built and wired into the Conductor — "Core + stubs" scope. Conductor reads Recipe.BiomeDataTable + Recipe.RowNames instead of hardcoded values. Verified behavior-preserving (seeds 1 vs 2 = distinct worlds). See "Recipe Data Asset v1" section below. Next: lighting preset per recipe (build order #4).
 4. Lighting/post-process preset applied on generation
 5. Anchors on terrain (door, sightline, hero, surprise, Shinbi ×3)
 6. Shinbi placement + sanity check
