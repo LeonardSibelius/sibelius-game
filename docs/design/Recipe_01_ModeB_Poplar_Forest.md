@@ -128,6 +128,30 @@ Conductor wiring (BP_WorldConductor):
 
 Verified: recipe-driven ConductWorld regenerates cleanly with no errors. **Seed 1 and Seed 2 produce clearly distinct worlds** (full re-deal of the 4 looks + PCG re-scatter), matching prior v2 behavior. Refactor is behavior-preserving — one editable data asset now drives the world without touching the graph. Actor count healthy (~472–587, engine-managed variance as before).
 
+## Lighting Preset per Recipe v1 (WORKING — built this session, build order #4)
+
+Scope: **data-driven, Sun + Fog** (chosen over reference-preset / sky / post-process). The recipe owns the mood; the Conductor applies it on generation, before the region loop.
+
+Lighting fields on PDA_WorldRecipe (6 total, all Instance Editable):
+- `SunIntensity` (Float), `SunColor` (Linear Color), `SunRotation` (Rotator), `SunTemperature` (Float) — added because the sun's warmth comes from Temperature (Use Temperature = on), not the (white) Light Color.
+- `FogDensity` (Float), `FogInscatteringColor` (Linear Color).
+
+Recipe #1 captured values (Mood_ForestMorning, read off the level actors):
+- Sun: Intensity **10** lux, Color **white (1,1,1,1)**, Rotation **(55.411931, -40.400902, 70.614597)**, Temperature **5000 K**. Mobility = **Movable** (required to re-angle/tint at runtime with no lighting rebuild).
+- Fog: Density **0.01**, Inscattering Color **(0,0,0,1)** — black; the visible haze actually comes from the fog's **Sky Atmosphere Ambient Contribution**, so inscattering stays black.
+
+Conductor wiring (BP_WorldConductor):
+- Two new instance-editable actor refs, `SunLight` (DirectionalLight) + `HeightFog` (ExponentialHeightFog). **Not** hand-assigned — the graph resolves them automatically with **Get Actor Of Class** at the start of ConductWorld (confirmed to work in-editor via the Call-In-Editor button). Robust to renames and reusable in any level with one sun + one fog.
+- ConductWorld now begins with a lighting-apply chain, then runs the existing region loop:
+  `GetActorOfClass(DirectionalLight) → Set SunLight → GetActorOfClass(ExponentialHeightFog) → Set HeightFog → Set Actor Rotation (sun = Recipe.SunRotation) → [Light Component] Set Intensity (Recipe.SunIntensity) → Set Temperature (Recipe.SunTemperature) → [Fog Component] Set Fog Density (Recipe.FogDensity) → For Each Loop (regions, unchanged)`.
+- The sun's Intensity/Temperature are set via **Get Light Component** off SunLight; fog density via the ExponentialHeightFogComponent.
+
+Deferred (captured but NOT yet applied in the graph): `SunColor` and `FogInscatteringColor` — both are currently white/black no-ops, so wiring them was skipped. Add the two Set nodes (Set Light Color, Set Fog Inscattering Color) when a future recipe needs colored light or tinted fog.
+
+Verified live: a dramatic test (Intensity 40, Temperature 12000 K, Fog Density 0.15) produced a bright, ice-blue, heavy-fog world — confirming rotation, intensity, temperature, and fog density all fire from the recipe. Restored to captured Mood_ForestMorning values afterward.
+
+**GOTCHA (resolved):** the EasyBiomes DirectionalLight + ExponentialHeightFog live in a **separate sublevel** (`/Game/EasyBiomes/Maps/Lighting/EB_LightingDaytime`), not in L_Elsewhere_Dev. Storing the Get-Actor-Of-Class results in the Conductor's `SunLight`/`HeightFog` variables created an illegal cross-level reference, and the persistent level refused to save ("Illegal reference to private object"). Fix: mark both variables **Transient** (Details → Advanced → Transient) — they're rebuilt every ConductWorld run anyway, so nothing is lost, and the level saves cleanly. Any future actor-ref that points at a sublevel actor must be Transient.
+
 ## Open items
 
 - ⬜ Hero candidate meshes (Step 5)
@@ -141,7 +165,7 @@ Verified: recipe-driven ConductWorld regenerates cleanly with no errors. **Seed 
 3. ✅ World Conductor v1 working: one world-seed → reseed + respawn all 4 regions.
 3b. ✅ Conductor v2 — ROW ROTATION working. Each region's row = RowNames[(ArrayIndex + WorldSeed) % 4]. RowNames array var holds the 4 rows (Forest_With_Meadows / Fiedls_With_Bushes / Forest_Dense / Forest_Dead). Graph: loop → Set Seed → Set Biome Preset (Data Table=DT_Biome_Poplar, Row Name from GET(a copy) of RowNames at modulo index; struct pin split) → Spawn. Verified: region 0 reads Forest_Dense at seed 2, Fiedls_With_Bushes at seed 1. Every world contains all 4 looks, dealt to different regions.
 3c. ✅ Recipe data asset (PDA_WorldRecipe + DA_Recipe_01_PoplarForest) built and wired into the Conductor — "Core + stubs" scope. Conductor reads Recipe.BiomeDataTable + Recipe.RowNames instead of hardcoded values. Verified behavior-preserving (seeds 1 vs 2 = distinct worlds). See "Recipe Data Asset v1" section below. Next: lighting preset per recipe (build order #4).
-4. Lighting/post-process preset applied on generation
+4. ✅ Lighting preset applied on generation — Sun + Fog, data-driven from the recipe (see "Lighting Preset per Recipe v1"). Post-process + colored light/fog deferred.
 5. Anchors on terrain (door, sightline, hero, surprise, Shinbi ×3)
 6. Shinbi placement + sanity check
 7. Surprise pool + integration pass
