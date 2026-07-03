@@ -1,0 +1,50 @@
+{
+ "places_rows": [
+  "FloodedLibrary",
+  "ClockworkAttic",
+  "StarlitVoid",
+  "InvertedKitchen",
+  "ServerCathedral",
+  "WinterForest"
+ ],
+ "travel_levels": [
+  "None",
+  "None",
+  "None",
+  "None",
+  "None",
+  "L_Elsewhere_Forest"
+ ],
+ "curio_pools": [
+  "(\"DrownedBook\",\"BottledTide\",\"PearlOfPages\")",
+  "(\"BrassGear\",\"InfiniteWatch\",\"DustmoteOrrery\")",
+  "(\"FallenStar\",\"VoidCompass\",\"SingingComet\")",
+  "(\"UpsideSpoon\",\"RecursiveRecipe\",\"SauceThatDreams\")",
+  "(\"CachedPrayer\",\"TheFirstPacket\",\"KernelRelic\")",
+  "(\"FrostPetal\",\"DreamingFern\",\"AuroraSeed\")"
+ ],
+ "curios_rows": [
+  "DrownedBook",
+  "BottledTide",
+  "PearlOfPages",
+  "BrassGear",
+  "InfiniteWatch",
+  "DustmoteOrrery",
+  "FallenStar",
+  "VoidCompass",
+  "SingingComet",
+  "UpsideSpoon",
+  "RecursiveRecipe",
+  "SauceThatDreams",
+  "CachedPrayer",
+  "TheFirstPacket",
+  "KernelRelic",
+  "FrostPetal",
+  "DreamingFern",
+  "AuroraSeed"
+ ],
+ "pcg_node_count": 16,
+ "return_door_placed": true,
+ "self_trigger": true,
+ "home_level": "L_Office_v02"
+}

@@ -1,0 +1,18 @@
+{
+ "per_node": [
+  "PCGGetLandscapeSettings in=0 out=3",
+  "PCGSurfaceSamplerSettings in=1 out=1",
+  "PCGTransformPointsSettings in=1 out=1",
+  "PCGStaticMeshSpawnerSettings in=1 out=1",
+  "PCGSurfaceSamplerSettings in=1 out=1",
+  "PCGTransformPointsSettings in=1 out=1",
+  "PCGStaticMeshSpawnerSettings in=1 out=1",
+  "PCGSurfaceSamplerSettings in=1 out=1",
+  "PCGTransformPointsSettings in=1 out=1",
+  "PCGStaticMeshSpawnerSettings in=1 out=1"
+ ],
+ "output_node_in": 3,
+ "output_in_by_pin": [
+  "Out:3"
+ ]
+}

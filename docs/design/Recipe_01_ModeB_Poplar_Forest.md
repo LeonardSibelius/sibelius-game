@@ -19,7 +19,7 @@ Status: Step 2 complete (palette identified). Open items marked ⬜.
 
 | # | Field | Value |
 |---|-------|-------|
-| 4 | Hero Candidates | ⬜ TBD in Step 5 — pick largest variant inside DT_Poplar_Collection and/or a big rock from DT_Cliff_Collection |
+| 4 | Hero Candidates | ✅ Resolved (Step 5) = **SM_Poplar_01_Field** (whole assembled field poplar: trunk+branches+leaves). NOT SM_Poplar_01_Field_Trunk — that earlier note was the bare leafless trunk (one component only). |
 | 5 | Canopy Set | DT_Poplar_Collection, DT_BoxElder_Collection |
 | 6 | Midstory Set | DT_Cliff_Collection, DT_Branches_01_Collection *(no bush collection in this row — bushes live in the Fiedls_With_Bushes row)* |
 | 7 | Ground Scatter Set | DT_MeadowPlants_Collection, DT_GrassCurly_Collection, DT_GrassPatches_Collection, DT_Fern_Collection, DT_Nettle_Collection |
@@ -152,11 +152,47 @@ Verified live: a dramatic test (Intensity 40, Temperature 12000 K, Fog Density 0
 
 **GOTCHA (resolved):** the EasyBiomes DirectionalLight + ExponentialHeightFog live in a **separate sublevel** (`/Game/EasyBiomes/Maps/Lighting/EB_LightingDaytime`), not in L_Elsewhere_Dev. Storing the Get-Actor-Of-Class results in the Conductor's `SunLight`/`HeightFog` variables created an illegal cross-level reference, and the persistent level refused to save ("Illegal reference to private object"). Fix: mark both variables **Transient** (Details → Advanced → Transient) — they're rebuilt every ConductWorld run anyway, so nothing is lost, and the level saves cleanly. Any future actor-ref that points at a sublevel actor must be Transient.
 
+## Anchors on Terrain v1 (WORKING — built this session, build order #5)
+
+Core idea proven: **anchors are an authored fixed rig** — the door/hero framing is hand-composed and stays put across every generation (like the splines); the seed only decides what fills the marks. Serves art rules #3 (composed arrival) and #4 (one hero).
+
+Four open questions — all decided as recommended:
+- **Hero source:** single mesh ref on the recipe (not a seed-picked pool). Pool is an easy superset to add later.
+- **Anchor positions:** fixed authored transforms (not seed-jittered).
+- **Door ↔ PlayerStart:** marker socket only for now (Door transform + forward vector). Real portal/arrival deferred.
+- **Clearing mask:** decided approach = **PCG exclusion volume** sized by recipe `ClearingRadiusMin/Max`. BUILD deferred to #7.
+
+**BP_WorldAnchors** (Actor, Content/Elsewhere) — placed in L_Elsewhere_Dev, persists across generations. Scene-Component sockets, all children of DefaultSceneRoot (flat siblings): **Door, LookTarget, Hero, Shinbi_A, Shinbi_B, Shinbi_C, Surprise**. Nudge the whole rig as a unit; Conductor reads one clean thing.
+
+Authored transforms (this world):
+- **Door** (= arrival view / postcard): rig Location **(20554, -4125, -1424)**, Rotation **(0, -6, -60.4)**. Its forward = the sightline down the path into the clearing.
+- **Hero** socket: set via **Absolute (World) Location** = **(21690, -6125, -1589.72)** — ~23 m straight down the Door sightline, base grounded (End key snaps to floor). Baked as an instance override on the placed actor.
+
+**Hero display mechanism (better than the plan's spawn/destroy):** added a **StaticMeshComponent `HeroMeshComp`** as a child of the Hero socket, mesh empty by default. The Conductor *fills that one slot* each generation. One slot = duplicates are physically impossible, nothing to clean up. (Plan originally said spawn hero + clear previous; this is simpler and stack-proof.)
+
+Recipe additions (PDA_WorldRecipe): added **`HeroMesh`** (Static Mesh object ref, Instance Editable). DA_Recipe_01 `HeroMesh` = **SM_Poplar_01_Field**.
+
+Conductor wiring (BP_WorldConductor.ConductWorld): off the **For Each Loop → Completed** exec (runs once after all 4 regions spawn):
+`Get Actor Of Class (BP_WorldAnchors) → [Cast To BP_WorldAnchors — redundant, compiler NOTE: ReturnValue already that type; harmless, left in] → Get HeroMeshComp → Set Static Mesh (New Mesh = Recipe.HeroMesh)`. No clear step needed.
+
+Verified live: deleted the temp reference tree, ran ConductWorld → hero appears at the socket (placed purely from the recipe). **Re-rolled World Seed → the 4 regions re-deal / flora reshuffles, hero stays fixed and framed.** The rig is seed-independent, exactly like the splines.
+
+Lessons / gotchas from this session:
+- **Piloting drags the actor:** while piloting an actor (Ctrl+Shift+P), flying the camera (WASD/RMB-drag) MOVES the actor. Composed the Door by piloting, but re-checking by re-piloting kept nudging it. Reliable method: **author transforms by typed numbers**, pilot only to *look* (no movement keys), or use the free camera.
+- **Component world-space entry:** the socket transform dropdown offers **"Absolute Location"** = world space — type world coords directly, no relative-to-rotated-parent math.
+- **End key** snaps a selected actor down onto the terrain (grounds the hero).
+- Cross-level rule still holds: BP_WorldAnchors + HeroMeshComp live in L_Elsewhere_Dev (not a sublevel), so no Transient needed here.
+
+To revisit (polish, non-blocking):
+- Hero mesh renders **green** in-level though its thumbnail/earlier drop looked gold — confirm which look we want; a color-contrasting hero is legitimate (rule #4).
+- Door "eye height" is ~1 m above the road (composed by pilot) — fine as a marker; refine if we want a precise player-eye arrival.
+- DA_Recipe_01 currently shows Sun Intensity **20** / Sun Rotation Y **-40.0** — worksheet Step 4 captured **10** / **-40.400902**. Reconcile (likely a leftover from the dramatic lighting test).
+
 ## Open items
 
-- ⬜ Hero candidate meshes (Step 5)
-- ⬜ Exact lighting values for Mood_ForestMorning (Step 4)
+- ⬜ Exact lighting values for Mood_ForestMorning — mostly captured in Step 4; reconcile Sun Intensity (20 vs 10) on DA_Recipe_01.
 - ⬜ Identify the green triangle billboard actors (possible future anchors)
+- ⬜ Framing polish: optional precise player-eye-height Door; hero green-vs-gold decision
 
 ## Build order (agreed plan)
 
@@ -166,7 +202,7 @@ Verified live: a dramatic test (Intensity 40, Temperature 12000 K, Fog Density 0
 3b. ✅ Conductor v2 — ROW ROTATION working. Each region's row = RowNames[(ArrayIndex + WorldSeed) % 4]. RowNames array var holds the 4 rows (Forest_With_Meadows / Fiedls_With_Bushes / Forest_Dense / Forest_Dead). Graph: loop → Set Seed → Set Biome Preset (Data Table=DT_Biome_Poplar, Row Name from GET(a copy) of RowNames at modulo index; struct pin split) → Spawn. Verified: region 0 reads Forest_Dense at seed 2, Fiedls_With_Bushes at seed 1. Every world contains all 4 looks, dealt to different regions.
 3c. ✅ Recipe data asset (PDA_WorldRecipe + DA_Recipe_01_PoplarForest) built and wired into the Conductor — "Core + stubs" scope. Conductor reads Recipe.BiomeDataTable + Recipe.RowNames instead of hardcoded values. Verified behavior-preserving (seeds 1 vs 2 = distinct worlds). See "Recipe Data Asset v1" section below. Next: lighting preset per recipe (build order #4).
 4. ✅ Lighting preset applied on generation — Sun + Fog, data-driven from the recipe (see "Lighting Preset per Recipe v1"). Post-process + colored light/fog deferred.
-5. Anchors on terrain (door, sightline, hero, surprise, Shinbi ×3)
+5. ✅ Anchors on terrain — BP_WorldAnchors rig (Door/LookTarget/Hero/Shinbi_A-C/Surprise), Door + Hero hand-composed, HeroMesh added to recipe, Conductor fills HeroMeshComp slot each gen. Verified: hero stays framed across seed re-rolls. See "Anchors on Terrain v1". (Shinbi ×3 = #6, Surprise = #7, clearing mask = #7.)
 6. Shinbi placement + sanity check
 7. Surprise pool + integration pass
 8. Async loading + budget caps, profile door-open time

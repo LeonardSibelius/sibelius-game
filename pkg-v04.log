@@ -1,0 +1,1026 @@
+Running AutomationTool...
+Using bundled DotNet SDK version: 8.0.412 win-x64
+Starting AutomationTool...
+Parsing command line: BuildCookRun -nop4 -utf8output -nocompileeditor -skipbuildeditor -cook -project=C:/Users/wpark/projects/sibelius-game/SibeliusGame.uproject -target=SibeliusGame -unrealexe="C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" -platform=Win64 -installed -SkipCookingErrorSummary -clientarchitecture=x64 -stage -archive -package -build -pak -iostore -compressed -prereqs -archivedirectory=C:/Users/wpark/builds/sibelius-v04-dev -clientconfig=Development -nocompile -nocompileuat
+Initializing script modules...
+Total script module initialization time: 0.11 s.
+Using C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe
+Executing commands...
+Setting up ProjectParams for C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject
+********** BUILD COMMAND STARTED **********
+Running: C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\ThirdParty\DotNet\8.0.412\win-x64\dotnet.exe "C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SibeliusGame Win64 Development -Project=C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject  -remoteini="C:\Users\wpark\projects\sibelius-game"  -skipdeploy -architecture=x64 -log="C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\UBA-SibeliusGame-Win64-Development.txt"
+Log file: C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\UBA-SibeliusGame-Win64-Development.txt
+Using 'git status' to determine working set for adaptive non-unity build (C:\Users\wpark\projects\sibelius-game).
+Creating makefile for SibeliusGame (.uproject file is newer)
+UHT compiled-in object format Default
+Parsing headers for SibeliusGame
+  Running Internal UnrealHeaderTool C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject C:\Users\wpark\projects\sibelius-game\Intermediate\Build\Win64\SibeliusGame\Development\SibeliusGame.uhtmanifest -WarningsAsErrors -installed
+UHT processed SibeliusGame in 1.4108541 seconds (37 files written)
+Building SibeliusGame...
+Using Visual Studio 2026 14.44.35227 toolchain (C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.44.35207) and Windows 10.0.22621.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+Determining max actions to execute in parallel (20 physical cores, 28 logical cores)
+  Executing up to 20 processes, one per physical core
+  Requested 1.5 GB memory per action, 15.28 GB available: limiting max parallel actions to 10
+Using Unreal Build Accelerator local executor to run 8 action(s)
+  Storage capacity 40Gb
+---- Starting trace: 260619_062327 ----
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+[1/8] Compile [x64] Module.SibeliusGame.1.cpp
+[2/8] Compile [x64] Module.SibeliusGame.2.cpp
+[3/8] Compile [x64] Module.SibeliusGame.3.cpp
+[4/8] Compile [x64] Module.SibeliusGame.4.cpp
+[5/8] Compile [x64] Module.SibeliusGame.5.cpp
+[6/8] Compile [x64] Module.SibeliusGame.6.cpp
+[7/8] Link [x64] SibeliusGame.exe
+[8/8] WriteMetadata SibeliusGame.target [NoUba]
+
+Trace written to file C:/Users/wpark/AppData/Roaming/Unreal Engine/AutomationTool/Logs/C+Program+Files+Epic+Games+UE_5.7/UBA-SibeliusGame-Win64-Development.uba with size 5.6kb
+Total time in Unreal Build Accelerator local executor: 16.75 seconds
+
+Result: Succeeded
+Total execution time: 22.17 seconds
+Took 22.31s to run dotnet.exe, ExitCode=0
+No build products were made
+Build command time: 22.32 s
+********** BUILD COMMAND COMPLETED **********
+********** COOK COMMAND STARTED **********
+Running UnrealEditor Cook for project C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject
+Commandlet log file is C:\Program Files\Epic Games\UE_5.7\Engine\Programs\AutomationTool\Saved\Cook-2026.06.19-06.23.44.txt
+Running: C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealEditor-Cmd.exe "C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject" -run=Cook  -TargetPlatform=Windows  -unversioned -NoErrorSummary -fileopenlog -abslog="C:\Program Files\Epic Games\UE_5.7\Engine\Programs\AutomationTool\Saved\Cook-2026.06.19-06.23.44.txt" -stdout -CrashForUAT -unattended -NoLogTimes
+LogInit: Display: Running engine for game: SibeliusGame
+LogCore: Display: Requested channels: 'cpu,gpu,frame,log,bookmark,screenshot,region'
+LogTrace: Display: Control listening on port 1985
+LogCsvProfiler: Display: Metadata set : platform="Windows"
+LogCsvProfiler: Display: Metadata set : config="Development"
+LogCsvProfiler: Display: Metadata set : buildversion="++UE5+Release-5.7-CL-51494982"
+LogCsvProfiler: Display: Metadata set : engineversion="5.7.4-51494982+++UE5+Release-5.7"
+LogCsvProfiler: Display: Metadata set : enginereleaseversion="5.7.4"
+LogCsvProfiler: Display: Metadata set : os="Windows 11 (25H2) [10.0.26200.8655] "
+LogCsvProfiler: Display: Metadata set : cpu="GenuineIntel|Intel(R) Core(TM) i7-14700KF"
+LogCsvProfiler: Display: Metadata set : pgoenabled="0"
+LogCsvProfiler: Display: Metadata set : pgoprofilingenabled="0"
+LogCsvProfiler: Display: Metadata set : ltoenabled="0"
+LogCsvProfiler: Display: Metadata set : asan="0"
+LogCsvProfiler: Display: Metadata set : mergedmodules="0"
+LogCsvProfiler: Display: Metadata set : commandline="" C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject -run=Cook -TargetPlatform=Windows -unversioned -NoErrorSummary -fileopenlog -abslog="C:\Program Files\Epic Games\UE_5.7\Engine\Programs\AutomationTool\Saved\Cook-2026.06.19-06.23.44.txt" -stdout -CrashForUAT -unattended -NoLogTimes""
+LogCsvProfiler: Display: Metadata set : loginid="4b13d03f69154d6f86d7c52c079bdd63"
+LogCsvProfiler: Display: Metadata set : llm="0"
+LogCsvProfiler: Display: Metadata set : systemresolution.resx="1280"
+LogCsvProfiler: Display: Metadata set : systemresolution.resy="720"
+LogAudio: Display: Audio Device Manager not initializing due to all audio being disabled. If this is not intentional, please check command line arguments for "-nosound".
+LogConfig: Display: Loading Mac ini files took 0.03 seconds
+LogConfig: Display: Loading VulkanPC ini files took 0.03 seconds
+LogConfig: Display: Loading Android ini files took 0.03 seconds
+LogConfig: Display: Loading IOS ini files took 0.04 seconds
+LogConfig: Display: Loading TVOS ini files took 0.04 seconds
+LogConfig: Display: Loading Unix ini files took 0.04 seconds
+LogConfig: Display: Loading Windows ini files took 0.04 seconds
+LogConfig: Display: Loading VisionOS ini files took 0.04 seconds
+LogConfig: Display: Loading Linux ini files took 0.04 seconds
+LogAssetRegistry: Display: Asset registry cache read as 117.3 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
+RenderDocPlugin: Display: RenderDoc plugin will not be loaded. Use '-AttachRenderDoc' on the cmd line or enable 'renderdoc.AutoAttach' in the plugin settings.
+LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
+LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
+LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
+LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
+LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
+LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
+LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
+LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
+LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
+LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
+LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
+LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
+LogTargetPlatformManager: Display: Building Assets For Windows
+LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
+LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
+LogCsvProfiler: Display: Metadata set : rhiname="Null"
+LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
+LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
+LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
+LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
+LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
+LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 32244  --child-id Zen_32244_Startup'
+LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
+LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
+LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.01ms. RandomReadSpeed=1730.94MBs, RandomWriteSpeed=284.20MBs. Assigned SpeedClass 'Local'
+LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
+LogShaderCompilers: Display: No distributed shader compiler controller found
+LogShaderCompilers: Display: Using 25 local workers for shader compilation
+LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
+LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+LogEditorDomain: Display: EditorDomain is Disabled
+LogAssetRegistry: Display: AssetDataGatherer spent 0.001s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
+LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
+LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
+LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
+LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
+LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
+LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
+LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
+LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
+LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
+LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
+LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
+LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
+LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
+LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
+LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
+LogMeshReduction: Display: No distributed automatic mesh merging module available
+LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
+LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+LogVirtualization: Display: VirtualizationSystem name found in ini file: None
+LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
+LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
+LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.635 ms
+LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
+LogAudio: Display: Registering Engine Module Parameter Interfaces...
+LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
+LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+LogCook: Display: CookProcessCount=1. CookMultiprocess is disabled and the cooker is running as a single process.
+LogCook: Display: CookSettings for Memory:
+	MemoryMaxUsedVirtual 0MiB
+	MemoryMaxUsedPhysical 0MiB
+	MemoryMinFreeVirtual 2048MiB
+	MemoryMinFreePhysical 2048MiB
+	MemoryTriggerGCAtPressureLevel None
+	SoftGCMemoryUseTrigger disabled
+	SoftGCTimeBudgetTrigger enabled (0.05 budget, 30s min period)
+LogCook: Display: SkipOnlyEditorOnly is enabled, unsolicited packages will not be cooked unless they are referenced from the cooked version of the instigator package.
+LogEditorDomain: Display: Cycle detected in parents of class /Script/RigVMDeveloper.RigVMUnitNode. Allow flags for editordomain and incremental cooking will be invalid.
+LogEditorDomain: Display: Cycle detected in parents of class /Script/LiveLinkGraphNode.K2Node_EvaluateLiveLinkFrameWithSpecificRole. Allow flags for editordomain and incremental cooking will be invalid.
+LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+LogZenStore: Display: Establishing oplog 'SibeliusGame.5e728e78/EditorDomain'
+LogZenStore: Display: Zen project 'SibeliusGame.5e728e78' already exists
+LogZenStore: Display: Zen oplog 'SibeliusGame.5e728e78/EditorDomain' already exists
+LogCook: Display: Waiting for Asset Registry
+LogAssetRegistry: Display: Starting OnFilesLoaded.Broadcast
+LogPlacementMode: Display: The Asset Registry is done with its initial scan, the list of placeable classes has been updated.
+LogAssetRegistry: Display: Completed OnFilesLoaded.Broadcast: 0.857s
+LogAssetRegistry: Display: Asset registry cache written as 117.3 MiB to ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin
+LogCook: Display: INCREMENTAL COOK DEPENDENCIES: Disabled. Incremental Cook Dependencies are disabled because the cooker is not using ZenStore, and we do not yet support storage of Incremental Cook dependency data with loose cooked packages. Falling back to legacy iterative cook mode.
+LogCook: Display: CalculateGlobalDependenciesHash(Windows):
+LogCook: Display: 	[Engine]:Core.System.CanStripEditorOnlyExportsAndImports = True
+LogCook: Display: 	[Engine]:Core.System.CanSkipEditorReferencedPackagesWhenCooking = False
+LogCook: Display: 	CanUseUnversionedPropertySerialization = True
+LogCook: Display: 	[Editor]:CookSettings.AutomaticOptionalInclusionAssetType = /Script/Niagara.NiagaraScript, /Script/Niagara.NiagaraEmitter, /Script/Niagara.NiagaraSystem, /Script/NiagaraEditor.NiagaraParameterDefinitions, /Script/Niagara.NiagaraEffectType, /Script/Niagara.NiagaraValidationRuleSet
+LogCook: Display: 	IsCookFlagSet(ECookInitializationFlags::Unversioned) = True
+LogCook: Display: 	FCoreRedirects::AppendHashOfGlobalRedirects = fdb7fe9d7ab4ad5b20cd82e1e8d90694751db7123f8d2101332b808304194f8a
+LogCook: Display: 	GlobalDependenciesHash(Windows) = 20b5a42043d26bfd8ef80d5f22d4ef226b2d40330d8ab8ee1bd2ec77546bb732
+LogCook: Display: FULL COOK: Incremental Cook Dependencies are disabled, and -legacyiterative was not specified. Deleting previously cooked packages for platform Windows and recooking all packages discovered in the current cook.
+LogCook: Display: Sandbox cleanup took 0.053 seconds for platforms Windows
+LogCook: Display: Compiling global changed shaders for platform 'Windows'
+LogShaderLibrary: Display:
+LogShaderLibrary: Display: Shader Library 'Global' (PCD3D_SM6-PCD3D_SM6) Stats:
+LogShaderLibrary: Display: =================
+LogShaderLibrary: Display: Assets: 1, Unique Shadermaps: 533 (53300.00%)
+LogShaderLibrary: Display: Total Shaders: 13154, Unique Shaders: 13153 (99.99%)
+LogShaderLibrary: Display: Total Shader Size: 201.38mb, Unique Shaders Size: 201.38mb (100.00%)
+LogShaderLibrary: Display: === Extended info:
+LogShaderLibrary: Display: Minimum number of shaders in shadermap: 1
+LogShaderLibrary: Display: Median number of shaders in shadermap: 3
+LogShaderLibrary: Display: Maximum number of shaders in shadermap: 704
+LogShaderLibrary: Display: Number of shadermaps referencing top 10 most shared shaders:
+LogShaderLibrary: Display:     2, 1, 1, 1, 1, 1, 1, 1, 1, 1
+LogShaderLibrary: Display: Unique shaders itemization (sorted by compressed size):
+LogShaderLibrary: Display: SF_Compute: 9716 shaders (73.87%), compressed size: 156.17 MB (16.46 KB avg per shader), uncompressed size: 206.36 MB (21.75 KB avg per shader)
+LogShaderLibrary: Display: SF_Pixel: 2500 shaders (19.01%), compressed size: 28.94 MB (11.86 KB avg per shader), uncompressed size: 37.02 MB (15.17 KB avg per shader)
+LogShaderLibrary: Display: SF_RayGen: 770 shaders (5.85%), compressed size: 15.78 MB (20.99 KB avg per shader), uncompressed size: 20.51 MB (27.28 KB avg per shader)
+LogShaderLibrary: Display: SF_Vertex: 136 shaders (1.03%), compressed size: 0.36 MB (2.74 KB avg per shader), uncompressed size: 0.45 MB (3.41 KB avg per shader)
+LogShaderLibrary: Display: SF_RayHitGroup: 17 shaders (0.13%), compressed size: 0.06 MB (3.46 KB avg per shader), uncompressed size: 0.07 MB (4.06 KB avg per shader)
+LogShaderLibrary: Display: SF_RayMiss: 8 shaders (0.06%), compressed size: 0.05 MB (5.78 KB avg per shader), uncompressed size: 0.06 MB (8.06 KB avg per shader)
+LogShaderLibrary: Display: SF_RayCallable: 2 shaders (0.02%), compressed size: 0.01 MB (7.25 KB avg per shader), uncompressed size: 0.02 MB (9.16 KB avg per shader)
+LogShaderLibrary: Display: SF_Geometry: 3 shaders (0.02%), compressed size: 0.01 MB (2.15 KB avg per shader), uncompressed size: 0.01 MB (3.31 KB avg per shader)
+LogShaderLibrary: Display: SF_WorkGraphComputeNode: 1 shaders (0.01%), compressed size: 0.00 MB (2.75 KB avg per shader), uncompressed size: 0.00 MB (3.35 KB avg per shader)
+LogShaderLibrary: Display: Textual dump saved to '../../../../../../Users/wpark/projects/sibelius-game/Saved/Shaders/PCD3D_SM6-PCD3D_SM6/ShaderDebug-Global-PCD3D_SM6-PCD3D_SM6/Dump.txt'
+LogShaderLibrary: Display: =================
+LogShaderLibrary: Display:
+LogShaderLibrary: Display: Shader Library 'Global' (PCD3D_SM5-PCD3D_SM5) Stats:
+LogShaderLibrary: Display: =================
+LogShaderLibrary: Display: Assets: 1, Unique Shadermaps: 363 (36300.00%)
+LogShaderLibrary: Display: Total Shaders: 4734, Unique Shaders: 4720 (99.70%)
+LogShaderLibrary: Display: Total Shader Size: 15.72mb, Unique Shaders Size: 15.71mb (99.97%)
+LogShaderLibrary: Display: === Extended info:
+LogShaderLibrary: Display: Minimum number of shaders in shadermap: 1
+LogShaderLibrary: Display: Median number of shaders in shadermap: 3
+LogShaderLibrary: Display: Maximum number of shaders in shadermap: 434
+LogShaderLibrary: Display: Number of shadermaps referencing top 10 most shared shaders:
+LogShaderLibrary: Display:     3, 3, 2, 2, 2, 2, 2, 2, 2, 2
+LogShaderLibrary: Display: Unique shaders itemization (sorted by compressed size):
+LogShaderLibrary: Display: SF_Pixel: 2081 shaders (44.09%), compressed size: 9.11 MB (4.48 KB avg per shader), uncompressed size: 39.25 MB (19.31 KB avg per shader)
+LogShaderLibrary: Display: SF_Compute: 2528 shaders (53.56%), compressed size: 6.54 MB (2.65 KB avg per shader), uncompressed size: 25.63 MB (10.38 KB avg per shader)
+LogShaderLibrary: Display: SF_Vertex: 109 shaders (2.31%), compressed size: 0.06 MB (0.60 KB avg per shader), uncompressed size: 0.14 MB (1.29 KB avg per shader)
+LogShaderLibrary: Display: SF_Geometry: 2 shaders (0.04%), compressed size: 0.00 MB (0.49 KB avg per shader), uncompressed size: 0.00 MB (1.55 KB avg per shader)
+LogShaderLibrary: Display: Textual dump saved to '../../../../../../Users/wpark/projects/sibelius-game/Saved/Shaders/PCD3D_SM5-PCD3D_SM5/ShaderDebug-Global-PCD3D_SM5-PCD3D_SM5/Dump.txt'
+LogShaderLibrary: Display: =================
+LogCook: Display: Discovering localized assets for cultures: en
+LogCook: Display: Found 0 localized assets
+LogShaderCompilers: Display: ================================================
+LogShaderCompilers: Display: === FShaderJobCache stats ===
+LogShaderCompilers: Display: Total job queries 6, among them cache hits 0 (0.00%), DDC hits 3 (50.00%), Duplicates 0 (0.00%)
+LogShaderCompilers: Display: Tracking 6 distinct input hashes that result in 6 distinct outputs (100.00%)
+LogShaderCompilers: Display: RAM used: 75.23 KiB of 1.60 GiB budget. Usage: 0.00%
+LogShaderCompilers: Display: === Shader Compilation stats ===
+LogShaderCompilers: Display: Shaders Compiled: 3
+LogShaderCompilers: Display: Jobs assigned 3, completed 3 (100%)
+LogShaderCompilers: Display: Time job spent in pending queue: average 0.05 s, longest 0.05 s
+LogShaderCompilers: Display: Job execution time: average 0.14 s, max 0.21 s
+LogShaderCompilers: Display: Job life time (pending + execution): average 0.19 s, max 0.26
+LogShaderCompilers: Display: Shader code size: total 7.695 KiB, numShaders 3, average 2.564 KiB, min 600 B, max 5.742 KiB
+LogShaderCompilers: Display: Time at least one job was in flight (either pending or executed): 0.26 s
+LogShaderCompilers: Display: Mutex wait stall in FShaderJobCache::SubmitJobs:  0.29%
+LogShaderCompilers: Display: Jobs were issued in 3 batches (only local compilation was used), average 1.00 jobs/batch
+LogShaderCompilers: Display: Average processing rate: 11.46 jobs/sec
+LogShaderCompilers: Display: Total thread time: 0.115 s
+LogShaderCompilers: Display: Total thread preprocess time: 0.017 s
+LogShaderCompilers: Display: Percentage time preprocessing: 14.69%
+LogShaderCompilers: Display: Effective parallelization: 0.44 (times faster than compiling all shaders on one thread). Compare with number of workers: 25 - 0.017505
+LogShaderCompilers: Display: Top 3 most expensive shader types by average time:
+LogShaderCompilers: Display:                                            FPCGSceneWriterCS (compiled    1 times, average 0.10 sec, max 0.10 sec, min 0.10 sec)
+LogShaderCompilers: Display:                                       FPCGGrassMapUnpackerCS (compiled    1 times, average 0.01 sec, max 0.01 sec, min 0.01 sec)
+LogShaderCompilers: Display:                                        FPCGTextureReadbackCS (compiled    1 times, average 0.01 sec, max 0.01 sec, min 0.01 sec)
+LogShaderCompilers: Display: Top 3 shader types by total compile time:
+LogShaderCompilers: Display:                                            FPCGSceneWriterCS - 87.03% of total time (compiled    1 times, average 0.10 sec, max 0.10 sec, min 0.10 sec)
+LogShaderCompilers: Display:                                       FPCGGrassMapUnpackerCS - 7.85% of total time (compiled    1 times, average 0.01 sec, max 0.01 sec, min 0.01 sec)
+LogShaderCompilers: Display:                                        FPCGTextureReadbackCS - 5.12% of total time (compiled    1 times, average 0.01 sec, max 0.01 sec, min 0.01 sec)
+LogShaderCompilers: Display: === Material stats ===
+LogShaderCompilers: Display: Materials Cooked:        0
+LogShaderCompilers: Display: Materials Translated:    0
+LogShaderCompilers: Display: Material Total Translate Time: 0.00 s
+LogShaderCompilers: Display: Material Translation Only: 0.00 s (0%)
+LogShaderCompilers: Display: Material DDC Serialization Only: 0.00 s (0%)
+LogShaderCompilers: Display: Material Cache Hits: 0 (0%)
+LogShaderCompilers: Display: ================================================
+LogCook: Display: Cooked packages 0 Packages Remain 1012 Total 1012
+LogCook: Display: Cook Diagnostics: OpenFileHandles=356, VirtualMemory=2428MiB, VirtualMemoryAvailable=46327MiB
+LogCook: Display: Package /Game/SciFiBoxes_A/Materials/Box1_v5_MAT has a dependency on package /Game/SciFiBox1/Textures/Box1_OcclusionRoughnessMetallic which does not exist.
+LogCook: Display: Package /Game/SciFiBoxes_A/Materials/Box1_v4_MAT has a dependency on package /Game/SciFiBox1/Textures/Box1_OcclusionRoughnessMetallic which does not exist.
+LogCook: Display: Package /Game/SciFiBoxes_A/Materials/Box1_v3_MAT has a dependency on package /Game/SciFiBox1/Textures/Box1_OcclusionRoughnessMetallic which does not exist.
+LogCook: Display: Package /Game/SciFiBoxes_A/Materials/Box1_v2_MAT has a dependency on package /Game/SciFiBox1/Textures/Box1_OcclusionRoughnessMetallic which does not exist.
+LogCook: Display: Package /Game/SciFiBoxes_A/Materials/Box1_v1_MAT has a dependency on package /Game/SciFiBox1/Textures/Box1_OcclusionRoughnessMetallic which does not exist.
+LogCook: Display: Package /Game/ModularSciFiEnv_K/Materials/Instances/MI_ThirdMat_NoNormal has a dependency on package /Game/ModularSciFiEnv_K/Textures/Details/T_DM-All_normal which does not exist.
+LogCook: Display: Package /Game/ModularSciFiEnv_K/Materials/Instances/MI_ThirdMat_NoNormal has a dependency on package /Game/ModularSciFiEnv_K/Textures/Details/alpha_blur which does not exist.
+LogCook: Display: Package /Game/ModularSciFiEnv_K/Materials/Instances/MI_ThirdMat_NoNormal has a dependency on package /Game/ModularSciFiEnv_K/Textures/Details/T_DM-All_ao which does not exist.
+LogCook: Display: Package /Game/ModularSciFiEnv_K/Materials/Instances/MI_ThirdMat_NoNormal has a dependency on package /Game/ModularSciFiEnv_K/Textures/Details/T_DM-All_curvature which does not exist.
+LogCook: Display: Package /Game/ModularSciFiEnv_K/Materials/Instances/MI_ThirdMat_NoNormal has a dependency on package /Game/ModularSciFiEnv_K/Textures/Details/T_DM-All_emission which does not exist.
+LogCook: Display: Package /Game/ModularSciFiEnv_K/Materials/Instances/MI_ThirdMat_NoNormal has a dependency on package /Game/ModularSciFiEnv_K/Textures/Details/T_DM-All_subset which does not exist.
+LogCook: Display: Package /Game/Dragon_Rise/Renders/NewLevelSequence has a dependency on package /Game/Dragon_Rise/Maps/Temple_Dragon which does not exist.
+LogCook: Display: Package /Game/Dragon_Rise/Renders/NewLevelSequence1 has a dependency on package /Game/Dragon_Rise/Maps/Temple_Dragon which does not exist.
+LogCook: Display: Package /Game/Dragon_Rise/Renders/NewLevelSequence2 has a dependency on package /Game/Dragon_Rise/Maps/Temple_Dragon which does not exist.
+LogCook: Display: Package /Game/Dragon_Rise/Renders/NewLevelSequence3 has a dependency on package /Game/Dragon_Rise/Maps/Temple_Dragon which does not exist.
+LogCook: Display: Cooked packages 0 Packages Remain 3087 Total 3087
+LogHairStrands: Display: Waiting for groom bindings to be ready 0/1 (Mustache_L_Full_Binding) ...
+LogCook: Display: Garbage collection triggered (Soft). Triggered by conditions:
+  CookSettings.SoftGCTimeTrigger: Periodic triggering of SoftGC: No duration data.
+LogCookCommandlet: Display: GarbageCollection... (Periodic GC)
+LogMaterial: Display: Missing cached shadermap for MI_Pipes_A_DM_All_B in PCD3D_SM6, Default, SM6, Game (DDC key hash: 36ed7e8439f96185da9de5cc25034f4987becdb3), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Wall_A_Second_DM_All_A in PCD3D_SM6, Default, SM6, Game (DDC key hash: e7432083895a64535e440d3192290f864bd00559), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Wall_A_Base_DM_All_B in PCD3D_SM5, Default, SM5, Game (DDC key hash: b82420a1b6aadc99b4a6a78c676db800203f2c05), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Wall_A_Base_DM_All_A in PCD3D_SM6, Default, SM6, Game (DDC key hash: 953c74e45a1d4c0f40ba99e51add09b3bd529683), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Wall_A_Second_DM_All in PCD3D_SM5, Default, SM5, Game (DDC key hash: a654114e8e033d0d88df2ad27706887860121056), compiling.
+PIE: Warning: Trying to simulate physics on ''/Game/L_Office_v02.L_Office_v02:PersistentLevel.SM_BookSet_A83_54.StaticMeshComponent0'' but it has ComplexAsSimple collision.
+LogAIApparition: Display: [Apparition] visuals built: 9 glyphs + core
+LogMaterial: Display: Missing cached shadermap for MI_Wall_A_Base_DM_All_A in PCD3D_SM5, Default, SM5, Game (DDC key hash: 80ccc49a2254ad605ef842cae81f9b1954761d48), compiling.
+LogCook: Display: Cooked packages 146 Packages Remain 2941 Total 3087
+LogMaterial: Display: Missing cached shadermap for MI_SecondMat in PCD3D_SM6, Default, SM6, Game (DDC key hash: 9d5d7d8afd85b44bb05aebe72b5ac1f008a52028), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_ThirdMat in PCD3D_SM6, Default, SM6, Game (DDC key hash: e234475218226214f88068e3fdaae99d60d46709), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_ThirdMat in PCD3D_SM5, Default, SM5, Game (DDC key hash: baf55c3023cbce3249ad88f1d76908bb0cf25bc4), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_SecondMat in PCD3D_SM5, Default, SM5, Game (DDC key hash: 0ea9b7913138772ea4715a89cb6d1dcc5ec66592), compiling.
+LogCook: Display: Cooked packages 237 Packages Remain 2853 Total 3090
+LogMaterial: Display: Missing cached shadermap for MI_Glass_Bulkhead in PCD3D_SM6, Default, SM6, Game (DDC key hash: 06f698f949835ca3cc30bee379f73d0ee044ec34), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Glass_Door_A in PCD3D_SM6, Default, SM6, Game (DDC key hash: f1606ed95fd4f133e435290421de4e5b1ae9aa74), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Glass_Windows in PCD3D_SM5, Default, SM5, Game (DDC key hash: ed9a29e93f127cd84f855dad7d33b354f0baeb1a), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Glass_Door_A in PCD3D_SM5, Default, SM5, Game (DDC key hash: 9b5a27d7ed7b8009de9d138b90c0f7d546c0fcee), compiling.
+LogCook: Display: Cooked packages 341 Packages Remain 2749 Total 3090
+LogMaterial: Display: Missing cached shadermap for MI_Glass_Windows_Simple in PCD3D_SM6, Default, SM6, Game (DDC key hash: 2e30929804a59ba66e0d22a81034d1872d791e8c), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Glass_Railings_Simple in PCD3D_SM6, Default, SM6, Game (DDC key hash: 694704b4fd59ece3aa8f7e95aa17934c5ad8cece), compiling.
+LogFateCarousel: Display: [Fate] carousel built: 9 cards, radius 170
+LogStaticMesh: Display: Waiting for static meshes to be ready 12/14 (/Game/Dragon_Rise/Meshes/SM_Goddess) ...
+LogStaticMesh: Display: Waiting for static meshes to be ready 13/14 (/Game/Dragon_Rise/Meshes/SM_Lamp_01) ...
+LogMaterial: Display: Missing cached shadermap for Base_MRAD_Paralax_MAT in PCD3D_SM6, Low, SM6, Game (DDC key hash: 987b7227073134674f854c5b6182de569964eb7f), compiling.
+LogCook: Display: Cooked packages 478 Packages Remain 2612 Total 3090
+LogCook: Display: UnexpectedLoad: TargetPackage /MetaHumanCharacter/Materials/MI_GeneratePreBakedGrooms was unexpectededly loaded during the cook of SourcePackage /MetaHumanCharacter/TextureGraphs/TG_BakedGrooms; it was not declared as a hard dependency (aka Import) of the SourcePackage. We have to conservatively add this package to the cook, but it might not be needed at runtime. Declare the TargetPackage as an import during editor save of the SourcePackage, or mark up its load with FCookLoadScope to specify whether it is runtime or editoronly.
+LogStaticMesh: Display: Building static mesh SM_Ceiling_SmallRoom (Required Memory Estimate: 0.02492 MB)...
+LogStaticMesh: Display: Building static mesh SM_Ceiling_BigRoom (Required Memory Estimate: 0.199784 MB)...
+LogMaterial: Display: Missing cached shadermap for MI_Glass_Walls in PCD3D_SM5, Default, SM5, Game (DDC key hash: 4aa270eefa35e5a9ea3c0845507909a3b2d80365), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_Glass_Railings_Simple in PCD3D_SM5, Default, SM5, Game (DDC key hash: 15a0b9fc39344c3a8cb68d1b49fe21fbf5fb8ef0), compiling.
+LogMaterial: Display: Missing cached shadermap for Base_MRAD_Paralax_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: 28b3aec4de771be4a08a86ce6365caa80ec1d42b), compiling.
+LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (SKM_Face) ...
+LogCook: Display: Cooked packages 669 Packages Remain 2421 Total 3090
+LogStaticMesh: Display: Building static mesh Box1_Cover_v0 (Required Memory Estimate: 5.246482 MB)...
+LogMaterial: Display: Missing cached shadermap for Base_MRAD_Paralax_MAT in PCD3D_SM5, Low, SM5, Game (DDC key hash: c2947633047ab0a80de8283e761105989937a472), compiling.
+LogStaticMesh: Display: Building static mesh Box1_Open_Empty_v1 (Required Memory Estimate: 12.25962 MB)...
+LogStaticMesh: Display: Building static mesh Box1_Locker_v1 (Required Memory Estimate: 0.621256 MB)...
+LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.7.dll
+LogStaticMesh: Display: Building static mesh Box1_Open_Full_v0 (Required Memory Estimate: 43.039176 MB)...
+LogStaticMesh: Display: Building static mesh Box1_Open_Empty_v0 (Required Memory Estimate: 12.25962 MB)...
+LogStaticMesh: Display: Building static mesh Box1_Open_Full_v1 (Required Memory Estimate: 43.039176 MB)...
+LogStaticMesh: Display: Building static mesh Box1_Open_Full_v3 (Required Memory Estimate: 43.039176 MB)...
+LogStaticMesh: Display: Building static mesh Box1_Open_Full_v2 (Required Memory Estimate: 43.039176 MB)...
+LogCook: Display: Cooked packages 921 Packages Remain 2169 Total 3090
+LogStaticMesh: Display: Building static mesh SM_SciFiBox_B_B (Required Memory Estimate: 16.43818 MB)...
+LogStaticMesh: Display: Building static mesh SM_SciFiBox_B_H (Required Memory Estimate: 8.972749 MB)...
+LogMaterial: Display: Missing cached shadermap for Base_MRAD_Paralax_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: f58ad288fe91c16c2c4aa1da92d457dbd54e64aa), compiling.
+LogCook: Display: Cooked packages 1295 Packages Remain 1795 Total 3090
+LogMaterial: Display: Missing cached shadermap for MI_Ceiling_A in PCD3D_SM6, Default, SM6, Game (DDC key hash: 2d273b3a84de8e09024d52dd25f67db2d8a7f166), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_PlasticBase_A in PCD3D_SM6, Default, SM6, Game (DDC key hash: aed7a3a90beb249f857214ae8c6baa9c6c431cba), compiling.
+LogStaticMesh: Display: Waiting for static meshes to be ready 3/17 (/ControlRig/Controls/ControlRig_Pyramid_solid) ...
+LogStaticMesh: Display: Waiting for static meshes to be ready 5/17 (/ControlRig/Controls/ControlRig_Pyramid_1mm) ...
+LogStaticMesh: Display: Waiting for static meshes to be ready 7/17 (/ControlRig/Controls/ControlRig_Octagon_3mm) ...
+LogStaticMesh: Display: Waiting for static meshes to be ready 9/17 (/ControlRig/Controls/ControlRig_Hexagon_solid) ...
+LogStaticMesh: Display: Waiting for static meshes to be ready 11/17 (/ControlRig/Controls/ControlRig_RoundedTriangle_3mm) ...
+LogStaticMesh: Display: Waiting for static meshes to be ready 14/17 (/ControlRig/Controls/ControlRig_RoundedSquare_solid) ...
+LogStaticMesh: Display: Waiting for static meshes to be ready 16/17 (/ControlRig/Controls/ControlRig_RoundedSquare_3mm) ...
+LogMaterial: Display: Missing cached shadermap for MI_Ceiling_A in PCD3D_SM5, Default, SM5, Game (DDC key hash: 56c886c1aef21f27ac9927caf6a1f52469e781f8), compiling.
+LogMaterial: Display: Missing cached shadermap for MI_PlasticBase_A in PCD3D_SM5, Default, SM5, Game (DDC key hash: 8ea07585e3ee4ba543974aaaa395b73925ac7f74), compiling.
+LogMaterial: Display: Missing cached shadermap for M_Monocolor_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: 1baa1ce365bc445280d9c45d3fcb34f1498e644c), compiling.
+LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.8.dll
+LogMaterial: Display: Missing cached shadermap for M_Base_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: 6bed6a9bf66ce6d8f81a143df6b9c408fce822f5), compiling.
+LogMaterial: Display: Missing cached shadermap for M_Base_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: 0d8f52b8e2787196d77f59b11096ce10f19c2245), compiling.
+LogMaterial: Display: Missing cached shadermap for Base_MRAE_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: cc0e8fbf4c6193872353d01be415c6644efd3f36), compiling.
+LogMaterial: Display: Missing cached shadermap for M_Monocolor_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: 743f1493e06febc3f1a95b97ffd87c21a3d12cfa), compiling.
+LogMaterial: Display: Missing cached shadermap for M_Base_BRMA_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: bf5a2d183061d391e7a1412c8e67d204e80cf130), compiling.
+LogMaterial: Display: Missing cached shadermap for Box1_Base_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: f4f27fce22ea64d53cd14ad71fd19c75d7bd8087), compiling.
+LogMaterial: Display: Missing cached shadermap for Base_MRAE_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: f84f9fdaab17b1c8ffa7cb840c401ecf7031b235), compiling.
+LogMaterial: Display: Missing cached shadermap for Base_MonoColor_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: 897b8976756f0a7a7ef746905d578c8108ef94f4), compiling.
+LogCook: Display: Cooked packages 1611 Packages Remain 1479 Total 3090
+LogMaterial: Display: Missing cached shadermap for Base_MRAE_Glass_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: 96f6c79a2df2bf250bd0696209913c09a33c7150), compiling.
+LogMaterial: Display: Missing cached shadermap for Box1_Base_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: 2f803d1da7020732d228cca0698481dfb9322ddb), compiling.
+LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.12.dll
+LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.13.dll
+LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.11.dll
+LogMaterial: Display: Missing cached shadermap for M_Base_BRMA_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: 414aae69de87010beae40fa7ae36bf6b99f33968), compiling.
+LogMaterial: Display: Missing cached shadermap for Base_MonoColor_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: 172c4080845fa60b7e997d87ae7e15ccc68a9886), compiling.
+LogMaterial: Display: Missing cached shadermap for Base_MRAE_Glass_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: 20623fb02e3c2dbfe50657a824d8596a85816ac3), compiling.
+LogCook: Display: Cooked packages 1825 Packages Remain 1265 Total 3090
+LogCook: Display: Cooked packages 1994 Packages Remain 1096 Total 3090
+LogCook: Display: Cook Diagnostics: OpenFileHandles=7479, VirtualMemory=6601MiB, VirtualMemoryAvailable=38575MiB
+LogCook: Display: Cooked packages 2309 Packages Remain 781 Total 3090
+LogCook: Display: Garbage collection triggered (Soft). Triggered by conditions:
+  CookSettings.SoftGCTimeTrigger: Periodic triggering of SoftGC: SoftGCTimeFractionBudget == 0.050. TimeSinceLastGCSeconds == 30.010. CurrentTimeBudget == 1.579. ExpectedDuration == 0.034.
+LogCookCommandlet: Display: GarbageCollection... (Periodic GC)
+LogTexture: Display: Building textures: /Game/ModularSciFiEnv_K/Textures/Tile/Normal/T_CarbonFiber_N.T_CarbonFiber_N (TFO_BC5, 2048x2048 x1x1x1) (Required Memory Estimate: 517.499988 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/ModularSciFiEnv_K/Textures/Tile/BRMA/T_IronHammered_N.T_IronHammered_N (TFO_BC5, 2048x2048 x1x1x1) (Required Memory Estimate: 517.499988 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/ModularSciFiEnv_K/Textures/Tile/Normal/T_PlasticDiamond_N.T_PlasticDiamond_N (TFO_BC5, 2048x2048 x1x1x1) (Required Memory Estimate: 517.499988 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_A_v1_T.SciFiBox_B_A_v1_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_A_v2_T.SciFiBox_B_A_v2_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_A_v3_T.SciFiBox_B_A_v3_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_A_v4_T.SciFiBox_B_A_v4_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_B_v1_T.SciFi_Box_B_B_v1_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_B_v3_T.SciFi_Box_B_B_v3_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_B_v2_T.SciFi_Box_B_B_v2_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_B_v4_T.SciFi_Box_B_B_v4_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_E_v1_T.SciFi_Box_B_E_v1_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_E_v2_T.SciFi_Box_B_E_v2_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_E_v3_T.SciFi_Box_B_E_v3_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogCook: Display: UnexpectedLoad: TargetPackage /MetaHumanCharacter/Materials/MI_GeneratePreBakedGrooms was unexpectededly loaded during the cook of SourcePackage /Engine/EditorResources/S_TriggerCapsule; it was not declared as a hard dependency (aka Import) of the SourcePackage. We have to conservatively add this package to the cook, but it might not be needed at runtime. Declare the TargetPackage as an import during editor save of the SourcePackage, or mark up its load with FCookLoadScope to specify whether it is runtime or editoronly.
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_H_v1_T.SciFiBox_B_H_v1_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_E_v4_T.SciFi_Box_B_E_v4_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_H_v2_T.SciFiBox_B_H_v2_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_H_v3_T.SciFiBox_B_H_v3_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_H_v4_T.SciFiBox_B_H_v4_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_I_v1_T.SciFiBox_I_v1_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_I_v2_T.SciFiBox_I_v2_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_I_v3_T.SciFiBox_I_v3_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_I_v4_T.SciFiBox_I_v4_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_Barrel_A_v1_T.SciFiBox_Barrel_A_v1_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_Barrel_A_v2_T.SciFiBox_Barrel_A_v2_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_Barrel_A_v3_T.SciFiBox_Barrel_A_v3_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_Barrel_A_v4_T.SciFiBox_Barrel_A_v4_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_F_v1_T.SciFiBox_B_F_v1_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_F_v2_T.SciFiBox_B_F_v2_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_F_v3_T.SciFiBox_B_F_v3_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_F_v4_T.SciFiBox_B_F_v4_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_G_v1_T.SciFiBox_B_G_v1_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_G_v2_T.SciFiBox_B_G_v2_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_G_v3_T.SciFiBox_B_G_v3_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFiBox_B_G_v4_T.SciFiBox_B_G_v4_T (TFO_AutoDXT, 2048x2048 x1x1x1) (Required Memory Estimate: 328.583323 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_B_C_v1_T.SciFi_B_C_v1_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_B_C_v3_T.SciFi_B_C_v3_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_B_C_v4_T.SciFi_B_C_v4_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_B_C_v2_T.SciFi_B_C_v2_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_D_v1_T.SciFi_Box_B_D_v1_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_D_v2_T.SciFi_Box_B_D_v2_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_D_v3_T.SciFi_Box_B_D_v3_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogTexture: Display: Building textures: /Game/SciFi_Box_B/Textures/SciFi_Box_B_D_v4_T.SciFi_Box_B_D_v4_T (TFO_AutoDXT, 4096x4096 x1x1x1) (Required Memory Estimate: 1152.999984 MB), EncodeSpeed: Final
+LogCook: Display: Cooked packages 2763 Packages Remain 327 Total 3090
+LogCook: Display: Cooked packages 2983 Packages Remain 125 Total 3108
+LogMaterial: Display: Missing cached shadermap for M_LampEmiss_MAT in PCD3D_SM6, Default, SM6, Game (DDC key hash: e9b78444e6dad97caf274a37ed6e09768c911b1b), compiling.
+LogMaterial: Display: Missing cached shadermap for M_LampEmiss_MAT in PCD3D_SM5, Default, SM5, Game (DDC key hash: bfe72e629c8ae3a582104586124b58f433d9d25d), compiling.
+LogMaterial: Display: Missing cached shadermap for Grey in PCD3D_SM6, Default, SM6, Game (DDC key hash: 1b07cc35b6c38018e61722bd3776be5e4b6a50b9), compiling.
+LogCook: Display: Cooked packages 3099 Packages Remain 9 Total 3108
+LogMaterial: Display: Missing cached shadermap for Grey in PCD3D_SM5, Default, SM5, Game (DDC key hash: 9e114b9d75c0e2e4d87851cc48525add17ccffd4), compiling.
+LogCook: Display: Cooked packages 3108 Packages Remain 0 Total 3108
+LogCook: Display: Cook Diagnostics: OpenFileHandles=10025, VirtualMemory=5839MiB, VirtualMemoryAvailable=40328MiB
+LogShaderCompilers: Display: ================================================
+LogShaderCompilers: Display: === FShaderJobCache stats ===
+LogShaderCompilers: Display: Total job queries 598, among them cache hits 150 (25.08%), DDC hits 113 (18.90%), Duplicates 20 (3.34%)
+LogShaderCompilers: Display: Tracking 428 distinct input hashes that result in 268 distinct outputs (62.62%)
+LogShaderCompilers: Display: RAM used: 2.13 MiB of 1.60 GiB budget. Usage: 0.13%
+LogShaderCompilers: Display: === Shader Compilation stats ===
+LogShaderCompilers: Display: Shaders Compiled: 315
+LogShaderCompilers: Display: Jobs assigned 315, completed 315 (100%)
+LogShaderCompilers: Display: Average time worker was idle: 1.14 s
+LogShaderCompilers: Display: Time job spent in pending queue: average 0.08 s, longest 0.71 s
+LogShaderCompilers: Display: Job execution time: average 0.85 s, max 5.47 s
+LogShaderCompilers: Display: Job life time (pending + execution): average 0.93 s, max 5.52
+LogShaderCompilers: Display: Shader code size: total 3.369 MiB, numShaders 335, average 10.299 KiB, min 208 B, max 42.5 KiB
+LogShaderCompilers: Display: Time at least one job was in flight (either pending or executed): 24.90 s
+LogShaderCompilers: Display: Mutex wait stall in FShaderJobCache::SubmitJobs:  0.00%
+LogShaderCompilers: Display: Jobs were issued in 315 batches (only local compilation was used), average 1.00 jobs/batch
+LogShaderCompilers: Display: Average processing rate: 12.65 jobs/sec
+LogShaderCompilers: Display: Total thread time: 242.912 s
+LogShaderCompilers: Display: Total thread preprocess time: 7.396 s
+LogShaderCompilers: Display: Percentage time preprocessing: 3.04%
+LogShaderCompilers: Display: Effective parallelization: 9.76 (times faster than compiling all shaders on one thread). Compare with number of workers: 24 - 0.406543
+LogShaderCompilers: Display: Top 5 most expensive shader types by average time:
+LogShaderCompilers: Display:           TBasePassPSFSelfShadowedTranslucencyPolicySkylight (compiled   10 times, average 2.49 sec, max 5.17 sec, min 0.34 sec)
+LogShaderCompilers: Display:                   TBasePassPSFSelfShadowedTranslucencyPolicy (compiled   10 times, average 2.48 sec, max 5.13 sec, min 0.37 sec)
+LogShaderCompilers: Display:                         TBasePassPSFNoLightMapPolicySkylight (compiled   36 times, average 1.11 sec, max 5.31 sec, min 0.11 sec)
+LogShaderCompilers: Display:                   TMaterialCHSFNoLightMapPolicyFAnyHitShader (compiled    4 times, average 1.06 sec, max 1.27 sec, min 0.76 sec)
+LogShaderCompilers: Display:                                 TBasePassPSFNoLightMapPolicy (compiled   39 times, average 1.02 sec, max 5.01 sec, min 0.10 sec)
+LogShaderCompilers: Display: Top 5 shader types by total compile time:
+LogShaderCompilers: Display:                         TBasePassPSFNoLightMapPolicySkylight - 16.50% of total time (compiled   36 times, average 1.11 sec, max 5.31 sec, min 0.11 sec)
+LogShaderCompilers: Display:                                 TBasePassPSFNoLightMapPolicy - 16.32% of total time (compiled   39 times, average 1.02 sec, max 5.01 sec, min 0.10 sec)
+LogShaderCompilers: Display:           TBasePassPSFSelfShadowedTranslucencyPolicySkylight - 10.25% of total time (compiled   10 times, average 2.49 sec, max 5.17 sec, min 0.34 sec)
+LogShaderCompilers: Display:                   TBasePassPSFSelfShadowedTranslucencyPolicy - 10.19% of total time (compiled   10 times, average 2.48 sec, max 5.13 sec, min 0.37 sec)
+LogShaderCompilers: Display:            TVelocityPS<EVelocityPassMode::Velocity_Standard> - 4.36% of total time (compiled   14 times, average 0.76 sec, max 1.40 sec, min 0.18 sec)
+LogShaderCompilers: Display: === Material stats ===
+LogShaderCompilers: Display: Materials Cooked:        779
+LogShaderCompilers: Display: Materials Translated:    44
+LogShaderCompilers: Display: Material Total Translate Time: 0.04 s
+LogShaderCompilers: Display: Material Translation Only: 0.02 s (59%)
+LogShaderCompilers: Display: Material DDC Serialization Only: 0.00 s (0%)
+LogShaderCompilers: Display: Material Cache Hits: 0 (0%)
+LogShaderCompilers: Display: ================================================
+LogAssetRegistryGenerator: Display: Saving asset registry v22.
+LogAssetRegistryGenerator: Display: Generated development asset registry C:/Users/wpark/projects/sibelius-game/Saved/Cooked/Windows/SibeliusGame/Metadata/DevelopmentAssetRegistry.bin num assets 3203, size is 4672.32kb, XxHash64[LE] = 0x7708E5FFF02D894B, waited on hash 0.00 seconds
+LogAssetRegistryGenerator: Display: Generated asset registry num assets 3194, size is 3334.90kb
+LogShaderLibrary: Display:
+LogShaderLibrary: Display: Shader Library 'SibeliusGame' (PCD3D_SM6-PCD3D_SM6) Stats:
+LogShaderLibrary: Display: =================
+LogShaderLibrary: Display: Assets: 484, Unique Shadermaps: 329 (67.98%)
+LogShaderLibrary: Display: Total Shaders: 7935, Unique Shaders: 4404 (55.50%)
+LogShaderLibrary: Display: Total Shader Size: 61.86mb, Unique Shaders Size: 40.36mb (65.25%)
+LogShaderLibrary: Display: === Extended info:
+LogShaderLibrary: Display: Minimum number of shaders in shadermap: 1
+LogShaderLibrary: Display: Median number of shaders in shadermap: 13
+LogShaderLibrary: Display: Maximum number of shaders in shadermap: 875
+LogShaderLibrary: Display: Number of shadermaps referencing top 10 most shared shaders:
+LogShaderLibrary: Display:     311, 167, 162, 61, 57, 57, 56, 51, 50, 49
+LogShaderLibrary: Display: Unique shaders itemization (sorted by compressed size):
+LogShaderLibrary: Display: SF_Pixel: 1918 shaders (43.55%), compressed size: 12.76 MB (6.81 KB avg per shader), uncompressed size: 16.60 MB (8.86 KB avg per shader)
+LogShaderLibrary: Display: SF_Compute: 696 shaders (15.80%), compressed size: 10.18 MB (14.98 KB avg per shader), uncompressed size: 13.58 MB (19.98 KB avg per shader)
+LogShaderLibrary: Display: SF_RayHitGroup: 772 shaders (17.53%), compressed size: 9.70 MB (12.87 KB avg per shader), uncompressed size: 12.16 MB (16.14 KB avg per shader)
+LogShaderLibrary: Display: SF_Vertex: 879 shaders (19.96%), compressed size: 6.46 MB (7.53 KB avg per shader), uncompressed size: 8.69 MB (10.12 KB avg per shader)
+LogShaderLibrary: Display: SF_Mesh: 130 shaders (2.95%), compressed size: 1.13 MB (8.92 KB avg per shader), uncompressed size: 1.36 MB (10.73 KB avg per shader)
+LogShaderLibrary: Display: SF_RayMiss: 4 shaders (0.09%), compressed size: 0.08 MB (20.86 KB avg per shader), uncompressed size: 0.11 MB (28.97 KB avg per shader)
+LogShaderLibrary: Display: SF_RayCallable: 3 shaders (0.07%), compressed size: 0.03 MB (10.23 KB avg per shader), uncompressed size: 0.04 MB (13.48 KB avg per shader)
+LogShaderLibrary: Display: SF_Geometry: 2 shaders (0.05%), compressed size: 0.01 MB (5.30 KB avg per shader), uncompressed size: 0.01 MB (7.50 KB avg per shader)
+LogShaderLibrary: Display: Textual dump saved to '../../../../../../Users/wpark/projects/sibelius-game/Saved/Shaders/PCD3D_SM6-PCD3D_SM6/ShaderDebug-SibeliusGame-PCD3D_SM6-PCD3D_SM6/Dump.txt'
+LogShaderLibrary: Display: =================
+LogShaderLibrary: Display:
+LogShaderLibrary: Display: Shader Library 'SibeliusGame' (PCD3D_SM5-PCD3D_SM5) Stats:
+LogShaderLibrary: Display: =================
+LogShaderLibrary: Display: Assets: 479, Unique Shadermaps: 317 (66.18%)
+LogShaderLibrary: Display: Total Shaders: 4229, Unique Shaders: 2250 (53.20%)
+LogShaderLibrary: Display: Total Shader Size: 10.28mb, Unique Shaders Size: 6.26mb (60.95%)
+LogShaderLibrary: Display: === Extended info:
+LogShaderLibrary: Display: Minimum number of shaders in shadermap: 1
+LogShaderLibrary: Display: Median number of shaders in shadermap: 7
+LogShaderLibrary: Display: Maximum number of shaders in shadermap: 347
+LogShaderLibrary: Display: Number of shadermaps referencing top 10 most shared shaders:
+LogShaderLibrary: Display:     150, 65, 60, 53, 52, 51, 48, 35, 35, 28
+LogShaderLibrary: Display: Unique shaders itemization (sorted by compressed size):
+LogShaderLibrary: Display: SF_Pixel: 1356 shaders (60.27%), compressed size: 3.40 MB (2.56 KB avg per shader), uncompressed size: 11.66 MB (8.81 KB avg per shader)
+LogShaderLibrary: Display: SF_Vertex: 681 shaders (30.27%), compressed size: 1.81 MB (2.72 KB avg per shader), uncompressed size: 5.60 MB (8.41 KB avg per shader)
+LogShaderLibrary: Display: SF_Compute: 211 shaders (9.38%), compressed size: 1.05 MB (5.11 KB avg per shader), uncompressed size: 4.54 MB (22.03 KB avg per shader)
+LogShaderLibrary: Display: SF_Geometry: 2 shaders (0.09%), compressed size: 0.00 MB (1.69 KB avg per shader), uncompressed size: 0.01 MB (5.39 KB avg per shader)
+LogShaderLibrary: Display: Textual dump saved to '../../../../../../Users/wpark/projects/sibelius-game/Saved/Shaders/PCD3D_SM5-PCD3D_SM5/ShaderDebug-SibeliusGame-PCD3D_SM5-PCD3D_SM5/Dump.txt'
+LogShaderLibrary: Display: =================
+LogCook: Display: Dependent plugin "SteamShared" referenced by "EOS Shared" wasn't found in enabled plugins list when creating cook metadata file... skipping
+LogCook: Display: Finalize package store(s)...
+LogCook: Display: Cook by the book total time in tick 44.999340s total time 49.966534
+LogCook: Display: Peak Used virtual 12312 MiB Peak Used physical 10996 MiB
+LogCook: Display: Packages Cooked: 3100, Packages Incrementally Skipped: 0, Packages Skipped by Platform: 8, Total Packages: 3108
+LogCookStats: Display: Hierarchy Timer Information:
+LogCookStats: Display:   Root: 0.000s (0)
+LogCookStats: Display:     CleanSandbox: 0.053s (1)
+LogCookStats: Display:     CollectFilesToCook: 0.010s (1)
+LogCookStats: Display:       CookModificationDelegate: 0.001s (1)
+LogCookStats: Display:     GenerateLongPackageName: 0.001s (1)
+LogCookStats: Display:     TickMainCookLoop: 44.999s (3)
+LogCookStats: Display:       PumpPollables: 0.008s (2)
+LogCookStats: Display:       PumpRequests: 0.026s (98)
+LogCookStats: Display:       LoadPackageForCooking: 11.676s (8109)
+LogCookStats: Display:       ValidateSourcePackage: 0.000s (3108)
+LogCookStats: Display:       PostLoadPackageFixup: 0.000s (5)
+LogCookStats: Display:       SavingPackages: 31.599s (487)
+LogCookStats: Display:         PollPendingCookedPlatformDatas: 10.181s (22701)
+LogCookStats: Display:         PrepareSave: 3.242s (19911)
+LogCookStats: Display:         PrecachePlatformDataForNextPackage: 2.022s (3106)
+LogCookStats: Display:           PrepareSave: 2.021s (3798)
+LogCookStats: Display:         SaveCookedPackage: 15.699s (3108)
+LogCookStats: Display:           GEditorSavePackage: 15.422s (3108)
+LogCookStats: Display:             VerifyCanCookPackage: 0.020s (3100)
+LogCookStats: Display:         ClearAllCachedCookedPlatformData: 0.406s (3108)
+LogCookStats: Display:       WaitForAsync: 1.458s (135665)
+LogCookStats: Display:     CookByTheBookFinished: 0.408s (1)
+LogCookStats: Display:       SavingCurrentIniSettings: 0.040s (1)
+LogCookStats: Display:         ProcessingAccessedStrings: 0.001s (1)
+LogCookStats: Display:       ChunkGeneration: 0.007s (1)
+LogCookStats: Display:       CalculateReferencedSet: 0.000s (1)
+LogCookStats: Display:       FinishPopulateShaderLibrary: 0.001s (1)
+LogCookStats: Display:       GeneratorPreSave: 0.001s (1)
+LogCookStats: Display:       BuildChunkManifest: 0.032s (1)
+LogCookStats: Display:         FixupPackageDependenciesForChunks: 0.004s (1)
+LogCookStats: Display:       SaveManifests: 0.000s (1)
+LogCookStats: Display:       SaveAssetRegistry: 0.117s (1)
+LogCookStats: Display:       WriteCookerOpenOrder: 0.067s (1)
+LogCookStats: Display:       WriteCookMetadata: 0.001s (1)
+LogCookStats: Display:       WriteReferencedSet: 0.002s (1)
+LogCookStats: Display:       FinalizePackageStore: 0.005s (1)
+LogCookStats: Display: Misc Cook Stats
+LogCookStats: Display: ===============
+LogCookStats: Display: Niagara
+LogCookStats: Display:     NiagaraScriptTranslationCount=0
+LogCookStats: Display:     NiagaraCpuScriptCompileCount=0
+LogCookStats: Display:     NiagaraCpuScriptDdcCacheHitCount=5
+LogCookStats: Display:     NiagaraCpuScriptDdcCacheMissCount=0
+LogCookStats: Display:     NiagaraGpuScriptCompileCount=0
+LogCookStats: Display:     NiagaraGpuScriptDdcCacheHitCount=2
+LogCookStats: Display:     NiagaraGpuScriptDdcCacheMissCount=0
+LogCookStats: Display:     NiagaraSystemWaitForCompilationCompleteTime=0.000029
+LogCookStats: Display: OpenColorIOShader.Misc
+LogCookStats: Display:     ShadersCompiled=0
+LogCookStats: Display: ComputeKernelShader.Misc
+LogCookStats: Display:     ShadersCompiled=0
+LogCookStats: Display: NiagaraShader.Misc
+LogCookStats: Display:     ShadersCompiled=0
+LogCookStats: Display: ShaderCompiler
+LogCookStats: Display:     BlockingTimeSec=0.281984
+LogCookStats: Display:     AsyncCompileTimeSec=269.083802
+LogCookStats: Display:     GlobalBeginCompileShaderTimeSec=0.041720
+LogCookStats: Display:     GlobalBeginCompileShaderCalls=635
+LogCookStats: Display:     ProcessAsyncResultsTimeSec=0.908878
+LogCookStats: Display: GlobalShader.Misc
+LogCookStats: Display:     ShadersCompiled=6
+LogCookStats: Display: Material
+LogCookStats: Display:     FinishCacheShadersSec=0.659773
+LogCookStats: Display: Package.Load
+LogCookStats: Display:     NumRequestedLoads=4323
+LogCookStats: Display:     NumPackagesLoaded=5913
+LogCookStats: Display:     NumInlineLoads=1590
+LogCookStats: Display:     LoadPackageTimeSec=12.443177
+LogCookStats: Display: Package.Save
+LogCookStats: Display:     NumPackagesIncrementallySkipped=0
+LogCookStats: Display:     NumPackagesSaved=3108
+LogCookStats: Display:     SavePackageTimeSec=15.176180
+LogCookStats: Display:     TagPackageExportsPresaveTimeSec=0.000000
+LogCookStats: Display:     TagPackageExportsTimeSec=0.000000
+LogCookStats: Display:     FullyLoadLoadersTimeSec=0.000000
+LogCookStats: Display:     ResetLoadersTimeSec=0.000000
+LogCookStats: Display:     TagPackageExportsGetObjectsWithOuter=0.000000
+LogCookStats: Display:     TagPackageExportsGetObjectsWithMarks=0.000000
+LogCookStats: Display:     SerializeImportsTimeSec=0.000000
+LogCookStats: Display:     SortExportsSeekfreeInnerTimeSec=0.000000
+LogCookStats: Display:     SerializeExportsTimeSec=0.000000
+LogCookStats: Display:     SerializeBulkDataTimeSec=0.028536
+LogCookStats: Display:     AsyncWriteTimeSec=0.000000
+LogCookStats: Display:     MBWritten=0.000000
+LogCookStats: Display: CookOnTheFlyServer
+LogCookStats: Display:     PeakRequestQueueSize=3087
+LogCookStats: Display:     PeakLoadQueueSize=191
+LogCookStats: Display:     PeakSaveQueueSize=315
+LogCookStats: Display: Package.DifferentPackagesSizeMBPerAsset
+LogCookStats: Display: Package.NumberOfDifferencesInPackagesPerAsset
+LogCookStats: Display: Package.PackageDifferencesSizeMBPerAsset
+LogCookStats: Display: Package.DiffTotal
+LogCookStats: Display:     NumberOfDifferentPackages=0
+LogCookStats: Display:     DifferentPackagesSizeMB=0.000000
+LogCookStats: Display:     NumberOfDifferencesInPackages=0
+LogCookStats: Display:     PackageDifferencesSizeMB=0.000000
+LogCookStats: Display: UnversionedProperties
+LogCookStats: Display:     SavedStructs=0
+LogCookStats: Display:     SavedMB=0
+LogCookStats: Display:     EquivalentTaggedMB=0
+LogCookStats: Display:     CompressionRatio=-nan(ind)
+LogCookStats: Display:     BitfieldWasteKB=0
+LogCookStats: Display:
+LogCookStats: Display: Cook Profile
+LogCookStats: Display: ============
+LogCookStats: Display:  0.CookWallTimeSec=55.334094
+LogCookStats: Display:  0. 0.StartupWallTimeSec=4.527679
+LogCookStats: Display:  0. 1.StartCookByTheBookTimeSec=5.020231
+LogCookStats: Display:  0. 1. 0.BlockOnAssetRegistryTimeSec=0.560186
+LogCookStats: Display:  0. 1. 1.GameCookModificationDelegateTimeSec=0.000936
+LogCookStats: Display:  0. 2.TickCookOnTheSideTimeSec=34.995998
+LogCookStats: Display:  0. 2. 0.TickCookOnTheSideLoadPackagesTimeSec=11.677024
+LogCookStats: Display:  0. 2. 1.TickCookOnTheSideSaveCookedPackageTimeSec=15.698968
+LogCookStats: Display:  0. 2. 1. 0.TickCookOnTheSideResolveRedirectorsTimeSec=0.000000
+LogCookStats: Display:  0. 2. 2.TickCookOnTheSidePrepareSaveTimeSec=5.263535
+LogCookStats: Display:  0. 3.TickLoopGCTimeSec=0.365977
+LogCookStats: Display:  0. 4.TickLoopRecompileShaderRequestsTimeSec=0.000000
+LogCookStats: Display:  0. 5.TickLoopShaderProcessAsyncResultsTimeSec=0.000005
+LogCookStats: Display:  0. 6.TickLoopProcessDeferredCommandsTimeSec=0.000003
+LogCookStats: Display:  0. 7.TickLoopTickCommandletStatsTimeSec=0.000001
+LogCookStats: Display:  0. 8.TickLoopFlushRenderingCommandsTimeSec=0.007549
+LogCookStats: Display:  0. 9.ShaderFlushTimeSec=0.000000
+LogCookStats: Display:  0. 10.ValidationTimeSec=0.000550
+LogCookStats: Display:  1.CookParameters=
+LogCookStats: Display:  1. 0.TargetPlatforms=Windows
+LogCookStats: Display:  1. 1.CookProject=SibeliusGame
+LogCookStats: Display:  1. 2.CookCultures=
+LogCookStats: Display:  1. 3.IsCookAll=false
+LogCookStats: Display:  1. 4.IsCookOnTheFly=false
+LogCookStats: Display:  1. 5.IsIterativeCook=false
+LogCookStats: Display:  1. 6.IsUnversioned=true
+LogCookStats: Display:  1. 7.CookLabel=
+LogCookStats: Display:  1. 8.IsFastCook=false
+LogCookStats: Display:
+LogCookStats: Display: DDC Summary Stats
+LogCookStats: Display: =================
+LogCookStats: Display: BackEnd         =InstalledDerivedDataBackendGraph
+LogCookStats: Display: HasLocalCache   =      true
+LogCookStats: Display: HasSharedCache  =     false
+LogCookStats: Display: HasCloudCache   =     false
+LogCookStats: Display: HasZenCache     =      true
+LogCookStats: Display: TotalGetHits    =     15586
+LogCookStats: Display: TotalGetMisses  =      1087
+LogCookStats: Display: TotalGets       =     16673
+LogCookStats: Display: TotalGetHitPct  =  0.934805
+LogCookStats: Display: GetMissPct      =  0.065195
+LogCookStats: Display: TotalPutHits    =      2248
+LogCookStats: Display: TotalPutMisses  =         0
+LogCookStats: Display: TotalPuts       =      2248
+LogCookStats: Display: TotalPutHitPct  =  1.000000
+LogCookStats: Display: PutMissPct      =  0.000000
+LogCookStats: Display: LocalGetHits    =     14527
+LogCookStats: Display: LocalGetMisses  =      1087
+LogCookStats: Display: LocalGetTotal   =     15614
+LogCookStats: Display: LocalGetHitPct  =  0.930383
+LogCookStats: Display: SharedGetHits   =         0
+LogCookStats: Display: SharedGetTotal  =         0
+LogCookStats: Display: SharedGetHitPct =  0.000000
+LogCookStats: Display: ZenLocalGetHits =     14527
+LogCookStats: Display: ZenLocalGetTotal=     15614
+LogCookStats: Display: ZenLocalGetHitPct=  0.930383
+LogCookStats: Display: ZenRemoteGetHits=         0
+LogCookStats: Display: ZenRemoteGetTotal=         0
+LogCookStats: Display: ZenRemoteGetHitPct=  0.000000
+LogCookStats: Display: ZenRemoteReadSpeed=  0.000000
+LogCookStats: Display: ZenRemoteWriteSpeed=  0.000000
+LogCookStats: Display: ZenRemoteLatency=  0.000000
+LogCookStats: Display: CloudGetHits    =         0
+LogCookStats: Display: CloudGetTotal   =         0
+LogCookStats: Display: CloudGetHitPct  =  0.000000
+LogCookStats: Display: LocalLatency    =  1.021542
+LogCookStats: Display: LocalReadSpeed  =309.023778
+LogCookStats: Display: LocalWriteSpeed =112.784194
+LogCookStats: Display: SharedLatency   =  0.000000
+LogCookStats: Display: SharedReadSpeed =  0.000000
+LogCookStats: Display: SharedWriteSpeed=  0.000000
+LogCookStats: Display: CloudLatency    =  0.000000
+LogCookStats: Display: CloudReadSpeed  =  0.000000
+LogCookStats: Display: CloudWriteSpeed =  0.000000
+LogCookStats: Display:
+LogCookStats: Display: DDC Resource Stats
+LogCookStats: Display: =======================================================================================================
+LogCookStats: Display: Asset Type                          Total Time (Sec)  GameThread Time (Sec)  Assets Built  MB Processed
+LogCookStats: Display: ----------------------------------  ----------------  ---------------------  ------------  ------------
+LogCookStats: Display: StaticMesh                                      2.31                   0.01            12        406.84
+LogCookStats: Display: GlobalShader                                    2.07                   1.35           896        221.04
+LogCookStats: Display: BodySetup                                       1.26                   0.00            18         90.25
+LogCookStats: Display: DistanceField                                   0.93                   0.90           268         26.90
+LogCookStats: Display: MaterialShader                                  0.49                   0.95            44         98.32
+LogCookStats: Display: Texture                                         0.20                   8.10           278       2498.75
+LogCookStats: Display: BulkDataList                                    0.07                   0.00            45          0.73
+LogCookStats: Display: NavCollision                                    0.05                   0.00            44         43.99
+LogCookStats: Display: CardRepresentation                              0.04                   0.01           259          0.15
+LogCookStats: Display: Shader                                          0.03                   0.00           315          0.75
+LogCookStats: Display: BulkDataPayloadId                               0.01                   0.00            43          0.11
+LogCookStats: Display: MESHDATAKEY                                     0.01                   0.00             0         25.82
+LogCookStats: Display: AnimationSequence                               0.01                   0.00             0          0.57
+LogCookStats: Display: MaterialTranslation                             0.00                   0.00            26          0.00
+LogCookStats: Display: CKERSM                                          0.00                   0.00             0          0.35
+LogCookStats: Display: GROOM                                           0.00                   0.00             0          0.61
+LogCookStats: Display: STREAMEDAUDIO                                   0.00                   0.00             0          0.79
+LogCookStats: Display: GROOMBINDING                                    0.00                   0.00             0          0.30
+LogCookStats: Display: Audio                                           0.00                   0.00             0          0.77
+LogCookStats: Display: SkeletalMesh                                    0.00                   0.00             0         25.10
+LogCookStats: Display: NiagaraScript                                   0.00                   0.00             0          0.17
+LogPackageBuildDependencyTracker: Display: Package Accesses (1760 referencing packages with a total of 21642 unique accesses)
+LogConfigBuildDependencyTracker: Display: Config Accesses (2465 referencing packages with a total of 8838 unique accesses). 1774 unique accesses that were not associated with a package.
+LogCook: Display: Done!
+LogSavePackage: Display: Took 0.002370s to verify the EDL loading graph.
+LogInit: Display: Finished.
+LogInit: Display:
+
+Execution of commandlet took:  50.81 seconds
+LogShaderCompilers: Display: Shaders left to compile 0
+Script history saved: 2 entries
+Script history saved: 2 entries
+Took 58.40s to run UnrealEditor-Cmd.exe, ExitCode=0
+Cook command time: 58.41 s
+********** COOK COMMAND COMPLETED **********
+********** STAGE COMMAND STARTED **********
+Creating Staging Manifest...
+Patching bootstrap executable; C:\Users\wpark\projects\sibelius-game\Intermediate\Staging\SibeliusGame.exe
+Begin update resource 'C:\Users\wpark\projects\sibelius-game\Intermediate\Staging\SibeliusGame.exe' (0)
+Add resource 101, length 104 (True)
+Add resource 1, length 1996 (True)
+Add resource 2, length 2447 (True)
+Add resource 3, length 2535 (True)
+Add resource 4, length 3037 (True)
+Add resource 5, length 3244 (True)
+Add resource 6, length 3531 (True)
+Add resource 7, length 6931 (True)
+Add resource 201, length 90 (True)
+Add resource 202, length 26 (True)
+Add resource 205, length 2 (True)
+End update resource (True/0)
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\PropertyNames.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\Keywords.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseLightmass.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\PortableObjectExport.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\Editor.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\PortableObjectImport.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\WordCount.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\RepairData.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseEditorKeyBindings.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseEditorPerProjectUserSettings.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Windows\WindowsEditorSettings.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseSourceControlSettings.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Windows\WindowsEditorPerProjectUserSettings.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\ToolTips.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\Category.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseEditor.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BasePakFileRules.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Localization\Engine.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseEditorSettings.ini
+Excluding config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseUnrealInsightsSettings.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseEngine.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseInput.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseHardware.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Windows\WindowsGame.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseMaterialExpressions.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Windows\WindowsInput.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Windows\BaseWindowsEngine.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\ConsoleVariables.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\ConfigRedirects.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseGameUserSettings.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseGame.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseScalability.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseRuntimeOptions.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseDeviceProfiles.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\VulkanPC\DataDrivenPlatformInfo.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseCompat.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Base.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Windows\BaseWindowsInput.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\BaseInstallBundle.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Layouts\DefaultLayout.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\PluginBase.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Windows\DataDrivenPlatformInfo.ini
+Including config file C:\Program Files\Epic Games\UE_5.7\Engine\Config\Layouts\UE4ClassicLayout.ini
+Excluding config file C:\Users\wpark\projects\sibelius-game\Config\DefaultEditorPerProjectUserSettings.ini
+Excluding config file C:\Users\wpark\projects\sibelius-game\Config\DefaultEditor.ini
+Including config file C:\Users\wpark\projects\sibelius-game\Config\DefaultEngine.ini
+Including config file C:\Users\wpark\projects\sibelius-game\Config\DefaultInput.ini
+Including config file C:\Users\wpark\projects\sibelius-game\Config\DefaultGame.ini
+Cleaning Stage Directory: C:\Users\wpark\projects\sibelius-game\Saved\StagedBuilds\Windows
+Creating pak using staging manifest.
+DumpManifest: C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\PrePak_Windows_NonUFSFiles.txt, NumItems: 127
+DumpManifest: C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\PrePak_Windows_NonUFSFilesDebug.txt, NumItems: 6
+DumpManifest: C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\PrePak_Windows_UFSFiles.txt, NumItems: 9680
+No matching platform for PakFileRules for Section ExcludeContentForMobile : Windows
+Using 0 pak order files:
+Running UnrealPak with arguments: "C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject"  -cryptokeys="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\Crypto.json" -patchpaddingalign=2048 -compressionformats=Oodle -compresslevel=4 -compressmethod=Kraken  -platform=Windows  -CreateMultiple="C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\PakCommands.txt"
+Running: C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealPak.exe "C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject"  -cryptokeys="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\Crypto.json" -patchpaddingalign=2048 -compressionformats=Oodle -compresslevel=4 -compressmethod=Kraken  -platform=Windows  -CreateMultiple="C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\PakCommands.txt"
+LogPakFile: Display: ProjectDir: ../../../../../../Users/wpark/projects/sibelius-game/
+LogPakFile: Display: Parsing crypto keys from a crypto key cache file
+LogPakFile: Display: CompressionFormats in priority order: Oodle, Zlib
+LogPakFile: Display: Oodle enabled on 'NoPluginCompression' files
+LogPakFile: Display: Loading response file C:\Program Files\Epic Games\UE_5.7\Engine\Programs\AutomationTool\Saved\ResponseFiles\PakList_SibeliusGame-Windows.txt
+LogPakFile: Display: Added 1707 entries to add to pak file.
+LogPakFile: Display: Collecting files to add to pak file...
+LogPakFile: Display: Collected 1707 files in 0.00s.
+LogPakFile: Display: Creating pak C:/Users/wpark/projects/sibelius-game/Saved/StagedBuilds/Windows/SibeliusGame/Content/Paks/SibeliusGame-Windows.pak.
+OodleDataCompression: Display: Oodle v2.9.14 format for pak/iostore with method=Kraken, level=4=Normal
+LogPakFile: Display: Created pak file: C:/Users/wpark/projects/sibelius-game/Saved/StagedBuilds/Windows/SibeliusGame/Content/Paks/SibeliusGame-Windows.pak
+LogPakFile: Display: CompressionFormat 0 [Oodle] : 398 files, 33179087 -> 10171643 bytes
+LogPakFile: Display: CompressionFormat 2 [None] : 1309 files, 770605 -> 770605 bytes
+LogPakFile: Display: Added 1707 files, 11600280 bytes total
+LogPakFile: Display: PrimaryIndex size: 24130 bytes
+LogPakFile: Display: PathHashIndex size: 53398 bytes
+LogPakFile: Display: FullDirectoryIndex size: 56194 bytes
+LogPakFile: Display: Compression summary: 30.66% of original size. Compressed Size 10171643 bytes, Original Size 33179087 bytes.
+LogPakFile: Display: Encryption - DISABLED
+LogPakFile: Display:
+LogPakFile: Display: Writer and Compression Threads exited.
+LogPakFile: Display: UnrealPak executed in 0.262106 seconds
+Took 0.59s to run UnrealPak.exe, ExitCode=0
+Running UnrealPak with arguments: "C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject" -CreateGlobalContainer="C:\Users\wpark\projects\sibelius-game\Saved\StagedBuilds\Windows\SibeliusGame\Content\Paks\global.utoc" -PackageStoreManifest="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\packagestore.manifest" -CookedDirectory="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows" -Commands="C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\IoStoreCommands.txt" -ScriptObjects="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\scriptobjects.bin" -patchpaddingalign=2048 -compressionformats=Oodle -compresslevel=4 -compressmethod=Kraken   -cryptokeys="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\Crypto.json" -compressionMinBytesSaved=1024 -compressionMinPercentSaved=5 -WriteBackMetadataToAssetRegistry=Disabled -platform=Windows 
+Running: C:\Program Files\Epic Games\UE_5.7\Engine\Binaries\Win64\UnrealPak.exe "C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject" -CreateGlobalContainer="C:\Users\wpark\projects\sibelius-game\Saved\StagedBuilds\Windows\SibeliusGame\Content\Paks\global.utoc" -PackageStoreManifest="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\packagestore.manifest" -CookedDirectory="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows" -Commands="C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\IoStoreCommands.txt" -ScriptObjects="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\scriptobjects.bin" -patchpaddingalign=2048 -compressionformats=Oodle -compresslevel=4 -compressmethod=Kraken   -cryptokeys="C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\Crypto.json" -compressionMinBytesSaved=1024 -compressionMinPercentSaved=5 -WriteBackMetadataToAssetRegistry=Disabled -platform=Windows
+LogPakFile: Display: ProjectDir: ../../../../../../Users/wpark/projects/sibelius-game/
+LogIoStore: Display: ==================== IoStore Utils ====================
+LogIoStore: Display: Parsing crypto keys from a crypto key cache file 'C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows\SibeliusGame\Metadata\Crypto.json'
+LogIoStore: Display: Container signing - DISABLED
+LogIoStore: Display: Directory index - ENABLED
+LogIoStore: Display: Using compression format 'Oodle'
+LogConfig: Display: Read in platform Windows ini files took 0.01 seconds
+LogIoStore: Display: Using memory mapping alignment '16384'
+LogIoStore: Display: Using compression block size '65536'
+LogIoStore: Display: Using compression block alignment '2048'
+LogIoStore: Display: Using compression min bytes saved '1024'
+LogIoStore: Display: Using compression min percent saved '5'
+LogIoStore: Display: Using max partition size '0'
+LogIoStore: Display: Not using DDC for compression
+LogIoStore: Display: Using command list file: 'C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\IoStoreCommands.txt'
+LogIoStore: Display: Selected Oodle level 4 (Normal) from command line for shaders
+LogIoStore: Display: Fetched 3108 oplog items from Manifest in 0.00 seconds
+LogIoStore: Display: Parsed 3108 oplog items 0.01 seconds, 4869 chunks
+LogIoStore: Display: Using input asset registry: C:/Users/wpark/projects/sibelius-game/Saved/Cooked/Windows/SibeliusGame/Metadata/DevelopmentAssetRegistry.bin
+LogIoStore: Display: Loaded 1769 chunk hashes from AssetRegistry in 0.02 seconds, 1769 hashes updated in 0.00 seconds
+LogIoStore: Display: Searching for cooked assets in folder 'C:\Users\wpark\projects\sibelius-game\Saved\Cooked\Windows'
+LogIoStore: Display: Found '7977' files
+LogIoStore: Display: Creating container targets...
+OodleDataCompression: Display: Oodle v2.9.14 format for pak/iostore with method=Kraken, level=4=Normal
+LogIoStore: Display: Parsing packages...
+LogIoStore: Display: Reading package assets...
+LogIoStore: Display: Reading 1000/3100: 'C:/Users/wpark/projects/sibelius-game/Saved/Cooked/Windows/SibeliusGame/Content/HouseFurniture/Materials/Generic/MI_Wood_A.uasset'
+LogIoStore: Display: Reading 2000/3100: 'C:/Users/wpark/projects/sibelius-game/Saved/Cooked/Windows/SibeliusGame/Content/HouseFurniture/Meshes/SM_ToyRabbit_A1.uasset'
+LogIoStore: Display: Reading 3000/3100: 'C:/Users/wpark/projects/sibelius-game/Saved/Cooked/Windows/SibeliusGame/Content/Characters/Mannequins/Materials/Manny/MI_Manny_02_New.uasset'
+LogIoStore: Display: Packages read 3,100 files in 0.02 seconds, 6,955,115 total bytes, 291,308,835 bytes per second
+LogIoStore: Display: Processing shader libraries, compressing with Oodle Mermaid, level 4 (Normal)
+LogShaderLibrary: Display: Created IoStoreShaderArchive header: shaders grouped in 414 groups (158 of them didn't need new indices), average uncompressed size 164684 bytes, min 249 bytes, max 1040706 bytes (r.ShaderCodeLibrary.MaxShaderGroupSize=1048576)
+LogIoStore: Display: Global-PCD3D_SM5(PCD3D_SM5): Recompressed 4720 shaders as 414 groups. Library size changed from 16088 KB (4.14 : 1 ratio) to 7086 KB (9.40 : 1 ratio), 44.05% of previous.
+LogShaderLibrary: Display: Created IoStoreShaderArchive header: shaders grouped in 501 groups (94 of them didn't need new indices), average uncompressed size 110004 bytes, min 2378 bytes, max 967700 bytes (r.ShaderCodeLibrary.MaxShaderGroupSize=1048576)
+LogIoStore: Display: SibeliusGame-PCD3D_SM6(PCD3D_SM6): Recompressed 4404 shaders as 501 groups. Library size changed from 41331 KB (1.30 : 1 ratio) to 27881 KB (1.93 : 1 ratio), 67.46% of previous.
+LogShaderLibrary: Display: Created IoStoreShaderArchive header: shaders grouped in 748 groups (204 of them didn't need new indices), average uncompressed size 370805 bytes, min 1249 bytes, max 1083990 bytes (r.ShaderCodeLibrary.MaxShaderGroupSize=1048576)
+LogIoStore: Display: Global-PCD3D_SM6(PCD3D_SM6): Recompressed 13153 shaders as 748 groups. Library size changed from 206211 KB (1.31 : 1 ratio) to 130614 KB (2.07 : 1 ratio), 63.34% of previous.
+LogShaderLibrary: Display: Created IoStoreShaderArchive header: shaders grouped in 432 groups (128 of them didn't need new indices), average uncompressed size 52928 bytes, min 249 bytes, max 962811 bytes (r.ShaderCodeLibrary.MaxShaderGroupSize=1048576)
+LogIoStore: Display: SibeliusGame-PCD3D_SM5(PCD3D_SM5): Recompressed 2250 shaders as 432 groups. Library size changed from 6414 KB (3.48 : 1 ratio) to 2825 KB (7.90 : 1 ratio), 44.05% of previous.
+LogIoStore: Display: Shaders processed in 0.78 seconds
+LogIoStore: Display: Initialized WriteRequestManager with MaxConcurrentSourceReads=14 (28 cores), MaxSourceBufferMemory=3072MiB
+LogIoStore: Display: Processing redirects...
+LogIoStore: Display: Creating disk layout...
+LogIoStore: Display: Ordered 3100 packages using fallback bundle order
+LogIoStore: Display: Serializing container(s)...
+LogIoStore: Display: Writing chunks 3955/6967... [2139 compressed] [5685 compression tasks] [Physical: 3384 MiB, Virtual: 5904 MiB]
+LogIoStore: Display: Writing chunks 5382/6967... [3383 compressed] [7324 compression tasks] [Physical: 4321 MiB, Virtual: 6206 MiB]
+LogIoStore: Display: Writing chunks 6814/6967... [4718 compressed] [1695 compression tasks] [Physical: 3784 MiB, Virtual: 5293 MiB]
+LogIoStore: Display: Writing and compressing took 5.32 seconds, writes to disk took 3.63 seconds for 3,600,287,840 bytes @ 993,009,479 bytes per second.
+LogIoStore: Display: global: Found perfect hashmap for 1 items.
+LogIoStore: Display: SibeliusGame-Windows: Found perfect hashmap for 6966 items.
+LogIoStore: Display: Finalize took 0.0 seconds for 2 writers to write 2,204,870 bytes, 251,973,626 bytes per second
+LogIoStore: Display: Writing tocs... [Physical: 3429 MiB, Virtual: 4886 MiB]
+LogIoStore: Display: 1,769 / 6,967 hashes were loaded from the hash database, by type:
+LogIoStore: Display:     BulkData                   1,768
+LogIoStore: Display:     OptionalBulkData           1
+LogIoStore: Display: 4,869 / 6,967 chunks attempted to compress, by type:
+LogIoStore: Display:     ExportBundleData           3,100 / 3,100
+LogIoStore: Display:     BulkData                   1,768 / 1,768
+LogIoStore: Display:     OptionalBulkData           1 / 1
+LogIoStore: Display:     ScriptObjects              0 / 1
+LogIoStore: Display:     ContainerHeader            0 / 1
+LogIoStore: Display:     ShaderCodeLibrary          0 / 4
+LogIoStore: Display:     ShaderCode                 0 / 2,092
+LogIoStore: Display: Source bytes read:
+LogIoStore: Display:     Zen:                                  0
+LogIoStore: Display:     Loose File:              12,349,127,727
+LogIoStore: Display:         ExportBundleData       7,598,427,712 bytes over 6,200 reads
+LogIoStore: Display:         BulkData               4,717,145,583 bytes over 1,768 reads
+LogIoStore: Display:         OptionalBulkData         33,554,432 bytes over 1 reads
+LogIoStore: Display:     Memory:                     346,904,394
+LogIoStore: Display:         ShaderCodeLibrary         2,008,368 bytes over 8 reads
+LogIoStore: Display:         ShaderCode              344,896,026 bytes over 4,184 reads
+LogIoStore: Display: Calculating stats...
+LogIoStore: Display:
+LogIoStore: Display: Container Summary
+LogIoStore: Display: ==================
+LogIoStore: Display:
+LogIoStore: Display: Container                                               Flags      Chunk(s) #       TOC (KiB)       Raw Size (MiB)           Size (MiB)
+LogIoStore: Display: ----------------------------------------------------------------------------------------------------------------------------------------------
+LogIoStore: Display: global                                              -/-/-/-/-               1            0.78                 3.10                 3.10 -
+LogIoStore: Display: SibeliusGame-Windows                                C/-/-/I/-            6966         2152.42              8329.27              3430.41 (58.82% Oodle)
+LogIoStore: Display: ----------------------------------------------------------------------------------------------------------------------------------------------
+LogIoStore: Display: Total                                                                    6967         2153.19              8332.37              3433.50
+LogIoStore: Display:
+LogIoStore: Display: ** Flags: (C)ompressed / (E)ncrypted / (S)igned) / (I)ndexed) / (O)nDemand **
+LogIoStore: Display:
+LogIoStore: Display: Compression block padding:     5.29 MiB
+LogIoStore: Display:
+LogIoStore: Display: Container Directory Index
+LogIoStore: Display: ==========================
+LogIoStore: Display:
+LogIoStore: Display: Container                                          Size (KiB)
+LogIoStore: Display: ----------------------------------------------------------------------------------------------------------------------------------------------
+LogIoStore: Display: global                                                   0.00
+LogIoStore: Display: SibeliusGame-Windows                                   205.00
+LogIoStore: Display:
+LogIoStore: Display: Container Patch Report
+LogIoStore: Display: ========================
+LogIoStore: Display:
+LogIoStore: Display: Container                                             Total #       Modified #          Added #   Modified (MiB)      Added (MiB)
+LogIoStore: Display: ----------------------------------------------------------------------------------------------------------------------------------------------
+LogIoStore: Display: global                                                      1                0                0             0.00             0.00
+LogIoStore: Display: SibeliusGame-Windows                                     6966                0             6966             0.00          3425.12
+LogIoStore: Display:
+LogIoStore: Display: PackageStore
+LogIoStore: Display: =============
+LogIoStore: Display:
+LogIoStore: Display: Container                                          Size (KiB)      Packages #     Localized #
+LogIoStore: Display: ----------------------------------------------------------------------------------------------------------------------------------------------
+LogIoStore: Display: SibeliusGame-Windows                                      112            3100               0
+LogIoStore: Display: ----------------------------------------------------------------------------------------------------------------------------------------------
+LogIoStore: Display: Total                                                     112            3100               0
+LogIoStore: Display:
+LogIoStore: Display:
+LogIoStore: Display: Input:      3100 Packages
+LogIoStore: Display: Input:      3.54 GiB UExp
+LogIoStore: Display: Input:      6.63 MiB UAsset
+LogIoStore: Display: Input:      4.42 GiB UBulk
+LogIoStore: Display: Input:    134.47 MiB for 1162 Global shaders
+LogIoStore: Display: Input:      6.45 MiB for 390 Shared shaders
+LogIoStore: Display: Input:         0   B for 0 Unique shaders
+LogIoStore: Display: Input:     23.54 MiB for 540 Inline shaders
+LogIoStore: Display:
+LogIoStore: Display: Output:    57642 Name map entries
+LogIoStore: Display: Output:     5529 Imported package entries
+LogIoStore: Display: Output:     1470 Packages without imports
+LogIoStore: Display: Output:        0 Public runtime script objects
+LogIoStore: Display: Output:     4.60 MiB HeaderData
+LogIoStore: Display: Output:     3.10 MiB InitialLoadData
+LogIoStore: Display:
+LogIoStore: Display: Success
+LogPakFile: Display: UnrealPak executed in 7.199300 seconds
+Took 7.52s to run UnrealPak.exe, ExitCode=0
+DumpManifest: C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\FinalCopyWin64_UFSFiles.txt, NumItems: 9681
+DumpManifest: C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\FinalCopyWin64_NonUFSFiles.txt, NumItems: 127
+DumpManifest: C:\Users\wpark\AppData\Roaming\Unreal Engine\AutomationTool\Logs\C+Program+Files+Epic+Games+UE_5.7\FinalCopyWin64_NonUFSFilesDebug.txt, NumItems: 6
+Copying NonUFSFiles to staging directory: C:\Users\wpark\projects\sibelius-game\Saved\StagedBuilds\Windows
+Copying DebugFiles to staging directory: C:\Users\wpark\projects\sibelius-game\Saved\StagedBuilds\Windows
+Stage command time: 9.61 s
+********** STAGE COMMAND COMPLETED **********
+********** PACKAGE COMMAND STARTED **********
+Package command time: 0.00 s
+********** PACKAGE COMMAND COMPLETED **********
+********** ARCHIVE COMMAND STARTED **********
+Archiving to C:/Users/wpark/builds/sibelius-v04-dev
+Archive command time: 1.59 s
+********** ARCHIVE COMMAND COMPLETED **********
+BuildCookRun time: 92.60 s
+BUILD SUCCESSFUL
+AutomationTool executed for 0h 1m 32s
+AutomationTool exiting with ExitCode=0 (Success)
+PKG_EXIT=0 

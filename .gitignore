@@ -142,3 +142,17 @@ Plugins/UnrealClaude/Resources/mcp-bridge/node_modules/
 # Python bytecode cache (ue_bridge client runs under the engine's Python)
 __pycache__/
 *.pyc
+
+# ===========================================================================
+# Swept-in 2026-07-02 by an over-broad `git add -A`. NOT individually
+# classified — ignored per policy (over-inclusive is safe; a leak is not).
+# If any of these is actually YOUR OWN content, delete its line and commit it
+# deliberately. Bytes for paid packs stay local (install via Fab).
+# ===========================================================================
+Content/Carousel/
+Content/Dragon_Rise/
+Content/Library/
+Content/MagicianLabatory/
+Content/StainedGlass3D/
+Content/UltimateGothicCathedralChurch/
+Content/UnrealClaude/

@@ -1,0 +1,23 @@
+{
+ "label": "Landscape",
+ "origin": [
+  0.0,
+  0.0,
+  0.0
+ ],
+ "extent_uu": [
+  50800.0,
+  50800.0,
+  100.0
+ ],
+ "size_m": [
+  1016.0,
+  1016.0
+ ],
+ "actor_location": [
+  -50800.0,
+  -50800.0,
+  0.0
+ ],
+ "material_assigned": true
+}
