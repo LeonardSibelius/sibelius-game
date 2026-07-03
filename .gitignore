@@ -161,3 +161,10 @@ Content/UnrealClaude/
 #     Added from Fab. Referenced by /Game/ParagonShinbi/... path only; bytes stay
 #     local (Fab -> Add to Project). Keep the Epic character out of the repo.
 Content/ParagonShinbi/
+
+# --- Vehicle packs: Helicopter + Vehicles/boats (Walt's aircraft/watercraft, SIB) ---
+#     Fab-pack structure (Audio/Blueprint/Meshes/Textures/VFX). Referenced by
+#     /Game/... path only; bytes stay local. If either becomes YOUR own authored
+#     content you want versioned, delete its line and commit it deliberately.
+Content/Helicopter/
+Content/Vehicles/
