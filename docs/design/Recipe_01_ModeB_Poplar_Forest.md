@@ -301,6 +301,43 @@ jarring pop-in, so the existing TravelTransitionSubsystem cover may already suff
 (confirm); (#7 part 2) clearing mask so foliage stops spearing the anchors in LUSH seeds
 (invisible in the dead seed); final cook with the arrival fix + butler push.
 
+**0.5.2 SHIPPED (2026-07-03).** package_v052.ps1 (Development, EXITCODE=0, clean cook — the
+poplar-leaf SkipPackage warnings from the minimal de-risk cook did NOT recur in the full
+cook) → butler push leonardsibelius/leonard-sibelius:windows --userversion 0.5.2. Downloaded
+from itch, verified: kitchen "Many Worlds" door opens the promoted L_Poplar_Forest, composed
+forest with hero/Shinbi/boat, composed arrival on the postcard. Debug Print String silenced
+(Print to Screen off, Print to Log on).
+
+**KNOWN ISSUE (top item next session):** the world does NOT appear to re-roll on in-game
+RE-ENTRY (O → office → back through the kitchen door) within one running session — even though
+FRESH launches (PIE, dev cook) clearly reseeded (lush vs dead). Caveat: the arrival tableau
+(boat/Shinbi/hero) is FIXED by design, so only the far-background flora would reveal a re-roll
+— confirm the background actually matches before assuming a bug. Suspects: PCG runtime-gen
+caching within a session, OR the kit's auto-runtime-gen ("Runtime Generation" checkbox)
+generating from the baked component seed and racing/overriding our BeginPlay reseed. Diagnostic:
+log the chosen seed each entry (add to the Level-BP Print String), grep the packaged log across
+two visits to see whether ConductWorld reseeds. Fix candidates: force Cleanup+regenerate on
+entry; or ensure generation is driven ONLY by ConductWorld, not the auto-scheduler. Also still
+queued: Layer 2b travel-cover timing; #7-part-2 clearing mask; then the drivable boat/helicopter
+milestone.
+
+**RESEED BUG FOUND + FIXED → 0.5.3 (2026-07-03).** Diagnosed in PIE with seed-logging (Print
+String now logs the value Set on the Conductor). The reseed WAS firing every re-entry — two
+entries logged 1294106880 and 1175023616 — but BOTH were exact multiples of 256, i.e. ≡ 0 mod 4.
+Root cause: `Random Integer in Range(0, 2000000000)` — that range is huge vs the engine's random
+float precision, so the low bits quantize to 0. The row-rotation `RowNames[(ArrayIndex +
+WorldSeed) % 4]` keys off `WorldSeed % 4`, which was therefore ALWAYS 0 → the 4 biome looks were
+always dealt to the same 4 regions (only the fine scatter varied, so it read as "same world").
+FIX: shrank the range to **`Random Integer in Range(0, 100000)`** (one field). Re-tested in PIE —
+seeds 41511 / 34205 / 58016 → `% 4` = 3 / 1 / 0, all different → row rotation varies again.
+LESSON: don't derive a small modulus from the low bits of a very-large-range random int; UE's
+RandRange quantizes low bits for big ranges. (A future-proof alternative: a dedicated
+`Random Integer in Range(0,3)` row offset independent of the scatter seed.) Diagnostic aid: the
+editor buffers Saved/Logs/SibeliusGame.log — read seeds live via the Output Log "Search Log" filter
+`LogBlueprintUserMessages`, or Stop PIE to flush the file. Also seen: 180 `LogPCG: Error: Interior
+sampling only generates for closed shapes` (road sub-biome SplineSampler wants Closed Loop) — noisy
+but non-fatal; cleanup later.
+
 ## Open items
 
 - ⬜ Exact lighting values for Mood_ForestMorning — mostly captured in Step 4; reconcile Sun Intensity (20 vs 10) on DA_Recipe_01.
