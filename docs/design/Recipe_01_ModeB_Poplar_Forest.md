@@ -260,6 +260,47 @@ Consequence: the 5 open questions are settled toward TRUE RUNTIME — (1) overwr
 L_Poplar_Forest, (2) true runtime PCG per visit, (3) random seed each entry, (4) reuse
 TravelTransitionSubsystem cover, (5) clearing mask after de-risk / before 0.5.2.
 
+## Layer 1 + Layer 2a + composed arrival (build order #8, 2026-07-03) — DOOR OPENS THE WORKED FOREST
+
+The shipped-0.5.1 problem (door opened the plain kit forest; all work lived in the
+uncooked L_Elsewhere_Dev) is CLOSED.
+
+- **Layer 1 — promotion (DONE).** Overwrote `/Game/Maps/L_Poplar_Forest` with the worked
+  Elsewhere content. Method: the door/travel/smoke-test all key off the level-name
+  STRING (`SauceDoor.TravelTargetLevel` = **FName** "L_Poplar_Forest"; `CathedralDoor`
+  uses `FName TargetLevelName`; `TravelTransitionSubsystem.cpp:209` fires its cover on
+  any name containing "Poplar_Forest" OR "Elsewhere"). So overwriting in place = ZERO
+  code changes. Levels are monolithic (non-WP; 350-377 MB umaps, no external actors), so
+  a Save-As is a clean one-file copy. Save-As overwrite was blocked ("Unable to overwrite
+  existing package" — target loaded in memory); fix was to **Force Delete** the old
+  L_Poplar_Forest (Reference Viewer confirmed NO on-disk referencers — the door is an
+  FName, not an asset ref — so nothing real broke), then Save Current Level As →
+  L_Poplar_Forest. Old plain forest preserved in git; L_Elsewhere_Dev kept on disk as a
+  second backup. Commit 3662cd2.
+- **Layer 2a — random seed each entry (DONE).** Level Blueprint: `BeginPlay → Print
+  String → Get Actor Of Class(BP_WorldConductor) → Set WorldSeed = Random Integer in
+  Range(0, 2e9) → ConductWorld`. Randomizing at the CALL SITE (not inside ConductWorld)
+  keeps the editor button reproducible while every door-entry rolls a fresh world. Gotcha
+  fixed: Get Actor Of Class is impure — must sit IN the exec chain or its Return Value is
+  null; and the Set node's Target must be wired to the Conductor (defaulted to `self`).
+- **Composed arrival (DONE — art rule #3).** The deferred "Door ↔ PlayerStart" gap: the
+  player spawned at the level's generic PlayerStart, not the Door viewpoint — so the
+  first cook-walk wandered the forest and never found the tableau. Fix: moved
+  **PlayerStart onto the Door anchor** — Location **(20554, -4125, -1424)**, Rotation yaw
+  **-60.4** (slightly above the road; player settles on spawn; faces down the sightline).
+  Verified in PIE: spawn looks straight at the boat + three Shinbi down the road. The
+  full dev game (package_v052dev_test.ps1 → sibelius-v0.5.2-dev, EXITCODE=0) confirmed the
+  kitchen door opens the promoted forest and generates a random world live; the composed
+  arrival needs one more cook to bake the PlayerStart move.
+- **Art decision (2026-07-03):** arrival look = **EMBRACE THE FULL RANGE** — no
+  arrival-region lushness pin/bias. Dead/sparse/dense/meadow all valid; a barren arrival
+  is a legitimate "world." Seed stays fully random.
+
+Still open toward 0.5.2: (Layer 2b) travel-cover timing — the dev walk didn't report a
+jarring pop-in, so the existing TravelTransitionSubsystem cover may already suffice
+(confirm); (#7 part 2) clearing mask so foliage stops spearing the anchors in LUSH seeds
+(invisible in the dead seed); final cook with the arrival fix + butler push.
+
 ## Open items
 
 - ⬜ Exact lighting values for Mood_ForestMorning — mostly captured in Step 4; reconcile Sun Intensity (20 vs 10) on DA_Recipe_01.
