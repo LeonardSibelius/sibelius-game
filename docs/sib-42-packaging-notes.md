@@ -155,3 +155,25 @@ later) and play start to finish: office bang → powers → cathedral → slot c
    (suggest C:\Users\wpark\builds\sibelius-v01-dev).
 5. Wait out PK4. Then run SibeliusGame.exe from the output folder and play
    the full loop: bang → office → attic → cathedral → E → spin → Esc.
+
+## Release runbook (recurring — butler push to itch)
+
+Recorded from the v0.5.1 push (2026-07) so it's not a scavenger hunt next time:
+
+1. Bump `Config/DefaultGame.ini` → `ProjectVersion=<x.y.z>`.
+2. Package: `Tools/Scripts/package_v051.ps1` (copy per version; edits the
+   archivedirectory to `C:\Users\wpark\builds\sibelius-v<x.y.z>` + log path).
+   Run: `powershell -ExecutionPolicy Bypass -File ...\package_v0xx.ps1`.
+   Success = `EXITCODE=0` and `builds\sibelius-v<x.y.z>\Windows\SibeliusGame.exe`.
+3. **butler lives at `C:\Users\wpark\butler\butler.exe`** (NOT on PATH — call by
+   full path). itch target = **`leonardsibelius/leonard-sibelius:windows`**.
+   - Status:  `& "C:\Users\wpark\butler\butler.exe" status leonardsibelius/leonard-sibelius:windows`
+   - Push:    `& "C:\Users\wpark\butler\butler.exe" push "C:\Users\wpark\builds\sibelius-v<x.y.z>\Windows" leonardsibelius/leonard-sibelius:windows --userversion <x.y.z>`
+   - butler block-diffs vs the last build → an 8.9 GB build uploads as a few MB.
+4. Verify version on https://leonardsibelius.itch.io/leonard-sibelius after it
+   finishes processing.
+
+NOTE (v0.5.1): shipped maps are `MapsToCook` only (L_Office_v02, L_Cathedral,
+L_AI_Temple, L_Poplar_Forest). The Elsewhere anchors work lives in the dev
+sandbox **L_Elsewhere_Dev**, which is NOT cooked — so 0.5.1's playable content
+matches 0.5.0. To ship the forest, promote it into a cooked map / MapsToCook.
