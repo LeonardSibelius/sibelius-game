@@ -201,13 +201,23 @@ Authored positions — instance **Absolute (World) Location** on each socket, mi
 - `Shinbi_B` = **(20854, -5565, -1565)**
 - `Shinbi_C` = **(21610, -5481, -1573)**
 
+Feet-seating height nudge (hand-tuned so each figure stands on the sloped terrain) — set on the **Shinbi sockets' Location Z: A = 110, B = 70, C = 90**. Facing: Absolute Rotation yaw 144 on all three sockets.
+
 Verified: reseeded World Seed → flora re-dealt, all three Shinbi held their marks. They're seed-independent by construction (part of the persistent authored rig; the Conductor never touches them).
 
 Deferred (noted for compatibility):
 - **Recipe-driven Shinbi:** mesh is currently baked on the rig components (every world shows the three). To make it data-driven like the hero (different/absent figures per recipe), add a `ShinbiMesh` (Skeletal Mesh ref) field to PDA_WorldRecipe and have the Conductor `Set Skeletal Mesh Asset` on the three components each gen. Not needed for Recipe #1.
 - **Posing/animation (`ShinbiPoseTag`):** figures stand in default reference pose; add idle/pose anim later.
-- **Facing:** figures face their default direction (profile), not yet turned to the arrival.
+- **Facing:** ✅ turned to face the arrival — all three set to **Absolute Rotation yaw = 144** (uniform; Shinbi mesh forward cooperated). Reads as three "watchers" flanking the approach.
 - **Clearing mask (#7):** foliage can grow through the figures; the PCG exclusion volume (sized by `ClearingRadiusMin/Max`) will carve clearings around all anchors.
+
+## Surprise object v1 (WORKING — boat placed this session, build order #7 part 1)
+
+Surprise = **SM_SailBoat_01a** (from `Content/Vehicles/VOL16_Boats/Meshes/`; 5 variants 01a–05a; **gitignored** as `Content/Vehicles/`). A sailboat run aground *across the forest road* — "the wrong thing in the right place" (art rule #7), and on the road so it stays visible when flora re-deals (Walt's call).
+
+Mechanism: **StaticMeshComponent `Surprise_Mesh`** under the Surprise socket, mesh = SM_SailBoat_01a, Movable — baked on the rig (like Shinbi). Positioned by dragging on the path beside Shinbi_C; final transform saved in the level (socket ≈ (22441, -6302, -1560), rot (18, -6, 20); `Surprise_Mesh` given a relative offset ≈ (82.6, -225.2, -146.8) to seat her on the path). Sits marooned on the road; could sink a touch deeper for a fully "buried" read if desired.
+
+Deferred: recipe-driven Surprise via `SurprisePoolTag` (a pool the seed picks from) — baked one boat for now, same pattern as Shinbi.
 
 ## Open items
 
