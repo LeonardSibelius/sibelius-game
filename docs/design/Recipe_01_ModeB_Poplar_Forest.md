@@ -188,6 +188,27 @@ To revisit (polish, non-blocking):
 - Door "eye height" is ~1 m above the road (composed by pilot) — fine as a marker; refine if we want a precise player-eye arrival.
 - DA_Recipe_01 currently shows Sun Intensity **20** / Sun Rotation Y **-40.0** — worksheet Step 4 captured **10** / **-40.400902**. Reconcile (likely a leftover from the dramatic lighting test).
 
+## Shinbi Anchors v1 (WORKING — built this session, build order #6)
+
+Shinbi = **Paragon: Shinbi** (Epic free character, added from Fab to `Content/ParagonShinbi/`). Skeletal mesh: `/Game/ParagonShinbi/Characters/Heroes/Shinbi/Meshes/Shinbi` (skeleton `Shinbi_Skeleton`; also ships `ShinbiPlayerCharacter` BP and a `Shinbi_Wolf` — candidate Surprise later). **Gitignored** (`Content/ParagonShinbi/`) per the third-party policy — bytes stay local, referenced by /Game path.
+
+Decisions: **same figure ×3** (not a pool); **skeletal**; **fixed authored** positions; **static placement first** (posing via `ShinbiPoseTag` deferred).
+
+BP_WorldAnchors: added a **SkeletalMeshComponent** under each Shinbi socket — `Shinbi_A_Mesh` / `Shinbi_B_Mesh` / `Shinbi_C_Mesh` — with **Skeletal Mesh Asset = Shinbi** assigned directly on the component (baked into the rig; skeletal meshes are Movable by default, no mobility toggle shown).
+
+Authored positions — instance **Absolute (World) Location** on each socket, mid-distance staggered along the door sightline between the door and the hero:
+- `Shinbi_A` = **(21532, -4835, -1558)**
+- `Shinbi_B` = **(20854, -5565, -1565)**
+- `Shinbi_C` = **(21610, -5481, -1573)**
+
+Verified: reseeded World Seed → flora re-dealt, all three Shinbi held their marks. They're seed-independent by construction (part of the persistent authored rig; the Conductor never touches them).
+
+Deferred (noted for compatibility):
+- **Recipe-driven Shinbi:** mesh is currently baked on the rig components (every world shows the three). To make it data-driven like the hero (different/absent figures per recipe), add a `ShinbiMesh` (Skeletal Mesh ref) field to PDA_WorldRecipe and have the Conductor `Set Skeletal Mesh Asset` on the three components each gen. Not needed for Recipe #1.
+- **Posing/animation (`ShinbiPoseTag`):** figures stand in default reference pose; add idle/pose anim later.
+- **Facing:** figures face their default direction (profile), not yet turned to the arrival.
+- **Clearing mask (#7):** foliage can grow through the figures; the PCG exclusion volume (sized by `ClearingRadiusMin/Max`) will carve clearings around all anchors.
+
 ## Open items
 
 - ⬜ Exact lighting values for Mood_ForestMorning — mostly captured in Step 4; reconcile Sun Intensity (20 vs 10) on DA_Recipe_01.
@@ -203,7 +224,7 @@ To revisit (polish, non-blocking):
 3c. ✅ Recipe data asset (PDA_WorldRecipe + DA_Recipe_01_PoplarForest) built and wired into the Conductor — "Core + stubs" scope. Conductor reads Recipe.BiomeDataTable + Recipe.RowNames instead of hardcoded values. Verified behavior-preserving (seeds 1 vs 2 = distinct worlds). See "Recipe Data Asset v1" section below. Next: lighting preset per recipe (build order #4).
 4. ✅ Lighting preset applied on generation — Sun + Fog, data-driven from the recipe (see "Lighting Preset per Recipe v1"). Post-process + colored light/fog deferred.
 5. ✅ Anchors on terrain — BP_WorldAnchors rig (Door/LookTarget/Hero/Shinbi_A-C/Surprise), Door + Hero hand-composed, HeroMesh added to recipe, Conductor fills HeroMeshComp slot each gen. Verified: hero stays framed across seed re-rolls. See "Anchors on Terrain v1". (Shinbi ×3 = #6, Surprise = #7, clearing mask = #7.)
-6. Shinbi placement + sanity check
+6. ✅ Shinbi placement + sanity check — Paragon: Shinbi ×3 (skeletal) baked on Shinbi_A/B/C sockets, hand-placed mid-distance on the sightline. Verified: hold marks across seed re-rolls. See "Shinbi Anchors v1". (Recipe-driven fill + posing + facing deferred.)
 7. Surprise pool + integration pass
 8. Async loading + budget caps, profile door-open time
 9. Recipes #2–3, terrain stage 2

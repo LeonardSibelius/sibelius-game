@@ -156,3 +156,8 @@ Content/MagicianLabatory/
 Content/StainedGlass3D/
 Content/UltimateGothicCathedralChurch/
 Content/UnrealClaude/
+
+# --- Paragon: Shinbi (Epic free third-party character, SIB Shinbi anchor #6) ---
+#     Added from Fab. Referenced by /Game/ParagonShinbi/... path only; bytes stay
+#     local (Fab -> Add to Project). Keep the Epic character out of the repo.
+Content/ParagonShinbi/
