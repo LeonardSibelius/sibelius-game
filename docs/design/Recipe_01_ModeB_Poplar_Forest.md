@@ -219,6 +219,47 @@ Mechanism: **StaticMeshComponent `Surprise_Mesh`** under the Surprise socket, me
 
 Deferred: recipe-driven Surprise via `SurprisePoolTag` (a pool the seed picks from) — baked one boat for now, same pattern as Shinbi.
 
+## Runtime Generation de-risk (build order #8 — PRE-FLIGHT PROVEN, 2026-07-03)
+
+THE question before committing to the runtime path: does the EasyBiomes PCG forest
+actually generate at RUNTIME in a cooked build? (Editor success proves nothing —
+see packaging PK-ledger PK21: whole engine features vanish in Shipping.) **Answer:
+YES.** Proven with a throwaway Development package.
+
+Method (one cook, isolated, shipping config untouched):
+- Ticked **Runtime Generation** = on (Details → Advanced) on all 4 biome regions in
+  L_Elsewhere_Dev (the checkbox deferred back in Step 3 — un-gates the kit's "Spawn
+  Runtime" so it runs in a package).
+- Level Blueprint: **Event BeginPlay → Print String("DERISK BeginPlay fired") → Get
+  Actor Of Class(BP_WorldConductor) → ConductWorld**. NOTE: Get Actor Of Class is an
+  *impure* node (has exec pins) — it MUST sit in the exec chain or its Return Value is
+  null and ConductWorld gets a null Target. Chain order matters.
+- Cook: `Tools/Scripts/package_pcg_runtime_test.ps1` — cooks ONLY /Game/Maps/
+  L_Elsewhere_Dev via `-Map=` (no edit to DefaultGame.ini / MapsToCook), Development,
+  archived to C:\Users\wpark\builds\sibelius-pcg-runtime-test. EXITCODE=0, ~3m11s
+  (shaders warm from 0.5.1).
+- Ran: `SibeliusGame.exe /Game/Maps/L_Elsewhere_Dev -windowed -log`. A full composed
+  forest generated live (poplars + box elder + midstory + ground scatter). Runtime log
+  (copied to runtime-derisk.log) confirms `DERISK BeginPlay fired` AND
+  `BP_WorldConductor_C:ConductWorld` in the runtime call stack — our Conductor, not
+  incidental geometry.
+
+Non-fatal warnings observed in the cooked runtime (carry, don't block):
+- `Accessed None ... WaterPlane / PostProcess in BP_Biome_C` — the stale Save-As refs
+  (Recipe gotcha) now firing as runtime script warnings during generation. Clean up so
+  the shipping log is quiet.
+- `SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarField_0{1,2,3}/
+  SM_Poplar_0X_Field_Leaves_04 ... does not exist on disk` — a few poplar-leaf variants
+  missing from the minimal cook. Forest still looked full. Before shipping 0.5.2:
+  confirm whether /Game/EasyBiomes foliage needs adding to DirectoriesToAlwaysCook, or
+  these are dangling kit entries to ignore.
+- `Invalid material [MI_RiverMuddy] on Nanite [SM_WaterPlane] (SingleLayerWater not
+  supported on Nanite)` — cosmetic. Profiler-DLL misses (aqProf/Vtune/PIX) — benign.
+
+Consequence: the 5 open questions are settled toward TRUE RUNTIME — (1) overwrite
+L_Poplar_Forest, (2) true runtime PCG per visit, (3) random seed each entry, (4) reuse
+TravelTransitionSubsystem cover, (5) clearing mask after de-risk / before 0.5.2.
+
 ## Open items
 
 - ⬜ Exact lighting values for Mood_ForestMorning — mostly captured in Step 4; reconcile Sun Intensity (20 vs 10) on DA_Recipe_01.
@@ -236,7 +277,11 @@ Deferred: recipe-driven Surprise via `SurprisePoolTag` (a pool the seed picks fr
 5. ✅ Anchors on terrain — BP_WorldAnchors rig (Door/LookTarget/Hero/Shinbi_A-C/Surprise), Door + Hero hand-composed, HeroMesh added to recipe, Conductor fills HeroMeshComp slot each gen. Verified: hero stays framed across seed re-rolls. See "Anchors on Terrain v1". (Shinbi ×3 = #6, Surprise = #7, clearing mask = #7.)
 6. ✅ Shinbi placement + sanity check — Paragon: Shinbi ×3 (skeletal) baked on Shinbi_A/B/C sockets, hand-placed mid-distance on the sightline. Verified: hold marks across seed re-rolls. See "Shinbi Anchors v1". (Recipe-driven fill + posing + facing deferred.)
 7. Surprise pool + integration pass
-8. Async loading + budget caps, profile door-open time
+8. Async loading + budget caps, profile door-open time.
+   8-preflight. ✅ RUNTIME GENERATION DE-RISK PROVEN (2026-07-03) — EasyBiomes PCG +
+   ConductWorld generate a full forest at runtime in a cooked Development build. See
+   "Runtime Generation de-risk" section. Path confirmed: Layer 1 (promote into
+   L_Poplar_Forest) + Layer 2 (runtime Conductor w/ random seed + travel cover).
 9. Recipes #2–3, terrain stage 2
 
 ## Art-direction rules (quick reference)

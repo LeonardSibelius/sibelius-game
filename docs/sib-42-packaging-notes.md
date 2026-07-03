@@ -50,6 +50,24 @@ later) and play start to finish: office bang → powers → cathedral → slot c
   don't stage. Fine — gates run pre-package, not post.
 - PK10 STALE SNAPSHOT. The staged index.html will silently lag the web repo.
   Loose end: a pre-package checklist item (re-copy dist → Content/WebGame).
+- PK22 (TESTED — GOOD NEWS, the runtime-PCG question answered). Before wiring the
+  "no two alike" door we had to know: does the EasyBiomes PCG forest GENERATE AT
+  RUNTIME in a cooked build, or is ConductWorld an editor-only party trick? Proven YES
+  with a throwaway Development package (Tools/Scripts/package_pcg_runtime_test.ps1,
+  cooks ONLY /Game/Maps/L_Elsewhere_Dev via -Map=, shipping config untouched). Ran
+  `SibeliusGame.exe /Game/Maps/L_Elsewhere_Dev -log`; a full composed forest generated
+  live, and the runtime log (runtime-derisk.log) shows `DERISK BeginPlay fired` +
+  `BP_WorldConductor_C:ConductWorld` in the call stack. Enabler: tick "Runtime
+  Generation" on each biome (Details→Advanced) + a runtime trigger (BeginPlay→
+  ConductWorld). Carry-forward warnings, all non-fatal in the cook: (a) `Accessed None
+  ... WaterPlane / PostProcess in BP_Biome_C` — stale Save-As refs, clean up for a quiet
+  log; (b) `SkipPackage: .../SM_Poplar_0X_Field_Leaves_04 does not exist on disk` — a
+  few leaf variants missing from the minimal cook; before 0.5.2 decide if /Game/
+  EasyBiomes foliage needs DirectoriesToAlwaysCook or they're dangling kit refs; (c)
+  SM_WaterPlane Nanite/SingleLayerWater material — cosmetic. LESSON (the inverse of
+  PK21): here in-editor success DID carry to the cook — but only because we proved it
+  with a packaged LOG, not by assuming. Next: Layer 1 promote into L_Poplar_Forest,
+  Layer 2 runtime Conductor w/ random seed + TravelTransitionSubsystem cover.
 - PK21 (HIT, FIXED — supersedes PK20's approach; the REAL PK19/PK20 cure).
   PK20's staged CSVs shipped fine but the packaged log confessed: "[Generate]
   ... CSV fallback is editor-only" — UDataTable CSV PARSING DOES NOT EXIST in
