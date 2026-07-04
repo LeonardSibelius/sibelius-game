@@ -338,6 +338,32 @@ editor buffers Saved/Logs/SibeliusGame.log — read seeds live via the Output Lo
 sampling only generates for closed shapes` (road sub-biome SplineSampler wants Closed Loop) — noisy
 but non-fatal; cleanup later.
 
+**0.5.3 SHIPPED but did NOT fix the visible symptom — REAL cause found (2026-07-03).** After
+0.5.3, the packaged build STILL showed no change across 3 door re-entries. Pulled the packaged
+runtime log (rt-053.log): the reseed IS working in the cook — seeds 42314 / 46626 / 70492,
+% 4 = 2 / 2 / 0 (entry 3's row layout SHOULD differ), and ConductWorld runs. So it's not the RNG.
+The log's CleanupWorld timestamps show the player pressed O to leave **~44-53 s** after each entry,
+but a full generation is ~71k tasks ≈ **~60 s** — i.e. the player LEFT BEFORE THE NEW GEN FINISHED.
+What shows instantly on load is the forest **baked into L_Poplar_Forest.umap** (the editor-Spawn
+output got saved into the level — hence the 348 MB umap; PCGWorldActor0 ISMs are serialized). Every
+load shows that same baked seed-3 world until the live regen replaces it (~60 s). Fresh launches
+looked different only because the gen had time to finish before Walt looked. LESSON (PK-ledger
+again): verify the OUTPUT in a COOK, not just the seed input in PIE — I shipped 0.5.3 on PIE
+seed-variation alone; the fix was real (row rotation was frozen) but not the symptom.
+
+NEXT SESSION — three items to make "no two alike" actually read:
+1. **Strip the baked forest from the saved level**: kit Clear on all 4 regions → Save, so the
+   shipped .umap starts empty (no stale seed-3 world) and the only forest is the freshly generated
+   one. (Watch umap size drop from ~348 MB.)
+2. **Layer 2b — hold the travel cover until generation reports COMPLETE** (not just level-loaded).
+   Needs a gen-done signal from ConductWorld/PCG; TravelTransitionSubsystem already covers the load,
+   extend it to wait. Then the cover lifts onto the finished new world — no empty/building phase,
+   no baked fallback.
+3. **Missing leaf meshes**: runtime `LoadPackage: SkipPackage ... SM_Poplar_XX_Leaves_04 does not
+   exist on disk` (trees render bare). Add `/Game/EasyBiomes` (or the specific Foliage/Trees paths)
+   to DirectoriesToAlwaysCook.
+Still also queued after: #7-part-2 clearing mask; then drivable boat/helicopter.
+
 ## Open items
 
 - ⬜ Exact lighting values for Mood_ForestMorning — mostly captured in Step 4; reconcile Sun Intensity (20 vs 10) on DA_Recipe_01.
