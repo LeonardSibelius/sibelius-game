@@ -7,8 +7,13 @@
 #include "Engine/Texture2D.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "TravelTransitionSubsystem.h"   // route the return-door OpenLevel through the travel cover
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
+#include "Components/BoxComponent.h"
+#include "GameFramework/Pawn.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogReturnDoor, Log, All);
 
@@ -45,6 +50,20 @@ AReturnDoor::AReturnDoor()
 	// "THE WAY HOME" art (Walt's, committed under /Game/Signs). Loaded by path because this door is
 	// runtime-spawned; absent on a fresh clone before import -> SignTexture null -> sign skipped.
 	SignTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Game/Signs/T_Sign_TheWayHome.T_Sign_TheWayHome"));
+
+	// Self-contained walk-through return trigger — armed in BeginPlay ONLY when bSelfReturnTrigger.
+	// An overlap box around the door: QueryOnly, Pawn-overlap only, hidden — never blocks movement
+	// or the interact trace. Same shape/role as AElsewhereBuilder::SeatReturnTrigger's box.
+	ReturnTrigger = CreateDefaultSubobject<UBoxComponent>(TEXT("ReturnTrigger"));
+	ReturnTrigger->SetupAttachment(DoorMesh);
+	ReturnTrigger->SetBoxExtent(FVector(110.0f, 160.0f, 130.0f));
+	ReturnTrigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	ReturnTrigger->SetCollisionObjectType(ECC_WorldStatic);
+	ReturnTrigger->SetCollisionResponseToAllChannels(ECR_Ignore);
+	ReturnTrigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	ReturnTrigger->SetGenerateOverlapEvents(true);
+	ReturnTrigger->SetCanEverAffectNavigation(false);
+	ReturnTrigger->SetHiddenInGame(true);
 }
 
 void AReturnDoor::OnConstruction(const FTransform& Transform)
@@ -78,8 +97,47 @@ void AReturnDoor::OnConstruction(const FTransform& Transform)
 	}
 }
 
-void AReturnDoor::Interact_Implementation(AActor* /*Interactor*/)
+void AReturnDoor::BeginPlay()
 {
+	Super::BeginPlay();
+	if (bSelfReturnTrigger && ReturnTrigger)
+	{
+		ReturnTrigger->OnComponentBeginOverlap.AddDynamic(this, &AReturnDoor::OnReturnTriggerBeginOverlap);
+		// Arm after a short delay so arriving AT the door (the forest PlayerStart is right here)
+		// doesn't instant-return — the player must walk away and come back to leave.
+		if (UWorld* World = GetWorld())
+		{
+			FTimerHandle ArmTimer;
+			World->GetTimerManager().SetTimer(ArmTimer,
+				FTimerDelegate::CreateWeakLambda(this, [this]() { bReturnArmed = true; }),
+				FMath::Max(0.05f, ReturnArmDelay), /*bLoop=*/false);
+		}
+	}
+}
+
+void AReturnDoor::OnReturnTriggerBeginOverlap(UPrimitiveComponent* /*OverlappedComp*/, AActor* OtherActor,
+	UPrimitiveComponent* /*OtherComp*/, int32 /*OtherBodyIndex*/, bool /*bFromSweep*/, const FHitResult& /*SweepResult*/)
+{
+	if (!bSelfReturnTrigger || bReturningHome || !bReturnArmed)
+	{
+		return;   // disabled, already returning, or still in the spawn-frame arm delay
+	}
+	const APawn* Pawn = Cast<APawn>(OtherActor);
+	if (!Pawn || !Pawn->IsPlayerControlled())
+	{
+		return;   // only the player returns home
+	}
+	GoHome();
+}
+
+void AReturnDoor::GoHome()
+{
+	if (bReturningHome)
+	{
+		return;   // already travelling (OpenLevel is async)
+	}
+	bReturningHome = true;
+
 	if (UGameInstance* GI = UGameplayStatics::GetGameInstance(this))
 	{
 		if (UElsewhereSubsystem* Elsewhere = GI->GetSubsystem<UElsewhereSubsystem>())
@@ -90,7 +148,12 @@ void AReturnDoor::Interact_Implementation(AActor* /*Interactor*/)
 
 	UE_LOG(LogReturnDoor, Display, TEXT("[%s] returning home to %s; Elsewhere discarded."),
 		*GetName(), *HomeLevelName.ToString());
-	UGameplayStatics::OpenLevel(this, HomeLevelName);
+	UTravelTransitionSubsystem::Travel(this, HomeLevelName);
+}
+
+void AReturnDoor::Interact_Implementation(AActor* /*Interactor*/)
+{
+	GoHome();   // E on the door also returns (cathedral + forest)
 }
 
 FText AReturnDoor::GetInteractionPrompt_Implementation() const

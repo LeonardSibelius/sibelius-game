@@ -1,0 +1,209 @@
+﻿LogInit: Display: Running engine for game: SibeliusGame
+LogCore: Display: Requested channels: 'cpu,gpu,frame,log,bookmark,screenshot,region'
+LogTrace: Display: Control listening on port 1985
+LogCsvProfiler: Display: Metadata set : platform="Windows"
+LogCsvProfiler: Display: Metadata set : config="Development"
+LogCsvProfiler: Display: Metadata set : buildversion="++UE5+Release-5.7-CL-51494982"
+LogCsvProfiler: Display: Metadata set : engineversion="5.7.4-51494982+++UE5+Release-5.7"
+LogCsvProfiler: Display: Metadata set : enginereleaseversion="5.7.4"
+LogCsvProfiler: Display: Metadata set : os="Windows 11 (25H2) [10.0.26200.8655] "
+LogCsvProfiler: Display: Metadata set : cpu="GenuineIntel|Intel(R) Core(TM) i7-14700KF"
+LogCsvProfiler: Display: Metadata set : pgoenabled="0"
+LogCsvProfiler: Display: Metadata set : pgoprofilingenabled="0"
+LogCsvProfiler: Display: Metadata set : ltoenabled="0"
+LogCsvProfiler: Display: Metadata set : asan="0"
+LogCsvProfiler: Display: Metadata set : mergedmodules="0"
+LogCsvProfiler: Display: Metadata set : commandline="" C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject -run=pythonscript -script=C:\Users\wpark\projects\sibelius-game\Tools\Scripts\import_wayhome_sign.py -unattended -nopause -nosplash -stdout""
+LogCsvProfiler: Display: Metadata set : loginid="4b13d03f69154d6f86d7c52c079bdd63"
+LogCsvProfiler: Display: Metadata set : llm="0"
+LogCsvProfiler: Display: Metadata set : systemresolution.resx="1280"
+LogCsvProfiler: Display: Metadata set : systemresolution.resy="720"
+LogAudio: Display: Audio Device Manager not initializing due to all audio being disabled. If this is not intentional, please check command line arguments for "-nosound".
+LogConfig: Display: Loading Android ini files took 0.03 seconds
+LogConfig: Display: Loading VulkanPC ini files took 0.03 seconds
+LogConfig: Display: Loading Mac ini files took 0.03 seconds
+LogConfig: Display: Loading IOS ini files took 0.03 seconds
+LogConfig: Display: Loading Unix ini files took 0.03 seconds
+LogConfig: Display: Loading VisionOS ini files took 0.03 seconds
+LogConfig: Display: Loading TVOS ini files took 0.04 seconds
+LogConfig: Display: Loading Windows ini files took 0.04 seconds
+LogConfig: Display: Loading Linux ini files took 0.04 seconds
+RenderDocPlugin: Display: RenderDoc plugin will not be loaded. Use '-AttachRenderDoc' on the cmd line or enable 'renderdoc.AutoAttach' in the plugin settings.
+[2026.06.19-22.04.33:788][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+[2026.06.19-22.04.33:788][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
+[2026.06.19-22.04.34:029][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
+[2026.06.19-22.04.34:107][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
+[2026.06.19-22.04.34:107][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
+[2026.06.19-22.04.34:107][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
+[2026.06.19-22.04.34:107][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
+[2026.06.19-22.04.34:112][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
+[2026.06.19-22.04.34:112][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
+[2026.06.19-22.04.34:112][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
+[2026.06.19-22.04.34:112][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
+[2026.06.19-22.04.34:112][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
+[2026.06.19-22.04.34:112][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
+[2026.06.19-22.04.34:112][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
+[2026.06.19-22.04.34:112][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
+[2026.06.19-22.04.34:112][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
+[2026.06.19-22.04.34:113][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
+[2026.06.19-22.04.34:132][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
+[2026.06.19-22.04.34:141][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
+[2026.06.19-22.04.34:141][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
+[2026.06.19-22.04.34:150][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
+[2026.06.19-22.04.34:150][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
+[2026.06.19-22.04.34:150][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
+[2026.06.19-22.04.34:150][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
+[2026.06.19-22.04.34:159][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
+[2026.06.19-22.04.34:159][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
+[2026.06.19-22.04.34:159][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
+[2026.06.19-22.04.34:159][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
+[2026.06.19-22.04.34:167][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
+[2026.06.19-22.04.34:167][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
+[2026.06.19-22.04.34:176][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
+[2026.06.19-22.04.34:176][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
+[2026.06.19-22.04.34:176][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
+[2026.06.19-22.04.34:176][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
+[2026.06.19-22.04.34:176][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
+[2026.06.19-22.04.34:178][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+[2026.06.19-22.04.34:211][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
+[2026.06.19-22.04.34:397][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
+[2026.06.19-22.04.34:398][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.06.19-22.04.34:703][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.06.19-22.04.35:014][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.06.19-22.04.35:014][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.06.19-22.04.35:014][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
+[2026.06.19-22.04.35:015][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 7716  --child-id Zen_7716_Startup'
+[2026.06.19-22.04.35:075][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
+[2026.06.19-22.04.35:076][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
+[2026.06.19-22.04.35:080][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.01ms. RandomReadSpeed=1687.27MBs, RandomWriteSpeed=287.19MBs. Assigned SpeedClass 'Local'
+[2026.06.19-22.04.35:082][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
+[2026.06.19-22.04.35:082][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
+[2026.06.19-22.04.35:082][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
+[2026.06.19-22.04.35:083][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
+[2026.06.19-22.04.35:083][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.06.19-22.04.35:376][  0]LogEditorDomain: Display: EditorDomain is Disabled
+[2026.06.19-22.04.35:549][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
+[2026.06.19-22.04.35:549][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
+[2026.06.19-22.04.35:576][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
+[2026.06.19-22.04.35:578][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+[2026.06.19-22.04.35:585][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:585][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
+[2026.06.19-22.04.35:585][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:585][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:586][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
+[2026.06.19-22.04.35:586][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:586][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:587][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:588][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:588][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:589][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
+[2026.06.19-22.04.35:589][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:589][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
+[2026.06.19-22.04.35:589][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:589][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
+[2026.06.19-22.04.35:589][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:590][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
+[2026.06.19-22.04.35:590][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.04.35:590][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
+[2026.06.19-22.04.35:590][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
+[2026.06.19-22.04.35:590][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
+[2026.06.19-22.04.35:602][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
+[2026.06.19-22.04.35:602][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
+[2026.06.19-22.04.35:602][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
+[2026.06.19-22.04.35:602][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
+[2026.06.19-22.04.35:730][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
+[2026.06.19-22.04.35:730][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.06.19-22.04.35:730][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
+[2026.06.19-22.04.35:730][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
+[2026.06.19-22.04.35:784][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
+[2026.06.19-22.04.35:786][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.583 ms
+[2026.06.19-22.04.36:353][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
+[2026.06.19-22.04.36:354][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
+[2026.06.19-22.04.36:449][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
+[2026.06.19-22.04.36:511][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/Signs/T_Sign_TheWayHome (0x9C855100527797B1) - The package to load does not exist on disk or in the loader
+[2026.06.19-22.04.36:511][  0]LogUObjectGlobals: Warning: Failed to find object 'Texture2D /Game/Signs/T_Sign_TheWayHome.T_Sign_TheWayHome'
+[2026.06.19-22.04.37:274][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.06.19-22.04.37:274][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.06.19-22.04.37:810][  0]LogAssetRegistry: Display: Asset registry cache read as 115.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
+[2026.06.19-22.04.37:811][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.066s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
+[2026.06.19-22.04.37:885][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+[2026.06.19-22.04.37:911][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
+[2026.06.19-22.04.38:191][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.06.19-22.04.38:214][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
+[2026.06.19-22.04.38:215][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 98 us
+[2026.06.19-22.04.38:215][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
+[2026.06.19-22.04.38:232][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 17.463 ms (total: 17.562 ms)
+[2026.06.19-22.04.38:233][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
+[2026.06.19-22.04.38:250][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 17.925 ms (total: 35.488 ms)
+[2026.06.19-22.04.38:250][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
+[2026.06.19-22.04.38:251][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 1.163 ms (total: 36.651 ms)
+[2026.06.19-22.04.38:252][  0]LogPythonScriptCommandlet: Display: Running Python script: C:\Users\wpark\projects\sibelius-game\Tools\Scripts\import_wayhome_sign.py
+[2026.06.19-22.04.38:558][  0]LogInterchangeEngine: Display: Interchange start importing source [C:/Users/wpark/projects/walt-cowork-memory/sibelius-art/signs/T_Sign_TheWayHome.png]
+[2026.06.19-22.04.38:580][  0]LogInterchangeEngine: Display: Interchange import completed [C:/Users/wpark/proje...y/sibelius-art/signs/T_Sign_TheWayHome.png]
+[2026.06.19-22.04.38:632][  0]LogSourceControl: Display: Uncontrolled Changelist persistency file loaded ../../../../../../Users/wpark/projects/sibelius-game/Saved/SourceControl/UncontrolledChangelists.json
+[2026.06.19-22.04.38:640][  0]LogOutputDevice: Warning: 
+
+Script Stack (1 frames) :
+/Script/AssetTools.AssetTools.ImportAssetTasks
+
+[2026.06.19-22.04.38:645][  0]LogWindows: Error: appError called: Assertion failed: CurrentApplication.IsValid() [File:D:\build\++UE5\Sync\Engine\Source\Runtime\Slate\Public\Framework\Application\SlateApplication.h] [Line: 321] 
+
+
+[2026.06.19-22.04.40:297][  0]LogWindows: Error: === Critical error: ===
+[2026.06.19-22.04.40:297][  0]LogWindows: Error: 
+[2026.06.19-22.04.40:297][  0]LogWindows: Error: Assertion failed: CurrentApplication.IsValid() [File:D:\build\++UE5\Sync\Engine\Source\Runtime\Slate\Public\Framework\Application\SlateApplication.h] [Line: 321] 
+[2026.06.19-22.04.40:297][  0]LogWindows: Error: 
+[2026.06.19-22.04.40:297][  0]LogWindows: Error: 
+[2026.06.19-22.04.40:297][  0]LogWindows: Error: 
+[2026.06.19-22.04.40:297][  0]LogWindows: Error: [Callstack] 0x00007ffbac3d8448 UnrealEditor-Core.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffbd3c94faf UnrealEditor-Slate.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffbd3c7611f UnrealEditor-Slate.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffbd3e1a2d8 UnrealEditor-Slate.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffbd3e19ea8 UnrealEditor-Slate.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffbd3df91c9 UnrealEditor-Slate.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffbd3e259c9 UnrealEditor-Slate.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffb91890248 UnrealEditor-ContentBrowser.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffb9185ad85 UnrealEditor-ContentBrowser.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffb918906a0 UnrealEditor-ContentBrowser.dll!UnknownFunction []
+[2026.06.19-22.04.40:298][  0]LogWindows: Error: [Callstack] 0x00007ffb918905ef UnrealEditor-ContentBrowser.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00007ffbb3bf4365 UnrealEditor-AssetTools.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00007ffbb3b9bcea UnrealEditor-AssetTools.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00007ffbd01e87bc UnrealEditor-InterchangeEngine.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00007ffbb3bcebed UnrealEditor-AssetTools.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00007ffbb3bcc92c UnrealEditor-AssetTools.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00007ffbb3b7a37e UnrealEditor-AssetTools.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00007ffbab65d07a UnrealEditor-CoreUObject.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00007ffbab981232 UnrealEditor-CoreUObject.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00000246bf0c8d23 UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00000246bf115f5a UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00000246bf11506e UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:299][  0]LogWindows: Error: [Callstack] 0x00000246bf1172a5 UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00000246bf0a3b7e UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00007ffb6b351263 python311.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00007ffb6b3548df python311.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00007ffb6b3560b2 python311.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00007ffb6b3b56bf python311.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00007ffb6b3b70bf python311.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00000246bf0b1d20 UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00000246bf0dbb34 UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00000246bf0b2328 UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00000246bf0cb40d UnrealEditor-PythonScriptPlugin.dll!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00007ff6858ea5d1 UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.06.19-22.04.40:300][  0]LogWindows: Error: [Callstack] 0x00007ff6858e0a1b UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.06.19-22.04.40:301][  0]LogWindows: Error: [Callstack] 0x00007ff6858e0d0a UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.06.19-22.04.40:301][  0]LogWindows: Error: [Callstack] 0x00007ff6858e4590 UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.06.19-22.04.40:301][  0]LogWindows: Error: [Callstack] 0x00007ff6858f5be4 UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.06.19-22.04.40:301][  0]LogWindows: Error: [Callstack] 0x00007ff6858f82f6 UnrealEditor-Cmd.exe!UnknownFunction []
+[2026.06.19-22.04.40:301][  0]LogWindows: Error: [Callstack] 0x00007ffc50a3e957 KERNEL32.DLL!UnknownFunction []
+[2026.06.19-22.04.40:301][  0]LogWindows: Error: 

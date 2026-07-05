@@ -1,0 +1,228 @@
+﻿LogInit: Display: Running engine for game: SibeliusGame
+LogCore: Display: Requested channels: 'cpu,gpu,frame,log,bookmark,screenshot,region'
+LogTrace: Display: Control listening on port 1985
+LogCsvProfiler: Display: Metadata set : platform="Windows"
+LogCsvProfiler: Display: Metadata set : config="Development"
+LogCsvProfiler: Display: Metadata set : buildversion="++UE5+Release-5.7-CL-51494982"
+LogCsvProfiler: Display: Metadata set : engineversion="5.7.4-51494982+++UE5+Release-5.7"
+LogCsvProfiler: Display: Metadata set : enginereleaseversion="5.7.4"
+LogCsvProfiler: Display: Metadata set : os="Windows 11 (25H2) [10.0.26200.8655] "
+LogCsvProfiler: Display: Metadata set : cpu="GenuineIntel|Intel(R) Core(TM) i7-14700KF"
+LogCsvProfiler: Display: Metadata set : pgoenabled="0"
+LogCsvProfiler: Display: Metadata set : pgoprofilingenabled="0"
+LogCsvProfiler: Display: Metadata set : ltoenabled="0"
+LogCsvProfiler: Display: Metadata set : asan="0"
+LogCsvProfiler: Display: Metadata set : mergedmodules="0"
+LogCsvProfiler: Display: Metadata set : commandline="" C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject -run=ElsewhereSmokeTest -unattended -nopause -nosplash -stdout""
+LogCsvProfiler: Display: Metadata set : loginid="4b13d03f69154d6f86d7c52c079bdd63"
+LogCsvProfiler: Display: Metadata set : llm="0"
+LogCsvProfiler: Display: Metadata set : systemresolution.resx="1280"
+LogCsvProfiler: Display: Metadata set : systemresolution.resy="720"
+LogAudio: Display: Audio Device Manager not initializing due to all audio being disabled. If this is not intentional, please check command line arguments for "-nosound".
+LogConfig: Display: Loading Android ini files took 0.03 seconds
+LogConfig: Display: Loading VulkanPC ini files took 0.03 seconds
+LogConfig: Display: Loading Mac ini files took 0.03 seconds
+LogConfig: Display: Loading IOS ini files took 0.03 seconds
+LogConfig: Display: Loading VisionOS ini files took 0.03 seconds
+LogConfig: Display: Loading TVOS ini files took 0.04 seconds
+LogConfig: Display: Loading Unix ini files took 0.04 seconds
+LogConfig: Display: Loading Windows ini files took 0.04 seconds
+LogConfig: Display: Loading Linux ini files took 0.04 seconds
+RenderDocPlugin: Display: RenderDoc plugin will not be loaded. Use '-AttachRenderDoc' on the cmd line or enable 'renderdoc.AutoAttach' in the plugin settings.
+[2026.06.19-22.05.07:053][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+[2026.06.19-22.05.07:054][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
+[2026.06.19-22.05.07:281][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
+[2026.06.19-22.05.07:353][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
+[2026.06.19-22.05.07:353][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
+[2026.06.19-22.05.07:353][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
+[2026.06.19-22.05.07:353][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
+[2026.06.19-22.05.07:357][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
+[2026.06.19-22.05.07:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
+[2026.06.19-22.05.07:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
+[2026.06.19-22.05.07:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
+[2026.06.19-22.05.07:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
+[2026.06.19-22.05.07:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
+[2026.06.19-22.05.07:357][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
+[2026.06.19-22.05.07:357][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
+[2026.06.19-22.05.07:357][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
+[2026.06.19-22.05.07:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
+[2026.06.19-22.05.07:376][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
+[2026.06.19-22.05.07:386][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
+[2026.06.19-22.05.07:386][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
+[2026.06.19-22.05.07:395][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
+[2026.06.19-22.05.07:395][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
+[2026.06.19-22.05.07:395][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
+[2026.06.19-22.05.07:395][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
+[2026.06.19-22.05.07:404][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
+[2026.06.19-22.05.07:404][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
+[2026.06.19-22.05.07:404][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
+[2026.06.19-22.05.07:404][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
+[2026.06.19-22.05.07:413][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
+[2026.06.19-22.05.07:413][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
+[2026.06.19-22.05.07:421][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
+[2026.06.19-22.05.07:421][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
+[2026.06.19-22.05.07:421][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
+[2026.06.19-22.05.07:421][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
+[2026.06.19-22.05.07:421][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
+[2026.06.19-22.05.07:423][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+[2026.06.19-22.05.07:456][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
+[2026.06.19-22.05.07:641][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
+[2026.06.19-22.05.07:642][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.06.19-22.05.07:846][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.06.19-22.05.08:050][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.06.19-22.05.08:050][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.06.19-22.05.08:050][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
+[2026.06.19-22.05.08:050][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 34728  --child-id Zen_34728_Startup'
+[2026.06.19-22.05.08:093][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
+[2026.06.19-22.05.08:094][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
+[2026.06.19-22.05.08:098][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.01ms. RandomReadSpeed=1944.55MBs, RandomWriteSpeed=316.99MBs. Assigned SpeedClass 'Local'
+[2026.06.19-22.05.08:099][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
+[2026.06.19-22.05.08:099][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
+[2026.06.19-22.05.08:100][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
+[2026.06.19-22.05.08:100][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
+[2026.06.19-22.05.08:100][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.06.19-22.05.08:383][  0]LogEditorDomain: Display: EditorDomain is Disabled
+[2026.06.19-22.05.08:557][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
+[2026.06.19-22.05.08:558][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
+[2026.06.19-22.05.08:583][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
+[2026.06.19-22.05.08:585][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+[2026.06.19-22.05.08:592][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:592][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
+[2026.06.19-22.05.08:592][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:592][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:592][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
+[2026.06.19-22.05.08:592][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:593][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:594][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:594][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:594][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:595][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
+[2026.06.19-22.05.08:595][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:596][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
+[2026.06.19-22.05.08:596][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:596][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
+[2026.06.19-22.05.08:596][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:596][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
+[2026.06.19-22.05.08:596][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.06.19-22.05.08:597][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
+[2026.06.19-22.05.08:597][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
+[2026.06.19-22.05.08:597][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
+[2026.06.19-22.05.08:608][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
+[2026.06.19-22.05.08:608][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
+[2026.06.19-22.05.08:608][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
+[2026.06.19-22.05.08:608][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
+[2026.06.19-22.05.08:718][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
+[2026.06.19-22.05.08:718][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.06.19-22.05.08:718][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
+[2026.06.19-22.05.08:718][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
+[2026.06.19-22.05.08:766][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
+[2026.06.19-22.05.08:768][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.540 ms
+[2026.06.19-22.05.08:913][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
+[2026.06.19-22.05.08:914][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
+[2026.06.19-22.05.09:012][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
+[2026.06.19-22.05.10:268][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.06.19-22.05.10:268][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.06.19-22.05.10:594][  0]LogAssetRegistry: Display: Asset registry cache read as 115.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
+[2026.06.19-22.05.10:595][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.066s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
+[2026.06.19-22.05.10:669][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+[2026.06.19-22.05.10:692][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
+[2026.06.19-22.05.10:954][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.06.19-22.05.10:974][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
+[2026.06.19-22.05.10:990][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 16.081 ms
+[2026.06.19-22.05.10:991][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
+[2026.06.19-22.05.10:991][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 67 us (total: 16.148 ms)
+[2026.06.19-22.05.10:991][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
+[2026.06.19-22.05.10:992][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 1.668 ms (total: 17.816 ms)
+[2026.06.19-22.05.10:992][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
+[2026.06.19-22.05.11:003][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 10.081 ms (total: 27.898 ms)
+[2026.06.19-22.05.11:003][  0]LogElsewhereSmokeTest: Display: === THE SAUCE DOOR smoke test: generate -> collect -> cabinet -> return ===
+[2026.06.19-22.05.11:004][  0]LogElsewhereSmokeTest: Display: --- ASSERT 1: content registry (MVP wants >=3 place-types) ---
+[2026.06.19-22.05.11:004][  0]LogElsewhereSmokeTest: Display:   [PASS] at least 3 place-types (5)
+[2026.06.19-22.05.11:004][  0]LogElsewhereSmokeTest: Display:   [PASS] at least 3 curios (15)
+[2026.06.19-22.05.11:004][  0]LogElsewhereSmokeTest: Display:   [PASS] every place has a non-empty pool of resolvable curios
+[2026.06.19-22.05.11:004][  0]LogElsewhereSmokeTest: Display:   [PASS] all three rarity tiers exist (wonder bonus, not loss)
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display: --- ASSERT 2: deterministic, varied, curio-fits-place ---
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] RollPlan(seed) is deterministic (same seed -> same plan) over 200 seeds
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] every rolled curio fits its place-type's pool
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] variety: >=3 distinct place-types appear over 200 seeds (5)
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] variety: many distinct curios appear (15)
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display: --- ASSERT 3: collection scoring + dedupe ---
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] found a Common + a Legendary curio to test scoring
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] first collect: new slot, total=1
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] Common scored by its rarity
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] duplicate: no new slot, total climbs
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] duplicate still scores (go-again stays rewarding)
+[2026.06.19-22.05.11:005][  0]LogElsewhereSmokeTest: Display:   [PASS] Legendary fills a new slot
+[2026.06.19-22.05.11:006][  0]LogElsewhereSmokeTest: Display:   [PASS] Legendary worth more than Common (rarity = bonus)
+[2026.06.19-22.05.11:006][  0]LogElsewhereSmokeTest: Display: --- ASSERT 4: save/load curios+score; room is NOT saved ---
+[2026.06.19-22.05.11:006][  0]LogElsewhereSmokeTest: Display:   [PASS] a room is staged at save time
+[2026.06.19-22.05.11:006][  0]LogSibeliusGame: Display: [Save] Commit to slot 'ElsewhereSmokeSlot': OK.
+[2026.06.19-22.05.11:006][  0]LogElsewhereSmokeTest: Display:   [PASS] CommitSave succeeds
+[2026.06.19-22.05.11:010][  0]LogElsewhereSmokeTest: Display:   [PASS] LoadSave returns a UElsewhereSaveGame
+[2026.06.19-22.05.11:010][  0]LogElsewhereSmokeTest: Display:   [PASS] score round-trips
+[2026.06.19-22.05.11:010][  0]LogElsewhereSmokeTest: Display:   [PASS] owned curios round-trip
+[2026.06.19-22.05.11:010][  0]LogElsewhereSmokeTest: Display:   [PASS] total collected round-trips
+[2026.06.19-22.05.11:010][  0]LogElsewhereSmokeTest: Display:   [PASS] save version stamped
+[2026.06.19-22.05.11:010][  0]LogElsewhereSmokeTest: Display:   [PASS] sandbox slot cleaned up
+[2026.06.19-22.05.11:235][  0]LogElsewhereSmokeTest: Display:   [PASS] host map loads (/Game/Maps/L_AI_Temple)
+[2026.06.19-22.05.11:236][  0]LogElsewhereSmokeTest: Display: --- ASSERT 5: builder spawns curio + return door, deterministic ---
+[2026.06.19-22.05.11:241][  0]LogElsewhereSmokeTest: Display:   [PASS] AElsewhereBuilder spawns
+[2026.06.19-22.05.11:500][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_0] built 'InvertedKitchen' (seed=777): 33 props, curio='UpsideSpoon', return door=ok
+[2026.06.19-22.05.11:500][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_1] built 'InvertedKitchen' (seed=777): 33 props, curio='UpsideSpoon', return door=ok
+[2026.06.19-22.05.11:500][  0]LogElsewhereSmokeTest: Display:   [PASS] builder scatters props (33)
+[2026.06.19-22.05.11:500][  0]LogElsewhereSmokeTest: Display:   [PASS] same plan -> same prop count (room reproducible from seed)
+[2026.06.19-22.05.11:501][  0]LogElsewhereSmokeTest: Display:   [PASS] exactly one curio spawned
+[2026.06.19-22.05.11:501][  0]LogElsewhereSmokeTest: Display:   [PASS] spawned curio matches the plan's curio id
+[2026.06.19-22.05.11:501][  0]LogElsewhereSmokeTest: Display:   [PASS] a return door is spawned (always a way home)
+[2026.06.19-22.05.11:501][  0]LogElsewhereSmokeTest: Display:   [PASS] scatter ISM readable (33 instances)
+[2026.06.19-22.05.11:501][  0]LogElsewhereSmokeTest: Display:   [PASS] builder exposes its scatter exclusion zones
+[2026.06.19-22.05.11:501][  0]LogElsewhereSmokeTest: Display:   [PASS] no scattered prop inside curio / doorway / spawn carve
+[2026.06.19-22.05.11:501][  0]LogElsewhereSmokeTest: Display:   [PASS] central corridor is clear (open path doorway -> curio)
+[2026.06.19-22.05.11:501][  0]LogElsewhereSmokeTest: Display:   [PASS] same LayoutSeed -> identical scatter transforms (not just count)
+[2026.06.19-22.05.11:574][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_2] built 'InvertedKitchen' (seed=777): 33 props, curio='UpsideSpoon', return door=ok
+[2026.06.19-22.05.11:579][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_3] built 'InvertedKitchen' (seed=777): 36 props, curio='UpsideSpoon', return door=ok
+[2026.06.19-22.05.11:579][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_4] built 'InvertedKitchen' (seed=777): 39 props, curio='UpsideSpoon', return door=ok
+[2026.06.19-22.05.11:595][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_5] built 'InvertedKitchen' (seed=777): 18 props, curio='UpsideSpoon', return door=ok
+[2026.06.19-22.05.11:595][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_6] built 'InvertedKitchen' (seed=777): 21 props, curio='UpsideSpoon', return door=ok
+[2026.06.19-22.05.11:633][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_7] built 'InvertedKitchen' (seed=777): 24 props, curio='UpsideSpoon', return door=ok
+[2026.06.19-22.05.11:633][  0]LogElsewhereSmokeTest: Display:   [PASS] per-seed variation: 3/3 seed-pairs differ
+[2026.06.19-22.05.11:633][  0]LogElsewhereSmokeTest: Display:   [PASS] Server Cathedral place-type exists (the first dressed place)
+[2026.06.19-22.05.11:676][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_8] built 'ServerCathedral' (seed=4242): 15 props, curio='KernelRelic', return door=ok
+[2026.06.19-22.05.11:676][  0]LogElsewhereBuilder: Display: [ElsewhereBuilder_9] built 'ServerCathedral' (seed=4242): 15 props, curio='KernelRelic', return door=ok
+[2026.06.19-22.05.11:676][  0]LogElsewhereSmokeTest: Display:   [PASS] Server Cathedral builds deterministically (kit meshes when installed, else fallback) (15 props)
+[2026.06.19-22.05.11:676][  0]LogElsewhereSmokeTest: Display:   [PASS] Server Cathedral spawns its curio
+[2026.06.19-22.05.11:676][  0]LogElsewhereSmokeTest: Display:   [PASS] Server Cathedral spawns a return door
+[2026.06.19-22.05.11:676][  0]LogElsewhereSmokeTest: Display: --- ASSERT 6: cabinet fill reflects the collection ---
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display:   [PASS] ACabinetOfCuriosities spawns
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display:   [PASS] empty cabinet: 0 filled, all slots present
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display:   [PASS] partial cabinet: 8/15 filled
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display:   [PASS] full cabinet: every slot filled
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display: --- ASSERT 7: sauce door reveals like a hidden door + classes resolve ---
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display:   [PASS] ASauceDoor spawns
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display:   [PASS] ASauceDoor IS an AHiddenDoor (reuses the Code Vision reveal/shimmer)
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display:   [PASS] reveal drives collision both ways: hidden+blocking <-> revealed+passable
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display:   [PASS] all Sauce Door classes resolve
+[2026.06.19-22.05.11:677][  0]LogElsewhereSmokeTest: Display: === ELSEWHERE SMOKE TEST PASSED (the wonder loop holds headless). ===
+[2026.06.19-22.05.11:677][  0]LogInit: Display: 
+[2026.06.19-22.05.11:677][  0]LogInit: Display: Warning/Error Summary (Unique only)
+[2026.06.19-22.05.11:678][  0]LogInit: Display: -----------------------------------
+[2026.06.19-22.05.11:678][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.06.19-22.05.11:678][  0]LogInit: Display: 
+[2026.06.19-22.05.11:678][  0]LogInit: Display: Success - 0 error(s), 1 warning(s)
+[2026.06.19-22.05.11:678][  0]LogInit: Display: 
+
+Execution of commandlet took:  0.70 seconds
+[2026.06.19-22.05.12:007][  0]LogShaderCompilers: Display: Shaders left to compile 0
+Script history saved: 2 entries
+Script history saved: 2 entries

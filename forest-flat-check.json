@@ -1,0 +1,11 @@
+{
+ "z_at_points": [
+  "ERR:AttributeError(\"'HitResult' object has no attribute 'impact_point'\")",
+  "ERR:AttributeError(\"'HitResult' object has no attribute 'impact_point'\")",
+  "ERR:AttributeError(\"'HitResult' object has no attribute 'impact_point'\")",
+  "ERR:AttributeError(\"'HitResult' object has no attribute 'impact_point'\")",
+  "ERR:AttributeError(\"'HitResult' object has no attribute 'impact_point'\")"
+ ],
+ "spread_uu": null,
+ "spread_cm": null
+}

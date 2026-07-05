@@ -51,6 +51,7 @@ Dist/
 # --- QuadArt packs: House Furniture + Modular House ---
 #     Standard tier, purchased 2026-05-27. Written AI-use permission on file
 #     (quadarthelp@gmail.com, 2026-05-26). Chapter 1 environment ONLY.
+Content/EasyBiomes/
 Content/QuadArt/
 Content/QuadArt_*/
 Content/*QuadArt*/
@@ -79,6 +80,16 @@ Content/SciFi_Box_A/
 Content/SciFi_Box_B/
 Content/SciFiBox_*/
 Content/SciFi_Boxes_*/
+
+# --- PN (Project Nature) foliage packs (SIB Forest Elsewhere) ---
+#     Spruce forest, grass, open-world foliage, foliage collection — purchased from Fab,
+#     ~4.2 GB. Same policy as the Crebotoly/SciFi kits: referenced by /Game/... path only
+#     (the PCG forest graph + grass material point at them); bytes stay local (Fab install).
+Content/PN_interactiveSpruceForest/
+Content/PN_GrassLibrary/
+Content/PN_OpenWorldFoliage/
+Content/PN_FoliageCollection/
+Content/PN_*/
 
 # --- Generic paid-asset zones (policy's predefined partition) ---
 Content/Paid/
@@ -114,6 +125,15 @@ Content/Commissioned/
 # Keep folder structure visible to humans even when contents are ignored
 !**/.gitkeep
 
+# --- PCGExtendedToolkit (PCGEx) — bulky MIT third-party plugin source ---
+#     Kept out of the repo for SIZE, not license (MIT permits redistribution).
+#     Same re-clone-per-dev pattern as the Fab packs. To restore locally:
+#       git clone --branch 5.7 https://github.com/PCGEx/PCGExtendedToolkit \
+#         Plugins/PCGExtendedToolkit
+#       git -C Plugins/PCGExtendedToolkit checkout 6912a2724
+#     (UE 5.7 / EngineVersion 5.7.0; enabled via SibeliusGame.uproject.)
+Plugins/PCGExtendedToolkit/
+
 # UnrealClaude plugin build artifacts (CP2)
 Plugins/UnrealClaude/Binaries/
 Plugins/UnrealClaude/Intermediate/
@@ -122,3 +142,29 @@ Plugins/UnrealClaude/Resources/mcp-bridge/node_modules/
 # Python bytecode cache (ue_bridge client runs under the engine's Python)
 __pycache__/
 *.pyc
+
+# ===========================================================================
+# Swept-in 2026-07-02 by an over-broad `git add -A`. NOT individually
+# classified — ignored per policy (over-inclusive is safe; a leak is not).
+# If any of these is actually YOUR OWN content, delete its line and commit it
+# deliberately. Bytes for paid packs stay local (install via Fab).
+# ===========================================================================
+Content/Carousel/
+Content/Dragon_Rise/
+Content/Library/
+Content/MagicianLabatory/
+Content/StainedGlass3D/
+Content/UltimateGothicCathedralChurch/
+Content/UnrealClaude/
+
+# --- Paragon: Shinbi (Epic free third-party character, SIB Shinbi anchor #6) ---
+#     Added from Fab. Referenced by /Game/ParagonShinbi/... path only; bytes stay
+#     local (Fab -> Add to Project). Keep the Epic character out of the repo.
+Content/ParagonShinbi/
+
+# --- Vehicle packs: Helicopter + Vehicles/boats (Walt's aircraft/watercraft, SIB) ---
+#     Fab-pack structure (Audio/Blueprint/Meshes/Textures/VFX). Referenced by
+#     /Game/... path only; bytes stay local. If either becomes YOUR own authored
+#     content you want versioned, delete its line and commit it deliberately.
+Content/Helicopter/
+Content/Vehicles/

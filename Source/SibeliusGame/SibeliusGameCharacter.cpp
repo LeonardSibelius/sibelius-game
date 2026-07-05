@@ -22,6 +22,9 @@
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
 #include "Kismet/KismetSystemLibrary.h" // SIB-42: Q-to-quit
+#include "Kismet/GameplayStatics.h"     // O-to-office: OpenLevel
+#include "Engine/World.h"               // GetMapName for the wander-world check
+#include "TravelTransitionSubsystem.h"  // O-to-office travels through the transition cover
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -150,6 +153,11 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// SIB-42: Q to quit, double-press confirm. Packaged builds had NO exit
 	// (Walt alt-tabbed to Task Manager like a hostage).
 	PlayerInputComponent->BindKey(EKeys::Q, IE_Pressed, this, &ASibeliusGameCharacter::RequestQuit);
+
+	// Wander-world return: O -> back to the office. Raw BindKey (no Input Action / IMC),
+	// same as H/J/G/Q above. ReturnToOffice no-ops unless we're standing in a wander world,
+	// so the binding is harmless in the office / other levels.
+	PlayerInputComponent->BindKey(EKeys::O, IE_Pressed, this, &ASibeliusGameCharacter::ReturnToOffice);
 }
 
 
@@ -230,6 +238,29 @@ void ASibeliusGameCharacter::RequestQuit()
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(0xACE0F2, 2.0f, FColor::Yellow, TEXT("Press Q again to quit"));
+	}
+}
+
+bool ASibeliusGameCharacter::IsAwayFromOfficeLevelName(const FString& RawLevelName) const
+{
+	// UWorld::GetMapName() KEEPS the PIE streaming prefix in PIE ("UEDPIE_0_L_AI_Temple");
+	// strip it so PIE and a packaged build compare equal. Away == anything but the office.
+	return FName(*UWorld::RemovePIEPrefix(RawLevelName)) != OfficeLevelName;
+}
+
+bool ASibeliusGameCharacter::IsAwayFromOffice() const
+{
+	const UWorld* World = GetWorld();
+	return World && IsAwayFromOfficeLevelName(World->GetMapName());
+}
+
+void ASibeliusGameCharacter::ReturnToOffice()
+{
+	// O acts in EVERY away-from-office level (forest, temple, cathedral, future worlds); in
+	// the office it's a no-op, so a single press is safe to leave bound everywhere.
+	if (IsAwayFromOffice())
+	{
+		UTravelTransitionSubsystem::Travel(this, OfficeLevelName);
 	}
 }
 

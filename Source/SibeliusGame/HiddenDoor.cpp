@@ -16,6 +16,7 @@
 #include "Engine/Texture2D.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMaterialLibrary.h"
+#include "TravelTransitionSubsystem.h"   // route the level-door OpenLevel through the travel cover
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialParameterCollection.h"
@@ -232,7 +233,7 @@ void AHiddenDoor::Interact_Implementation(AActor* Interactor)
 	}
 
 	UE_LOG(LogHiddenDoor, Display, TEXT("[%s] the wall opens: travel to %s"), *GetName(), *TravelTargetLevel.ToString());
-	UGameplayStatics::OpenLevel(this, TravelTargetLevel);
+	UTravelTransitionSubsystem::Travel(this, TravelTargetLevel);
 }
 
 bool AHiddenDoor::RunCollisionSelfTest()

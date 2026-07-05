@@ -130,4 +130,3 @@ The seven-chapter arc follows a software-engineering metaphor. **Ch1–Ch6 above
 - Many Worlds forest: **Broadleaf Poplar Forest — PCG Biome** by **EasyBiomes** (Fab) — photoscanned, **Nanite full-geometry foliage** (no alpha-card fakery), the product of 8+ years of photogrammetry R&D. Used with thanks and admiration. https://www.fab.com/listings/61f2b0fc-5656-46b7-86ef-3c2100cebcb4
 - Forest watchers: **Paragon: Shinbi** by **Epic Games** (free).
 - The grounded sailboat: **VOL16 Boats** pack (Fab).
-  

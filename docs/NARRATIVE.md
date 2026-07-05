@@ -80,6 +80,16 @@ The world escalates with the powers:
   "Lennie-video" aesthetic, where everything the player has learned is used at once and the
   last wall falls.
 
+## The Many Worlds
+
+Behind the kitchen, hold the Vision and a door no blueprint shows shimmers into being, marked **Many Worlds — no two alike**. Step through and you are *elsewhere*: a poplar forest under a wide sky, light moving in the leaves, the grass reading true all the way down to the mossed stone at your feet.
+
+A word of honest credit, because the craft of that forest is not mine. It was grown by **EasyBiomes** — a team that spent more than eight years photographing real plants and rebuilding them, leaf by leaf, inside the engine. Most games fake a forest by pasting leaf photos onto flat cards; theirs doesn't. Every leaf is *real geometry*, captured from the living plant and rendered through Unreal's Nanite so a whole woodland can carry that detail at once. When you kneel by the stone and it holds up — that is their work, and years of it. *(EasyBiomes — Broadleaf Poplar Forest, on Fab. Buy their kits. They earned it.)*
+
+What is mine — what the three-part entity is learning to do — is the **arrangement**. A machine can scatter a thousand perfect trees in a second and still leave you standing in a parking lot of them. Teaching it to *compose* a place — to carve a clearing, leave a sightline, let the forest frame your walk — is the harder thing, and the thing I mean to keep chasing with Unreal's procedural tools as each new generation of AI arrives. The trees are EasyBiomes'. The world they are arranged into is ours to learn to make beautiful.
+
+The Many Worlds will grow — more places, no two alike. The pull is the oldest one there is: *I wonder what is behind the door this time.*
+
 ## The autobiographical / meta layer
 
 - **The three-part entity.** The game is made by Walt + Cowork (thinking) + Code (building).

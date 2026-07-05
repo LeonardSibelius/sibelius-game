@@ -1,0 +1,25 @@
+{
+ "total": 182787,
+ "by_mesh": {
+  "winter_spruce_full_01": 887,
+  "winter_spruce_full_02": 825,
+  "winter_spruce_full_03": 828,
+  "rocks_set_stone_collection_scan": 356,
+  "grass_01_01_mesh": 25445,
+  "grass_01_03_mesh": 25967,
+  "grass_01_05_mesh": 26106,
+  "grass_01_07_mesh": 25523,
+  "ground_01_01": 5022,
+  "ground_01_03": 5041,
+  "ground_02_01": 5253,
+  "ground_02_03": 5193,
+  "ground_03_01": 4987,
+  "ground_03_03": 5129,
+  "openWorld_flower_01_01": 7594,
+  "openWorld_flower_02_01": 7668,
+  "openWorld_flower_03_01": 7829,
+  "openWorld_flower_04_01": 7886,
+  "openWorld_flower_05_01": 7579,
+  "openWorld_flower_06_01": 7669
+ }
+}

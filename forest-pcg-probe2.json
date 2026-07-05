@@ -1,0 +1,107 @@
+{
+ "surfacesampler": {
+  "in": [
+   "Surface",
+   "Bounding Shape",
+   "Execution Dependency",
+   "Overrides",
+   "PointsPerSquaredMeter",
+   "PointExtents",
+   "Looseness",
+   "bUnbounded",
+   "bApplyDensityToPoints",
+   "PointSteepness",
+   "bKeepZeroDensityPoints",
+   "Seed"
+  ],
+  "out": [
+   "Out"
+  ]
+ },
+ "getlandscape": {
+  "in": [
+   "Execution Dependency",
+   "Overrides",
+   "bGetHeightOnly",
+   "bGetLayerWeights",
+   "bGetActorReference",
+   "bGetPhysicalMaterial",
+   "bGetComponentCoordinates",
+   "bSampleVirtualTextures",
+   "bSampleVirtualTextureNormals",
+   "bUnbounded",
+   "ActorFilter",
+   "bMustOverlapSelf",
+   "bIncludeChildren",
+   "ActorSelection",
+   "ActorSelectionTag",
+   "ActorSelectionClass",
+   "ActorReferenceSelector",
+   "bSelectMultiple",
+   "bIgnoreSelfAndChildren",
+   "bShowActorFilter",
+   "bShowIncludeChildren",
+   "bShowActorSelection",
+   "bShowActorSelectionClass",
+   "bShowSelectMultiple",
+   "bShowIgnoreSelfAndChildren",
+   "ComponentSelection",
+   "ComponentSelectionTag",
+   "ComponentSelectionClass",
+   "bShowComponentSelection",
+   "bShowComponentSelectionClass"
+  ],
+  "out": [
+   "Out"
+  ]
+ },
+ "transform": {
+  "in": [
+   "In",
+   "Execution Dependency",
+   "Overrides",
+   "bApplyToAttribute",
+   "AttributeName",
+   "OffsetMin",
+   "OffsetMax",
+   "bAbsoluteOffset",
+   "RotationMin",
+   "RotationMax",
+   "bAbsoluteRotation",
+   "ScaleMin",
+   "ScaleMax",
+   "bAbsoluteScale",
+   "bUniformScale",
+   "bRecomputeSeed",
+   "Seed"
+  ],
+  "out": [
+   "Out"
+  ]
+ },
+ "transform_props": [
+  "absolute_offset",
+  "absolute_rotation",
+  "absolute_scale",
+  "offset_max",
+  "offset_min",
+  "rotation_max",
+  "rotation_min",
+  "scale_max",
+  "scale_min",
+  "uniform_scale"
+ ],
+ "spawner": {
+  "in": [
+   "In",
+   "Execution Dependency",
+   "Overrides",
+   "TargetActor",
+   "bAllowMergeDifferentDataInSameInstancedComponents",
+   "Seed"
+  ],
+  "out": [
+   "Out"
+  ]
+ }
+}

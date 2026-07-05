@@ -7,6 +7,7 @@
 #include "ElsewhereSubsystem.h"
 #include "Curio.h"
 #include "ReturnDoor.h"
+#include "TravelTransitionSubsystem.h"   // route the doorway-return OpenLevel through the travel cover
 
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
@@ -634,7 +635,7 @@ void AElsewhereBuilder::OnReturnTriggerBeginOverlap(UPrimitiveComponent* /*Overl
 	}
 	UE_LOG(LogElsewhereBuilder, Display, TEXT("[%s] doorway return trigger entered -> home to %s; Elsewhere discarded."),
 		*GetName(), *HomeLevelName.ToString());
-	UGameplayStatics::OpenLevel(this, HomeLevelName);
+	UTravelTransitionSubsystem::Travel(this, HomeLevelName);
 }
 
 bool AElsewhereBuilder::RunPCGScatter(const FPlaceTypeDef& Place, int32 LayoutSeed)

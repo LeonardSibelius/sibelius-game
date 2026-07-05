@@ -1,15 +1,20 @@
-// SauceDoor.cpp — see header. A hidden door (Code Vision reveal, inherited) whose E
-// stages + travels to a generated Elsewhere instead of a fixed level.
+// SauceDoor.cpp — see header. Plan B: the door shuffles a deck of baked forest
+// levels. ASauceDoor customises the cosmetics (slab mesh, sign, prompt) and the
+// deck pick; AHiddenDoor's inherited Interact does the actual travel.
 
 #include "SauceDoor.h"
-#include "ElsewhereSubsystem.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
-#include "Engine/GameInstance.h"
-#include "Kismet/GameplayStatics.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogSauceDoor, Log, All);
+namespace
+{
+	// Which deck entry the LAST walk-through used. File-scope static: survives the
+	// office level reloading between visits (actors are recreated, this is not),
+	// resets only when the game restarts — exactly the "not the same world twice
+	// in a row" feel we want, with zero save-game machinery.
+	int32 GLastDeckPick = INDEX_NONE;
+}
 
 ASauceDoor::ASauceDoor()
 {
@@ -34,36 +39,28 @@ ASauceDoor::ASauceDoor()
 	SignRelativeRotation = FRotator(0.0f, 90.0f, 90.0f);
 	SignWidth = 450.0f;
 	SignHeight = 100.0f;
+
+	// The Many-Worlds travel prompt. AHiddenDoor's inherited Interact/GetInteractionPrompt
+	// drive the travel; this just swaps the parent's default prompt text.
+	TravelPromptText = NSLOCTEXT("Sibelius", "SauceDoorPrompt", "Step through [E]");
 }
 
-void ASauceDoor::Interact_Implementation(AActor* /*Interactor*/)
+void ASauceDoor::Interact_Implementation(AActor* Interactor)
 {
-	if (!IsRevealed())
+	// Shuffle the deck (if there is one): random pick, never the same twice in a row.
+	if (TravelTargetLevels.Num() > 0)
 	{
-		return;   // unrevealed wall keeps its secret — hold Code Vision to reveal it
+		int32 Pick = FMath::RandRange(0, TravelTargetLevels.Num() - 1);
+		if (TravelTargetLevels.Num() > 1 && Pick == GLastDeckPick)
+		{
+			Pick = (Pick + 1) % TravelTargetLevels.Num();
+		}
+		GLastDeckPick = Pick;
+		TravelTargetLevel = TravelTargetLevels[Pick];
+		UE_LOG(LogTemp, Display, TEXT("[SauceDoor] deck pick %d of %d -> %s"),
+			Pick + 1, TravelTargetLevels.Num(), *TravelTargetLevel.ToString());
 	}
 
-	UGameInstance* GI = UGameplayStatics::GetGameInstance(this);
-	UElsewhereSubsystem* Elsewhere = GI ? GI->GetSubsystem<UElsewhereSubsystem>() : nullptr;
-	if (!Elsewhere)
-	{
-		UE_LOG(LogSauceDoor, Error, TEXT("[%s] no UElsewhereSubsystem — cannot stage an Elsewhere."), *GetName());
-		return;
-	}
-
-	const FElsewherePlan Plan = Elsewhere->StageNextElsewhere();
-	if (!Plan.IsValid())
-	{
-		UE_LOG(LogSauceDoor, Error, TEXT("[%s] staged an invalid Elsewhere — not travelling."), *GetName());
-		return;
-	}
-
-	UE_LOG(LogSauceDoor, Display, TEXT("[%s] stepping through to %s (place=%s, curio=%s, seed=%d)."),
-		*GetName(), *ElsewhereLevelName.ToString(), *Plan.PlaceTypeId.ToString(), *Plan.CurioId.ToString(), Plan.Seed);
-	UGameplayStatics::OpenLevel(this, ElsewhereLevelName);
-}
-
-FText ASauceDoor::GetInteractionPrompt_Implementation() const
-{
-	return IsRevealed() ? StepThroughPrompt : FText::GetEmpty();
+	// Parent does the real work: reveal check, branch gate, travel cover, OpenLevel.
+	Super::Interact_Implementation(Interactor);
 }

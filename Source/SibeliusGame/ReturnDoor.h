@@ -16,6 +16,8 @@
 
 class UStaticMeshComponent;
 class UTexture2D;
+class UBoxComponent;
+class UPrimitiveComponent;
 
 UCLASS()
 class SIBELIUSGAME_API AReturnDoor : public AActor, public IInteractable
@@ -35,6 +37,26 @@ protected:
 	// runtime-spawned by AElsewhereBuilder, so there is no placed actor to assign it on — its cook
 	// story is /Game/Signs being in DirectoriesToAlwaysCook).
 	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void BeginPlay() override;
+
+	// --- Self-contained walk-through return (SIB Forest) -----------------------
+	// The cathedral's AElsewhereBuilder spawns this door AND seats its own ReturnTrigger, so this
+	// door's trigger stays OFF there (default false). The hand-placed FOREST door (a pre-made level,
+	// no builder) sets this true, so walking into the door returns home — the same armed Pawn-overlap
+	// mechanism as the cathedral, just owned by the door instead of the builder.
+	UPROPERTY(EditAnywhere, Category = "Return Door")
+	bool bSelfReturnTrigger = false;
+
+	// Armed this many seconds after BeginPlay so arriving AT the door can't instant-return.
+	UPROPERTY(EditAnywhere, Category = "Return Door", meta = (ClampMin = "0.05"))
+	float ReturnArmDelay = 0.6f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Return Door")
+	TObjectPtr<UBoxComponent> ReturnTrigger;
+
+	UFUNCTION()
+	void OnReturnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	// Where "home" is — the house with the Cabinet. Defaults to the office/house map.
 	UPROPERTY(EditAnywhere, Category = "Return Door")
@@ -73,4 +95,11 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Return Door|Sign")
 	TObjectPtr<UStaticMeshComponent> SignMesh;
+
+private:
+	// Discard the staged plan + travel to HomeLevelName. Shared by E-interact and the overlap.
+	void GoHome();
+
+	bool bReturningHome = false;   // re-entry guard (OpenLevel is async)
+	bool bReturnArmed = false;     // set true after ReturnArmDelay
 };

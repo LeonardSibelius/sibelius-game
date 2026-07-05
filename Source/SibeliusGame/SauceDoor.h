@@ -1,16 +1,20 @@
 // SauceDoor.h
 //
-// THE SAUCE DOOR — the "Many Worlds" kitchen door (SIB-47, §3). A subclass of
-// AHiddenDoor, so it REUSES the game's existing hidden-door reveal exactly: hold Code
-// Vision (V) and the panel shimmers into view (custom-depth outline), same as the
-// office "Sauce of All Knowledge" door and the attic "Carousel of Fates" door. The
-// only difference from a plain hidden door is what E does: instead of opening a fixed
-// TravelTargetLevel, it asks the UElsewhereSubsystem to roll + stage a fresh Elsewhere,
-// then steps through into the generation map (§8: a variant of the travel door).
+// THE SAUCE DOOR — the "Many Worlds" kitchen door. A subclass of AHiddenDoor, so it
+// REUSES the game's existing hidden-door reveal exactly: hold Code Vision (V) and the
+// panel shimmers into view (custom-depth outline), same as the office "Sauce of All
+// Knowledge" door and the attic "Carousel of Fates" door.
 //
-// Arming == revealed: there is no separate Sauce-completion gate here (the office has
-// no Sauce-feed); the door is "armed" whenever Code Vision reveals it, matching every
-// other hidden door in the game.
+// TRAVEL (Plan B — the Deck of Worlds): the door holds an editable DECK of baked
+// forest levels (TravelTargetLevels). On each interact it picks one at random —
+// never the same twice in a row (session-scoped memory; a static survives the
+// office level reloading between visits). The pick is written into the inherited
+// TravelTargetLevel and the parent's travel path does the rest, so branch-gating,
+// the travel cover, and the smoke-tested reveal behavior are all unchanged.
+// An EMPTY deck = the old single-target behavior (TravelTargetLevel as placed).
+//
+// Arming == revealed: there is no separate Sauce-completion gate here; the door is
+// "armed" whenever Code Vision reveals it, matching every other hidden door.
 
 #pragma once
 
@@ -26,15 +30,11 @@ class SIBELIUSGAME_API ASauceDoor : public AHiddenDoor
 public:
 	ASauceDoor();
 
-	// Reveal-gated travel: when revealed (Code Vision held), E stages a fresh Elsewhere
-	// and steps through. Unrevealed = a plain wall (no prompt, no travel).
+	// The deck: baked forest levels this door shuffles between (L_Forest_01, ...).
+	// Set on the PLACED door in the office level. Empty = plain single-target door.
+	UPROPERTY(EditAnywhere, Category = "Travel")
+	TArray<FName> TravelTargetLevels;
+
+protected:
 	virtual void Interact_Implementation(AActor* Interactor) override;
-	virtual FText GetInteractionPrompt_Implementation() const override;
-
-	// The generation map the door travels into (built there from the staged plan).
-	UPROPERTY(EditAnywhere, Category = "Sauce Door|Travel")
-	FName ElsewhereLevelName = TEXT("L_Elsewhere");
-
-	UPROPERTY(EditAnywhere, Category = "Sauce Door|Travel")
-	FText StepThroughPrompt = NSLOCTEXT("Sibelius", "SauceDoorPrompt", "Step through [E]");
 };

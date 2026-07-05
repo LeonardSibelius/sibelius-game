@@ -1,0 +1,15 @@
+﻿GATE SWEEP on merged main 06/19/2026 16:22:05
+SibeliusSmokeTest        exit=0 PASS
+CodeVisionSmokeTest      exit=0 PASS
+RefactorSmokeTest        exit=0 PASS
+CompileSmokeTest         exit=0 PASS
+RefuserSmokeTest         exit=0 PASS
+BranchSmokeTest          exit=0 PASS
+GenerateSmokeTest        exit=0 PASS
+CathedralDoorSmokeTest   exit=0 PASS
+CarouselSmokeTest        exit=0 PASS
+SlotSmokeTest            exit=0 PASS
+SauceSmokeTest           exit=0 PASS
+ElsewhereSmokeTest       exit=0 PASS
+
+OVERALL: ALL 12 PASS

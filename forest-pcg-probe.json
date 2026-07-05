@@ -1,0 +1,90 @@
+{
+ "PCGSurfaceSamplerSettings": true,
+ "PCGGetLandscapeSettings": true,
+ "PCGTransformPointsSettings": true,
+ "PCGStaticMeshSpawnerSettings": true,
+ "PCGMeshSelectorWeighted": true,
+ "PCGMeshSelectorWeightedEntry": true,
+ "PCGDensityFilterSettings": true,
+ "PCGGraph": true,
+ "PCGGraphFactory": true,
+ "PCGVolume": true,
+ "PCGComponent": true,
+ "surfacesampler_pins": [
+  [
+   "PCGPin_0",
+   "PCGPin_1",
+   "PCGPin_2",
+   "PCGPin_3",
+   "PCGPin_4",
+   "PCGPin_5",
+   "PCGPin_6",
+   "PCGPin_7",
+   "PCGPin_8",
+   "PCGPin_9",
+   "PCGPin_10",
+   "PCGPin_11"
+  ],
+  [
+   "PCGPin_12"
+  ]
+ ],
+ "surfacesampler_density_props": [
+  "apply_density_to_points",
+  "keep_zero_density_points",
+  "point_extents",
+  "point_steepness",
+  "points_per_squared_meter"
+ ],
+ "getlandscape_pins": [
+  [
+   "PCGPin_0",
+   "PCGPin_1",
+   "PCGPin_2",
+   "PCGPin_3",
+   "PCGPin_4",
+   "PCGPin_5",
+   "PCGPin_6",
+   "PCGPin_7",
+   "PCGPin_8",
+   "PCGPin_9",
+   "PCGPin_10",
+   "PCGPin_11",
+   "PCGPin_12",
+   "PCGPin_13",
+   "PCGPin_14",
+   "PCGPin_15",
+   "PCGPin_16",
+   "PCGPin_17",
+   "PCGPin_18",
+   "PCGPin_19",
+   "PCGPin_20",
+   "PCGPin_21",
+   "PCGPin_22",
+   "PCGPin_23",
+   "PCGPin_24",
+   "PCGPin_25",
+   "PCGPin_26",
+   "PCGPin_27",
+   "PCGPin_28",
+   "PCGPin_29"
+  ],
+  [
+   "PCGPin_30"
+  ]
+ ],
+ "spawner_pins": [
+  [
+   "PCGPin_0",
+   "PCGPin_1",
+   "PCGPin_2",
+   "PCGPin_3",
+   "PCGPin_4",
+   "PCGPin_5"
+  ],
+  [
+   "PCGPin_6"
+  ]
+ ],
+ "cleanup": "ok"
+}
