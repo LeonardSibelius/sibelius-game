@@ -1,117 +1,161 @@
-# NEXT SESSION — "The Living Forest" (make the kitchen door open the real, regenerating Elsewhere)
-
-Paste this at the start of the next session.
-
----
-
 Hi. I'm Walt Parkman, 71, working on my Unreal Engine 5.7 narrative game
-"Leonard Sibelius" — a hidden kitchen door marked *"Many Worlds — no two alike"*
-that should open onto a procedurally-composed forest that's different every visit.
-Continuation of earlier sessions.
+"Leonard Sibelius." The Many Worlds door now works (v0.5.4 shipped): a deck
+of eight baked EasyBiomes poplar forests, shuffled per entry. This session
+brings the forests to LIFE: the three Shinbi watchers become followers who
+defend me, and the Refusers get a new demonic body with real attack
+animations.
 
 FIRST: confirm which model you are, plainly, before we start.
 
-HOW I LIKE TO WORK: spoon-fed, small clearly-numbered steps. Recommended option
-first, then trade-offs. I paste screenshots; you guide me click-by-click in the
-Unreal editor (you can't click for me). For PowerShell you give me one command at
-a time and I paste the output back. I go carefully. Use the AskUserQuestion tool
-for the open decisions before building.
+HOW I LIKE TO WORK: spoon-fed, small clearly-numbered "bites." Recommended
+option first, then trade-offs. I paste screenshots; you guide me
+click-by-click in the Unreal editor (you can't click for me). For
+PowerShell you give me one command at a time and I paste the output back.
+I go carefully. Use the AskUserQuestion tool for the open decisions before
+building.
 
 PLEASE START BY connecting to C:\Users\wpark\projects\sibelius-game and reading:
-- docs\design\Recipe_01_ModeB_Poplar_Forest.md  (the whole recipe/anchors system,
-  everything built through build order #7 part 1)
-- docs\sib-42-packaging-notes.md  (packaging PK-ledger + the butler release runbook)
 
-## WHERE WE ARE (all committed to branch feat/forest-elsewhere; 0.5.1 shipped to itch)
 
-Build orders #1–#6 done and #7 part 1 (Surprise) done, all inside the dev sandbox
-level **L_Elsewhere_Dev**:
-- Recipe system (PDA_WorldRecipe + DA_Recipe_01_PoplarForest, Content/Elsewhere)
-  drives flora + lighting.
-- BP_WorldConductor.ConductWorld (Call-In-Editor button): one seed -> reseeds +
-  row-rotates the 4 biome regions, applies Sun+Fog. ~1 min for a full 4-region
-  rebuild (~71k PCG tasks).
-- BP_WorldAnchors rig (authored, fixed): Door, LookTarget, Hero (SM_Poplar_01_Field),
-  Shinbi_A/B/C (Paragon: Shinbi x3, facing the arrival), Surprise (SM_SailBoat_01a,
-  run aground on the road). Baked on the rig; holds across seed re-rolls.
-- 0.5.1 packaged and pushed to itch (leonardsibelius/leonard-sibelius:windows). The
-  pipeline works. Release runbook + butler path recorded in the packaging notes.
+docs\design\NEXT_SESSION_PROMPT.md  (this file)
+docs\design\Recipe_01_ModeB_Poplar_Forest.md  (whole recipe/anchors/deck
+system, INCLUDING the bottom sections: Plan B deck, PlayerStart lesson,
+Shinbi-on-the-road coordinates)
+docs\sib-42-packaging-notes.md  (packaging + butler runbook)
 
-## THE PROBLEM WE'RE SOLVING (found by playing the 0.5.1 download)
 
-The kitchen "Many Worlds" door opens **/Game/Maps/L_Poplar_Forest** (hardcoded in
-the travel path -- see Source/SibeliusGameEditor/ElsewhereSmokeTestCommandlet.cpp
-`ForestMapPackage` and the character's `IsAwayFromOfficeLevelName("L_Poplar_Forest")`).
-But ALL of our work lives in **L_Elsewhere_Dev**, a separate dev-sandbox *copy* of
-that level. So the shipped door opens the plain, original EasyBiomes forest with
-none of our Conductor/anchors/hero/Shinbi/boat. Two layers must close:
+WHERE WE ARE (v0.5.4 shipped to itch; feat/forest-elsewhere MERGED to main)
 
-**Layer 1 -- the level that ships isn't the one with our work.**
-Options: (A) promote L_Elsewhere_Dev's content into L_Poplar_Forest (the door's
-existing target -- cleanest for the door), or (B) repoint the door + travel code +
-MapsToCook at a renamed Elsewhere level. Decide next session.
 
-**Layer 2 -- "no two alike" doesn't run at runtime yet.**
-ConductWorld is an EDITOR button. In a packaged game nobody clicks it, so we'd ship
-one *static* forest (the last saved generation). To regenerate per visit we must:
-run the Conductor from GAME logic on level load (GameMode/level BeginPlay), turn on
-the kit's **Runtime Generation** (the checkbox we deferred in Step 3), pick a fresh
-random seed per entry, and hide the ~1-min generation behind the travel cover / a
-loading screen. This is roughly build orders #8-#9 (runtime generation + async load).
+The Sauce Door shuffles a deck of 8 baked forests (L_Forest_01..08,
+Content/Maps). C++: ASauceDoor.TravelTargetLevels, random no-repeat pick.
+All 8 in MapsToCook. Smoke gates 12/12 green.
+Every deck level has a PlayerStart at the Door anchor (~20554, -4125,
+-1350, yaw -60.4). LESSON LEARNED THE HARD WAY: PIE spawns at the editor
+camera when a level has no PlayerStart — only a packaged build proves
+arrival. Never trust PIE for spawn position.
+BP_WorldAnchors rig (Content/Elsewhere) carries the composed layer in
+every deck level: Door/LookTarget/Hero/Shinbi_A-C/Surprise. The three
+Shinbi_X_Mesh components idle-animate (Animation Mode = Use Animation
+Asset, Paragon idle) and have Collision Presets = BlockAll (set INSIDE
+the blueprint — editing the level instance silently doesn't stick).
+Shinbi stand at the ROAD EDGE (the authored splines keep the road clear,
+so no seed can impale them — coordinates in the worksheet).
+EasyBiomes kit is STOCK (Is Partitioned ON, Runtime Generation off).
+Runtime PCG in cooked builds is a dead end — proven, documented in the
+worksheet. Do not re-fight that battle.
+NEW ASSET: Paragon: Gideon in Content/ParagonGideon/ (gitignored —
+VERIFY with git status before any git add). Chosen look: the
+Gideon_Mephisto skeletal mesh (Skins/Mephisto/Meshes/Gideon_Mephisto)
+— red demonic skin — PLUS SM_DemonHornAttachment (static mesh, same
+folder): the horns are a separate attachment that must be socketed to
+the head. Pack includes animations, AnimBPs, skins, FX.
+License notes: may not use the trademark PARAGON in marketing; Fab
+listing says "Allows usage with AI: No" (read as: no feeding the asset
+into generative-AI tools; record the reading in the asset-license notes).
 
-## THE BIG RISK -- DE-RISK THIS FIRST, before committing to the whole path
 
-Can the EasyBiomes PCG forest actually **generate at runtime in a *packaged/Shipping*
-build**? (Editor success proves nothing -- see the packaging PK-ledger, e.g. PK21:
-whole engine features like CSV import vanish in cooked builds.) If PCG runtime
-generation doesn't survive cooking, we pivot to Plan B: pre-bake a handful of forest
-variants in-editor and have the door pick one at random (still "many worlds," just a
-finite deck). Prove the runtime-generation question with a small test package BEFORE
-doing the level promotion and gameplay wiring.
+THE MILESTONE
 
-## OPEN QUESTIONS TO DECIDE AT THE START (AskUserQuestion)
+Two headline features, one supporting lift:
 
-1. Promotion method: overwrite L_Poplar_Forest with the Elsewhere content, vs
-   repoint the door to a renamed Elsewhere level (+ MapsToCook + travel code).
-2. Regeneration model: true runtime PCG per visit, vs a pre-baked deck of N worlds
-   the door shuffles (the fallback if runtime PCG won't cook).
-3. Seeding: random each entry, vs seed tied to something (date, a counter, story).
-4. Loading cover: reuse the existing TravelTransitionSubsystem cover, vs a dedicated
-   loading screen, to hide generation time.
-5. Do the deferred **clearing mask** (#7 part 2 -- PCG exclusion volume around the
-   anchors so foliage stops growing through the hero/Shinbi/boat) as part of this,
-   or after.
+A. Demonic Refusers. Replace the MetaHuman Refuser body with
+Gideon_Mephisto + horns + the pack's attack/ability animations. The chase
+logic (ARefuserController, ARefuserSpawner, slap-ragdoll via
+USlapComponent) is body-agnostic; this is a mesh/AnimBP swap on the
+Refuser character BP plus montage wiring. Gideon ships a physics asset,
+so the slap-ragdoll should survive the swap — verify.
 
-## GOTCHAS CARRIED
+B. Shinbi bodyguards. In the Many Worlds, the three watchers follow me
+and attack Refusers that appear. They are currently static mesh components
+on the rig — they must become Characters (pawn + movement + small AI).
+The follow pattern already exists in the codebase: ARefuserController
+chases with MoveToActor re-issued when path-following idles; a follower is
+the same with a friendly leash (follow radius, stop distance).
 
-- L_Elsewhere_Dev has stale WaterPlane/PostProcess ref warnings from the Save-As
-  duplication (non-fatal in editor; watch them during a cook).
-- Sun/Fog live in the EB_LightingDaytime SUBLEVEL; any Conductor var pointing at a
-  sublevel actor must be Transient or the level won't save.
-- Use the kit's Spawn/Clear (not raw PCG Generate) to avoid orphan PCGStampChild
-  actors. Is Partitioned=on -> output lives in PCGWorldActor0.
-- Third-party asset folders are gitignored (EasyBiomes, ParagonShinbi, Vehicles,
-  Helicopter, the swept-in packs). Before any `git add -A`, `.gitignore` already
-  covers them; still run the paid-asset `git status` safety check.
-- Relevant C++: CathedralDoor (level door; TargetLevelName; routes OpenLevel through
-  TravelTransitionSubsystem), ElsewhereGameMode, ElsewhereSubsystem,
-  BranchPIEComponent (skips deploy-restore in an Elsewhere).
+C. Supporting lift: forest navigation. Nothing has ever walked in the
+forests — the deck levels have NO nav mesh. AI movement needs a
+NavMeshBoundsVolume (+ RecastNavMesh settings) per level. Per-level actors
+mean either an 8-level lap (like the PlayerStart fix) or a full deck
+re-bake from L_Elsewhere_Dev (seeds are recorded in the worksheet).
 
-## FIRST ACTIONS NEXT SESSION
+BUILD ORDER (agreed plan — de-risk order, cheapest reversible first)
 
-1. Confirm model; read the two docs above.
-2. Decide the 5 open questions (AskUserQuestion).
-3. **De-risk:** small test package that proves whether the PCG forest regenerates at
-   runtime in a cooked build. Everything else depends on this answer.
-4. Layer 1: promote the level so the door opens our worked forest.
-5. Layer 2: wire the Conductor to run on level load with a fresh seed + a generation
-   cover; turn on Runtime Generation.
-6. Do (or schedule) the clearing mask.
-7. Cook a Development package, walk through the kitchen door, confirm a fresh,
-   composed forest with the hero/Shinbi/boat.
-8. Ship 0.5.2 (butler runbook in the packaging notes).
 
-## AFTER THAT (the fun Walt actually wants)
+Safety pass. git status (ParagonGideon must NOT appear); record
+license notes; confirm gates still 12/12 before touching anything.
+Refuser reskin (office, self-contained). Swap the Refuser BP's
+mesh to Gideon_Mephisto, socket SM_DemonHornAttachment to the head,
+assign the pack AnimBP (or Animation-Asset mode + montages). Verify in
+the office: chase still works, slap still ragdolls, RefuserSmokeTest
+green. This ships value even if the rest slips.
+Nav in the workbench. NavMeshBoundsVolume in L_Elsewhere_Dev sized
+to the playable bowl; verify with the nav-debug view; watch nav-data
+build time and size (big landscape — may need tuning/bounds trimming).
+BP_ShinbiCompanion. A Character with the Shinbi mesh + follow AI.
+PROVE IN PIE FIRST with one companion in L_Elsewhere_Dev; remember the
+packaged-build-is-truth rule before declaring victory.
+Refusers in the forest. Place/enable an ARefuserSpawner in the dev
+level (waves modest — Nanite forest + several characters = watch perf).
+Combat. Shinbi attack montage on proximity to a Refuser; Refuser
+attack montage (Gideon ability anims) on proximity to Shinbi/player;
+damage model per the open questions below. Reuse ragdoll as the death.
+Propagate to the deck. Decide: 8-level lap (paste nav volume +
+spawner, like the PlayerStart fix) vs re-bake from dev (seeds in the
+worksheet; re-vet each world — Shinbi/boat/hero/arrival ritual).
+Gates, package, cooked-build door dance, ship (0.5.5 or 0.6 per
+open question). Butler runbook as usual. Update worksheet + README.
 
-Make the boat and the helicopter (Content/Vehicles, Content/Helicopter) DRIVABLE --
-a vehicle pawn + input + physics. Its own milestone; a good reward run.
+
+OPEN QUESTIONS TO DECIDE AT THE START (AskUserQuestion)
+
+
+Do all THREE Shinbi follow, or one (the other two hold the postcard)?
+Composition vs. spectacle.
+Do the statues "wake" when approached (nice narrative beat: the
+watchers come alive) or follow from arrival?
+Can Shinbi be hurt/die? (Recommend: no health, they can be knocked
+back but always recover — keeps the tone wonder, not war.)
+Do forest Refusers threaten ME (damage/fail state) or only tangle with
+the Shinbi (theatrical combat)? (Recommend theatrical first — no fail
+state in a wander world.)
+Version: 0.5.5 (feature drop) or 0.6 (the forests-come-alive release)?
+Branch name (suggest feat/watchers-and-demons, off main).
+
+
+GOTCHAS CARRIED
+
+
+PIE LIES about spawn position (no-PlayerStart → editor camera) and about
+cooked-build behavior generally. The packaged build is the only truth.
+Component edits must happen INSIDE the blueprint (BP_WorldAnchors etc.),
+not on a level instance — instance edits can silently not stick.
+EasyBiomes stays stock. No Runtime Generation, no Is Partitioned
+changes. The deck is the architecture.
+Third-party folders gitignored: EasyBiomes, ParagonShinbi, ParagonGideon,
+Vehicles, Helicopter, MetaHumans, the swept-in packs. Run the paid-asset
+git status check before every git add -A.
+The kit's Spawn/Clear buttons (not raw PCG Generate) for any re-bake.
+Cross-level actor refs to sublevel actors must be Transient (EB lighting
+sublevel) or the level won't save.
+Deck re-bakes must end with the vetting ritual: Shinbi ×3 unpierced,
+boat, hero, arrival postcard, PlayerStart present.
+MetaHuman Refuser body is rebuilt locally (not in git) — if the Gideon
+swap replaces it entirely, note what happens on a fresh clone.
+
+
+FIRST ACTIONS NEXT SESSION
+
+
+Confirm model; connect to the project; read the three docs above.
+Run the safety pass (build order #1) and paste git status.
+Decide the six open questions (AskUserQuestion).
+Start build order #2 — the Refuser reskin — in bites.
+
+
+AFTER THAT (still queued from last time)
+
+Make the boat and the helicopter (Content/Vehicles, Content/Helicopter)
+DRIVABLE — a vehicle pawn + input + physics. Its own milestone; a good
+reward run. (A drivable boat in a forest whose surprise object is a
+grounded boat is almost too good.)
