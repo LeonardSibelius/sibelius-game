@@ -83,6 +83,7 @@ re-bake from L_Elsewhere_Dev (seeds are recorded in the worksheet).
 
 BUILD ORDER (agreed plan — de-risk order, cheapest reversible first)
 
+DECIDED: nav confined to the road corridor — demons and bodyguards are road-bound; off-road is sanctuary. Volumes identical across deck levels.
 
 Safety pass. git status (ParagonGideon must NOT appear); record
 license notes; confirm gates still 12/12 before touching anything.
