@@ -364,6 +364,37 @@ NEXT SESSION — three items to make "no two alike" actually read:
    to DirectoriesToAlwaysCook.
 Still also queued after: #7-part-2 clearing mask; then drivable boat/helicopter.
 
+## ⚠ CRITICAL CORRECTION — runtime PCG does NOT run in the cook; DE-RISK (PK22) WAS A FALSE POSITIVE (2026-07-03)
+
+Walt stood still in the packaged forest for 5 minutes: ZERO change. The regen isn't slow — it
+never happens. Packaged runtime log (rt-053.log) proves it: inside the kit's `BP_Biome` **Spawn**
+(called by ConductWorld), per region:
+```
+LogScript: Warning: Accessed None trying to read (real) property WaterPlane in BP_Biome_C
+    Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C: 🌿 Spawn :00C6
+LogScript: Warning: Accessed None trying to read (real) property PostProcess in BP_Biome_C  ... Spawn :00E9
+LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+```
+So Spawn RUNS but the PCG generation SCHEDULES NOTHING and aborts at runtime. Every forest we've
+seen in a cook — including the de-risk — is the forest **baked into the .umap**, not runtime output.
+The de-risk verified that BeginPlay + ConductWorld executed (log had "DERISK BeginPlay fired" +
+ConductWorld in a stack) but NEVER that PCG generated vs the bake — the exact editor≠cook trap the
+PK-ledger is built around. PK22 must be re-marked: runtime-PCG-in-cook is NOT proven; it FAILS.
+
+Leads for the abort (both cook-only, need a cook to test):
+- (a) **WaterPlane / PostProcess None** — the stale Save-As refs on BP_Biome, firing at the exact
+  Spawn offsets (:00C6/:00E9) right before the schedule aborts. "Non-fatal in editor" but possibly
+  cook-fatal to scheduling. Known gotcha finally biting for real.
+- (b) **Is Partitioned = on + non-WP monolithic level** → the PCG runtime partition scheduler may
+  have no runtime-gen source / no streaming grid to schedule against → "Didn't schedule any task."
+  Test: Is Partitioned = OFF on the 4 biomes (non-partitioned runtime Spawn) and re-cook.
+
+DECISION (pending Walt): chase the runtime-gen fix (uncertain, but infinite variety if it works) vs
+pivot to **Plan B — pre-baked deck of N worlds** the door shuffles. Plan B is now the LOW-RISK path
+because baked content demonstrably cooks perfectly (it's what's been rendering all along); "many
+worlds" becomes a finite deck instead of infinite, but it's guaranteed to work in a package.
+
 ## Open items
 
 - ⬜ Exact lighting values for Mood_ForestMorning — mostly captured in Step 4; reconcile Sun Intensity (20 vs 10) on DA_Recipe_01.
@@ -399,3 +430,38 @@ Still also queued after: #7-part-2 clearing mask; then drivable boat/helicopter.
 7. Surprise object = the wrong thing in the right place, integrated into the ground
 8. Small palette, big repetition
 9. Randomness only inside fences
+
+## Shinbi on the Road v2 + Plan B Deck (2026-07-04 session)
+
+**Plan B adopted — the Deck of Worlds.** Runtime PCG generation does not run in
+cooked builds ("[ScheduleComponent] Didn't schedule any task"); the kit's
+Runtime Generation mode breaks its own spline interior sampling
+(PCGPartitionGridActor "Closed Loop" errors); unpartitioned runtime generates
+nothing. Kit restored to STOCK (Is Partitioned back ON, Runtime Generation
+unticked). The door now shuffles 8 pre-baked levels: **L_Forest_01..08**
+(Content/Maps), picked at random by ASauceDoor.TravelTargetLevels (C++),
+never the same twice in a row. All 8 are in MapsToCook.
+Seeds used: L_Forest_01..08 = ___ (fill in from the conductors).
+
+**PlayerStart lesson.** The dev level and its copies had NO PlayerStart — PIE
+hides this by spawning at the editor camera; packaged builds fall back to an
+arbitrary spot ("Cannot Find Player Start" in the log). Every deck level now
+has a PlayerStart at the Door anchor (approx 20554, -4125, -1350, yaw -60.4).
+Any future Elsewhere level must include one — PIE success proves nothing.
+
+**Shinbi moved onto the road edge** (same reasoning as the boat: the road is
+carved by the authored splines, so no seed can ever grow a tree through
+them). Impalement across multiple seeds is what forced this; the PCG
+clearing-mask (#7 part 2) stays deferred. New authored socket transforms
+(Absolute/World, baked in all 8 deck levels + L_Elsewhere_Dev):
+
+| Socket | X | Y | Z | Yaw |
+|---|---|---|---|---|
+| Shinbi_A | 21411 | -5084 | -1578 | 110 |
+| Shinbi_B | 21323 | -5565 | -1582 | 70 |
+| Shinbi_C | 21715 | -5521 | -1601 | 110 |
+
+Vetting ritual for every future deck card: seed → ConductWorld → check
+Shinbi ×3 / boat / hero / arrival postcard → then Save As. Re-rolled level
+this session: L_Forest____ (fill in) — final seed noted on its conductor.
+

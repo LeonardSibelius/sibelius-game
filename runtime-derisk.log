@@ -1,0 +1,1479 @@
+﻿Log file open, 07/03/26 11:31:44
+LogWindows: Failed to load 'aqProf.dll' (GetLastError=126)
+LogWindows: File 'aqProf.dll' does not exist
+LogProfilingDebugging: Loading WinPixEventRuntime.dll for PIX profiling (from ../../../Engine/Binaries/ThirdParty/Windows/WinPixEventRuntime/x64).
+LogWindows: Failed to load 'VtuneApi.dll' (GetLastError=126)
+LogWindows: File 'VtuneApi.dll' does not exist
+LogWindows: Failed to load 'VtuneApi32e.dll' (GetLastError=126)
+LogWindows: File 'VtuneApi32e.dll' does not exist
+LogWindows: Enabling Tpause support
+LogWindows: Custom abort handler registered for crash reporting.
+LogCore: Display: UTS: The Unreal Trace Server binary is not available ('../../../Engine/Binaries/Win64/UnrealTraceServer.exe')
+LogTrace: Initializing trace...
+LogTrace: Finished trace initialization.
+LogCsvProfiler: Display: Metadata set : platform="Windows"
+LogCsvProfiler: Display: Metadata set : config="Development"
+LogCsvProfiler: Display: Metadata set : buildversion="++UE5+Release-5.7-CL-51494982"
+LogCsvProfiler: Display: Metadata set : engineversion="5.7.4-51494982+++UE5+Release-5.7"
+LogCsvProfiler: Display: Metadata set : enginereleaseversion="5.7.4"
+LogCsvProfiler: Display: Metadata set : os="Windows 11 (25H2) [10.0.26200.8655] "
+LogCsvProfiler: Display: Metadata set : cpu="GenuineIntel|Intel(R) Core(TM) i7-14700KF"
+LogCsvProfiler: Display: Metadata set : pgoenabled="0"
+LogCsvProfiler: Display: Metadata set : pgoprofilingenabled="0"
+LogCsvProfiler: Display: Metadata set : ltoenabled="0"
+LogCsvProfiler: Display: Metadata set : asan="0"
+LogCsvProfiler: Display: Metadata set : mergedmodules="0"
+LogCsvProfiler: Display: Metadata set : commandline="" SibeliusGame /Game/Maps/L_Elsewhere_Dev -windowed -ResX=1600 -ResY=900 -log""
+LogCsvProfiler: Display: Metadata set : loginid="4b13d03f69154d6f86d7c52c079bdd63"
+LogCsvProfiler: Display: Metadata set : llm="0"
+LogPakFile: Initializing PakPlatformFile
+LogIoDispatcher: Display: Reading toc: ../../../SibeliusGame/Content/Paks/global.utoc
+LogIoDispatcher: Display: Toc loaded : ../../../SibeliusGame/Content/Paks/global.utoc, Id=ffffffffffffffff, Order=0, EntryCount=1, SignatureHash=0000000000000000000000000000000000000000
+LogIoDispatcher: Display: Mounting container '../../../SibeliusGame/Content/Paks/global.utoc' in location slot 0
+LogPakFile: Display: Initialized I/O dispatcher file backend. Mounted the global container: ../../../SibeliusGame/Content/Paks/global.utoc
+LogPakFile: Display: Found Pak file ../../../SibeliusGame/Content/Paks/SibeliusGame-Windows.pak attempting to mount.
+LogPakFile: Display: Mounting pak file ../../../SibeliusGame/Content/Paks/SibeliusGame-Windows.pak.
+LogIoDispatcher: Display: Reading toc: ../../../SibeliusGame/Content/Paks/SibeliusGame-Windows.utoc
+LogIoDispatcher: Display: Toc loaded : ../../../SibeliusGame/Content/Paks/SibeliusGame-Windows.utoc, Id=13f262479c6462a1, Order=4, EntryCount=8379, SignatureHash=0000000000000000000000000000000000000000
+LogIoDispatcher: Display: Mounting container '../../../SibeliusGame/Content/Paks/SibeliusGame-Windows.utoc' in location slot 0
+LogFilePackageStore: Mounting container: Id=13f262479c6462a1, Order=4, NumPackages=3906
+LogPakFile: Display: Mounted IoStore container "../../../SibeliusGame/Content/Paks/SibeliusGame-Windows.utoc"
+LogPakFile: Display: Mounted Pak file '../../../SibeliusGame/Content/Paks/SibeliusGame-Windows.pak', mount point: '../../../'
+LogStats: Stats thread started at 0.643786
+LogAssetRegistry: Premade AssetRegistry loaded from '../../../SibeliusGame/AssetRegistry.bin'
+LogCsvProfiler: Display: Metadata set : systemresolution.resx="1280"
+LogCsvProfiler: Display: Metadata set : systemresolution.resy="720"
+LogICUInternationalization: OS requested locale 'en-US' is not supported. Using the OS requested language of 'en-US' as the locale.
+LogICUInternationalization: ICU TimeZone Detection - Raw Offset: -8:00, Platform Override: ''
+LogInit: Session CrashGUID >====================================================
+         Session CrashGUID >   UECC-Windows-0741D20A4FC7D7D100A30594F2F6D5A5
+         Session CrashGUID >====================================================
+LogConfig: No local boot hotfix file found at: [../../../SibeliusGame/Saved/PersistentDownloadDir/HotfixForNextBoot.txt]
+LogAudio: Display: Pre-Initializing Audio Device Manager...
+LogAudio: Display: AudioInfo: 'OPUS' Registered
+LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+LogAudio: Display: AudioInfo: 'OGG' Registered
+LogAudio: Display: AudioInfo: 'ADPCM' Registered
+LogAudio: Display: AudioInfo: 'PCM' Registered
+LogAudio: Display: AudioInfo: 'BINKA' Registered
+LogAudio: Display: AudioInfo: 'RADA' Registered
+LogAudio: Display: Audio Device Manager Pre-Initialized
+LogPluginManager: Mounting Engine plugin Paper2D
+LogPluginManager: Mounting Engine plugin AISupport
+LogPluginManager: Mounting Engine plugin EnvironmentQueryEditor
+LogPluginManager: Mounting Engine plugin ACLPlugin
+LogPluginManager: Mounting Engine plugin AnimationData
+LogPluginManager: Mounting Engine plugin ControlRigModules
+LogPluginManager: Mounting Engine plugin ControlRigSpline
+LogPluginManager: Mounting Engine plugin ControlRig
+LogPluginManager: Mounting Engine plugin DeformerGraph
+LogPluginManager: Mounting Engine plugin EaseCurveTool
+LogPluginManager: Mounting Engine plugin IKRig
+LogPluginManager: Mounting Engine plugin LiveLink
+LogPluginManager: Mounting Engine plugin PerformanceCaptureCore
+LogPluginManager: Mounting Engine plugin RigLogic
+LogPluginManager: Mounting Engine plugin SkeletalMeshModelingTools
+LogPluginManager: Mounting Engine plugin TweeningUtils
+LogPluginManager: Mounting Engine plugin AudioInsights
+LogPluginManager: Mounting Engine plugin BaseMaterial
+LogPluginManager: Mounting Engine plugin Bridge
+LogPluginManager: Mounting Engine plugin CameraShakePreviewer
+LogPluginManager: Mounting Engine plugin EngineCameras
+LogPluginManager: Mounting Engine plugin GameplayCameras
+LogPluginManager: Mounting Engine plugin ChaosClothAssetEditor
+LogPluginManager: Mounting Engine plugin ChaosClothAsset
+LogPluginManager: Mounting Engine plugin ChaosCloth
+LogPluginManager: Mounting Engine plugin ChaosVD
+LogPluginManager: Mounting Engine plugin CompositeCore
+LogPluginManager: Mounting Engine plugin OpenColorIO
+LogPluginManager: Mounting Engine plugin OodleNetwork
+LogPluginManager: Mounting Engine plugin AnimationSharing
+LogPluginManager: Mounting Engine plugin ConcertMain
+LogPluginManager: Mounting Engine plugin ConcertSyncClient
+LogPluginManager: Mounting Engine plugin ConcertSyncCore
+LogPluginManager: Mounting Engine plugin ConcertSharedSlate
+LogPluginManager: Mounting Engine plugin DumpGPUServices
+LogPluginManager: Mounting Engine plugin GPUReshape
+LogPluginManager: Mounting Engine plugin NamingTokens
+LogPluginManager: Mounting Engine plugin PixWinPlugin
+LogPluginManager: Mounting Engine plugin PluginUtils
+LogPluginManager: Mounting Engine plugin RenderDocPlugin
+LogPluginManager: Mounting Engine plugin UObjectPlugin
+LogPluginManager: Mounting Engine plugin AssetManagerEditor
+LogPluginManager: Mounting Engine plugin BlueprintHeaderView
+LogPluginManager: Mounting Engine plugin ColorGrading
+LogPluginManager: Mounting Engine plugin ConsoleVariables
+LogPluginManager: Mounting Engine plugin ContentBrowserAssetDataSource
+LogPluginManager: Mounting Engine plugin CurveEditorTools
+LogPluginManager: Mounting Engine plugin DataValidation
+LogPluginManager: Mounting Engine plugin EditorScriptingUtilities
+LogPluginManager: Mounting Engine plugin EngineAssetDefinitions
+LogPluginManager: Mounting Engine plugin FacialAnimation
+LogPluginManager: Mounting Engine plugin GeometryMode
+LogPluginManager: Mounting Engine plugin LightMixer
+LogPluginManager: Mounting Engine plugin ObjectMixer
+LogPluginManager: Mounting Engine plugin ProxyLODPlugin
+LogPluginManager: Mounting Engine plugin SequencerAnimTools
+LogPluginManager: Mounting Engine plugin SpeedTreeImporter
+LogPluginManager: Mounting Engine plugin UMGWidgetPreview
+LogPluginManager: Mounting Engine plugin UVEditor
+LogPluginManager: Mounting Engine plugin EnhancedInput
+LogPluginManager: Mounting Engine plugin DatasmithContent
+LogPluginManager: Mounting Engine plugin GLTFExporter
+LogPluginManager: Mounting Engine plugin VariantManagerContent
+LogPluginManager: Mounting Engine plugin VariantManager
+LogPluginManager: Mounting Engine plugin AutomationUtils
+LogPluginManager: Mounting Engine plugin BackChannel
+LogPluginManager: Mounting Engine plugin ChaosCaching
+LogPluginManager: Mounting Engine plugin ChaosEditor
+LogPluginManager: Mounting Engine plugin ChaosNiagara
+LogPluginManager: Mounting Engine plugin ChaosOutfitAsset
+LogPluginManager: Mounting Engine plugin ChaosSolverPlugin
+LogPluginManager: Mounting Engine plugin ChaosUserDataPT
+LogPluginManager: Mounting Engine plugin CharacterAI
+LogPluginManager: Mounting Engine plugin Dataflow
+LogPluginManager: Mounting Engine plugin EditorDataStorageFeatures
+LogPluginManager: Mounting Engine plugin EditorDataStorage
+LogPluginManager: Mounting Engine plugin Fracture
+LogPluginManager: Mounting Engine plugin FullBodyIK
+LogPluginManager: Mounting Engine plugin GeometryCollectionPlugin
+LogPluginManager: Mounting Engine plugin GeometryDataflow
+LogPluginManager: Mounting Engine plugin GlobalConfigurationData
+LogPluginManager: Mounting Engine plugin LevelSequenceNavigatorBridge
+LogPluginManager: Mounting Engine plugin LiveLinkControlRig
+LogPluginManager: Mounting Engine plugin LocalizableMessage
+LogPluginManager: Mounting Engine plugin MeshResizing
+LogPluginManager: Mounting Engine plugin NFORDenoise
+LogPluginManager: Mounting Engine plugin PlanarCut
+LogPluginManager: Mounting Engine plugin PlatformCrypto
+LogPluginManager: Mounting Engine plugin PythonScriptPlugin
+LogPluginManager: Mounting Engine plugin RuntimeTelemetry
+LogPluginManager: Mounting Engine plugin ToolPresets
+LogPluginManager: Mounting Engine plugin Cascade
+LogPluginManager: Mounting Engine plugin NiagaraPreviewContent
+LogPluginManager: Mounting Engine plugin NiagaraSimCaching
+LogPluginManager: Mounting Engine plugin Niagara
+LogPluginManager: Mounting Engine plugin Fab
+LogPluginManager: Mounting Engine plugin AlembicImporter
+LogPluginManager: Mounting Engine plugin USDImporter
+LogPluginManager: Mounting Engine plugin InterchangeAssets
+LogPluginManager: Mounting Engine plugin InterchangeEditor
+LogPluginManager: Mounting Engine plugin Interchange
+LogPluginManager: Mounting Engine plugin AvfMedia
+LogPluginManager: Mounting Engine plugin ImgMedia
+LogPluginManager: Mounting Engine plugin MediaCompositing
+LogPluginManager: Mounting Engine plugin MediaPlate
+LogPluginManager: Mounting Engine plugin WebMMedia
+LogPluginManager: Mounting Engine plugin WmfMedia
+LogPluginManager: Mounting Engine plugin MeshPainting
+LogPluginManager: Mounting Engine plugin TcpMessaging
+LogPluginManager: Mounting Engine plugin UdpMessaging
+LogPluginManager: Mounting Engine plugin MetaHumanCharacter
+LogPluginManager: Mounting Engine plugin MetaHumanSDK
+LogPluginManager: Mounting Engine plugin ActorSequence
+LogPluginManager: Mounting Engine plugin LevelSequenceEditor
+LogPluginManager: Mounting Engine plugin MovieRenderPipeline
+LogPluginManager: Mounting Engine plugin SequenceValidator
+LogPluginManager: Mounting Engine plugin SequencerScripting
+LogPluginManager: Mounting Engine plugin TemplateSequence
+LogPluginManager: Mounting Engine plugin NNEDenoiser
+LogPluginManager: Mounting Engine plugin NNERuntimeORT
+LogPluginManager: Mounting Engine plugin OnlineBase
+LogPluginManager: Mounting Engine plugin OnlineServices
+LogPluginManager: Mounting Engine plugin OnlineSubsystemNull
+LogPluginManager: Mounting Engine plugin OnlineSubsystemUtils
+LogPluginManager: Mounting Engine plugin OnlineSubsystem
+LogPluginManager: Mounting Engine plugin PCGGeometryScriptInterop
+LogPluginManager: Mounting Engine plugin PCG
+LogPluginManager: Mounting Engine plugin LauncherChunkInstaller
+LogPluginManager: Mounting Engine plugin ActorLayerUtilities
+LogPluginManager: Mounting Engine plugin AnalyticsBlueprintLibrary
+LogPluginManager: Mounting Engine plugin AndroidFileServer
+LogPluginManager: Mounting Engine plugin AndroidPermission
+LogPluginManager: Mounting Engine plugin AppleImageUtils
+LogPluginManager: Mounting Engine plugin ArchVisCharacter
+LogPluginManager: Mounting Engine plugin AssetTags
+LogPluginManager: Mounting Engine plugin AudioCapture
+LogPluginManager: Mounting Engine plugin AudioSynesthesia
+LogPluginManager: Mounting Engine plugin AudioWidgets
+LogPluginManager: Mounting Engine plugin CableComponent
+LogPluginManager: Mounting Engine plugin ChunkDownloader
+LogPluginManager: Mounting Engine plugin ComputeFramework
+LogPluginManager: Mounting Engine plugin CustomMeshComponent
+LogPluginManager: Mounting Engine plugin SQLiteCore
+LogPluginManager: Mounting Engine plugin ExampleDeviceProfileSelector
+LogPluginManager: Mounting Engine plugin GameplayStateTree
+LogPluginManager: Mounting Engine plugin GeometryCache
+LogPluginManager: Mounting Engine plugin GeometryProcessing
+LogPluginManager: Mounting Engine plugin GeometryScripting
+LogPluginManager: Mounting Engine plugin GooglePAD
+LogPluginManager: Mounting Engine plugin HairStrands
+LogPluginManager: Mounting Engine plugin InputDebugging
+LogPluginManager: Mounting Engine plugin LocationServicesBPLibrary
+LogPluginManager: Mounting Engine plugin MeshModelingToolset
+LogPluginManager: Mounting Engine plugin Metasound
+LogPluginManager: Mounting Engine plugin MobilePatchingUtils
+LogPluginManager: Mounting Engine plugin MsQuic
+LogPluginManager: Mounting Engine plugin ProceduralMeshComponent
+LogPluginManager: Mounting Engine plugin PropertyAccessEditor
+LogPluginManager: Mounting Engine plugin PropertyBindingUtils
+LogPluginManager: Mounting Engine plugin ResonanceAudio
+LogPluginManager: Mounting Engine plugin RigVM
+LogPluginManager: Mounting Engine plugin SignificanceManager
+LogPluginManager: Mounting Engine plugin SoundFields
+LogPluginManager: Mounting Engine plugin StateTree
+LogPluginManager: Mounting Engine plugin Synthesis
+LogPluginManager: Mounting Engine plugin USDCore
+LogPluginManager: Mounting Engine plugin WaveTable
+LogPluginManager: Mounting Engine plugin WebBrowserWidget
+LogPluginManager: Mounting Engine plugin WebMMoviePlayer
+LogPluginManager: Mounting Engine plugin WindowsDeviceProfileSelector
+LogPluginManager: Mounting Engine plugin WindowsMoviePlayer
+LogPluginManager: Mounting Engine plugin XInputDevice
+LogPluginManager: Mounting Engine plugin InterchangeTests
+LogPluginManager: Mounting Engine plugin TraceUtilities
+LogPluginManager: Mounting Engine plugin GeometryMask
+LogPluginManager: Mounting Engine plugin Takes
+LogPluginManager: Mounting Engine plugin Text3D
+LogPluginManager: Mounting Engine plugin WorldMetrics
+LogPluginManager: Mounting Project plugin PCGExtendedToolkit
+LogPluginManager: Mounting Project plugin UnrealClaude
+LogConfig: Applying CVar settings from Section [/Script/CompositeCore.CompositeCorePluginSettings] File [Engine]
+LogWindows: Failed to load 'WinPixGpuCapturer.dll' (GetLastError=126)
+LogWindows: File 'WinPixGpuCapturer.dll' does not exist
+PixWinPlugin: PIX capture plugin failed to initialize! Check that the process is launched from PIX.
+LogConfig: Applying CVar settings from Section [/Script/RenderDocPlugin.RenderDocPluginSettings] File [Engine]
+RenderDocPlugin: Display: RenderDoc plugin will not be loaded. Use '-AttachRenderDoc' on the cmd line or enable 'renderdoc.AutoAttach' in the plugin settings.
+LogNFORDenoise: NFORDenoise function starting up
+LogStudioTelemetry: Started StudioTelemetry Session
+LogInit: Using libcurl 8.12.1
+LogInit:  - built for Windows
+LogInit:  - supports SSL with OpenSSL/1.1.1t
+LogInit:  - supports HTTP deflate (compression) using libz 1.3
+LogInit:  - other features:
+LogInit:      CURL_VERSION_SSL
+LogInit:      CURL_VERSION_LIBZ
+LogInit:      CURL_VERSION_IPV6
+LogInit:      CURL_VERSION_ASYNCHDNS
+LogInit:      CURL_VERSION_LARGEFILE
+LogInit:      CURL_VERSION_TLSAUTH_SRP
+LogInit:      CURL_VERSION_HTTP2
+LogInit:  CurlRequestOptions (configurable via config and command line):
+LogInit:  - bVerifyPeer = true  - Libcurl will verify peer certificate
+LogInit:  - bUseHttpProxy = false  - Libcurl will NOT use HTTP proxy
+LogInit:  - CVarHttpCurlReuseConnectionEnabled = true  - Libcurl will reuse connections
+LogInit:  - MaxHostConnections = 16  - Libcurl will limit the number of connections to a host
+LogInit:  - LocalHostAddr = Default
+LogInit:  - BufferSize = 65536
+LogInit: CreateHttpThread using FCurlMultiPollEventLoopHttpThread
+LogInit: Creating http thread with maximum 256 concurrent requests
+LogInit: WinSock: version 1.1 (2.2), MaxSocks=32767, MaxUdp=65467
+LogOnline: OSS: Created online subsystem instance for: NULL
+LogOnline: OSS: TryLoadSubsystemAndSetDefault: Loaded subsystem for type [NULL]
+LogInit: ExecutableName: SibeliusGame.exe
+LogInit: Build: ++UE5+Release-5.7-CL-51494982
+LogInit: Platform=Windows
+LogInit: MachineId=4b13d03f69154d6f86d7c52c079bdd63
+LogInit: DeviceId=
+LogInit: Engine Version: 5.7.4-51494982+++UE5+Release-5.7
+LogInit: Compatible Engine Version: 5.7.0-47537391+++UE5+Release-5.7
+LogInit: Net CL: 47537391
+LogInit: OS: Windows 11 (25H2) [10.0.26200.8655] (), CPU: Intel(R) Core(TM) i7-14700KF, GPU: NVIDIA GeForce RTX 5070 Ti
+LogInit: CPU Model ID: 6b71, microcode revision: 12f
+LogInit: Compiled (64-bit): Mar  6 2026 12:47:26
+LogInit: Architecture: x64
+LogInit: Compiled with Visual C++: 19.44.35223.00
+LogInit: Build Configuration: Development
+LogInit: Branch Name: ++UE5+Release-5.7
+LogInit: Command Line: /Game/Maps/L_Elsewhere_Dev -windowed -ResX=1600 -ResY=900 -log
+LogInit: Base Directory: C:/Users/wpark/builds/sibelius-pcg-runtime-test/Windows/SibeliusGame/Binaries/Win64/
+LogInit: Allocator: Binned2
+LogInit: Installed Engine Build: 0
+LogInit: This binary is optimized with LTO: no, PGO: no, instrumented for PGO data collection: no
+LogDevObjectVersion: Number of dev versions registered: 41
+LogDevObjectVersion:   Dev-Blueprints (B0D832E4-1F89-4F0D-ACCF-7EB736FD4AA2): 10
+LogDevObjectVersion:   Dev-Build (E1C64328-A22C-4D53-A36C-8E866417BD8C): 0
+LogDevObjectVersion:   Dev-Core (375EC13C-06E4-48FB-B500-84F0262A717E): 4
+LogDevObjectVersion:   Dev-Editor (E4B068ED-F494-42E9-A231-DA0B2E46BB41): 40
+LogDevObjectVersion:   Dev-Framework (CFFC743F-43B0-4480-9391-14DF171D2073): 37
+LogDevObjectVersion:   Dev-Mobile (B02B49B5-BB20-44E9-A304-32B752E40360): 3
+LogDevObjectVersion:   Dev-Networking (A4E4105C-59A1-49B5-A7C5-40C4547EDFEE): 0
+LogDevObjectVersion:   Dev-Online (39C831C9-5AE6-47DC-9A44-9C173E1C8E7C): 0
+LogDevObjectVersion:   Dev-Physics (78F01B33-EBEA-4F98-B9B4-84EACCB95AA2): 20
+LogDevObjectVersion:   Dev-Platform (6631380F-2D4D-43E0-8009-CF276956A95A): 0
+LogDevObjectVersion:   Dev-Rendering (12F88B9F-8875-4AFC-A67C-D90C383ABD29): 49
+LogDevObjectVersion:   Dev-Sequencer (7B5AE74C-D270-4C10-A958-57980B212A5A): 13
+LogDevObjectVersion:   Dev-VR (D7296918-1DD6-4BDD-9DE2-64A83CC13884): 3
+LogDevObjectVersion:   Dev-LoadTimes (C2A15278-BFE7-4AFE-6C17-90FF531DF755): 1
+LogDevObjectVersion:   Private-Geometry (6EACA3D4-40EC-4CC1-B786-8BED09428FC5): 3
+LogDevObjectVersion:   Dev-AnimPhys (29E575DD-E0A3-4627-9D10-D276232CDCEA): 17
+LogDevObjectVersion:   Dev-Anim (AF43A65D-7FD3-4947-9873-3E8ED9C1BB05): 15
+LogDevObjectVersion:   Dev-ReflectionCapture (6B266CEC-1EC7-4B8F-A30B-E4D90942FC07): 1
+LogDevObjectVersion:   Dev-Automation (0DF73D61-A23F-47EA-B727-89E90C41499A): 1
+LogDevObjectVersion:   FortniteMain (601D1886-AC64-4F84-AA16-D3DE0DEAC7D6): 225
+LogDevObjectVersion:   FortniteValkyrie (8DBC2C5B-54A7-43E0-A768-FCBB7DA29060): 8
+LogDevObjectVersion:   FortniteSeason (5B4C06B7-2463-4AF8-805B-BF70CDF5D0DD): 15
+LogDevObjectVersion:   FortniteRelease (E7086368-6B23-4C58-8439-1B7016265E91): 17
+LogDevObjectVersion:   Dev-Enterprise (9DFFBCD6-494F-0158-E221-12823C92A888): 11
+LogDevObjectVersion:   Dev-Niagara (F2AED0AC-9AFE-416F-8664-AA7FFA26D6FC): 1
+LogDevObjectVersion:   Dev-Destruction (174F1F0B-B4C6-45A5-B13F-2EE8D0FB917D): 10
+LogDevObjectVersion:   Dev-Physics-Ext (35F94A83-E258-406C-A318-09F59610247C): 41
+LogDevObjectVersion:   Dev-PhysicsMaterial-Chaos (B68FC16E-8B1B-42E2-B453-215C058844FE): 1
+LogDevObjectVersion:   Dev-CineCamera (B2E18506-4273-CFC2-A54E-F4BB758BBA07): 1
+LogDevObjectVersion:   Dev-VirtualProduction (64F58936-FD1B-42BA-BA96-7289D5D0FA4E): 1
+LogDevObjectVersion:   UE5-Main (697DD581-E64F-41AB-AA4A-51ECBEB7B628): 121
+LogDevObjectVersion:   UE5-Release (D89B5E42-24BD-4D46-8412-ACA8DF641779): 61
+LogDevObjectVersion:   UE5-SpecialProject (59DA5D52-1232-4948-B878-597870B8E98B): 9
+LogDevObjectVersion:   Dev-MediaFramework (6F0ED827-A609-4895-9C91-998D90180EA4): 2
+LogDevObjectVersion:   Dev-NaniteResearch (30D58BE3-95EA-4282-A6E3-B159D8EBB06A): 1
+LogDevObjectVersion:   Dev-ComputeFramework (6304A3E7-0059-4F59-8CFC-21BD7721FD4E): 0
+LogDevObjectVersion:   Dev-RigVM (DC49959B-53C0-4DE7-9156-EA885E7C5D39): 19
+LogDevObjectVersion:   Dev-ControlRig (A7820CFB-20A7-4359-8C54-2C149623CF50): 40
+LogDevObjectVersion:   Dev-Optimus (93EDE1AA-10CA-7375-4DF9-8A2849B157A0): 14
+LogDevObjectVersion:   FN-Main-InterchangePipeline (B69D2E47-E2A8-4003-BF77-18A492C4D899): 1
+LogDevObjectVersion:   Dev-IKRig (F6DFBB78-BB50-A0E4-4018-B84D60CBAF23): 11
+LogInit: Presizing for max 2097152 objects, including 1 objects not considered by GC.
+LogInit: Object subsystem initialized
+LogConfig: Set CVar [[con.DebugEarlyDefault:1]]
+LogConfig: CVar [[con.DebugLateDefault:1]] deferred - dummy variable created
+LogConfig: CVar [[con.DebugLateCheat:1]] deferred - dummy variable created
+LogConfig: CVar [[LogNamedEventFilters:Frame *]] deferred - dummy variable created
+LogConfig: Set CVar [[r.setres:1280x720]]
+LogConfig: CVar [[framepro.ScopeMinTimeMicroseconds:10]] deferred - dummy variable created
+LogConfig: Set CVar [[fx.NiagaraAllowRuntimeScalabilityChanges:1]]
+LogConfig: CVar [[QualityLevelMapping:high]] deferred - dummy variable created
+LogConfig: CVar [[r.Occlusion.SingleRHIThreadStall:1]] deferred - dummy variable created
+LogConfig: Set CVar [[r.Nanite.Streaming.ReservedResources:1]]
+LogConfig: Set CVar [[D3D12.Bindless.ResourceDescriptorHeapSize:32768]]
+LogConfig: Set CVar [[D3D12.Bindless.SamplerDescriptorHeapSize:2048]]
+LogConfig: Set CVar [[r.PSOPrecache.GlobalShaders:1]]
+LogConfig: Set CVar [[r.VRS.EnableSoftware:1]]
+LogConfig: Set CVar [[r.VRS.ContrastAdaptiveShading:1]]
+[2026.07.03-18.31.44:977][  0]LogConfig: CVar [[con.DebugLateDefault:1]] deferred - dummy variable created
+[2026.07.03-18.31.44:977][  0]LogConfig: CVar [[con.DebugLateCheat:1]] deferred - dummy variable created
+[2026.07.03-18.31.44:977][  0]LogConfig: CVar [[LogNamedEventFilters:Frame *]] deferred - dummy variable created
+[2026.07.03-18.31.44:977][  0]LogConfig: CVar [[framepro.ScopeMinTimeMicroseconds:10]] deferred - dummy variable created
+[2026.07.03-18.31.44:978][  0]LogConfig: CVar [[QualityLevelMapping:high]] deferred - dummy variable created
+[2026.07.03-18.31.44:978][  0]LogConfig: CVar [[r.Occlusion.SingleRHIThreadStall:1]] deferred - dummy variable created
+[2026.07.03-18.31.44:978][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.RendererSettings] File [Engine]
+[2026.07.03-18.31.44:978][  0]LogConfig: CVar [[VisualizeCalibrationColorMaterialPath:/Engine/EngineMaterials/PPM_DefaultCalibrationColor.PPM_DefaultCalibrationColor]] deferred - dummy variable created
+[2026.07.03-18.31.44:978][  0]LogConfig: CVar [[VisualizeCalibrationGrayscaleMaterialPath:/Engine/EngineMaterials/PPM_DefaultCalibrationGrayscale.PPM_DefaultCalibrationGrayscale]] deferred - dummy variable created
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.GPUCrashDebugging:0]]
+[2026.07.03-18.31.44:978][  0]LogConfig: CVar [[MaxSkinBones:(Default=65536,PerPlatform=(("Mobile", 256)))]] deferred - dummy variable created
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Shaders.RemoveUnusedInterpolators:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Shadow.DetectVertexShaderLayerAtRuntime:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Substrate.RoughDiffuse:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Substrate.SheenQuality:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Substrate.ShadingQuality:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Substrate.TileCoord8bits:0]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Substrate.Glints:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Substrate.ClosuresPerPixel:4]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Refraction.Blur:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.TextureStreaming:0]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.ReflectionMethod:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.GenerateMeshDistanceFields:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.DynamicGlobalIlluminationMethod:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.AllowStaticLighting:0]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.SkinCache.CompileShaders:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.RayTracing:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.RayTracing.RayTracingProxies.ProjectEnabled:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Substrate:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Substrate.ProjectGBufferFormat:0]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.Shadow.Virtual.Enable:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.DefaultFeature.LocalExposure.HighlightContrastScale:0.8]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.DefaultFeature.LocalExposure.ShadowContrastScale:0.8]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.GPUSkin.Support16BitBoneIndex:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: Set CVar [[r.GPUSkin.UnlimitedBoneInfluences:1]]
+[2026.07.03-18.31.44:978][  0]LogConfig: CVar [[SkeletalMesh.UseExperimentalChunking:1]] deferred - dummy variable created
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[r.CustomDepth:3]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[r.PostProcessing.PropagateAlpha:1]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.RendererOverrideSettings] File [Engine]
+[2026.07.03-18.31.44:979][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.StreamingSettings] File [Engine]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.MinBulkDataSizeForAsyncLoading:131072]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.AsyncLoadingThreadEnabled:1]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.EventDrivenLoaderEnabled:1]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.WarnIfTimeLimitExceeded:0]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.TimeLimitExceededMultiplier:1.5]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.TimeLimitExceededMinTime:0.005]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.UseBackgroundLevelStreaming:1]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.PriorityAsyncLoadingExtraTime:15.0]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.LevelStreamingActorsUpdateTimeLimit:5.0]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.PriorityLevelStreamingActorsUpdateExtraTime:5.0]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.LevelStreamingComponentsRegistrationGranularity:10]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.UnregisterComponentsTimeLimit:1.0]]
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.LevelStreamingComponentsUnregistrationGranularity:5]]
+[2026.07.03-18.31.44:979][  0]LogConfig: CVar [[s.MaxPackageSummarySize:16384]] deferred - dummy variable created
+[2026.07.03-18.31.44:979][  0]LogConfig: Set CVar [[s.FlushStreamingOnExit:1]]
+[2026.07.03-18.31.44:979][  0]LogConfig: CVar [[FixedBootOrder:/Script/Engine/Default__SoundBase]] deferred - dummy variable created
+[2026.07.03-18.31.44:979][  0]LogConfig: CVar [[FixedBootOrder:/Script/Engine/Default__MaterialInterface]] deferred - dummy variable created
+[2026.07.03-18.31.44:980][  0]LogConfig: CVar [[FixedBootOrder:/Script/Engine/Default__DeviceProfileManager]] deferred - dummy variable created
+[2026.07.03-18.31.44:980][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.GarbageCollectionSettings] File [Engine]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.MaxObjectsNotConsideredByGC:1]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.FlushStreamingOnGC:0]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.NumRetriesBeforeForcingGC:10]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.AllowParallelGC:1]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.TimeBetweenPurgingPendingKillObjects:61.1]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.MaxObjectsInEditor:25165824]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.IncrementalBeginDestroyEnabled:1]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.CreateGCClusters:1]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.MinGCClusterSize:5]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.AssetClustreringEnabled:0]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.ActorClusteringEnabled:0]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.VerifyUObjectsAreNotFGCObjects:0]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Set CVar [[gc.GarbageEliminationEnabled:1]]
+[2026.07.03-18.31.44:980][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.NetworkSettings] File [Engine]
+[2026.07.03-18.31.44:980][  0]LogConfig: CVar [[NetworkEmulationProfiles:(ProfileName="Average",ToolTip="Simulates average internet conditions")]] deferred - dummy variable created
+[2026.07.03-18.31.44:981][  0]LogConfig: CVar [[NetworkEmulationProfiles:(ProfileName="Bad",ToolTip="Simulates laggy internet conditions")]] deferred - dummy variable created
+[2026.07.03-18.31.44:981][  0]LogConfig: CVar [[NetworkEmulationProfiles:(ProfileName="BufferBloat",ToolTip="Simulates a connection affected by buffer bloat (in and out)")]] deferred - dummy variable created
+[2026.07.03-18.31.44:985][  0]LogCsvProfiler: Display: Metadata set : systemresolution.resx="1600"
+[2026.07.03-18.31.44:985][  0]LogCsvProfiler: Display: Metadata set : systemresolution.resy="900"
+[2026.07.03-18.31.44:986][  0]LogConfig: Applying CVar settings from Section [ViewDistanceQuality@3] File [Scalability]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.SkeletalMeshLODBias:0]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.ViewDistanceScale:1.0]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Applying CVar settings from Section [AntiAliasingQuality@3] File [Scalability]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.FXAA.Quality:4]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.TemporalAA.Quality:2]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.TSR.History.R11G11B10:1]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.TSR.History.ScreenPercentage:200]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.TSR.History.UpdateQuality:3]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.TSR.ShadingRejection.Flickering:1]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.TSR.RejectionAntiAliasingQuality:2]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.TSR.ReprojectionField:1]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.TSR.Resurrection:1]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Applying CVar settings from Section [ShadowQuality@3] File [Scalability]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.LightFunctionQuality:1]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.ShadowQuality:5]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.Shadow.CSM.MaxCascades:10]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.Shadow.MaxResolution:2048]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.Shadow.MaxCSMResolution:2048]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.Shadow.RadiusThreshold:0.01]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.Shadow.DistanceScale:1.0]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.Shadow.CSM.TransitionScale:1.0]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.Shadow.PreShadowResolutionFactor:1.0]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.DistanceFieldShadowing:1]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.VolumetricFog:1]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.VolumetricFog.GridPixelSize:8]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.VolumetricFog.GridSizeZ:128]]
+[2026.07.03-18.31.44:986][  0]LogConfig: Set CVar [[r.VolumetricFog.HistoryMissSupersampleCount:4]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.LightMaxDrawDistanceScale:1]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.CapsuleShadows:1]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.MaxPhysicalPages:4096]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.ResolutionLodBiasDirectional:-1.5]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.ResolutionLodBiasDirectionalMoving:-1.5]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.ResolutionLodBiasLocal:0.0]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.ResolutionLodBiasLocalMoving:1.0]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.SMRT.RayCountDirectional:8]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.SMRT.SamplesPerRayDirectional:4]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.SMRT.RayCountLocal:8]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.SMRT.SamplesPerRayLocal:4]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Shadow.Virtual.MarkCoarsePagesLocal:1]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Applying CVar settings from Section [GlobalIlluminationQuality@3] File [Scalability]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.DistanceFieldAO:1]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.SkylightIntensityMultiplier:1.0]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.AOQuality:2]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.Lumen.DiffuseIndirect.Allow:1]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.LumenScene.DirectLighting.MaxLightsPerTile:8]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.LumenScene.DirectLighting.UpdateFactor:32]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.LumenScene.Radiosity.UpdateFactor:64]]
+[2026.07.03-18.31.44:987][  0]LogConfig: Set CVar [[r.LumenScene.Radiosity.ProbeSpacing:4]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.LumenScene.Radiosity.HemisphereProbeResolution:4]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.TraceMeshSDFs.Allow:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.RadianceCache.ProbeResolution:32]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.RadianceCache.NumProbesToTraceBudget:100]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.DownsampleFactor:16]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.NumAdaptiveProbes:8]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.TracingOctahedronResolution:8]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.IrradianceFormat:0]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.StochasticInterpolation:0]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.FullResolutionJitterWidth:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.TwoSidedFoliageBackfaceDiffuse:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.ScreenTraces.HZBTraversal.FullResDepth:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.ShortRangeAO.BentNormal:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.ShortRangeAO.HorizonSearch.HZB:0]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.ShortRangeAO.HorizonSearch.ForegroundSampleRejectPower:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.TranslucencyVolume.GridPixelSize:32]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.TranslucencyVolume.TraceFromVolume:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.TranslucencyVolume.TracingOctahedronResolution:3]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.TranslucencyVolume.RadianceCache.ProbeResolution:8]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.TranslucencyVolume.RadianceCache.NumProbesToTraceBudget:70]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.RayTracing.Scene.BuildMode:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Applying CVar settings from Section [ReflectionQuality@3] File [Scalability]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.SSR.Quality:3]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.SSR.HalfResSceneColor:0]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.Reflections.Allow:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.Reflections.DownsampleFactor:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.Reflections.MaxRoughnessToTraceForFoliage:0.4]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.ScreenProbeGather.MaxRoughnessToEvaluateRoughSpecularForFoliage:0.8]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.Reflections.ScreenSpaceReconstruction.NumSamples:5]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.Reflections.ScreenSpaceReconstruction.MinWeight:0]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.TranslucencyReflections.FrontLayer.Allow:1]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Set CVar [[r.Lumen.TranslucencyReflections.FrontLayer.Enable:0]]
+[2026.07.03-18.31.44:988][  0]LogConfig: Applying CVar settings from Section [PostProcessQuality@3] File [Scalability]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.MotionBlurQuality:4]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.MotionBlur.HalfResGather:0]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.AmbientOcclusionMipLevelFactor:0.4]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.AmbientOcclusionMaxQuality:100]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.AmbientOcclusionLevels:-1]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.AmbientOcclusionRadiusScale:1.0]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DepthOfFieldQuality:2]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.RenderTargetPoolMin:400]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.LensFlareQuality:2]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.SceneColorFringeQuality:1]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.EyeAdaptationQuality:2]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.BloomQuality:5]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.Bloom.ScreenPercentage:50.000]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.FastBlurThreshold:100]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.Upscale.Quality:3]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.LightShaftQuality:1]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.Filter.SizeScale:1]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.Tonemapper.Quality:5]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Gather.ResolutionDivisor:2         ; lower gathering resolution]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Gather.AccumulatorQuality:1        ; higher gathering accumulator quality]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Gather.PostfilterMethod:1          ; Median3x3 postfilering method]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Gather.EnableBokehSettings:0       ; no bokeh simulation when gathering]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Gather.RingCount:4                 ; medium number of samples when gathering]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Scatter.ForegroundCompositing:1    ; additive foreground scattering]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Scatter.BackgroundCompositing:2    ; additive background scattering]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Scatter.EnableBokehSettings:1      ; bokeh simulation when scattering]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Scatter.MaxSpriteRatio:0.1         ; only a maximum of 10% of scattered bokeh]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Recombine.Quality:1                ; cheap slight out of focus]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Recombine.EnableBokehSettings:0    ; no bokeh simulation on slight out of focus]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.TemporalAAQuality:1                ; more stable temporal accumulation]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Kernel.MaxForegroundRadius:0.025]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.DOF.Kernel.MaxBackgroundRadius:0.025]]
+[2026.07.03-18.31.44:989][  0]LogConfig: Applying CVar settings from Section [TextureQuality@3] File [Scalability]
+[2026.07.03-18.31.44:989][  0]LogConfig: Set CVar [[r.Streaming.MipBias:0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.Streaming.AmortizeCPUToGPUCopy:0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.Streaming.MaxNumTexturesToStreamPerFrame:0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.Streaming.Boost:1]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.MaxAnisotropy:8]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.VT.MaxAnisotropy:8]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.Streaming.LimitPoolSizeToVRAM:0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.Streaming.PoolSize:1000]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.Streaming.MaxEffectiveScreenSize:0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Applying CVar settings from Section [EffectsQuality@3] File [Scalability]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.TranslucencyLightingVolume.Dim:64]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.RefractionQuality:2]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SceneColorFormat:4]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.DetailMode:3]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.TranslucencyLightingVolume.Blur:1]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.MaterialQualityLevel:1 ; High quality]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SSS.Scale:1]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SSS.SampleSet:2]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SSS.Quality:1]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SSS.HalfRes:0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SSGI.Quality:3]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.EmitterSpawnRateScale:1.0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.ParticleLightQuality:2]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.FastApplyOnOpaque:1 ; Always have FastSkyLUT 1 in this case to avoid wrong sky]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.SampleCountMaxPerSlice:4]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.DepthResolution:16.0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.FastSkyLUT:1]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.FastSkyLUT.SampleCountMin:4.0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.FastSkyLUT.SampleCountMax:128.0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.SampleCountMin:4.0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.SampleCountMax:128.0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.TransmittanceLUT.UseSmallFormat:0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.TransmittanceLUT.SampleCount:10.0]]
+[2026.07.03-18.31.44:990][  0]LogConfig: Set CVar [[r.SkyAtmosphere.MultiScatteringLUT.SampleCount:15.0]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[fx.Niagara.QualityLevel:3]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.Refraction.OffsetQuality:1]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.HeterogeneousVolumes.DownsampleFactor:2]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.HeterogeneousVolumes.MaxStepCount:256]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.HeterogeneousVolumes.Shadows.Resolution:512]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.HeterogeneousVolumes.Shadows.Precision:0]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.HeterogeneousVolumes.UseExistenceMask:0]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Applying CVar settings from Section [FoliageQuality@3] File [Scalability]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[foliage.DensityScale:1.0]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[grass.DensityScale:1.0]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Applying CVar settings from Section [ShadingQuality@3] File [Scalability]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.HairStrands.SkyLighting.IntegrationType:2]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.HairStrands.SkyAO.SampleCount:4]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.HairStrands.Visibility.MSAA.SamplePerPixel:4]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Set CVar [[r.AnisotropicMaterials:1]]
+[2026.07.03-18.31.44:991][  0]LogConfig: Applying CVar settings from Section [LandscapeQuality@3] File [Scalability]
+[2026.07.03-18.31.44:991][  0]LogRHI: Using Default RHI: D3D12
+[2026.07.03-18.31.44:993][  0]LogRHI: Using Highest Feature Level of D3D12: SM6
+[2026.07.03-18.31.44:993][  0]LogRHI: Loading RHI module D3D12RHI
+[2026.07.03-18.31.44:993][  0]LogD3D12RHI: Loading WinPixEventRuntime.dll for PIX profiling (from ../../../Engine/Binaries/ThirdParty/Windows/WinPixEventRuntime/x64).
+[2026.07.03-18.31.44:993][  0]LogRHI: Checking if RHI D3D12 with Feature Level SM6 is supported by your system.
+[2026.07.03-18.31.45:901][  0]LogD3D12RHI: Found D3D12 adapter 0: NVIDIA GeForce RTX 5070 Ti (VendorId: 10de, DeviceId: 2c05, SubSysId: 53101462, Revision: 00a1
+[2026.07.03-18.31.45:901][  0]LogD3D12RHI:   Max supported Feature Level 12_2, shader model 6.7, binding tier 3, wave ops supported, atomic64 supported
+[2026.07.03-18.31.45:902][  0]LogD3D12RHI:   Adapter has 15995MB of dedicated video memory, 0MB of dedicated system memory, and 16302MB of shared system memory, 2 output[s], UMA:false
+[2026.07.03-18.31.45:902][  0]LogD3D12RHI:   Driver Version: 596.36 (internal:32.0.15.9636, unified:596.36)
+[2026.07.03-18.31.45:902][  0]LogD3D12RHI:      Driver Date: 4-23-2026
+[2026.07.03-18.31.45:919][  0]LogD3D12RHI: Found D3D12 adapter 1: Microsoft Basic Render Driver (VendorId: 1414, DeviceId: 008c, SubSysId: 0000, Revision: 0000
+[2026.07.03-18.31.45:919][  0]LogD3D12RHI:   Max supported Feature Level 12_1, shader model 6.7, binding tier 3, wave ops supported, atomic64 supported
+[2026.07.03-18.31.45:919][  0]LogD3D12RHI:   Adapter has 0MB of dedicated video memory, 0MB of dedicated system memory, and 16302MB of shared system memory, 0 output[s], UMA:true
+[2026.07.03-18.31.45:920][  0]LogD3D12RHI:   D3D10Warp Version: 10.0.26100.8521
+[2026.07.03-18.31.45:920][  0]LogD3D12RHI: DirectX Agility SDK runtime found.
+[2026.07.03-18.31.45:920][  0]LogD3D12RHI: Chosen D3D12 Adapter Id = 0
+[2026.07.03-18.31.45:920][  0]LogRHI: RHI D3D12 with Feature Level SM6 is supported and will be used.
+[2026.07.03-18.31.45:920][  0]LogInit: Selected Device Profile: [Windows]
+[2026.07.03-18.31.45:920][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+[2026.07.03-18.31.45:920][  0]LogDeviceProfileManager: Going up to parent DeviceProfile []
+[2026.07.03-18.31.45:920][  0]LogDeviceProfileManager: Pushing Device Profile CVar: [[UI.SlateSDFText.RasterizationMode:Bitmap -> Msdf]]
+[2026.07.03-18.31.45:921][  0]LogDeviceProfileManager: Pushing Device Profile CVar: [[UI.SlateSDFText.ResolutionLevel:2 -> 2]]
+[2026.07.03-18.31.45:921][  0]LogConfig: Applying CVar settings from Section [Startup] File [../../../Engine/Config/ConsoleVariables.ini]
+[2026.07.03-18.31.45:921][  0]LogConfig: Set CVar [[r.DumpShaderDebugInfo:2]]
+[2026.07.03-18.31.45:921][  0]LogConfig: Set CVar [[p.chaos.AllowCreatePhysxBodies:1]]
+[2026.07.03-18.31.45:921][  0]LogConfig: Set CVar [[fx.SkipVectorVMBackendOptimizations:1]]
+[2026.07.03-18.31.45:921][  0]LogConfig: Applying CVar settings from Section [Startup_Windows] File [../../../Engine/Config/ConsoleVariables.ini]
+[2026.07.03-18.31.45:921][  0]LogConfig: Applying CVar settings from Section [ConsoleVariables] File [Engine]
+[2026.07.03-18.31.45:921][  0]LogConfig: Set CVar [[WindowsApplication.UseWorkerThreadForRawInput:0]]
+[2026.07.03-18.31.45:921][  0]LogInit: Computer: LS-PC
+[2026.07.03-18.31.45:921][  0]LogInit: User: wpark
+[2026.07.03-18.31.45:921][  0]LogInit: CPU Page size=4096, Cores=20
+[2026.07.03-18.31.45:921][  0]LogInit: High frequency timer resolution =10.000000 MHz
+[2026.07.03-18.31.45:921][  0]LogInit: Handheld Device: 0
+[2026.07.03-18.31.45:921][  0]LogMemory: Memory total: Physical=31.8GB (32GB approx) Virtual=56.8GB
+[2026.07.03-18.31.45:921][  0]LogMemory: Platform Memory Stats for Windows
+[2026.07.03-18.31.45:921][  0]LogMemory: Process Physical Memory: 257.22 MB used, 373.43 MB peak
+[2026.07.03-18.31.45:921][  0]LogMemory: Process Virtual Memory: 186.23 MB used, 197.23 MB peak
+[2026.07.03-18.31.45:921][  0]LogMemory: Physical Memory: 13002.92 MB used,  19601.36 MB free, 32604.28 MB total
+[2026.07.03-18.31.45:921][  0]LogMemory: Virtual Memory: 40931.97 MB used,  17272.31 MB free, 58204.28 MB total
+[2026.07.03-18.31.45:921][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
+[2026.07.03-18.31.45:926][  0]LogWindows: WindowsPlatformFeatures enabled
+[2026.07.03-18.31.45:927][  0]LogSpline: Registered spline type: TypeId=0x54E3AD22, Impl=MultiSpline, Value=Vector
+[2026.07.03-18.31.45:928][  0]LogChaosDD: Chaos Debug Draw Startup
+[2026.07.03-18.31.45:928][  0]LogInit: Physics initialised using underlying interface: Chaos
+[2026.07.03-18.31.45:928][  0]LogInit: Using OS detected language (en-US).
+[2026.07.03-18.31.45:929][  0]LogInit: Using OS detected locale (en-US).
+[2026.07.03-18.31.45:929][  0]LogTextLocalizationManager: No specific localization for 'en-US' exists, so 'en' will be used for the language.
+[2026.07.03-18.31.45:966][  0]LogWindowsTextInputMethodSystem: Available input methods:
+[2026.07.03-18.31.45:966][  0]LogWindowsTextInputMethodSystem:   - English (United States) - (Keyboard).
+[2026.07.03-18.31.45:967][  0]LogWindowsTextInputMethodSystem: Activated input method: English (United States) - (Keyboard).
+[2026.07.03-18.31.45:977][  0]LogWindowsTouchpad: Display: CacheForceMaxTouchpadSensitivityMode SetMaxTouchpadSensitivity
+[2026.07.03-18.31.45:983][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
+[2026.07.03-18.31.45:986][  0]LogSlate: New Slate User Created. Platform User Id 0, User Index 0, Is Virtual User: 0
+[2026.07.03-18.31.45:986][  0]LogSlate: Slate User Registered.  User Index 0, Is Virtual User: 0
+[2026.07.03-18.31.46:045][  0]LogRHI: Using Default RHI: D3D12
+[2026.07.03-18.31.46:045][  0]LogRHI: Using Highest Feature Level of D3D12: SM6
+[2026.07.03-18.31.46:045][  0]LogRHI: Loading RHI module D3D12RHI
+[2026.07.03-18.31.46:045][  0]LogRHI: Checking if RHI D3D12 with Feature Level SM6 is supported by your system.
+[2026.07.03-18.31.46:045][  0]LogRHI: RHI D3D12 with Feature Level SM6 is supported and will be used.
+[2026.07.03-18.31.46:045][  0]LogD3D12RHI: Integrated GPU (iGPU): false
+[2026.07.03-18.31.46:046][  0]LogD3D12RHI: Display: Creating D3D12 RHI with Max Feature Level SM6
+[2026.07.03-18.31.46:046][  0]LogWindows: Attached monitors:
+[2026.07.03-18.31.46:046][  0]LogWindows:     resolution: 2560x1440, work area: (0, 0) -> (2560, 1392), device: '\\.\DISPLAY1' [PRIMARY]
+[2026.07.03-18.31.46:046][  0]LogWindows:     resolution: 2560x1440, work area: (2560, -300) -> (5120, 1092), device: '\\.\DISPLAY2'
+[2026.07.03-18.31.46:046][  0]LogWindows: Found 2 attached monitors.
+[2026.07.03-18.31.46:046][  0]LogWindows: Gathering driver information using Windows Setup API
+[2026.07.03-18.31.46:046][  0]LogRHI: RHI Adapter Info:
+[2026.07.03-18.31.46:046][  0]LogRHI:             Name: NVIDIA GeForce RTX 5070 Ti
+[2026.07.03-18.31.46:047][  0]LogRHI:   Driver Version: 596.36 (internal:32.0.15.9636, unified:596.36)
+[2026.07.03-18.31.46:047][  0]LogRHI:      Driver Date: 4-23-2026
+[2026.07.03-18.31.46:047][  0]LogD3D12RHI:     GPU DeviceId: 0x2c05 (for the marketing name, search the web for "GPU Device Id")
+[2026.07.03-18.31.46:048][  0]LogD3D12RHI: InitD3DDevice: -D3DDebug = off -D3D12GPUValidation = off
+[2026.07.03-18.31.46:187][  0]LogNvidiaAftermath: Aftermath initialized
+[2026.07.03-18.31.46:187][  0]LogD3D12RHI: Emitting draw events for PIX profiling.
+[2026.07.03-18.31.46:245][  0]LogNvidiaAftermath: Aftermath enabled. Active feature flags: 
+[2026.07.03-18.31.46:245][  0]LogNvidiaAftermath:  - Feature: EnableResourceTracking
+[2026.07.03-18.31.46:245][  0]LogD3D12RHI: ID3D12Device1 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device2 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device3 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device4 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device5 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device6 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device7 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device8 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device9 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device10 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device11 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: ID3D12Device12 is supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Bindless is supported. MaxNonSamplerDescriptors: 1000000, MaxSamplerDescriptors: 2048
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Stencil ref from pixel shader is not supported
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Raster order views are supported
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Wave Operations are supported (wave size: min=32 max=32).
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI:      Legacy Barriers Present in Build: Yes
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI:    Enhanced Barriers Present in Build: Yes
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI:      Enhanced Barriers Driver Support: Yes
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Preferred Barrier Implementation Type: Legacy
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI:         Chosen Barrier Implementation: D3D12LegacyBarriers
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: D3D12 ray tracing tier 1.1 and bindless resources are supported.
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Mesh shader tier 1.0 is supported
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: AtomicInt64OnTypedResource is supported
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: AtomicInt64OnGroupShared is supported
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: AtomicInt64OnDescriptorHeapResource is supported
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Shader Model 6.6 atomic64 is supported
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Work Graphs are supported
+[2026.07.03-18.31.46:246][  0]LogD3D12RHI: Bindless is enabled (Configuration=RayTracing). Initializing allocators with 32768 Resource and 2048 Sampler descriptors
+[2026.07.03-18.31.46:294][  0]LogD3D12RHI: [GPUBreadCrumb] Successfully setup breadcrumb resource for DiagnosticBuffer (Queue: 0x000001D6E4A5F440)
+[2026.07.03-18.31.46:295][  0]LogD3D12RHI: [GPUBreadCrumb] Successfully setup breadcrumb resource for DiagnosticBuffer (Queue: 0x000001D6E4A5F700)
+[2026.07.03-18.31.46:295][  0]LogD3D12RHI: [GPUBreadCrumb] Successfully setup breadcrumb resource for DiagnosticBuffer (Queue: 0x000001D6E4A5F9C0)
+[2026.07.03-18.31.46:295][  0]LogD3D12RHI: Display: Not using pipeline state disk cache per r.D3D12.PSO.DiskCache=0
+[2026.07.03-18.31.46:295][  0]LogD3D12RHI: Display: Not using driver-optimized pipeline state disk cache per r.D3D12.PSO.DriverOptimizedDiskCache=0
+[2026.07.03-18.31.46:483][  0]LogD3D12RHI: NVIDIA Shader Execution Reordering interface supported!
+[2026.07.03-18.31.46:483][  0]LogD3D12RHI: NVIDIA Ray Tracing Cluster Operations supported and enabled
+[2026.07.03-18.31.46:483][  0]LogD3D12RHI: NVIDIA Extended ray tracing pipeline state applied.
+[2026.07.03-18.31.46:483][  0]LogRHI: Texture pool is 9593 MB (70% of 13704 MB)
+[2026.07.03-18.31.46:483][  0]LogD3D12RHI: Async texture creation enabled
+[2026.07.03-18.31.46:483][  0]LogD3D12RHI: RHI has support for 64 bit atomics
+[2026.07.03-18.31.46:503][  0]LogVRS: Current RHI supports per-draw and screenspace Variable Rate Shading
+[2026.07.03-18.31.46:508][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="D3D12"
+[2026.07.03-18.31.46:508][  0]LogCsvProfiler: Display: Metadata set : rhiname="D3D12"
+[2026.07.03-18.31.46:508][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
+[2026.07.03-18.31.46:508][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
+[2026.07.03-18.31.46:508][  0]LogInit: Initializing FReadOnlyCVARCache
+[2026.07.03-18.31.46:512][  0]LogRendererCore: Ray tracing is enabled (dynamic). Reason: r.RayTracing=1 and r.RayTracing.EnableOnDemand=1.
+[2026.07.03-18.31.46:512][  0]LogRendererCore: Ray tracing shaders are enabled.
+[2026.07.03-18.31.46:513][  0]LogShaderLibrary: Display: Using IoDispatcher for shader code library Global. Total 13153 unique shaders.
+[2026.07.03-18.31.46:513][  0]LogShaderLibrary: Display: Cooked Context: Using Shared Shader Library Global
+[2026.07.03-18.31.46:513][  0]LogShaderLibrary: Display: Logical shader library 'Global' has been created as a monolithic library
+[2026.07.03-18.31.46:515][  0]LogTemp: Display: Clearing the OS Cache
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: --- StereoAspects begin ---
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: Platform=PCD3D_SM6 (49)
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bInstancedStereo = 0
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bMobilePlatform = 0
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bMobilePostprocessing = 1
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bMobileMultiView = 0
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bMultiViewportCapable = 1
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bInstancedStereoNative = 0
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: ---
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bMobileMultiViewCoreSupport = 0
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bMobileMultiViewNative = 0
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bMobileMultiViewFallback = 0
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: ---
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bInstancedMultiViewportEnabled = 0
+[2026.07.03-18.31.46:527][  0]LogInit: FStereoShaderAspects: bInstancedStereoEnabled = 0
+[2026.07.03-18.31.46:528][  0]LogInit: FStereoShaderAspects: bMobileMultiViewEnabled = 0
+[2026.07.03-18.31.46:528][  0]LogInit: FStereoShaderAspects: --- StereoAspects end ---
+[2026.07.03-18.31.46:544][  0]LogInit: XR: Instanced Stereo Rendering is Disabled
+[2026.07.03-18.31.46:545][  0]LogInit: XR: MultiViewport is Disabled
+[2026.07.03-18.31.46:545][  0]LogInit: XR: Mobile Multiview is Disabled
+[2026.07.03-18.31.46:558][  0]LogSlate: Using FreeType 2.10.0
+[2026.07.03-18.31.46:560][  0]LogSlate: SlateFontServices - WITH_FREETYPE: 1, WITH_HARFBUZZ: 1
+[2026.07.03-18.31.46:611][  0]LogShaderLibrary: Display: Using IoDispatcher for shader code library SibeliusGame. Total 6596 unique shaders.
+[2026.07.03-18.31.46:611][  0]LogShaderLibrary: Display: Cooked Context: Using Shared Shader Library SibeliusGame
+[2026.07.03-18.31.46:611][  0]LogShaderLibrary: Display: Logical shader library 'SibeliusGame' has been created as a monolithic library
+[2026.07.03-18.31.46:611][  0]LogRHI: Could not open FPipelineCacheFile: ../../../SibeliusGame/Content/PipelineCaches/Windows/SibeliusGame_PCD3D_SM6.stable.upipelinecache
+[2026.07.03-18.31.46:611][  0]LogRHI: Could not open FPipelineCacheFile: ../../../SibeliusGame/Content/PipelineCaches/Windows/SibeliusGame_PCD3D_SM6.stable.upipelinecache
+[2026.07.03-18.31.46:611][  0]LogShaderLibrary: Display: Tried to open again shader library 'SibeliusGame', but could not find new components for it (existing components: 1).
+[2026.07.03-18.31.46:611][  0]LogRHI: Could not open FPipelineCacheFile: ../../../SibeliusGame/Content/PipelineCaches/Windows/SibeliusGame_PCD3D_SM6.stable.upipelinecache
+[2026.07.03-18.31.46:611][  0]LogInit: Using OS detected language (en-US).
+[2026.07.03-18.31.46:611][  0]LogInit: Using OS detected locale (en-US).
+[2026.07.03-18.31.46:611][  0]LogTextLocalizationManager: No localization for 'en-US' exists, so 'en' will be used for the language.
+[2026.07.03-18.31.46:611][  0]LogTextLocalizationManager: No localization for 'en-US' exists, so 'en' will be used for the locale.
+[2026.07.03-18.31.46:611][  0]LogSlate: FontCache flush requested. Reason: Culture for localization was changed
+[2026.07.03-18.31.46:611][  0]LogSlate: FontCache flush requested. Reason: Culture for localization was changed
+[2026.07.03-18.31.46:613][  0]LogAssetRegistry: FAssetRegistry took 0.0013 seconds to start up
+[2026.07.03-18.31.46:761][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
+[2026.07.03-18.31.46:762][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
+[2026.07.03-18.31.46:763][  0]LogDeviceProfileManager: Active device profile: [00007FF4DA321530][000001D94BE34930 82] Windows
+[2026.07.03-18.31.46:763][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="Windows"
+[2026.07.03-18.31.46:766][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+[2026.07.03-18.31.46:767][  0]LogFilePackageStore: Updated: NewPackages=3906, OldPackages=0, TotalPackages=3906
+[2026.07.03-18.31.46:904][  0]LogUsd: Attempted to call a static function from UnrealUSDWrapper before the module is actually loaded! The module will be loaded now, but not all static functions have this check. In general, please ensure an Unreal module is loaded before calling any of its static functions, for example by calling 'FModuleManager::LoadModuleChecked<IUnrealUSDWrapperModule>("UnrealUSDWrapper");' beforehand.
+[2026.07.03-18.31.46:907][  0]LogPackageLocalizationCache: Processed 86 localized package path(s) for 1 prioritized culture(s) in 0.000521 seconds
+[2026.07.03-18.31.47:043][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.07.03-18.31.47:059][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
+[2026.07.03-18.31.47:065][  0]LogStats: UGameplayTagsManager::InitializeManager -  0.000 s
+[2026.07.03-18.31.47:075][  0]LogConfig: Applying CVar settings from Section [/Script/NNEDenoiser.NNEDenoiserSettings] File [Engine]
+[2026.07.03-18.31.47:144][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.07.03-18.31.47:177][  0]LogMoviePlayer: Initializing movie player
+[2026.07.03-18.31.47:184][  0]LogNiagaraDebuggerClient: Niagara Debugger Client Initialized | Session: A037590AE8AF452A8000000000001500 | Instance: B508A5194B9B2D51A672958CBCA1FADE (LS-PC-29648).
+[2026.07.03-18.31.47:231][  0]LogNNERuntimeORT: No NPU adapter found with attributes (!GRAPHICS && (GENERIC_ML || CORE_COMPUTE)) (Windows 11 Version 24H2 or newer)!
+[2026.07.03-18.31.47:231][  0]LogNNERuntimeORT: Available graphics and compute adapters:
+[2026.07.03-18.31.47:231][  0]LogNNERuntimeORT: 0: NVIDIA GeForce RTX 5070 Ti (Compute, Graphics)
+[2026.07.03-18.31.47:231][  0]LogNNERuntimeORT: 1: Microsoft Basic Render Driver (Compute, Graphics)
+[2026.07.03-18.31.47:231][  0]LogNNERuntimeORT: No NPU adapter found!
+[2026.07.03-18.31.47:231][  0]LogNNERuntimeORT: MakeRuntimeORTDml:
+[2026.07.03-18.31.47:231][  0]LogNNERuntimeORT:   DirectML:  yes
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT:   RHI D3D12: yes
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT:   D3D12:     yes
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT:   NPU:       no
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT: Interface availability:
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT:   GPU: yes
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT:   RDG: yes
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT:   NPU: no
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT: No NPU adapter found with attributes (!GRAPHICS && (GENERIC_ML || CORE_COMPUTE)) (Windows 11 Version 24H2 or newer)!
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT: Available graphics and compute adapters:
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT: 0: NVIDIA GeForce RTX 5070 Ti (Compute, Graphics)
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT: 1: Microsoft Basic Render Driver (Compute, Graphics)
+[2026.07.03-18.31.47:232][  0]LogNNERuntimeORT: No NPU adapter found!
+[2026.07.03-18.31.47:256][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
+[2026.07.03-18.31.47:259][  0]LogMetaSound: MetaSound Engine Initialized
+[2026.07.03-18.31.47:534][  0]LogWebBrowser: Loaded CEF3 version 128.4.13.3057 from C:/Users/wpark/builds/sibelius-pcg-runtime-test/Windows/Engine/Binaries/ThirdParty/CEF3/Win64/128.4.13+ge76af7e+chromium-128.0.6613.138
+[2026.07.03-18.31.47:536][  0]LogCEFBrowser: CEF GPU acceleration enabled
+[2026.07.03-18.31.47:649][  0]LogAndroidPermission: UAndroidPermissionCallbackProxy::GetInstance
+[2026.07.03-18.31.47:652][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExCore
+[2026.07.03-18.31.47:653][  0]LogPCGEx: PCGExCore: Registered 16 class redirects
+[2026.07.03-18.31.47:653][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExBlending
+[2026.07.03-18.31.47:655][  0]LogPCGEx: PCGExBlending: Registered 10 class redirects
+[2026.07.03-18.31.47:655][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExProperties
+[2026.07.03-18.31.47:655][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExMatching
+[2026.07.03-18.31.47:656][  0]LogPCGEx: PCGExMatching: Registered 16 class redirects
+[2026.07.03-18.31.47:656][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExPickers
+[2026.07.03-18.31.47:658][  0]LogPCGEx: PCGExPickers: Registered 10 class redirects
+[2026.07.03-18.31.47:658][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExFilters
+[2026.07.03-18.31.47:659][  0]LogPCGEx: PCGExFilters: Registered 92 class redirects
+[2026.07.03-18.31.47:660][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExFoundations
+[2026.07.03-18.31.47:661][  0]LogPCGEx: PCGExFoundations: Registered 40 class redirects
+[2026.07.03-18.31.47:661][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsBridges
+[2026.07.03-18.31.47:662][  0]LogPCGEx: PCGExElementsBridges: Registered 1 class redirects
+[2026.07.03-18.31.47:663][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExCollections
+[2026.07.03-18.31.47:665][  0]LogPCGEx: PCGExCollections: Registered 50 class redirects
+[2026.07.03-18.31.47:665][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsActions
+[2026.07.03-18.31.47:666][  0]LogPCGEx: PCGExElementsActions: Registered 5 class redirects
+[2026.07.03-18.31.47:666][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExHeuristics
+[2026.07.03-18.31.47:668][  0]LogPCGEx: PCGExHeuristics: Registered 20 class redirects
+[2026.07.03-18.31.47:668][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExGraphs
+[2026.07.03-18.31.47:669][  0]LogPCGEx: PCGExGraphs: Registered 1 class redirects
+[2026.07.03-18.31.47:670][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsClusters
+[2026.07.03-18.31.47:671][  0]LogPCGEx: PCGExElementsClusters: Registered 72 class redirects
+[2026.07.03-18.31.47:671][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsClipper2
+[2026.07.03-18.31.47:671][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsClustersDecomp
+[2026.07.03-18.31.47:673][  0]LogPCGEx: PCGExElementsClustersDecomp: Registered 18 class redirects
+[2026.07.03-18.31.47:673][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsClustersDiagrams
+[2026.07.03-18.31.47:674][  0]LogPCGEx: PCGExElementsClustersDiagrams: Registered 16 class redirects
+[2026.07.03-18.31.47:674][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsClustersRefine
+[2026.07.03-18.31.47:675][  0]LogPCGEx: PCGExElementsClustersRefine: Registered 38 class redirects
+[2026.07.03-18.31.47:675][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsClustersRelax
+[2026.07.03-18.31.47:677][  0]LogPCGEx: PCGExElementsClustersRelax: Registered 18 class redirects
+[2026.07.03-18.31.47:677][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsFloodFill
+[2026.07.03-18.31.47:678][  0]LogPCGEx: PCGExElementsFloodFill: Registered 60 class redirects
+[2026.07.03-18.31.47:678][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExNoise3D
+[2026.07.03-18.31.47:678][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsMeta
+[2026.07.03-18.31.47:680][  0]LogPCGEx: PCGExElementsMeta: Registered 28 class redirects
+[2026.07.03-18.31.47:680][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsPathfinding
+[2026.07.03-18.31.47:681][  0]LogPCGEx: PCGExElementsPathfinding: Registered 17 class redirects
+[2026.07.03-18.31.47:681][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsPathfindingNavmesh
+[2026.07.03-18.31.47:682][  0]LogPCGEx: PCGExElementsPathfindingNavmesh: Registered 2 class redirects
+[2026.07.03-18.31.47:683][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsPaths
+[2026.07.03-18.31.47:684][  0]LogPCGEx: PCGExElementsPaths: Registered 35 class redirects
+[2026.07.03-18.31.47:684][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsProbing
+[2026.07.03-18.31.47:686][  0]LogPCGEx: PCGExElementsProbing: Registered 35 class redirects
+[2026.07.03-18.31.47:686][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsSampling
+[2026.07.03-18.31.47:687][  0]LogPCGEx: PCGExElementsSampling: Registered 15 class redirects
+[2026.07.03-18.31.47:688][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsShapes
+[2026.07.03-18.31.47:689][  0]LogPCGEx: PCGExElementsShapes: Registered 12 class redirects
+[2026.07.03-18.31.47:689][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsSpatial
+[2026.07.03-18.31.47:690][  0]LogPCGEx: PCGExElementsSpatial: Registered 14 class redirects
+[2026.07.03-18.31.47:690][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsTensors
+[2026.07.03-18.31.47:692][  0]LogPCGEx: PCGExElementsTensors: Registered 46 class redirects
+[2026.07.03-18.31.47:692][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExElementsTopology
+[2026.07.03-18.31.47:693][  0]LogPCGEx: PCGExElementsTopology: Registered 7 class redirects
+[2026.07.03-18.31.47:693][  0]LogPCGEx: IPCGExModuleInterface::StartupModule >> PCGExSpatialDomains
+[2026.07.03-18.31.47:699][  0]LogUObjectArray: 37931 objects as part of root set at end of initial load.
+[2026.07.03-18.31.47:699][  0]LogUObjectArray: 106 objects are not in the root set, but can never be destroyed because they are in the DisregardForGC set.
+[2026.07.03-18.31.47:699][  0]LogUObjectArray: CloseDisregardForGC: 37931/37931 objects in disregard for GC pool
+[2026.07.03-18.31.48:211][  0]LogEngine: Initializing Engine...
+[2026.07.03-18.31.48:234][  0]LogNetVersion: Set ProjectVersion to 0.5.1. Version Checksum will be recalculated on next use.
+[2026.07.03-18.31.48:234][  0]LogInit: Texture streaming: Disabled
+[2026.07.03-18.31.48:235][  0]LogAudio: Display: Initializing Audio Device Manager...
+[2026.07.03-18.31.48:235][  0]LogAudio: Display: Loading Default Audio Settings Objects...
+[2026.07.03-18.31.48:236][  0]LogAudio: Display: No default SoundConcurrencyObject specified (or failed to load).
+[2026.07.03-18.31.48:236][  0]LogAudio: Display: Audio Device Manager Initialized
+[2026.07.03-18.31.48:236][  0]LogAudio: Display: Creating Audio Device:                 Id: 1, Scope: Shared, Realtime: True
+[2026.07.03-18.31.48:236][  0]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2026.07.03-18.31.48:237][  0]LogAudioMixer: Display: 	Sample Rate:						  48000
+[2026.07.03-18.31.48:237][  0]LogAudioMixer: Display: 	Callback Buffer Frame Size Requested: 1024
+[2026.07.03-18.31.48:237][  0]LogAudioMixer: Display: 	Callback Buffer Frame Size To Use:	  1024
+[2026.07.03-18.31.48:237][  0]LogAudioMixer: Display: 	Number of buffers to queue:			  1
+[2026.07.03-18.31.48:237][  0]LogAudioMixer: Display: 	Max Channels (voices):				  32
+[2026.07.03-18.31.48:237][  0]LogAudioMixer: Display: 	Number of Async Source Workers:		  4
+[2026.07.03-18.31.48:237][  0]LogAudio: Display: AudioDevice MaxSources: 32
+[2026.07.03-18.31.48:237][  0]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2026.07.03-18.31.48:237][  0]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2026.07.03-18.31.48:237][  0]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2026.07.03-18.31.48:250][  0]LogAudioMixer: Display: Initializing audio mixer using platform API: 'XAudio2'
+[2026.07.03-18.31.48:270][  0]LogAudioEnumeration: Display: FWindowsMMDeviceCache: Default Render Role='Console', Device='LG HDR 4K (NVIDIA High Definition Audio)'
+[2026.07.03-18.31.48:272][  0]LogAudioEnumeration: Display: FWindowsMMDeviceCache: Default Capture Role='Console', Device='External Mic (Sound BlasterX G6)'
+[2026.07.03-18.31.48:273][  0]LogAudioEnumeration: Display: FWindowsMMDeviceCache: Default Render Role='Multimedia', Device='LG HDR 4K (NVIDIA High Definition Audio)'
+[2026.07.03-18.31.48:273][  0]LogAudioEnumeration: Display: FWindowsMMDeviceCache: Default Capture Role='Multimedia', Device='External Mic (Sound BlasterX G6)'
+[2026.07.03-18.31.48:275][  0]LogAudioEnumeration: Display: FWindowsMMDeviceCache: Default Render Role='Communications', Device='Speakers (Sound BlasterX G6)'
+[2026.07.03-18.31.48:276][  0]LogAudioEnumeration: Display: FWindowsMMDeviceCache: Default Capture Role='Communications', Device='External Mic (Sound BlasterX G6)'
+[2026.07.03-18.31.48:293][  0]LogAudioMixer: Display: Using Audio Hardware Device LG HDR 4K (NVIDIA High Definition Audio)
+[2026.07.03-18.31.48:294][  0]LogAudioMixer: Display: Initializing Sound Submixes...
+[2026.07.03-18.31.48:295][  0]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2026.07.03-18.31.48:295][  0]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2026.07.03-18.31.48:298][  0]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called. InstanceID=1
+[2026.07.03-18.31.48:298][  0]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048, InstanceID=1
+[2026.07.03-18.31.48:299][  0]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal(), InstanceID=1
+[2026.07.03-18.31.48:299][  0]LogInit: FAudioDevice initialized with ID 1.
+[2026.07.03-18.31.48:299][  0]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time. InstanceID=1
+[2026.07.03-18.31.48:299][  0]LogAudioMixer: Initializing Audio Bus Subsystem for audio device with ID 1
+[2026.07.03-18.31.48:300][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+[2026.07.03-18.31.48:310][  0]LogChaosDD: Creating Chaos Debug Draw Scene for world Untitled
+[2026.07.03-18.31.48:329][  0]LogElsewhere: [Elsewhere] registry: 6 place-types, 18 curios.
+[2026.07.03-18.31.48:329][  0]LogAudio: Display: Audio Device (ID: 1) registered with world 'Untitled'.
+[2026.07.03-18.31.48:330][  0]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2026.07.03-18.31.48:331][  0]LogInit: Display: Game Engine Initialized.
+[2026.07.03-18.31.48:340][  0]LogInit: Display: Starting Game.
+[2026.07.03-18.31.48:340][  0]LogGlobalStatus: UEngine::Browse Started Browse: "/Game/Maps/L_Elsewhere_Dev?Name=Player"
+[2026.07.03-18.31.48:340][  0]LogNet: Browse: /Game/Maps/L_Elsewhere_Dev?Name=Player
+[2026.07.03-18.31.48:341][  0]LogLoad: LoadMap: /Game/Maps/L_Elsewhere_Dev?Name=Player
+[2026.07.03-18.31.48:341][  0]LogWorld: BeginTearingDown for /Temp/Untitled_0
+[2026.07.03-18.31.48:342][  0]LogWorld: UWorld::CleanupWorld for Untitled, bSessionEnded=true, bCleanupResources=true
+[2026.07.03-18.31.48:349][  0]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2026.07.03-18.31.48:354][  0]LogUObjectHash: Compacting FUObjectHashTables data took   0.59ms
+[2026.07.03-18.31.48:359][  0]LogSlate: Took 0.000569 seconds to synchronously load lazily loaded font '../../../Engine/Content/Slate/Fonts/Roboto-Regular.ttf' (155K)
+[2026.07.03-18.31.49:352][  0]LogStaticMesh: Warning: Invalid material [MI_RiverMuddy] used on Nanite static mesh [SM_WaterPlane]. The SingleLayerWater shading model is currently not supported, [MSM_SingleLayerWater] shading model was specified. (NOTE: "Disallow Nanite" on static mesh components can be used to suppress this warning and forcibly render the object as non-Nanite.)
+[2026.07.03-18.31.49:353][  0]LogStaticMesh: Warning: Invalid material [MI_RiverMuddy] used on Nanite static mesh [SM_WaterPlane]. The SingleLayerWater shading model is currently not supported, [MSM_SingleLayerWater] shading model was specified. (NOTE: "Disallow Nanite" on static mesh components can be used to suppress this warning and forcibly render the object as non-Nanite.)
+[2026.07.03-18.31.49:353][  0]LogStaticMesh: Warning: Invalid material [MI_RiverMuddy] used on Nanite static mesh [SM_WaterPlane]. The SingleLayerWater shading model is currently not supported, [MSM_SingleLayerWater] shading model was specified. (NOTE: "Disallow Nanite" on static mesh components can be used to suppress this warning and forcibly render the object as non-Nanite.)
+[2026.07.03-18.31.49:353][  0]LogStaticMesh: Warning: Invalid material [MI_RiverMuddy] used on Nanite static mesh [SM_WaterPlane]. The SingleLayerWater shading model is currently not supported, [MSM_SingleLayerWater] shading model was specified. (NOTE: "Disallow Nanite" on static mesh components can be used to suppress this warning and forcibly render the object as non-Nanite.)
+[2026.07.03-18.31.49:646][  0]LogAudio: Display: Audio Device (ID: 1) registered with world 'L_Elsewhere_Dev'.
+[2026.07.03-18.31.49:646][  0]LogChaosDD: Creating Chaos Debug Draw Scene for world L_Elsewhere_Dev
+[2026.07.03-18.31.49:653][  0]LogLoad: Game class is 'BP_FirstPersonGameMode_C'
+[2026.07.03-18.31.49:656][  0]LogStreaming: Display: ULevelStreaming::RequestLevel(/Game/EasyBiomes/Maps/Lighting/EB_LightingDaytime) is flushing async loading
+[2026.07.03-18.31.55:667][  0]LogWorld: Bringing World /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev up for play (max tick rate 0) at 2026.07.03-11.31.55
+[2026.07.03-18.31.55:678][  0]LogWorld: Bringing up level for play took: 6.011372
+[2026.07.03-18.31.55:728][  0]LogSibeliusGame: Display: [CompileEnd] Bound to 0 'CompileEndTrigger' trigger(s).
+[2026.07.03-18.31.55:734][  0]LogBlueprintUserMessages: [L_Elsewhere_Dev_C_1] DERISK BeginPlay fired
+[2026.07.03-18.31.55:736][  0]LogScript: Warning: Attempted to access missing property 'none'. If this is a packaged/cooked build, are you attempting to use an editor-only property?
+	BP_WorldManager_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_WorldManager_C_2147482323
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_WorldManager.BP_WorldManager_C:UserConstructionScript:019F
+[2026.07.03-18.31.55:736][  0]LogScript: Warning: Script call stack:
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_WorldManager.BP_WorldManager_C:UserConstructionScript
+
+[2026.07.03-18.31.55:738][  0]LogScript: Warning: Accessed None trying to read (real) property WaterPlane in BP_Biome_C
+	BP_Biome_Poplar_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_Biome_Poplar_C_1
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   :00C6
+[2026.07.03-18.31.55:738][  0]LogScript: Warning: Script call stack:
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ReceiveBeginPlay
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ExecuteUbergraph_L_Elsewhere_Dev
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ConductWorld
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ExecuteUbergraph_BP_WorldConductor
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   
+
+[2026.07.03-18.31.55:738][  0]LogScript: Warning: Accessed None trying to read (real) property PostProcess in BP_Biome_C
+	BP_Biome_Poplar_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_Biome_Poplar_C_1
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   :00E9
+[2026.07.03-18.31.55:738][  0]LogScript: Warning: Script call stack:
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ReceiveBeginPlay
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ExecuteUbergraph_L_Elsewhere_Dev
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ConductWorld
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ExecuteUbergraph_BP_WorldConductor
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   
+
+[2026.07.03-18.31.55:739][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarField_01/SM_Poplar_01_Field_Leaves_04 (0x348442CC9B8D13C) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:739][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarField_01/SM_Poplar_01_Field_Leaves_04.SM_Poplar_01_Field_Leaves_04'
+[2026.07.03-18.31.55:739][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarField_02/SM_Poplar_02_Field_Leaves_04 (0xD605E9F97C6FC5A2) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:739][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarField_02/SM_Poplar_02_Field_Leaves_04.SM_Poplar_02_Field_Leaves_04'
+[2026.07.03-18.31.55:739][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarField_03/SM_Poplar_03_Field_Leaves_04 (0xB0B10D40B472D062) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:739][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarField_03/SM_Poplar_03_Field_Leaves_04.SM_Poplar_03_Field_Leaves_04'
+[2026.07.03-18.31.55:739][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_01/SM_Poplar_01_Leaves_04 (0xB3621E3DE15977C8) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:739][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_01/SM_Poplar_01_Leaves_04.SM_Poplar_01_Leaves_04'
+[2026.07.03-18.31.55:739][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_02/SM_Poplar_02_Leaves_04 (0xFB5DE8D1DF477379) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:739][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_02/SM_Poplar_02_Leaves_04.SM_Poplar_02_Leaves_04'
+[2026.07.03-18.31.55:739][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_03/SM_Poplar_03_Leaves_04 (0x8C20ED3588968969) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:739][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_03/SM_Poplar_03_Leaves_04.SM_Poplar_03_Leaves_04'
+[2026.07.03-18.31.55:740][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_04/SM_Poplar_04_Leaves_04 (0x4053BC6DEA2F24C) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:740][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_04/SM_Poplar_04_Leaves_04.SM_Poplar_04_Leaves_04'
+[2026.07.03-18.31.55:740][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_05/SM_Poplar_05_Leaves_04 (0x4DBB4BF07A546BCE) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:740][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_05/SM_Poplar_05_Leaves_04.SM_Poplar_05_Leaves_04'
+[2026.07.03-18.31.55:740][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_06/SM_Poplar_06_Leaves_04 (0x2193DF6E01991CBC) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:740][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_06/SM_Poplar_06_Leaves_04.SM_Poplar_06_Leaves_04'
+[2026.07.03-18.31.55:740][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_07/SM_Poplar_07_Leaves_04 (0xFC7183156CF9A889) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:740][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_07/SM_Poplar_07_Leaves_04.SM_Poplar_07_Leaves_04'
+[2026.07.03-18.31.55:740][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_08/SM_Poplar_08_Leaves_04 (0xBEC69C4039A42B81) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:740][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_08/SM_Poplar_08_Leaves_04.SM_Poplar_08_Leaves_04'
+[2026.07.03-18.31.55:740][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_09/SM_Poplar_09_Leaves_04 (0x6BFC54DB739C3020) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:740][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_09/SM_Poplar_09_Leaves_04.SM_Poplar_09_Leaves_04'
+[2026.07.03-18.31.55:740][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_10/SM_Poplar_10_Leaves_04 (0xBD109C69E22AF997) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:740][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_10/SM_Poplar_10_Leaves_04.SM_Poplar_10_Leaves_04'
+[2026.07.03-18.31.55:741][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_11/SM_Poplar_11_Leaves_03 (0x3AB34A12CAC4B229) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:741][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_11/SM_Poplar_11_Leaves_03.SM_Poplar_11_Leaves_03'
+[2026.07.03-18.31.55:741][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_12/SM_Poplar_12_Leaves_02 (0xD7D8AC662FC91223) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:741][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_12/SM_Poplar_12_Leaves_02.SM_Poplar_12_Leaves_02'
+[2026.07.03-18.31.55:741][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_13/SM_Poplar_13_Leaves_02 (0x8F7F43FBBC83A0FF) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:741][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_13/SM_Poplar_13_Leaves_02.SM_Poplar_13_Leaves_02'
+[2026.07.03-18.31.55:741][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_01/SM_PoplarBush_01_Leaves_02 (0xB6A9352AD924F98D) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:741][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_01/SM_PoplarBush_01_Leaves_02.SM_PoplarBush_01_Leaves_02'
+[2026.07.03-18.31.55:741][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_02/SM_PoplarBush_02_Leaves_02 (0x4E4885EFB128E551) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:741][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_02/SM_PoplarBush_02_Leaves_02.SM_PoplarBush_02_Leaves_02'
+[2026.07.03-18.31.55:741][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_04/SM_BoxElderBush_04_Leaves_03 (0x6C91F494A6DD5002) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:741][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_04/SM_BoxElderBush_04_Leaves_03.SM_BoxElderBush_04_Leaves_03'
+[2026.07.03-18.31.55:741][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_05/SM_BoxElderBush_05_Leaves_02 (0x4CDCBD25EDE693AB) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:741][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_05/SM_BoxElderBush_05_Leaves_02.SM_BoxElderBush_05_Leaves_02'
+[2026.07.03-18.31.55:741][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_14/SM_Poplar_14_Leaves_02 (0xF82584883D6367A6) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:741][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_14/SM_Poplar_14_Leaves_02.SM_Poplar_14_Leaves_02'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_15/SM_Poplar_15_Leaves_02 (0xE36D7FD17F8E07F9) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:742][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_Poplar_15/SM_Poplar_15_Leaves_02.SM_Poplar_15_Leaves_02'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_03/SM_PoplarBush_03_Leaves_02 (0xABAF13A4546DD24C) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:742][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_03/SM_PoplarBush_03_Leaves_02.SM_PoplarBush_03_Leaves_02'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_04/SM_PoplarBush_04_Leaves_02 (0xE9CE654E7D53E271) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:742][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_04/SM_PoplarBush_04_Leaves_02.SM_PoplarBush_04_Leaves_02'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_05/SM_PoplarBush_05_Leaves_02 (0xA487111BCEEC9274) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:742][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/SM_PoplarBush_05/SM_PoplarBush_05_Leaves_02.SM_PoplarBush_05_Leaves_02'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/Poplar/PoplarFallen_01/SM_PoplarFallen_01_Leaves_01 (0x732C96D3BED40413) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:742][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/Poplar/PoplarFallen_01/SM_PoplarFallen_01_Leaves_01.SM_PoplarFallen_01_Leaves_01'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_01/SM_BoxElderBush_01_Leaves_03 (0x2A93FCE676F2A683) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:742][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_01/SM_BoxElderBush_01_Leaves_03.SM_BoxElderBush_01_Leaves_03'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_02/SM_BoxElderBush_02_Leaves_03 (0xA83FC560545BC4D3) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:742][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_02/SM_BoxElderBush_02_Leaves_03.SM_BoxElderBush_02_Leaves_03'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_03/SM_BoxElderBush_03_Leaves_03 (0xC41CF3A014E61067) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:742][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderBush_03/SM_BoxElderBush_03_Leaves_03.SM_BoxElderBush_03_Leaves_03'
+[2026.07.03-18.31.55:742][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_01/SM_BoxElderSapling_01_Leaves_02 (0x54898B8F4FD36B2C) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:743][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_01/SM_BoxElderSapling_01_Leaves_02.SM_BoxElderSapling_01_Leaves_02'
+[2026.07.03-18.31.55:743][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_02/SM_BoxElderSapling_02_Leaves_02 (0xB721F05B76133A41) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:743][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_02/SM_BoxElderSapling_02_Leaves_02.SM_BoxElderSapling_02_Leaves_02'
+[2026.07.03-18.31.55:743][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_03/SM_BoxElderSapling_03_Leaves_02 (0xE688AAFBE45FB940) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:743][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_03/SM_BoxElderSapling_03_Leaves_02.SM_BoxElderSapling_03_Leaves_02'
+[2026.07.03-18.31.55:743][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_04/SM_BoxElderSapling_04_Leaves_02 (0xE0E1E8A4B3C40F7C) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:743][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_04/SM_BoxElderSapling_04_Leaves_02.SM_BoxElderSapling_04_Leaves_02'
+[2026.07.03-18.31.55:743][  0]LogStreaming: Warning: LoadPackage: SkipPackage: /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_05/SM_BoxElderSapling_05_Leaves_02 (0xDC9F0ABCB3E1E23C) - The package to load does not exist on disk or in the loader
+[2026.07.03-18.31.55:743][  0]LogUObjectGlobals: Warning: Failed to find object 'Object /Game/EasyBiomes/Foliage/Trees/BoxElder/BoxElderSapling_05/SM_BoxElderSapling_05_Leaves_02.SM_BoxElderSapling_05_Leaves_02'
+[2026.07.03-18.31.55:743][  0]LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+[2026.07.03-18.31.55:743][  0]LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+[2026.07.03-18.31.55:743][  0]LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+[2026.07.03-18.31.55:743][  0]LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+[2026.07.03-18.31.55:743][  0]LogScript: Warning: Accessed None trying to read (real) property WaterPlane in BP_Biome_C
+	BP_Biome_Poplar_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_Biome_Poplar_C_3
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   :00C6
+[2026.07.03-18.31.55:743][  0]LogScript: Warning: Script call stack:
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ReceiveBeginPlay
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ExecuteUbergraph_L_Elsewhere_Dev
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ConductWorld
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ExecuteUbergraph_BP_WorldConductor
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   
+
+[2026.07.03-18.31.55:743][  0]LogScript: Warning: Accessed None trying to read (real) property PostProcess in BP_Biome_C
+	BP_Biome_Poplar_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_Biome_Poplar_C_3
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   :00E9
+[2026.07.03-18.31.55:743][  0]LogScript: Warning: Script call stack:
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ReceiveBeginPlay
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ExecuteUbergraph_L_Elsewhere_Dev
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ConductWorld
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ExecuteUbergraph_BP_WorldConductor
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   
+
+[2026.07.03-18.31.55:746][  0]LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+[2026.07.03-18.31.55:746][  0]LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+[2026.07.03-18.31.55:746][  0]LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+[2026.07.03-18.31.55:746][  0]LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+[2026.07.03-18.31.55:746][  0]LogScript: Warning: Accessed None trying to read (real) property WaterPlane in BP_Biome_C
+	BP_Biome_Poplar_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_Biome_Poplar_C_5
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   :00C6
+[2026.07.03-18.31.55:746][  0]LogScript: Warning: Script call stack:
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ReceiveBeginPlay
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ExecuteUbergraph_L_Elsewhere_Dev
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ConductWorld
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ExecuteUbergraph_BP_WorldConductor
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   
+
+[2026.07.03-18.31.55:746][  0]LogScript: Warning: Accessed None trying to read (real) property PostProcess in BP_Biome_C
+	BP_Biome_Poplar_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_Biome_Poplar_C_5
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   :00E9
+[2026.07.03-18.31.55:746][  0]LogScript: Warning: Script call stack:
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ReceiveBeginPlay
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ExecuteUbergraph_L_Elsewhere_Dev
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ConductWorld
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ExecuteUbergraph_BP_WorldConductor
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   
+
+[2026.07.03-18.31.55:747][  0]LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+[2026.07.03-18.31.55:747][  0]LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+[2026.07.03-18.31.55:747][  0]LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+[2026.07.03-18.31.55:747][  0]LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+[2026.07.03-18.31.55:747][  0]LogScript: Warning: Accessed None trying to read (real) property WaterPlane in BP_Biome_C
+	BP_Biome_Poplar_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_Biome_Poplar_C_2
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   :00C6
+[2026.07.03-18.31.55:747][  0]LogScript: Warning: Script call stack:
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ReceiveBeginPlay
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ExecuteUbergraph_L_Elsewhere_Dev
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ConductWorld
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ExecuteUbergraph_BP_WorldConductor
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   
+
+[2026.07.03-18.31.55:747][  0]LogScript: Warning: Accessed None trying to read (real) property PostProcess in BP_Biome_C
+	BP_Biome_Poplar_C /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev:PersistentLevel.BP_Biome_Poplar_C_2
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   :00E9
+[2026.07.03-18.31.55:748][  0]LogScript: Warning: Script call stack:
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ReceiveBeginPlay
+	Function /Game/Maps/L_Elsewhere_Dev.L_Elsewhere_Dev_C:ExecuteUbergraph_L_Elsewhere_Dev
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ConductWorld
+	Function /Game/Elsewhere/BP_WorldConductor.BP_WorldConductor_C:ExecuteUbergraph_BP_WorldConductor
+	Function /Game/EasyBiomes/PCG/Blueprints/BP_Biome.BP_Biome_C:​​​ 🌿 Spawn   
+
+[2026.07.03-18.31.55:749][  0]LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+[2026.07.03-18.31.55:770][  0]LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+[2026.07.03-18.31.55:770][  0]LogPCG: Error: [ScheduleComponent] Didn't schedule any task.
+[2026.07.03-18.31.55:770][  0]LogPCG: Warning: Process Graph was called but aborted, check for errors in log if you expected a result.
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [Generate] catalog loaded: 6 entries, budget 10.
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [Generate] Mrs. Hall lines loaded: 4 reason group(s).
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall] === Voice clip manifest: record one WAV per AudioKey, import to /Game/Audio/MrsHall/ (asset name = key) ===
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_1.wav  <-  "We don't keep that here, Programmer. Make do with what you've got."
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_2.wav  <-  "You. Programmer. We don't keep that here."
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_3.wav  <-  "That's not in our inventory. This is a workplace, not a wish."
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_ambiguous_1.wav  <-  "Be precise. I expect a senior developer to know exactly what he wants."
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_ambiguous_2.wav  <-  "You. Programmer. Say what you mean, plainly."
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_overbudget_1.wav  <-  "That's enough of that. What am I paying you for, Programmer, if you lean on it all day?"
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_overbudget_2.wav  <-  "You've spent your allowance. We don't throw resources around here."
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_unsafe_1.wav  <-  "Absolutely not. I won't have that in my shop."
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall]   mrshall_unsafe_2.wav  <-  "You. Programmer. We do not make such things. Not under my roof."
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [MrsHall] === 9 clip(s) total ===
+[2026.07.03-18.31.55:771][  0]LogTemp: Display: [Generate] unsafe blocklist loaded: 8 word(s).
+[2026.07.03-18.31.55:791][  0]LogLoad: Took 7.450872 seconds to LoadMap(/Game/Maps/L_Elsewhere_Dev)
+[2026.07.03-18.31.55:791][  0]LogGlobalStatus: UEngine::LoadMap Load map complete /Game/Maps/L_Elsewhere_Dev
+[2026.07.03-18.31.55:890][  0]LogRHI: Display: ShaderPipelineCache: Paused Batching. 1
+[2026.07.03-18.31.55:891][  0]LogPakFile: AllPaks IndexSizes: DirectoryHashSize=32, PathHashSize=16, EntriesSize=32752, DirTreeIndexSize=155296, TotalSize=188096
+[2026.07.03-18.31.55:891][  0]LogRHI: Display: ShaderPipelineCache: Resumed Batching. 0
+[2026.07.03-18.31.55:891][  0]LogRHI: Display: ShaderPipelineCache: Batching Resumed.
+[2026.07.03-18.31.55:940][  0]LogInit: Display: Engine is initialized. Leaving FEngineLoop::Init()
+[2026.07.03-18.31.55:941][  0]LogLoad: (Engine Initialization) Total time: 11.94 seconds
+[2026.07.03-18.31.55:952][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: no usable save (primary + backup both unavailable) — world stays authored default.
+[2026.07.03-18.31.55:972][  0]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2026.07.03-18.31.56:063][  0]LogRenderer: Recreating Persistent SBTs due to initializer changes: 
+		NumShaderSlotsPerGeometrySegment changed: current: 1 - new: 2
+		NumGeometrySegments changed: current: 0 - new: 768
+[2026.07.03-18.31.56:165][  0]LogRHI: Display: Encountered a new graphics PSO: 3062478879
+[2026.07.03-18.31.56:165][  0]LogRHI: Display: Encountered a new graphics PSO: 3843383051
+[2026.07.03-18.31.56:166][  0]LogRHI: Display: Encountered a new graphics PSO: 2930414398
+[2026.07.03-18.31.56:166][  0]LogRHI: Display: Encountered a new graphics PSO: 1671144848
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 1012923383
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 2634052163
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 3463516760
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 612159702
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 2306596881
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new compute PSO: 3472740569
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 1723079533
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 1915435470
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 3032326647
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 279471309
+[2026.07.03-18.31.56:167][  0]LogRHI: Display: Encountered a new graphics PSO: 3677113228
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new graphics PSO: 462325976
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new compute PSO: 174062413
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new compute PSO: 1145225183
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new compute PSO: 2381337590
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new graphics PSO: 3567388513
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new compute PSO: 2108309869
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new graphics PSO: 3842568399
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new compute PSO: 1103297546
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new graphics PSO: 406219102
+[2026.07.03-18.31.56:168][  0]LogRHI: Display: Encountered a new graphics PSO: 1887654817
+[2026.07.03-18.31.56:169][  0]LogRHI: Display: Encountered a new graphics PSO: 1315878622
+[2026.07.03-18.31.56:169][  0]LogRHI: Display: Encountered a new graphics PSO: 2426818150
+[2026.07.03-18.31.56:169][  0]LogRHI: Display: Encountered a new graphics PSO: 4050570585
+[2026.07.03-18.31.56:169][  0]LogRHI: Display: Encountered a new graphics PSO: 1592395721
+[2026.07.03-18.31.56:169][  0]LogRHI: Display: Encountered a new graphics PSO: 3064691321
+[2026.07.03-18.31.56:170][  0]LogRHI: Display: Encountered a new graphics PSO: 3610167418
+[2026.07.03-18.31.56:170][  0]LogRHI: Display: Encountered a new graphics PSO: 863310323
+[2026.07.03-18.31.56:170][  0]LogRHI: Display: Encountered a new graphics PSO: 3267262678
+[2026.07.03-18.31.56:170][  0]LogRHI: Display: Encountered a new graphics PSO: 2671929825
+[2026.07.03-18.31.56:170][  0]LogRHI: Display: Encountered a new graphics PSO: 4209299837
+[2026.07.03-18.31.56:170][  0]LogRHI: Display: Encountered a new graphics PSO: 3762740916
+[2026.07.03-18.31.56:170][  0]LogRHI: Display: Encountered a new graphics PSO: 474707058
+[2026.07.03-18.31.56:170][  0]LogRHI: Display: Encountered a new compute PSO: 634479809
+[2026.07.03-18.31.56:171][  0]LogRHI: Display: Encountered a new compute PSO: 1424004665
+[2026.07.03-18.31.56:171][  0]LogRHI: Display: Encountered a new compute PSO: 3838511287
+[2026.07.03-18.31.56:171][  0]LogRHI: Display: Encountered a new compute PSO: 1753340302
+[2026.07.03-18.31.56:171][  0]LogRHI: Display: Encountered a new graphics PSO: 4204082073
+[2026.07.03-18.31.56:171][  0]LogRHI: Display: Encountered a new graphics PSO: 3695969077
+[2026.07.03-18.31.56:171][  0]LogRHI: Display: Encountered a new graphics PSO: 703464814
+[2026.07.03-18.31.56:171][  0]LogRHI: Display: Encountered a new graphics PSO: 615422109
+[2026.07.03-18.31.56:171][  0]LogRHI: Display: Encountered a new graphics PSO: 1382255986
+[2026.07.03-18.31.56:172][  0]LogRHI: Display: Encountered a new graphics PSO: 3563141089
+[2026.07.03-18.31.56:172][  0]LogRHI: Display: Encountered a new graphics PSO: 345577987
+[2026.07.03-18.31.56:172][  0]LogRHI: Display: Encountered a new graphics PSO: 1875341349
+[2026.07.03-18.31.56:172][  0]LogRHI: Display: Encountered a new graphics PSO: 3481289530
+[2026.07.03-18.31.56:172][  0]LogRHI: Display: Encountered a new graphics PSO: 3960815769
+[2026.07.03-18.31.56:172][  0]LogRHI: Display: Encountered a new graphics PSO: 19021272
+[2026.07.03-18.31.56:172][  0]LogRHI: Display: Encountered a new graphics PSO: 3044799551
+[2026.07.03-18.31.56:173][  0]LogRHI: Display: Encountered a new graphics PSO: 440888347
+[2026.07.03-18.31.56:173][  0]LogRHI: Display: Encountered a new graphics PSO: 2883700271
+[2026.07.03-18.31.56:173][  0]LogRHI: Display: Encountered a new graphics PSO: 2507261615
+[2026.07.03-18.31.56:173][  0]LogRHI: Display: Encountered a new graphics PSO: 1884084695
+[2026.07.03-18.31.56:173][  0]LogRHI: Display: Encountered a new graphics PSO: 351368312
+[2026.07.03-18.31.56:175][  0]LogRHI: Display: Encountered a new graphics PSO: 3235805329
+[2026.07.03-18.31.56:175][  0]LogRHI: Display: Encountered a new graphics PSO: 2917570109
+[2026.07.03-18.31.56:175][  0]LogRHI: Display: Encountered a new graphics PSO: 2628833863
+[2026.07.03-18.31.56:176][  0]LogRHI: Display: Encountered a new graphics PSO: 3222741555
+[2026.07.03-18.31.56:176][  0]LogRHI: Display: Encountered a new graphics PSO: 3459943824
+[2026.07.03-18.31.56:176][  0]LogRHI: Display: Encountered a new graphics PSO: 2392203882
+[2026.07.03-18.31.56:177][  0]LogRHI: Display: Encountered a new graphics PSO: 3362734255
+[2026.07.03-18.31.56:179][  0]LogRenderer: Forcing update for all mesh draw commands: SkyLight real-time capture change
+[2026.07.03-18.31.56:303][  0]LogRHI: Display: Encountered a new graphics PSO: 3489666494
+[2026.07.03-18.31.56:304][  0]LogRHI: Display: Encountered a new graphics PSO: 1033692221
+[2026.07.03-18.31.56:304][  0]LogRHI: Display: Encountered a new compute PSO: 1611385967
+[2026.07.03-18.31.56:305][  0]LogRHI: Display: Encountered a new compute PSO: 846744375
+[2026.07.03-18.31.56:305][  0]LogRHI: Display: Encountered a new compute PSO: 1760510048
+[2026.07.03-18.31.56:305][  0]LogRHI: Display: Encountered a new compute PSO: 2701931787
+[2026.07.03-18.31.56:305][  0]LogRHI: Display: Encountered a new compute PSO: 2112459046
+[2026.07.03-18.31.56:305][  0]LogRHI: Display: Encountered a new compute PSO: 193859167
+[2026.07.03-18.31.56:305][  0]LogRHI: Display: Encountered a new compute PSO: 3635065829
+[2026.07.03-18.31.56:323][  0]LogSlate: Slate font cache was flushed
+[2026.07.03-18.31.56:325][  0]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2026.07.03-18.31.56:339][  0]LogTrace: Display: Control listening on port 40706
+[2026.07.03-18.32.04:355][  1]LogTemp: Display: [BUILD DBG] ScanForSite #1: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.04:362][  1]LogSlate: Took 0.000340 seconds to synchronously load lazily loaded font '../../../Engine/Content/Slate/Fonts/Roboto-Regular.ttf' (155K)
+[2026.07.03-18.32.04:377][  1]LogRHI: Display: Encountered a new compute PSO: 2936422368
+[2026.07.03-18.32.04:377][  1]LogRHI: Display: Encountered a new compute PSO: 2015780957
+[2026.07.03-18.32.04:377][  1]LogRHI: Display: Encountered a new compute PSO: 1582052568
+[2026.07.03-18.32.04:377][  1]LogRHI: Display: Encountered a new compute PSO: 2102283273
+[2026.07.03-18.32.04:378][  1]LogRHI: Display: Encountered a new compute PSO: 371311396
+[2026.07.03-18.32.04:378][  1]LogRHI: Display: Encountered a new compute PSO: 805299359
+[2026.07.03-18.32.04:378][  1]LogRHI: Display: Encountered a new compute PSO: 2950653504
+[2026.07.03-18.32.04:398][  2]LogTemp: Display: [BUILD DBG] ScanForSite #2: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.04:398][  2]LogTemp: Display: [BUILD DBG] ScanForSite #3: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.04:592][  8]LogTemp: Display: [BUILD DBG] ScanForSite #4: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.04:620][ 10]LogRenderer: Recreating Persistent SBTs due to initializer changes: 
+		NumGeometrySegments changed: current: 768 - new: 1280
+[2026.07.03-18.32.04:835][ 29]LogTemp: Display: [BUILD DBG] ScanForSite #5: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.04:993][ 42]LogRHI: Display: Encountered a new compute PSO: 1726819394
+[2026.07.03-18.32.05:089][ 51]LogTemp: Display: [BUILD DBG] ScanForSite #6: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.05:338][ 73]LogTemp: Display: [BUILD DBG] ScanForSite #7: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.05:392][ 77]LogRHI: Display: Encountered a new graphics PSO: 4136106144
+[2026.07.03-18.32.05:583][ 95]LogTemp: Display: [BUILD DBG] ScanForSite #8: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.05:836][118]LogTemp: Display: [BUILD DBG] ScanForSite #9: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.06:085][141]LogTemp: Display: [BUILD DBG] ScanForSite #10: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.06:343][165]LogTemp: Display: [BUILD DBG] ScanForSite #11: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.06:590][188]LogTemp: Display: [BUILD DBG] ScanForSite #12: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.06:836][211]LogTemp: Display: [BUILD DBG] ScanForSite #13: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.07:086][235]LogTemp: Display: [BUILD DBG] ScanForSite #14: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.07:334][258]LogTemp: Display: [BUILD DBG] ScanForSite #15: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.07:588][282]LogTemp: Display: [BUILD DBG] ScanForSite #16: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.07:839][306]LogTemp: Display: [BUILD DBG] ScanForSite #17: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.08:087][329]LogTemp: Display: [BUILD DBG] ScanForSite #18: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.08:156][334]LogRHI: Display: Encountered a new graphics PSO: 3072807617
+[2026.07.03-18.32.08:157][334]LogRHI: Display: Encountered a new graphics PSO: 2626078731
+[2026.07.03-18.32.08:157][335]LogRHI: Display: Encountered a new graphics PSO: 1716836314
+[2026.07.03-18.32.08:158][335]LogRHI: Display: Encountered a new graphics PSO: 4283332755
+[2026.07.03-18.32.08:158][335]LogRHI: Display: Encountered a new graphics PSO: 1842558341
+[2026.07.03-18.32.08:344][350]LogTemp: Display: [BUILD DBG] ScanForSite #19: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.08:584][370]LogTemp: Display: [BUILD DBG] ScanForSite #20: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.08:837][391]LogTemp: Display: [BUILD DBG] ScanForSite #21: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.09:085][412]LogTemp: Display: [BUILD DBG] ScanForSite #22: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.09:334][433]LogTemp: Display: [BUILD DBG] ScanForSite #23: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.09:594][456]LogTemp: Display: [BUILD DBG] ScanForSite #24: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.09:833][477]LogTemp: Display: [BUILD DBG] ScanForSite #25: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.10:093][501]LogTemp: Display: [BUILD DBG] ScanForSite #26: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.10:333][523]LogTemp: Display: [BUILD DBG] ScanForSite #27: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.10:591][546]LogTemp: Display: [BUILD DBG] ScanForSite #28: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.10:838][568]LogTemp: Display: [BUILD DBG] ScanForSite #29: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.11:086][591]LogTemp: Display: [BUILD DBG] ScanForSite #30: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.11:339][615]LogTemp: Display: [BUILD DBG] ScanForSite #31: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.11:586][639]LogTemp: Display: [BUILD DBG] ScanForSite #32: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.11:838][663]LogTemp: Display: [BUILD DBG] ScanForSite #33: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.12:091][687]LogTemp: Display: [BUILD DBG] ScanForSite #34: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.12:334][710]LogTemp: Display: [BUILD DBG] ScanForSite #35: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.12:584][734]LogTemp: Display: [BUILD DBG] ScanForSite #36: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.12:838][759]LogTemp: Display: [BUILD DBG] ScanForSite #37: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.13:092][783]LogTemp: Display: [BUILD DBG] ScanForSite #38: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.13:337][806]LogTemp: Display: [BUILD DBG] ScanForSite #39: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.13:584][830]LogTemp: Display: [BUILD DBG] ScanForSite #40: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.13:841][855]LogTemp: Display: [BUILD DBG] ScanForSite #41: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.14:088][879]LogTemp: Display: [BUILD DBG] ScanForSite #42: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.14:335][902]LogTemp: Display: [BUILD DBG] ScanForSite #43: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.14:592][927]LogTemp: Display: [BUILD DBG] ScanForSite #44: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.14:840][951]LogTemp: Display: [BUILD DBG] ScanForSite #45: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.15:085][975]LogTemp: Display: [BUILD DBG] ScanForSite #46: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.15:338][999]LogTemp: Display: [BUILD DBG] ScanForSite #47: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.15:587][ 22]LogTemp: Display: [BUILD DBG] ScanForSite #48: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.15:833][ 45]LogTemp: Display: [BUILD DBG] ScanForSite #49: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.16:092][ 70]LogTemp: Display: [BUILD DBG] ScanForSite #50: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.16:336][ 93]LogTemp: Display: [BUILD DBG] ScanForSite #51: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.16:587][116]LogTemp: Display: [BUILD DBG] ScanForSite #52: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.16:834][140]LogTemp: Display: [BUILD DBG] ScanForSite #53: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.39:981][164]LogTemp: Display: [BUILD DBG] ScanForSite #54: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.39:981][164]LogTemp: Display: [BUILD DBG] ScanForSite #55: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.40:108][168]LogTemp: Display: [BUILD DBG] ScanForSite #56: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.40:340][189]LogTemp: Display: [BUILD DBG] ScanForSite #57: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.40:591][213]LogTemp: Display: [BUILD DBG] ScanForSite #58: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.40:839][237]LogTemp: Display: [BUILD DBG] ScanForSite #59: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.41:090][261]LogTemp: Display: [BUILD DBG] ScanForSite #60: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.41:345][285]LogTemp: Display: [BUILD DBG] ScanForSite #61: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.41:592][309]LogTemp: Display: [BUILD DBG] ScanForSite #62: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.41:840][333]LogTemp: Display: [BUILD DBG] ScanForSite #63: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.42:087][357]LogTemp: Display: [BUILD DBG] ScanForSite #64: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.42:339][381]LogTemp: Display: [BUILD DBG] ScanForSite #65: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.42:588][405]LogTemp: Display: [BUILD DBG] ScanForSite #66: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.42:836][429]LogTemp: Display: [BUILD DBG] ScanForSite #67: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.43:095][454]LogTemp: Display: [BUILD DBG] ScanForSite #68: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.43:335][477]LogTemp: Display: [BUILD DBG] ScanForSite #69: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.43:592][501]LogTemp: Display: [BUILD DBG] ScanForSite #70: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.43:857][525]LogTemp: Display: [BUILD DBG] ScanForSite #71: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.44:085][547]LogTemp: Display: [BUILD DBG] ScanForSite #72: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.44:344][572]LogTemp: Display: [BUILD DBG] ScanForSite #73: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.44:591][596]LogTemp: Display: [BUILD DBG] ScanForSite #74: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.44:837][620]LogTemp: Display: [BUILD DBG] ScanForSite #75: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.45:089][645]LogTemp: Display: [BUILD DBG] ScanForSite #76: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.45:340][669]LogTemp: Display: [BUILD DBG] ScanForSite #77: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.45:589][693]LogTemp: Display: [BUILD DBG] ScanForSite #78: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.45:842][717]LogTemp: Display: [BUILD DBG] ScanForSite #79: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.46:094][742]LogTemp: Display: [BUILD DBG] ScanForSite #80: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.46:340][766]LogTemp: Display: [BUILD DBG] ScanForSite #81: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.46:589][790]LogTemp: Display: [BUILD DBG] ScanForSite #82: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.46:840][814]LogTemp: Display: [BUILD DBG] ScanForSite #83: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.47:087][838]LogTemp: Display: [BUILD DBG] ScanForSite #84: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.47:344][863]LogTemp: Display: [BUILD DBG] ScanForSite #85: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.47:589][887]LogTemp: Display: [BUILD DBG] ScanForSite #86: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.47:836][911]LogTemp: Display: [BUILD DBG] ScanForSite #87: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.48:089][936]LogTemp: Display: [BUILD DBG] ScanForSite #88: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.48:341][960]LogTemp: Display: [BUILD DBG] ScanForSite #89: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.48:590][984]LogTemp: Display: [BUILD DBG] ScanForSite #90: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.48:838][  8]LogTemp: Display: [BUILD DBG] ScanForSite #91: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.49:092][ 33]LogTemp: Display: [BUILD DBG] ScanForSite #92: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.49:345][ 57]LogTemp: Display: [BUILD DBG] ScanForSite #93: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.49:591][ 81]LogTemp: Display: [BUILD DBG] ScanForSite #94: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.49:838][105]LogTemp: Display: [BUILD DBG] ScanForSite #95: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.50:092][127]LogTemp: Display: [BUILD DBG] ScanForSite #96: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.50:341][151]LogTemp: Display: [BUILD DBG] ScanForSite #97: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.50:589][174]LogTemp: Display: [BUILD DBG] ScanForSite #98: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.50:844][198]LogTemp: Display: [BUILD DBG] ScanForSite #99: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.51:088][222]LogTemp: Display: [BUILD DBG] ScanForSite #100: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.51:335][246]LogTemp: Display: [BUILD DBG] ScanForSite #101: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.51:592][271]LogTemp: Display: [BUILD DBG] ScanForSite #102: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.51:839][295]LogTemp: Display: [BUILD DBG] ScanForSite #103: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.52:093][320]LogTemp: Display: [BUILD DBG] ScanForSite #104: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.52:341][344]LogTemp: Display: [BUILD DBG] ScanForSite #105: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.52:586][368]LogTemp: Display: [BUILD DBG] ScanForSite #106: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.52:841][393]LogTemp: Display: [BUILD DBG] ScanForSite #107: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.53:088][417]LogTemp: Display: [BUILD DBG] ScanForSite #108: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.53:342][442]LogTemp: Display: [BUILD DBG] ScanForSite #109: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.53:589][466]LogTemp: Display: [BUILD DBG] ScanForSite #110: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.53:842][490]LogTemp: Display: [BUILD DBG] ScanForSite #111: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.54:095][515]LogTemp: Display: [BUILD DBG] ScanForSite #112: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.54:338][539]LogTemp: Display: [BUILD DBG] ScanForSite #113: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.54:586][563]LogTemp: Display: [BUILD DBG] ScanForSite #114: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.54:844][588]LogTemp: Display: [BUILD DBG] ScanForSite #115: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.55:087][612]LogTemp: Display: [BUILD DBG] ScanForSite #116: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.55:337][636]LogTemp: Display: [BUILD DBG] ScanForSite #117: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.55:593][661]LogTemp: Display: [BUILD DBG] ScanForSite #118: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.55:836][684]LogTemp: Display: [BUILD DBG] ScanForSite #119: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.56:093][709]LogTemp: Display: [BUILD DBG] ScanForSite #120: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.56:344][733]LogTemp: Display: [BUILD DBG] ScanForSite #121: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.56:590][757]LogTemp: Display: [BUILD DBG] ScanForSite #122: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.56:838][780]LogTemp: Display: [BUILD DBG] ScanForSite #123: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.57:091][804]LogTemp: Display: [BUILD DBG] ScanForSite #124: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.57:339][828]LogTemp: Display: [BUILD DBG] ScanForSite #125: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.57:589][852]LogTemp: Display: [BUILD DBG] ScanForSite #126: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.57:834][876]LogTemp: Display: [BUILD DBG] ScanForSite #127: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.58:094][901]LogTemp: Display: [BUILD DBG] ScanForSite #128: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.58:339][921]LogTemp: Display: [BUILD DBG] ScanForSite #129: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.58:588][945]LogTemp: Display: [BUILD DBG] ScanForSite #130: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.58:835][969]LogTemp: Display: [BUILD DBG] ScanForSite #131: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.59:094][994]LogTemp: Display: [BUILD DBG] ScanForSite #132: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.59:340][ 18]LogTemp: Display: [BUILD DBG] ScanForSite #133: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.59:589][ 42]LogTemp: Display: [BUILD DBG] ScanForSite #134: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.32.59:836][ 66]LogTemp: Display: [BUILD DBG] ScanForSite #135: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.00:096][ 91]LogTemp: Display: [BUILD DBG] ScanForSite #136: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.00:335][113]LogTemp: Display: [BUILD DBG] ScanForSite #137: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.00:593][137]LogTemp: Display: [BUILD DBG] ScanForSite #138: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.00:840][161]LogTemp: Display: [BUILD DBG] ScanForSite #139: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.01:092][186]LogTemp: Display: [BUILD DBG] ScanForSite #140: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.01:342][210]LogTemp: Display: [BUILD DBG] ScanForSite #141: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.01:593][233]LogTemp: Display: [BUILD DBG] ScanForSite #142: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.01:842][255]LogTemp: Display: [BUILD DBG] ScanForSite #143: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.02:091][279]LogTemp: Display: [BUILD DBG] ScanForSite #144: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.02:343][304]LogTemp: Display: [BUILD DBG] ScanForSite #145: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.02:592][328]LogTemp: Display: [BUILD DBG] ScanForSite #146: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.02:839][352]LogTemp: Display: [BUILD DBG] ScanForSite #147: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.03:093][377]LogTemp: Display: [BUILD DBG] ScanForSite #148: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.03:339][401]LogTemp: Display: [BUILD DBG] ScanForSite #149: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.03:585][425]LogTemp: Display: [BUILD DBG] ScanForSite #150: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.03:838][450]LogTemp: Display: [BUILD DBG] ScanForSite #151: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.04:092][475]LogTemp: Display: [BUILD DBG] ScanForSite #152: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.04:336][499]LogTemp: Display: [BUILD DBG] ScanForSite #153: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.04:590][524]LogTemp: Display: [BUILD DBG] ScanForSite #154: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.04:835][548]LogTemp: Display: [BUILD DBG] ScanForSite #155: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.05:090][573]LogTemp: Display: [BUILD DBG] ScanForSite #156: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.05:339][597]LogTemp: Display: [BUILD DBG] ScanForSite #157: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.05:592][621]LogTemp: Display: [BUILD DBG] ScanForSite #158: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.05:837][645]LogTemp: Display: [BUILD DBG] ScanForSite #159: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.06:092][670]LogTemp: Display: [BUILD DBG] ScanForSite #160: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.06:339][694]LogTemp: Display: [BUILD DBG] ScanForSite #161: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.06:588][718]LogTemp: Display: [BUILD DBG] ScanForSite #162: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.06:845][743]LogTemp: Display: [BUILD DBG] ScanForSite #163: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.07:092][767]LogTemp: Display: [BUILD DBG] ScanForSite #164: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.07:339][791]LogTemp: Display: [BUILD DBG] ScanForSite #165: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.07:585][815]LogTemp: Display: [BUILD DBG] ScanForSite #166: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.07:840][840]LogTemp: Display: [BUILD DBG] ScanForSite #167: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.08:094][865]LogTemp: Display: [BUILD DBG] ScanForSite #168: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.08:340][889]LogTemp: Display: [BUILD DBG] ScanForSite #169: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.08:586][912]LogTemp: Display: [BUILD DBG] ScanForSite #170: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.08:838][937]LogTemp: Display: [BUILD DBG] ScanForSite #171: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.09:090][962]LogTemp: Display: [BUILD DBG] ScanForSite #172: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.09:345][986]LogTemp: Display: [BUILD DBG] ScanForSite #173: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.09:586][  5]LogTemp: Display: [BUILD DBG] ScanForSite #174: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.09:840][ 30]LogTemp: Display: [BUILD DBG] ScanForSite #175: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.10:102][ 55]LogTemp: Display: [BUILD DBG] ScanForSite #176: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.10:341][ 79]LogTemp: Display: [BUILD DBG] ScanForSite #177: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.10:589][103]LogTemp: Display: [BUILD DBG] ScanForSite #178: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.10:835][127]LogTemp: Display: [BUILD DBG] ScanForSite #179: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.11:088][152]LogTemp: Display: [BUILD DBG] ScanForSite #180: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.11:344][177]LogTemp: Display: [BUILD DBG] ScanForSite #181: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.11:589][201]LogTemp: Display: [BUILD DBG] ScanForSite #182: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.11:839][225]LogTemp: Display: [BUILD DBG] ScanForSite #183: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.12:088][250]LogTemp: Display: [BUILD DBG] ScanForSite #184: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.12:336][274]LogTemp: Display: [BUILD DBG] ScanForSite #185: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.12:593][299]LogTemp: Display: [BUILD DBG] ScanForSite #186: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.12:838][323]LogTemp: Display: [BUILD DBG] ScanForSite #187: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.13:093][348]LogTemp: Display: [BUILD DBG] ScanForSite #188: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.13:341][372]LogTemp: Display: [BUILD DBG] ScanForSite #189: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.13:587][396]LogTemp: Display: [BUILD DBG] ScanForSite #190: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.13:844][421]LogTemp: Display: [BUILD DBG] ScanForSite #191: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.14:091][445]LogTemp: Display: [BUILD DBG] ScanForSite #192: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.14:338][469]LogTemp: Display: [BUILD DBG] ScanForSite #193: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.14:593][494]LogTemp: Display: [BUILD DBG] ScanForSite #194: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.14:838][518]LogTemp: Display: [BUILD DBG] ScanForSite #195: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.15:091][543]LogTemp: Display: [BUILD DBG] ScanForSite #196: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.15:345][568]LogTemp: Display: [BUILD DBG] ScanForSite #197: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.15:591][592]LogTemp: Display: [BUILD DBG] ScanForSite #198: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.15:844][617]LogTemp: Display: [BUILD DBG] ScanForSite #199: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.16:088][641]LogTemp: Display: [BUILD DBG] ScanForSite #200: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.16:342][666]LogTemp: Display: [BUILD DBG] ScanForSite #201: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.16:588][690]LogTemp: Display: [BUILD DBG] ScanForSite #202: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.16:836][714]LogTemp: Display: [BUILD DBG] ScanForSite #203: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.17:088][739]LogTemp: Display: [BUILD DBG] ScanForSite #204: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.17:337][763]LogTemp: Display: [BUILD DBG] ScanForSite #205: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.17:586][786]LogTemp: Display: [BUILD DBG] ScanForSite #206: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.17:841][809]LogTemp: Display: [BUILD DBG] ScanForSite #207: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.18:095][834]LogTemp: Display: [BUILD DBG] ScanForSite #208: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.18:341][858]LogTemp: Display: [BUILD DBG] ScanForSite #209: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.18:589][882]LogTemp: Display: [BUILD DBG] ScanForSite #210: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.18:843][907]LogTemp: Display: [BUILD DBG] ScanForSite #211: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.19:089][931]LogTemp: Display: [BUILD DBG] ScanForSite #212: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.19:335][955]LogTemp: Display: [BUILD DBG] ScanForSite #213: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.19:591][980]LogTemp: Display: [BUILD DBG] ScanForSite #214: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.19:839][  4]LogTemp: Display: [BUILD DBG] ScanForSite #215: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.20:088][ 29]LogTemp: Display: [BUILD DBG] ScanForSite #216: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.20:337][ 53]LogTemp: Display: [BUILD DBG] ScanForSite #217: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.20:587][ 77]LogTemp: Display: [BUILD DBG] ScanForSite #218: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.20:843][102]LogTemp: Display: [BUILD DBG] ScanForSite #219: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.21:087][125]LogTemp: Display: [BUILD DBG] ScanForSite #220: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.21:344][150]LogTemp: Display: [BUILD DBG] ScanForSite #221: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.21:589][174]LogTemp: Display: [BUILD DBG] ScanForSite #222: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.21:841][199]LogTemp: Display: [BUILD DBG] ScanForSite #223: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.22:095][224]LogTemp: Display: [BUILD DBG] ScanForSite #224: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.22:338][248]LogTemp: Display: [BUILD DBG] ScanForSite #225: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.22:587][272]LogTemp: Display: [BUILD DBG] ScanForSite #226: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.22:845][297]LogTemp: Display: [BUILD DBG] ScanForSite #227: nearest=none canBuild=0 (Books=0)
+[2026.07.03-18.33.22:865][299]Closing by request
+[2026.07.03-18.33.22:866][299]LogWindows: FPlatformMisc::RequestExit(0, UGameEngine::HandleExitCommand)
+[2026.07.03-18.33.22:866][299]LogWindows: FPlatformMisc::RequestExitWithStatus(0, 0, UGameEngine::HandleExitCommand)
+[2026.07.03-18.33.22:866][299]LogCore: Engine exit requested (reason: Win RequestExit)
+[2026.07.03-18.33.22:876][300]LogCore: Engine exit requested (reason: EngineExit() was called; note: exit was already requested)
+[2026.07.03-18.33.22:891][300]LogInit: Display: PreExit Game.
+[2026.07.03-18.33.22:893][300]LogWorld: BeginTearingDown for /Game/Maps/L_Elsewhere_Dev
+[2026.07.03-18.33.22:903][300]LogWorld: UWorld::CleanupWorld for L_Elsewhere_Dev, bSessionEnded=true, bCleanupResources=true
+[2026.07.03-18.33.23:492][300]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2026.07.03-18.33.23:497][300]LogRuntimeTelemetry: Recording EnginePreExit events
+[2026.07.03-18.33.24:279][300]LogAudio: Display: Beginning Audio Device Manager Shutdown (Module: AudioMixerXAudio2)...
+[2026.07.03-18.33.24:280][300]LogAudio: Display: Destroying 1 Remaining Audio Device(s)...
+[2026.07.03-18.33.24:280][300]LogAudio: Display: Audio Device unregistered from world 'L_Elsewhere_Dev'.
+[2026.07.03-18.33.24:280][300]LogAudio: Display: Shutting down audio device while 1 references to it are still alive. For more information, compile with INSTRUMENT_AUDIODEVICE_HANDLES.
+[2026.07.03-18.33.24:324][300]LogAudioMixer: Display: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=1, StreamState=4
+[2026.07.03-18.33.24:325][300]LogAudioMixer: Display: FMixerPlatformXAudio2::StopAudioStream() called. InstanceID=1, StreamState=2
+[2026.07.03-18.33.24:329][300]LogAudioMixer: Deinitializing Audio Bus Subsystem for audio device with ID -1
+[2026.07.03-18.33.24:329][300]LogAudio: Display: Audio Device Manager Shutdown
+[2026.07.03-18.33.24:329][300]LogSlate: Request Window 'SibeliusGame (64-bit Development PCD3D_SM6) ' being destroyed
+[2026.07.03-18.33.24:331][300]LogSlate: Window 'SibeliusGame (64-bit Development PCD3D_SM6) ' being destroyed
+[2026.07.03-18.33.24:339][300]LogSlate: Slate User Destroyed.  User Index 0, Is Virtual User: 0
+[2026.07.03-18.33.24:341][300]LogExit: Preparing to exit.
+[2026.07.03-18.33.24:343][300]LogMoviePlayer: Shutting down movie player
+[2026.07.03-18.33.24:375][300]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2026.07.03-18.33.24:402][300]LogDemo: Cleaned up 0 splitscreen connections, owner deletion: enabled
+[2026.07.03-18.33.24:413][300]LogExit: Game engine shut down
+[2026.07.03-18.33.27:153][300]LogRenderer: Forcing update for all mesh draw commands: SkyLight real-time capture change
+[2026.07.03-18.33.27:348][300]LogExit: Object subsystem successfully closed.
+[2026.07.03-18.33.27:367][300]LogShaderLibrary: Display: Closing logical shader library 'Global' with 1 components
+[2026.07.03-18.33.27:394][300]LogShaderLibrary: Display: Closing logical shader library 'SibeliusGame' with 1 components
+[2026.07.03-18.33.27:502][300]LogChaosDD: Chaos Debug Draw Shutdown
+[2026.07.03-18.33.27:506][300]LogNFORDenoise: NFORDenoise function shutting down
+[2026.07.03-18.33.27:507][300]RenderDocPlugin: plugin has been unloaded.
+[2026.07.03-18.33.27:509][300]LogPakFile: Destroying PakPlatformFile
+[2026.07.03-18.33.27:665][300]LogD3D12RHI: ~FD3D12DynamicRHI
+[2026.07.03-18.33.27:679][300]LogExit: Exiting.
+[2026.07.03-18.33.27:689][300]Log file closed, 07/03/26 11:33:27

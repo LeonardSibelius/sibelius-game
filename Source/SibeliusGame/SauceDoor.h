@@ -5,17 +5,16 @@
 // panel shimmers into view (custom-depth outline), same as the office "Sauce of All
 // Knowledge" door and the attic "Carousel of Fates" door.
 //
-// TRAVEL: it now behaves as a PLAIN travel door — on reveal + E it OpenLevel()s its
-// inherited TravelTargetLevel (set on the placed actor by hand to the fixed Poplar forest
-// L_Poplar_Forest), exactly like the office obelisk / its AHiddenDoor parent. The old
-// curio / cabinet / AElsewhereBuilder / UElsewhereSubsystem "roll a fresh Elsewhere" flow
-// is SET ASIDE — those classes still exist but this door no longer drives them. The only
-// ASauceDoor specialisations left are cosmetic: a default doorway slab, the hand-dialed
-// "Many Worlds" sign placement, and the "Step through [E]" travel prompt.
+// TRAVEL (Plan B — the Deck of Worlds): the door holds an editable DECK of baked
+// forest levels (TravelTargetLevels). On each interact it picks one at random —
+// never the same twice in a row (session-scoped memory; a static survives the
+// office level reloading between visits). The pick is written into the inherited
+// TravelTargetLevel and the parent's travel path does the rest, so branch-gating,
+// the travel cover, and the smoke-tested reveal behavior are all unchanged.
+// An EMPTY deck = the old single-target behavior (TravelTargetLevel as placed).
 //
-// Arming == revealed: there is no separate Sauce-completion gate here (the office has no
-// Sauce-feed); the door is "armed" whenever Code Vision reveals it, matching every other
-// hidden door in the game.
+// Arming == revealed: there is no separate Sauce-completion gate here; the door is
+// "armed" whenever Code Vision reveals it, matching every other hidden door.
 
 #pragma once
 
@@ -30,4 +29,12 @@ class SIBELIUSGAME_API ASauceDoor : public AHiddenDoor
 
 public:
 	ASauceDoor();
+
+	// The deck: baked forest levels this door shuffles between (L_Forest_01, ...).
+	// Set on the PLACED door in the office level. Empty = plain single-target door.
+	UPROPERTY(EditAnywhere, Category = "Travel")
+	TArray<FName> TravelTargetLevels;
+
+protected:
+	virtual void Interact_Implementation(AActor* Interactor) override;
 };
