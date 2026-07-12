@@ -17,6 +17,7 @@
 #include "GenerateComponent.h"    // Ch6 Generate driver
 #include "SibeliusHUD.h"          // SIB-39 dev-overlay toggle
 #include "JournalWidget.h"        // SIB-41 journal panel
+#include "GameMenuWidget.h"       // FUN-8 Tab game menu
 #include "GenerateRequestWidget.h" // SIB-30 P1 typed-request panel
 #include "Blueprint/UserWidget.h" // CreateWidget
 #include "GameFramework/PlayerController.h"
@@ -161,6 +162,10 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 	// SIB-41 journal/story panel toggle: J.
 	PlayerInputComponent->BindKey(EKeys::J, IE_Pressed, this, &ASibeliusGameCharacter::ToggleJournal);
+
+	// FUN-8 game menu (STATUS/CONTROLS): Tab — the one menu key every PC player
+	// tries first (Raymond's conventions rule).
+	PlayerInputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ASibeliusGameCharacter::ToggleGameMenu);
 
 	// SIB-30 P1 generate/ask panel toggle: G.
 	PlayerInputComponent->BindKey(EKeys::G, IE_Pressed, this, &ASibeliusGameCharacter::ToggleGenerate);
@@ -314,6 +319,39 @@ void ASibeliusGameCharacter::ToggleJournal()
 	}
 }
 
+void ASibeliusGameCharacter::ToggleGameMenu()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		return;
+	}
+
+	// Open -> close (mirrors ToggleJournal).
+	if (GameMenuWidget && GameMenuWidget->IsInViewport())
+	{
+		GameMenuWidget->CloseMenu();
+		return;
+	}
+
+	if (!GameMenuWidget)
+	{
+		GameMenuWidget = CreateWidget<UGameMenuWidget>(PC, UGameMenuWidget::StaticClass());
+	}
+	if (GameMenuWidget)
+	{
+		GameMenuWidget->AddToViewport(55);
+
+		// UIOnly + focus so Tab/Esc land in the widget's NativeOnKeyDown and the
+		// tab buttons are clickable (the shop's pattern).
+		FInputModeUIOnly Mode;
+		Mode.SetWidgetToFocus(GameMenuWidget->TakeWidget());
+		PC->SetInputMode(Mode);
+		PC->SetShowMouseCursor(true);
+		GameMenuWidget->SetFocus();
+	}
+}
+
 void ASibeliusGameCharacter::ToggleGenerate()
 {
 	// FUN-1: the Generate verb must be earned before the panel opens. (Closing an
@@ -408,11 +446,20 @@ bool ASibeliusGameCharacter::CheckPowerUnlocked(EPowerVerb Verb) const
 		// feature, never something that should brick a session or a smoke test.
 		return true;
 	}
-	if (GEngine)
+	// Walt's first playtest lesson: a small top-left line drowns under the dev
+	// overlay and the refusal reads as a bug. Use the HUD's centered ceremony
+	// banner so the player can't miss WHY nothing happened.
+	const FString Refusal = FString::Printf(TEXT("%s IS NOT YET YOURS — SEEK THE PLACE IT IS GRANTED"),
+		*PowerVerbDisplayName(Verb));
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+	{
+		HUD->ShowBanner(Refusal, 3.5f);
+	}
+	else if (GEngine)
 	{
 		// Stable key per verb so mashing the key updates one line instead of stacking.
-		GEngine->AddOnScreenDebugMessage(0xF0B0 + static_cast<uint64>(Verb), 3.0f, FColor::Orange,
-			FString::Printf(TEXT("%s is not yet yours — find where it is granted."), *PowerVerbDisplayName(Verb)));
+		GEngine->AddOnScreenDebugMessage(0xF0B0 + static_cast<uint64>(Verb), 3.0f, FColor::Orange, Refusal);
 	}
 	return false;
 }

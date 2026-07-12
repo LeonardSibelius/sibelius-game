@@ -77,6 +77,10 @@ class ASibeliusGameCharacter : public ACharacter
 	UPROPERTY()
 	TObjectPtr<UJournalWidget> JournalWidget;
 
+	/** FUN-8: the Tab game menu (STATUS/CONTROLS), created on first Tab press. */
+	UPROPERTY()
+	TObjectPtr<class UGameMenuWidget> GameMenuWidget;
+
 	/** SIB-30 P1: the typed-request panel, created on first G press. */
 	UPROPERTY()
 	TObjectPtr<UGenerateRequestWidget> GenerateWidget;
@@ -185,6 +189,9 @@ protected:
 
 	/** SIB-41: opens/closes the Journal story panel (bound to J). */
 	void ToggleJournal();
+
+	/** FUN-8: opens/closes the game menu (bound to Tab). */
+	void ToggleGameMenu();
 
 	/** SIB-30 P1: opens/closes the Generate typed-request panel (bound to G). */
 	void ToggleGenerate();

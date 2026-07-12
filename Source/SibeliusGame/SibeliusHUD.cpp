@@ -16,7 +16,9 @@
 #include "ProgressionSubsystem.h"             // FUN-2: sauce + powers readout
 #include "SibeliusGameCharacter.h"            // IsAwayFromOffice() for the Back-to-Office hint
 
-bool ASibeliusHUD::bOverlayVisible = true; // default ON
+// FUN-8: default OFF now that the player has real surfaces (Tab menu, sauce
+// counter, banners). H brings it back — it's Walt's debug view, not the UI.
+bool ASibeliusHUD::bOverlayVisible = false;
 
 // Dev overlay text scale (2.0 = double size for Walt's 4K monitor). Single knob —
 // scales both the glyph size and the line spacing. Bump to taste.
@@ -270,6 +272,6 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(TEXT("  F slap    E interact    V vision"), White);
 	Line(TEXT("  R refactor    B build    G generate / ask"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
-	Line(TEXT("  J journal / story    H hide/show overlay    Q quit (press twice)"), White);
+	Line(TEXT("  Tab menu    J journal / story    H hide/show overlay    Q quit (press twice)"), White);
 	Line(TEXT("  O back to office (in a wander world)"), White);
 }
