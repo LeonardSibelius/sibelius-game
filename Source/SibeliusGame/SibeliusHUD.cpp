@@ -98,7 +98,16 @@ void ASibeliusHUD::DrawPlayerLayer()
 		const float SauceX = Canvas->ClipX - W - 24.0f;
 		DrawText(SauceLine, FLinearColor(0.4f, 1.0f, 0.5f, 0.95f), SauceX, 24.0f, nullptr, OverlayTextScale);
 
-		// The +N/-N delta floats under the count, then fades.
+		// Walt's ask: a standing reminder of the menu key, tucked under the count.
+		// (M, not Tab — Slate eats Tab in PIE; see the character's key bindings.)
+		const FString MenuHint = TEXT("[M] status");
+		float HintW = 0.0f, HintH = 0.0f;
+		const float HintScale = OverlayTextScale * 0.7f;
+		GetTextSize(MenuHint, HintW, HintH, nullptr, HintScale);
+		DrawText(MenuHint, FLinearColor(0.7f, 0.7f, 0.7f, 0.7f),
+			Canvas->ClipX - HintW - 24.0f, 24.0f + H + 4.0f, nullptr, HintScale);
+
+		// The +N/-N delta floats under the hint, then fades.
 		if (Now < SauceFlashUntil && LastSauceDelta != 0)
 		{
 			const float Alpha = static_cast<float>(FMath::Clamp((SauceFlashUntil - Now) / 2.5, 0.0, 1.0));
@@ -106,7 +115,7 @@ void ASibeliusHUD::DrawPlayerLayer()
 			const FLinearColor DeltaColor = LastSauceDelta > 0
 				? FLinearColor(0.4f, 1.0f, 0.5f, Alpha)
 				: FLinearColor(1.0f, 0.55f, 0.3f, Alpha);
-			DrawText(DeltaLine, DeltaColor, SauceX, 24.0f + H + 4.0f, nullptr, OverlayTextScale);
+			DrawText(DeltaLine, DeltaColor, SauceX, 24.0f + H + HintH + 8.0f, nullptr, OverlayTextScale);
 		}
 	}
 
@@ -272,6 +281,6 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(TEXT("  F slap    E interact    V vision"), White);
 	Line(TEXT("  R refactor    B build    G generate / ask"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
-	Line(TEXT("  M menu    J journal / story    H hide/show overlay    Q quit (press twice)"), White);
+	Line(TEXT("  M menu    J how to play    H hide/show overlay    Q quit (press twice)"), White);
 	Line(TEXT("  O back to office (in a wander world)"), White);
 }

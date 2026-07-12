@@ -204,7 +204,7 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 		{ TEXT("0"), TEXT("Deploy (persist your edits)"), Owned(EPowerVerb::Deploy) },
 		{ TEXT("G"), TEXT("Generate — type a request"), Owned(EPowerVerb::Generate) },
 		{ TEXT("M"), TEXT("this menu"), true },
-		{ TEXT("J"), TEXT("journal / story"), true },
+		{ TEXT("J"), TEXT("how to play"), true },
 		{ TEXT("O"), TEXT("back to the office (from any other world)"), true },
 		{ TEXT("Q Q"), TEXT("quit"), true },
 	};

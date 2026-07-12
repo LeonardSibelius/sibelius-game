@@ -71,12 +71,13 @@ void UJournalWidget::ApplyText()
 void UJournalWidget::RefreshFromNarrative()
 {
 	// PK17: staged-first, dev-fallback (the ResolveWebGameURL pattern).
-	// Content/Journal/NARRATIVE.md ships as a NonUFS loose file; docs/ is the
-	// editor-time source of truth.
-	FString FullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Journal/NARRATIVE.md"));
+	// Content/Journal/HOW_TO_PLAY.md ships as a NonUFS loose file; docs/ is the
+	// editor-time source of truth. (Walt: J is the player's how-to-play guide
+	// now — the making-of narrative lives on in docs/NARRATIVE.md for readers.)
+	FString FullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Journal/HOW_TO_PLAY.md"));
 	if (!FPaths::FileExists(FullPath))
 	{
-		FullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("docs/NARRATIVE.md"));
+		FullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("docs/HOW_TO_PLAY.md"));
 	}
 
 	FString Raw;
