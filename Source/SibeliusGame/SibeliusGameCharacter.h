@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "ProgressionTypes.h"   // FUN-1: EPowerVerb for the input gates
 #include "SibeliusGameCharacter.generated.h"
 
 class UInputComponent;
@@ -147,6 +148,31 @@ protected:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void DoInteract();
 
+	/** FUN-1 — the power gate. True when the verb is earned; otherwise shows a
+	    "not yet yours" line and returns false. EVERY power input routes through
+	    this (the components stay ungated so smoke tests drive them directly). */
+	bool CheckPowerUnlocked(EPowerVerb Verb) const;
+
+	/** FUN-1 gated input handlers — thin wrappers: gate, then forward to the
+	    component exactly as the old direct bindings did. */
+	void OnCodeVisionStarted();
+	void OnCodeVisionCompleted();   // ungated: releasing the key must always restore
+	void OnRefactorPressed();
+	void OnBuildPressed();          // the Compile chapter's verb
+	void OnBranchEnterPressed();    // Test-Drive verb (key 6)
+	void OnBranchMergePressed();    //                 (key 7)
+	void OnBranchDiscardPressed();  //                 (key 8)
+	void OnDeployPressed();         // Deploy verb     (key 0)
+
+public:
+	/** FUN-1 dev cheats (console, backtick). GrantPower accepts loose names
+	    ("refactor", "test-drive"). ResetProgression wipes powers + sauce. */
+	UFUNCTION(Exec) void GrantPower(const FString& PowerName);
+	UFUNCTION(Exec) void GrantSauce(int32 Amount);
+	UFUNCTION(Exec) void UnlockAllPowers();
+	UFUNCTION(Exec) void ResetProgression();
+
+protected:
 	/** SIB-39: toggles the developer/HELP overlay (bound to H). */
 	void ToggleDevOverlay();
 

@@ -25,6 +25,7 @@
 #include "Kismet/GameplayStatics.h"     // O-to-office: OpenLevel
 #include "Engine/World.h"               // GetMapName for the wander-world check
 #include "TravelTransitionSubsystem.h"  // O-to-office travels through the transition cover
+#include "ProgressionSubsystem.h"       // FUN-1: the power gates + sauce cheats
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -103,23 +104,25 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ASibeliusGameCharacter::DoInteract);
 		}
 
-		// Code Vision (hold) - Started reveals, Completed restores; drives the component directly
+		// Code Vision (hold) - Started reveals, Completed restores. FUN-1: routes
+		// through the character's power gate (Completed stays ungated — releasing
+		// the key must always restore, whatever the unlock state).
 		if (CodeVisionAction && CodeVisionComp)
 		{
-			EnhancedInputComponent->BindAction(CodeVisionAction, ETriggerEvent::Started, CodeVisionComp.Get(), &UCodeVisionComponent::ActivateCodeVision);
-			EnhancedInputComponent->BindAction(CodeVisionAction, ETriggerEvent::Completed, CodeVisionComp.Get(), &UCodeVisionComponent::DeactivateCodeVision);
+			EnhancedInputComponent->BindAction(CodeVisionAction, ETriggerEvent::Started, this, &ASibeliusGameCharacter::OnCodeVisionStarted);
+			EnhancedInputComponent->BindAction(CodeVisionAction, ETriggerEvent::Completed, this, &ASibeliusGameCharacter::OnCodeVisionCompleted);
 		}
 
-		// Refactor (R) - Started toggles whatever refactorable is under the crosshair
+		// Refactor (R) - Started toggles whatever refactorable is under the crosshair (FUN-1: gated)
 		if (RefactorAction && RefactorComp)
 		{
-			EnhancedInputComponent->BindAction(RefactorAction, ETriggerEvent::Started, RefactorComp.Get(), &URefactorComponent::TriggerRefactor);
+			EnhancedInputComponent->BindAction(RefactorAction, ETriggerEvent::Started, this, &ASibeliusGameCharacter::OnRefactorPressed);
 		}
 
-		// Build (B) - Started builds the proximate affordable site; .Get() on the TObjectPtr (Ch1 lesson)
+		// Build (B) - Started builds the proximate affordable site (FUN-1: gated on the Compile verb)
 		if (BuildAction && BuildComp)
 		{
-			EnhancedInputComponent->BindAction(BuildAction, ETriggerEvent::Started, BuildComp.Get(), &UBuildComponent::TriggerBuild);
+			EnhancedInputComponent->BindAction(BuildAction, ETriggerEvent::Started, this, &ASibeliusGameCharacter::OnBuildPressed);
 		}
 	}
 	else
@@ -131,13 +134,15 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// not the F-row (F8 collided with the editor's Eject/Possess) and not gizmo keys
 	// 1-5: 6 Enter · 7 Merge · 8 Discard (Ch4 branch ops) · 9 Clear deploy save (dev) ·
 	// 0 Deploy (Ch5).
+	// FUN-1: 6/7/8 gate on Test-Drive and 0 on Deploy; 9 (clear-deploy) stays an
+	// ungated dev key.
 	if (BranchPIEComp)
 	{
-		PlayerInputComponent->BindKey(EKeys::Six, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Enter);
-		PlayerInputComponent->BindKey(EKeys::Seven, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Merge);
-		PlayerInputComponent->BindKey(EKeys::Eight, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Discard);
+		PlayerInputComponent->BindKey(EKeys::Six, IE_Pressed, this, &ASibeliusGameCharacter::OnBranchEnterPressed);
+		PlayerInputComponent->BindKey(EKeys::Seven, IE_Pressed, this, &ASibeliusGameCharacter::OnBranchMergePressed);
+		PlayerInputComponent->BindKey(EKeys::Eight, IE_Pressed, this, &ASibeliusGameCharacter::OnBranchDiscardPressed);
 		PlayerInputComponent->BindKey(EKeys::Nine, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_ClearDeploy);
-		PlayerInputComponent->BindKey(EKeys::Zero, IE_Pressed, BranchPIEComp.Get(), &UBranchPIEComponent::Debug_Deploy);
+		PlayerInputComponent->BindKey(EKeys::Zero, IE_Pressed, this, &ASibeliusGameCharacter::OnDeployPressed);
 	}
 
 	// SIB-39 dev-overlay toggle: H (hide/help). V was taken by Code Vision; H is free
@@ -301,6 +306,13 @@ void ASibeliusGameCharacter::ToggleJournal()
 
 void ASibeliusGameCharacter::ToggleGenerate()
 {
+	// FUN-1: the Generate verb must be earned before the panel opens. (Closing an
+	// already-open panel is below this gate and unreachable while locked.)
+	if (!CheckPowerUnlocked(EPowerVerb::Generate))
+	{
+		return;
+	}
+
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (!PC)
 	{
@@ -371,5 +383,153 @@ void ASibeliusGameCharacter::CloseGenerate()
 	{
 		PC->SetInputMode(FInputModeGameOnly());
 		PC->SetShowMouseCursor(false);
+	}
+}
+
+// --- FUN-1: the power gate + gated input handlers -------------------------
+
+bool ASibeliusGameCharacter::CheckPowerUnlocked(EPowerVerb Verb) const
+{
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (!Progression || Progression->IsUnlocked(Verb))
+	{
+		// No subsystem (headless/teardown) fails open: gating is a game-feel
+		// feature, never something that should brick a session or a smoke test.
+		return true;
+	}
+	if (GEngine)
+	{
+		// Stable key per verb so mashing the key updates one line instead of stacking.
+		GEngine->AddOnScreenDebugMessage(0xF0B0 + static_cast<uint64>(Verb), 3.0f, FColor::Orange,
+			FString::Printf(TEXT("%s is not yet yours — find where it is granted."), *PowerVerbDisplayName(Verb)));
+	}
+	return false;
+}
+
+void ASibeliusGameCharacter::OnCodeVisionStarted()
+{
+	if (CodeVisionComp && CheckPowerUnlocked(EPowerVerb::CodeVision))
+	{
+		CodeVisionComp->ActivateCodeVision();
+	}
+}
+
+void ASibeliusGameCharacter::OnCodeVisionCompleted()
+{
+	// Deliberately ungated: key-up must always restore normal vision.
+	if (CodeVisionComp)
+	{
+		CodeVisionComp->DeactivateCodeVision();
+	}
+}
+
+void ASibeliusGameCharacter::OnRefactorPressed()
+{
+	if (RefactorComp && CheckPowerUnlocked(EPowerVerb::Refactor))
+	{
+		RefactorComp->TriggerRefactor();
+	}
+}
+
+void ASibeliusGameCharacter::OnBuildPressed()
+{
+	if (BuildComp && CheckPowerUnlocked(EPowerVerb::Compile))
+	{
+		BuildComp->TriggerBuild();
+	}
+}
+
+void ASibeliusGameCharacter::OnBranchEnterPressed()
+{
+	if (BranchPIEComp && CheckPowerUnlocked(EPowerVerb::TestDrive))
+	{
+		BranchPIEComp->Debug_Enter();
+	}
+}
+
+void ASibeliusGameCharacter::OnBranchMergePressed()
+{
+	if (BranchPIEComp && CheckPowerUnlocked(EPowerVerb::TestDrive))
+	{
+		BranchPIEComp->Debug_Merge();
+	}
+}
+
+void ASibeliusGameCharacter::OnBranchDiscardPressed()
+{
+	if (BranchPIEComp && CheckPowerUnlocked(EPowerVerb::TestDrive))
+	{
+		BranchPIEComp->Debug_Discard();
+	}
+}
+
+void ASibeliusGameCharacter::OnDeployPressed()
+{
+	if (BranchPIEComp && CheckPowerUnlocked(EPowerVerb::Deploy))
+	{
+		BranchPIEComp->Debug_Deploy();
+	}
+}
+
+// --- FUN-1: dev cheats (console) -------------------------------------------
+
+void ASibeliusGameCharacter::GrantPower(const FString& PowerName)
+{
+	EPowerVerb Verb;
+	if (!ParsePowerVerb(PowerName, Verb))
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Red,
+				FString::Printf(TEXT("GrantPower: unknown power '%s' (try: vision, refactor, compile, testdrive, deploy, generate)"), *PowerName));
+		}
+		return;
+	}
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->UnlockPower(Verb);
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Cyan,
+				FString::Printf(TEXT("GrantPower: %s unlocked"), *PowerVerbDisplayName(Verb)));
+		}
+	}
+}
+
+void ASibeliusGameCharacter::GrantSauce(int32 Amount)
+{
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->GrantSauce(Amount);
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Emerald,
+				FString::Printf(TEXT("GrantSauce: +%d (total %d)"), Amount, Progression->GetSauce()));
+		}
+	}
+}
+
+void ASibeliusGameCharacter::UnlockAllPowers()
+{
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->UnlockAllPowers();
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Cyan, TEXT("UnlockAllPowers: all six verbs unlocked"));
+		}
+	}
+}
+
+void ASibeliusGameCharacter::ResetProgression()
+{
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->ResetProgression();
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Orange,
+				TEXT("ResetProgression: back to Code Vision only, 0 sauce"));
+		}
 	}
 }

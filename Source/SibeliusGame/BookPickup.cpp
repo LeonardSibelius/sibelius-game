@@ -1,6 +1,7 @@
 #include "BookPickup.h"
 #include "Components/StaticMeshComponent.h"
 #include "InventoryComponent.h"
+#include "ProgressionSubsystem.h"   // FUN-2: books pay Sauce
 
 ABookPickup::ABookPickup()
 {
@@ -23,6 +24,14 @@ bool ABookPickup::Collect(UInventoryComponent* Inventory)
 	}
 	bCollected = true;
 	Inventory->Add(Resource, Amount);
+
+	// FUN-2: the same collect also feeds the Sauce wallet (null-safe: headless
+	// smoke tests have no game instance and simply skip the grant).
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->GrantSauce(SauceOnCollect);
+	}
+
 	Destroy();
 	return true;
 }

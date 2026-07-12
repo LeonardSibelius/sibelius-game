@@ -35,6 +35,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	float RagdollLifetime = 4.0f;
 
+	// FUN-2: a connected slap pays a little Sauce, so standing up to a Refuser
+	// is rewarded, not just survived.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap", meta=(ClampMin="0"))
+	int32 SauceOnSlap = 2;
+
 	UFUNCTION(BlueprintCallable, Category="Slap")
 	void DoSlap();
 };

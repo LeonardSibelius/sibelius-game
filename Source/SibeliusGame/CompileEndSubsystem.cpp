@@ -7,6 +7,8 @@
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
+#include "Engine/Engine.h"          // FUN-2: on-screen reward line
+#include "ProgressionSubsystem.h"   // FUN-2: chapter completion pays Sauce
 #include "SibeliusGame.h"           // LogSibeliusGame
 
 const FName UCompileEndSubsystem::EndTriggerTag = TEXT("CompileEndTrigger");
@@ -54,5 +56,23 @@ void UCompileEndSubsystem::HandleEndTriggerOverlap(AActor* /*OverlappedActor*/, 
 
 	bFired = true;
 	UE_LOG(LogSibeliusGame, Display, TEXT("[CompileEnd] Ch3 complete"));
+
+	// FUN-2: a chapter completion is a big one-time Sauce payday. Claimed through
+	// the progression save, so replaying the level can't farm it.
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		constexpr int32 ChapterReward = 50;
+		if (Progression->ClaimOneTimeGrant(TEXT("Chapter.Compile.End")))
+		{
+			Progression->GrantSauce(ChapterReward);
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 6.0f, FColor::Emerald,
+					FString::Printf(TEXT("CHAPTER COMPLETE  +%d SAUCE  (total %d)"),
+						ChapterReward, Progression->GetSauce()));
+			}
+		}
+	}
+
 	OnCompileChapterComplete.Broadcast();
 }

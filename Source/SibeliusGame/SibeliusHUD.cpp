@@ -13,6 +13,7 @@
 #include "HatchLock.h"
 #include "RefactorableComponent.h"
 #include "GenerateComponent.h"                // Ch6 budget readout
+#include "ProgressionSubsystem.h"             // FUN-2: sauce + powers readout
 #include "SibeliusGameCharacter.h"            // IsAwayFromOffice() for the Back-to-Office hint
 
 bool ASibeliusHUD::bOverlayVisible = true; // default ON
@@ -148,7 +149,24 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(FString::Printf(TEXT("  refactored: %d/%d"), RefacOn, RefacTotal), White);
 	Line(FString::Printf(TEXT("  hatches locked: %d/%d"), HatchLocked, HatchTotal), White);
 	Line(FString::Printf(TEXT("  built sites: %d/%d"), SiteBuilt, SiteTotal), White);
-	Line(TEXT("  score: n/a"), Dim);
+
+	// --- FUN-2: sauce wallet + earned powers ---
+	if (const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Line(FString::Printf(TEXT("  SAUCE: %d"), Progression->GetSauce()),
+			FLinearColor(0.4f, 1.0f, 0.5f, 1.0f));
+		FString Powers;
+		for (uint8 i = 0; i < static_cast<uint8>(EPowerVerb::Count); ++i)
+		{
+			const EPowerVerb Verb = static_cast<EPowerVerb>(i);
+			if (Progression->IsUnlocked(Verb))
+			{
+				Powers += (Powers.IsEmpty() ? TEXT("") : TEXT("  ")) + PowerVerbDisplayName(Verb);
+			}
+		}
+		Line(FString::Printf(TEXT("  powers %d/%d: %s"),
+			Progression->NumUnlocked(), static_cast<int32>(EPowerVerb::Count), *Powers), White);
+	}
 
 	// --- GENERATE: live budget + catalog size (Ch6) ---
 	Line(TEXT("GENERATE"), Head);

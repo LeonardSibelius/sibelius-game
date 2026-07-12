@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "ProgressionSubsystem.h"   // FUN-2: slaps pay Sauce
 
 USlapComponent::USlapComponent()
 {
@@ -121,6 +122,12 @@ void USlapComponent::DoSlap()
 		if (SlapSound)
 		{
 			UGameplayStatics::PlaySoundAtLocation(World, SlapSound, Hit.ImpactPoint);
+		}
+
+		// FUN-2: the connected slap pays out (null-safe when headless).
+		if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+		{
+			Progression->GrantSauce(SauceOnSlap);
 		}
 
 		break;
