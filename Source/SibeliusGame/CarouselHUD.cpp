@@ -3,6 +3,7 @@
 #include "CarouselHUD.h"
 #include "CarouselMachine.h"
 #include "CarouselRunSubsystem.h"
+#include "ProgressionSubsystem.h"   // FUN-4: sauce balance + stake lines
 
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
@@ -75,7 +76,16 @@ void ACarouselHUD::DrawHUD()
 
 	const ECarouselRunPhase Phase = RunSub->GetPhase();
 
-	Line(TEXT("THE CAROUSEL OF FATES  (grey-box slice)"), Gold, 1.2f);
+	Line(TEXT("THE CAROUSEL OF FATES"), Gold, 1.2f);
+
+	// FUN-4: the player's real wallet, so the stakes read against something.
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (Progression)
+	{
+		Line(FString::Printf(TEXT("SAUCE: %d%s"), Progression->GetSauce(),
+			RunSub->IsRunStaked() ? TEXT("     (a stake is riding)") : TEXT("")), Green);
+	}
+
 	Line(FString::Printf(TEXT("Phase: %s     Round %d / %d"),
 		CarouselHUDNS::PhaseName(Phase), RunSub->GetRoundIndex() + 1, RunSub->GetNumRounds()), White);
 	Line(FString::Printf(TEXT("Chips this round: %d / %d      Spins left: %d"),
@@ -113,15 +123,22 @@ void ACarouselHUD::DrawHUD()
 	}
 
 	case ECarouselRunPhase::Won:
-		Line(TEXT("RUN CLEARED!   [N] new run"), Green, 1.2f);
+		Line(FString::Printf(TEXT("RUN CLEARED!   [N] new run (stakes %d sauce)"),
+			UCarouselRunSubsystem::EntryStake), Green, 1.2f);
 		break;
 
 	case ECarouselRunPhase::Lost:
-		Line(TEXT("Run over.   [N] new run"), Dim, 1.2f);
+		Line(FString::Printf(TEXT("Run over.   [N] new run (stakes %d sauce)"),
+			UCarouselRunSubsystem::EntryStake), Dim, 1.2f);
 		break;
 
 	default:
-		Line(TEXT("[N] start a run"), Gold);
+		Line(FString::Printf(TEXT("[N] start a run — stakes %d SAUCE. Win: +%d plus %d per banked coin. Lose: +%d per cleared round."),
+			UCarouselRunSubsystem::EntryStake, UCarouselRunSubsystem::WinPayout,
+			UCarouselRunSubsystem::SaucePerLeftoverCurrency, UCarouselRunSubsystem::ConsolationPerClearedRound), Gold);
 		break;
 	}
+
+	Y += 10.0f;
+	Line(TEXT("[O] back to office"), Dim);
 }

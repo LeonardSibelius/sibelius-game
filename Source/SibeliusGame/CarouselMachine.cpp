@@ -2,6 +2,7 @@
 
 #include "CarouselMachine.h"
 #include "CarouselRunSubsystem.h"
+#include "TravelTransitionSubsystem.h"   // FUN-4: O returns to the office
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/InputComponent.h"
@@ -43,14 +44,11 @@ void ACarouselMachine::BeginPlay()
 		}
 	}
 
-	// Auto-start a run so PIE is immediately playable.
+	// FUN-4: no auto-start — a run now stakes Sauce, and charging the player for
+	// merely walking in would be a mugging. The HUD shows "[N] start a run".
 	if (UCarouselRunSubsystem* RunSub = GetRun())
 	{
 		RunSub->OnSpinResolved.AddDynamic(this, &ACarouselMachine::HandleSpinResolved);
-		if (RunSub->GetPhase() == ECarouselRunPhase::NotStarted)
-		{
-			RunSub->StartRun(/*Seed*/ 1);
-		}
 	}
 
 	TryEnableInput();
@@ -86,6 +84,9 @@ void ACarouselMachine::TryEnableInput()
 		InputComponent->BindKey(EKeys::R,         IE_Pressed, this, &ACarouselMachine::OnReroll);
 		InputComponent->BindKey(EKeys::Enter,     IE_Pressed, this, &ACarouselMachine::OnContinue);
 		InputComponent->BindKey(EKeys::N,         IE_Pressed, this, &ACarouselMachine::OnNewRun);
+		// FUN-4: the carousel room is an away level, but its pawn is a plain
+		// DefaultPawn (no character O-binding) — so the machine carries the exit.
+		InputComponent->BindKey(EKeys::O,         IE_Pressed, this, &ACarouselMachine::OnLeave);
 	}
 }
 
@@ -105,7 +106,24 @@ void ACarouselMachine::OnContinue(){ if (UCarouselRunSubsystem* R = GetRun()) { 
 
 void ACarouselMachine::OnNewRun()
 {
-	if (UCarouselRunSubsystem* R = GetRun()) { R->StartRun(FMath::Rand()); }
+	// FUN-4: a new run stakes Sauce (free only in the bare slice, where no
+	// progression subsystem exists). Refusal is loud so the player knows why.
+	if (UCarouselRunSubsystem* R = GetRun())
+	{
+		if (!R->StartStakedRun(FMath::Rand()) && GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(0xCA80, 4.0f, FColor::Orange,
+				FString::Printf(TEXT("The Carousel demands %d SAUCE. Earn more first."),
+					UCarouselRunSubsystem::EntryStake));
+		}
+	}
+}
+
+void ACarouselMachine::OnLeave()
+{
+	// Never strand a live stake silently: leaving mid-run keeps the run alive in
+	// the GameInstance subsystem — re-enter the room to finish it.
+	UTravelTransitionSubsystem::Travel(this, TEXT("L_Office_v02"));
 }
 
 void ACarouselMachine::HandleSpinResolved(const FSpinResult& Result)

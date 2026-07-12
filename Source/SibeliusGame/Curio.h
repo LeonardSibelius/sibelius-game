@@ -74,6 +74,12 @@ public:
 	// Emissive strength fed to the material's "Intens" param.
 	UPROPERTY(EditAnywhere, Category = "Curio") float GlowEmissiveIntensity = 9.0f;
 
+	// FUN-5: a found curio quietly pays Sauce — the Many Worlds reward wandering
+	// without a checklist (no counter, no cabinet UI; the walk stays the point).
+	// Priced above a book: reaching one means riding the door and looking around.
+	UPROPERTY(EditAnywhere, Category = "Curio", meta = (ClampMin = "0"))
+	int32 SauceOnCollect = 15;
+
 private:
 	bool bCollected = false;   // re-entrancy guard
 };
