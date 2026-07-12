@@ -86,7 +86,7 @@ TSharedRef<SWidget> UGameMenuWidget::RebuildWidget()
 					+ SVerticalBox::Slot().AutoHeight().Padding(0, 16, 0, 0)
 					[
 						SNew(STextBlock)
-						.Text(NSLOCTEXT("Sibelius", "MenuFooter", "[Tab] or [Esc] to close"))
+						.Text(NSLOCTEXT("Sibelius", "MenuFooter", "[M] or [Esc] to close"))
 						.Font(Font("Regular", 15))
 						.ColorAndOpacity(Dim)
 					]
@@ -203,7 +203,7 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 		{ TEXT("6 / 7 / 8"), TEXT("Test-Drive: branch / merge / discard"), Owned(EPowerVerb::TestDrive) },
 		{ TEXT("0"), TEXT("Deploy (persist your edits)"), Owned(EPowerVerb::Deploy) },
 		{ TEXT("G"), TEXT("Generate — type a request"), Owned(EPowerVerb::Generate) },
-		{ TEXT("Tab"), TEXT("this menu"), true },
+		{ TEXT("M"), TEXT("this menu"), true },
 		{ TEXT("J"), TEXT("journal / story"), true },
 		{ TEXT("O"), TEXT("back to the office (from any other world)"), true },
 		{ TEXT("Q Q"), TEXT("quit"), true },
@@ -237,7 +237,8 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 
 FReply UGameMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
-	if (InKeyEvent.GetKey() == EKeys::Escape || InKeyEvent.GetKey() == EKeys::Tab)
+	if (InKeyEvent.GetKey() == EKeys::Escape || InKeyEvent.GetKey() == EKeys::Tab
+		|| InKeyEvent.GetKey() == EKeys::M)
 	{
 		CloseMenu();
 		return FReply::Handled();

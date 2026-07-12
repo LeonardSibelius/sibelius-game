@@ -163,8 +163,11 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// SIB-41 journal/story panel toggle: J.
 	PlayerInputComponent->BindKey(EKeys::J, IE_Pressed, this, &ASibeliusGameCharacter::ToggleJournal);
 
-	// FUN-8 game menu (STATUS/CONTROLS): Tab — the one menu key every PC player
-	// tries first (Raymond's conventions rule).
+	// FUN-8 game menu (STATUS/CONTROLS): M, plus Tab as a courtesy. M is primary
+	// because Slate claims Tab for focus navigation and PIE eats it before raw
+	// BindKey ever sees it (Walt: "i press tab and nothing happens") — Tab may
+	// still work in a packaged build, so both stay bound.
+	PlayerInputComponent->BindKey(EKeys::M, IE_Pressed, this, &ASibeliusGameCharacter::ToggleGameMenu);
 	PlayerInputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ASibeliusGameCharacter::ToggleGameMenu);
 
 	// SIB-30 P1 generate/ask panel toggle: G.
@@ -326,6 +329,9 @@ void ASibeliusGameCharacter::ToggleGameMenu()
 	{
 		return;
 	}
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[GameMenu] toggle (open=%s)"),
+		(GameMenuWidget && GameMenuWidget->IsInViewport()) ? TEXT("true") : TEXT("false"));
 
 	// Open -> close (mirrors ToggleJournal).
 	if (GameMenuWidget && GameMenuWidget->IsInViewport())

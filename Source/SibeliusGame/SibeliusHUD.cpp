@@ -272,6 +272,6 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(TEXT("  F slap    E interact    V vision"), White);
 	Line(TEXT("  R refactor    B build    G generate / ask"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
-	Line(TEXT("  Tab menu    J journal / story    H hide/show overlay    Q quit (press twice)"), White);
+	Line(TEXT("  M menu    J journal / story    H hide/show overlay    Q quit (press twice)"), White);
 	Line(TEXT("  O back to office (in a wander world)"), White);
 }

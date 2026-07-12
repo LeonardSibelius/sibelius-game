@@ -2,6 +2,7 @@
 
 #include "SauceCauldron.h"
 #include "SauceShopWidget.h"
+#include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/Pawn.h"
@@ -13,6 +14,16 @@ ASauceCauldron::ASauceCauldron()
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
+
+	// FUN-8.1: the E-target. Invisible; sized/scaled in-editor to wrap the props
+	// that play the cauldron (the stove + pots). BookPickup's collision recipe.
+	InteractZone = CreateDefaultSubobject<UBoxComponent>(TEXT("InteractZone"));
+	InteractZone->SetupAttachment(SceneRoot);
+	InteractZone->SetBoxExtent(FVector(50.0f, 50.0f, 35.0f));
+	InteractZone->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	InteractZone->SetCollisionResponseToAllChannels(ECR_Block);
+	InteractZone->SetGenerateOverlapEvents(false);
+	InteractZone->SetCanEverAffectNavigation(false);
 
 	CauldronMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CauldronMesh"));
 	CauldronMesh->SetupAttachment(SceneRoot);

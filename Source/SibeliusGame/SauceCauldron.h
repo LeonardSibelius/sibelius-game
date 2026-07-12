@@ -49,6 +49,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Sauce")
 	TObjectPtr<USceneComponent> SceneRoot;
 
+	// FUN-8.1 (Walt): the interaction lives on an INVISIBLE box stretched over
+	// existing kitchen props (the stove + pots), so no placeholder mesh has to
+	// squat in the scene. Mirrors BookPickup's collision recipe — QueryOnly,
+	// block-all — so the interactor's camera trace finds it. Scale it in-editor
+	// to wrap whatever should read as "the cauldron".
+	UPROPERTY(VisibleAnywhere, Category = "Sauce")
+	TObjectPtr<class UBoxComponent> InteractZone;
+
+	// Optional dress meshes — leave empty when real props (the stove) play the
+	// part; assign only if the cauldron ever gets its own hero mesh.
 	UPROPERTY(VisibleAnywhere, Category = "Sauce")
 	TObjectPtr<UStaticMeshComponent> CauldronMesh;
 
