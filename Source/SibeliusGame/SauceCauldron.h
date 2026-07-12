@@ -1,7 +1,9 @@
-// SauceCauldron.h — World Three / "The Sauce of All Knowledge"
-// P0 STUB (June 13, 2026). Drop in Source/SibeliusGame/ (RUNTIME module).
-// The altar centerpiece: holds the Sauce blend state, is E-interactable, fires once on completion.
-// Code: reconcile the IInteractable include path + exact method signatures with the project's Interactable.h.
+// SauceCauldron.h — "The Sauce of All Knowledge"
+// FUN-3 (docs/FUN_PLAN.md Step 3): un-stubbed from the June 13 P0. The cauldron
+// is now the game's SHOP — E opens USauceShopWidget, where earned Sauce buys
+// powers and upgrades at known prices (deterministic spend; the gamble lives at
+// the Carousel, not here). The original blend state (FeedSauce/OnSauceComplete)
+// is kept intact for ABookRain and the World Three ceremony.
 
 #pragma once
 
@@ -54,9 +56,13 @@ protected:
 	TObjectPtr<UStaticMeshComponent> ContentsMesh;   // glowing sauce surface; optional, hide if unused
 
 	UPROPERTY(EditAnywhere, Category = "Sauce")
-	FText PromptText = FText::FromString(TEXT("The Sauce of All Knowledge"));
+	FText PromptText = FText::FromString(TEXT("Blend the Sauce [E]"));
 
 private:
 	bool bComplete = false;
 	void HandleComplete();
+
+	// FUN-3: the shop screen, created on first open and reused.
+	UPROPERTY()
+	TObjectPtr<class USauceShopWidget> ShopWidget;
 };

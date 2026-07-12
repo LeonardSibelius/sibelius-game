@@ -199,6 +199,10 @@ public:
 
 protected:
 
+	/** FUN-3: re-apply bought cauldron upgrades to this fresh pawn (components
+	    spawn with authored defaults; the purchase record lives in the save). */
+	virtual void BeginPlay() override;
+
 	/** Set up input action bindings */
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	

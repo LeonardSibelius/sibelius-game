@@ -55,6 +55,14 @@ public:
 	bool HasClaimedGrant(FName GrantKey) const { return State.HasClaimed(GrantKey); }
 	bool ClaimOneTimeGrant(FName GrantKey);  // claim-and-save; false if already claimed
 
+	// --- Purchases (FUN-3, the cauldron shop) ---
+	int32 GetPurchaseCount(FName OfferKey) const { return State.GetPurchaseCount(OfferKey); }
+	void RecordPurchase(FName OfferKey);     // saves; the shop applies the effect
+
+	// Read-only view of the pure state (FSauceShop::BuildOffers takes the state
+	// directly so the catalog logic stays headless-testable).
+	const FProgressionState& GetStateForRead() const { return State; }
+
 	// Dev: wipe to a fresh state and delete the slot (exec'd from the character).
 	void ResetProgression();
 

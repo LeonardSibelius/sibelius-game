@@ -97,6 +97,12 @@ bool UProgressionSubsystem::TrySpendSauce(int32 Amount)
 	return true;
 }
 
+void UProgressionSubsystem::RecordPurchase(FName OfferKey)
+{
+	State.RecordPurchase(OfferKey);
+	SaveNow();
+}
+
 bool UProgressionSubsystem::ClaimOneTimeGrant(FName GrantKey)
 {
 	if (!State.Claim(GrantKey))

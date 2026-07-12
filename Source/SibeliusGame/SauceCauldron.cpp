@@ -1,7 +1,11 @@
-// SauceCauldron.cpp — P0 STUB (June 13, 2026). Source/SibeliusGame/ (RUNTIME module).
+// SauceCauldron.cpp — the Sauce shop (FUN-3, un-stubbed from the June 13 P0).
 
 #include "SauceCauldron.h"
+#include "SauceShopWidget.h"
 #include "Components/StaticMeshComponent.h"
+#include "Blueprint/UserWidget.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 
 ASauceCauldron::ASauceCauldron()
 {
@@ -49,11 +53,34 @@ void ASauceCauldron::HandleComplete()
 	OnSauceComplete.Broadcast();
 }
 
-void ASauceCauldron::Interact_Implementation(AActor* /*Interactor*/)
+void ASauceCauldron::Interact_Implementation(AActor* Interactor)
 {
-	// P0: status read-out only. P3 will commit a held "true" book here.
-	UE_LOG(LogTemp, Display, TEXT("[Sauce] Interact: BlendProgress=%.2f, Complete=%s"),
-		BlendProgress, bComplete ? TEXT("true") : TEXT("false"));
+	// FUN-3: E opens the shop. Deterministic spend point — earned Sauce buys
+	// powers and upgrades at listed prices (the widget owns the catalog UI;
+	// FSauceShop owns the logic).
+	APawn* Pawn = Cast<APawn>(Interactor);
+	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+	if (!PC)
+	{
+		return;
+	}
+
+	if (!ShopWidget)
+	{
+		ShopWidget = CreateWidget<USauceShopWidget>(PC, USauceShopWidget::StaticClass());
+	}
+	if (ShopWidget && !ShopWidget->IsInViewport())
+	{
+		ShopWidget->AddToViewport(70);
+
+		// UIOnly + focus on the widget so Esc/E land in its NativeOnKeyDown and
+		// WASD stops moving the pawn (the Generate panel's pattern).
+		FInputModeUIOnly Mode;
+		Mode.SetWidgetToFocus(ShopWidget->TakeWidget());
+		PC->SetInputMode(Mode);
+		PC->SetShowMouseCursor(true);
+		ShopWidget->SetFocus();
+	}
 }
 
 FText ASauceCauldron::GetInteractionPrompt_Implementation() const

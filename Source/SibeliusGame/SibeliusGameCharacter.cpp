@@ -26,6 +26,7 @@
 #include "Engine/World.h"               // GetMapName for the wander-world check
 #include "TravelTransitionSubsystem.h"  // O-to-office travels through the transition cover
 #include "ProgressionSubsystem.h"       // FUN-1: the power gates + sauce cheats
+#include "SauceShop.h"                  // FUN-3: re-apply bought upgrades on spawn
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
@@ -82,8 +83,17 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 	GetCharacterMovement()->AirControl = 0.5f;
 }
 
+void ASibeliusGameCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// FUN-3: purchased upgrades land on the fresh components (which just spawned
+	// with authored defaults, so this is exact — never a double apply).
+	FSauceShop::ApplyPersistentPurchases(this);
+}
+
 void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{	
+{
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
