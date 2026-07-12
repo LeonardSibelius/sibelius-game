@@ -322,6 +322,7 @@ void ASibeliusGameCharacter::ToggleGenerate()
 	{
 		return;
 	}
+	OnPowerVerbUsed.Broadcast(EPowerVerb::Generate);
 
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (!PC)
@@ -421,6 +422,7 @@ void ASibeliusGameCharacter::OnCodeVisionStarted()
 	if (CodeVisionComp && CheckPowerUnlocked(EPowerVerb::CodeVision))
 	{
 		CodeVisionComp->ActivateCodeVision();
+		OnPowerVerbUsed.Broadcast(EPowerVerb::CodeVision);
 	}
 }
 
@@ -438,6 +440,7 @@ void ASibeliusGameCharacter::OnRefactorPressed()
 	if (RefactorComp && CheckPowerUnlocked(EPowerVerb::Refactor))
 	{
 		RefactorComp->TriggerRefactor();
+		OnPowerVerbUsed.Broadcast(EPowerVerb::Refactor);
 	}
 }
 
@@ -446,6 +449,7 @@ void ASibeliusGameCharacter::OnBuildPressed()
 	if (BuildComp && CheckPowerUnlocked(EPowerVerb::Compile))
 	{
 		BuildComp->TriggerBuild();
+		OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);
 	}
 }
 
@@ -454,6 +458,7 @@ void ASibeliusGameCharacter::OnBranchEnterPressed()
 	if (BranchPIEComp && CheckPowerUnlocked(EPowerVerb::TestDrive))
 	{
 		BranchPIEComp->Debug_Enter();
+		OnPowerVerbUsed.Broadcast(EPowerVerb::TestDrive);
 	}
 }
 
@@ -462,6 +467,7 @@ void ASibeliusGameCharacter::OnBranchMergePressed()
 	if (BranchPIEComp && CheckPowerUnlocked(EPowerVerb::TestDrive))
 	{
 		BranchPIEComp->Debug_Merge();
+		OnPowerVerbUsed.Broadcast(EPowerVerb::TestDrive);
 	}
 }
 
@@ -470,6 +476,7 @@ void ASibeliusGameCharacter::OnBranchDiscardPressed()
 	if (BranchPIEComp && CheckPowerUnlocked(EPowerVerb::TestDrive))
 	{
 		BranchPIEComp->Debug_Discard();
+		OnPowerVerbUsed.Broadcast(EPowerVerb::TestDrive);
 	}
 }
 
@@ -478,6 +485,7 @@ void ASibeliusGameCharacter::OnDeployPressed()
 	if (BranchPIEComp && CheckPowerUnlocked(EPowerVerb::Deploy))
 	{
 		BranchPIEComp->Debug_Deploy();
+		OnPowerVerbUsed.Broadcast(EPowerVerb::Deploy);
 	}
 }
 

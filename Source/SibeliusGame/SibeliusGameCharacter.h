@@ -25,6 +25,10 @@ struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
+/** FUN-6: fired whenever an UNLOCKED power verb is actually used (the gated
+    input handlers are the one chokepoint). The finale altar listens. */
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPowerVerbUsed, EPowerVerb);
+
 /**
  *  A basic first person character
  */
@@ -165,6 +169,9 @@ protected:
 	void OnDeployPressed();         // Deploy verb     (key 0)
 
 public:
+	/** FUN-6: broadcast on every successful use of an unlocked verb. */
+	FOnPowerVerbUsed OnPowerVerbUsed;
+
 	/** FUN-1 dev cheats (console, backtick). GrantPower accepts loose names
 	    ("refactor", "test-drive"). ResetProgression wipes powers + sauce. */
 	UFUNCTION(Exec) void GrantPower(const FString& PowerName);

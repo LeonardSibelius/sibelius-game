@@ -92,27 +92,14 @@ void APowerGrant::OnTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 	}
 	bConsumed = true;
 
+	// The grant moment: the HUD's ceremony banner (OnPowerUnlocked) and the
+	// sauce delta flash (OnSauceChanged) fire off these two calls — FUN-7.
 	if (bGrantsPower)
 	{
 		Progression->UnlockPower(Power);
 	}
 	Progression->GrantSauce(SauceReward);
 
-	// The grant moment. Step 7 upgrades this to a proper ceremony widget; the
-	// on-screen lines make the reward legible today.
-	if (GEngine)
-	{
-		if (bGrantsPower)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 6.0f, FColor::Cyan,
-				FString::Printf(TEXT("*** %s IS YOURS ***"), *PowerVerbDisplayName(Power)));
-		}
-		if (SauceReward > 0)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 6.0f, FColor::Emerald,
-				FString::Printf(TEXT("+%d SAUCE  (total %d)"), SauceReward, Progression->GetSauce()));
-		}
-	}
 	if (GrantSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, GrantSound, GetActorLocation());
