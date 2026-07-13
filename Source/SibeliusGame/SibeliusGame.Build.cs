@@ -41,7 +41,10 @@ public class SibeliusGame : ModuleRules
 			"WebBrowser",
 			// Travel-door transition: animated loading screen during the blocking level load
 			// (registered on PreLoadMap in SibeliusGame.cpp).
-			"MoviePlayer"
+			"MoviePlayer",
+			// Shinbi cloth-flutter fix: runtime damping via the Chaos cloth interactor.
+			"ClothingSystemRuntimeInterface",
+			"ChaosCloth"
 		});
 
 // SIB-19 smoke-test commandlet uses UEditorLoadingAndSavingUtils (editor-only)

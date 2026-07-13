@@ -21,4 +21,28 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Companion")
 	TObjectPtr<USlapComponent> SlapComponent;
+
+	// The Paragon Shinbi's converted APEX cloth (arm ribbons + hair) ships with
+	// near-zero damping and vibrates like hummingbird wings. Tamed at runtime
+	// via the Chaos cloth interactor — tune here, no rebuild needed.
+	UPROPERTY(EditAnywhere, Category="Companion|Cloth")
+	bool bTameClothFlutter = true;
+
+	UPROPERTY(EditAnywhere, Category="Companion|Cloth", meta=(ClampMin="0", ClampMax="1"))
+	float ClothDamping = 0.8f;
+
+	UPROPERTY(EditAnywhere, Category="Companion|Cloth", meta=(ClampMin="0", ClampMax="1"))
+	float ClothLocalDamping = 0.5f;
+
+	// Nuclear option: freeze the cloth entirely (rigid ribbons, zero flutter).
+	UPROPERTY(EditAnywhere, Category="Companion|Cloth")
+	bool bSuspendClothEntirely = false;
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	void ApplyClothTuning();
+
+	FTimerHandle ClothTuneRetryHandle;
 };

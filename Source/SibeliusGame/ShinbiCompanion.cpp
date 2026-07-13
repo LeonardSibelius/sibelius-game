@@ -2,7 +2,12 @@
 
 #include "ShinbiController.h"
 #include "SlapComponent.h"
+#include "ChaosCloth/ChaosClothingSimulationInteractor.h"
+#include "ClothingAssetBase.h"
+#include "ClothingSimulationInteractor.h"
+#include "Engine/SkeletalMesh.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "TimerManager.h"
 
 AShinbiCompanion::AShinbiCompanion()
 {
@@ -22,4 +27,56 @@ AShinbiCompanion::AShinbiCompanion()
 	}
 
 	SlapComponent = CreateDefaultSubobject<USlapComponent>(TEXT("SlapComponent"));
+}
+
+void AShinbiCompanion::BeginPlay()
+{
+	Super::BeginPlay();
+
+	ApplyClothTuning();
+}
+
+void AShinbiCompanion::ApplyClothTuning()
+{
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (!MeshComp)
+	{
+		return;
+	}
+
+	if (bSuspendClothEntirely)
+	{
+		MeshComp->SuspendClothingSimulation();
+		return;
+	}
+
+	if (!bTameClothFlutter)
+	{
+		return;
+	}
+
+	// The cloth simulation (and its interactor) is created lazily; if it isn't
+	// up yet at BeginPlay, retry once shortly after.
+	UClothingSimulationInteractor* Sim = MeshComp->GetClothingSimulationInteractor();
+	USkeletalMesh* MeshAsset = MeshComp->GetSkeletalMeshAsset();
+	if (!Sim || !MeshAsset)
+	{
+		GetWorldTimerManager().SetTimer(
+			ClothTuneRetryHandle, this, &AShinbiCompanion::ApplyClothTuning,
+			0.5f, /*bLoop=*/false);
+		return;
+	}
+
+	for (UClothingAssetBase* ClothAsset : MeshAsset->GetMeshClothingAssets())
+	{
+		if (!ClothAsset)
+		{
+			continue;
+		}
+		if (UChaosClothingInteractor* Cloth =
+			Cast<UChaosClothingInteractor>(Sim->GetClothingInteractor(ClothAsset->GetFName())))
+		{
+			Cloth->SetDamping(ClothDamping, ClothLocalDamping);
+		}
+	}
 }
