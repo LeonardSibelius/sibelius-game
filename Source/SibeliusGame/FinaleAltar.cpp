@@ -95,8 +95,21 @@ void AFinaleAltar::Tick(float DeltaSeconds)
 
 FString AFinaleAltar::StagePrompt() const
 {
+	// If the rite is asking for a verb the player does NOT own, say so in the
+	// prompt itself — the gated-input refusal banner gets stomped by this
+	// prompt's every-tick refresh (Walt, stage 5, locked Deploy: "0 does
+	// nothing"), so the guidance must live HERE.
+	const EPowerVerb Verb = Sequence.CurrentVerb();
+	if (const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		if (!Progression->IsUnlocked(Verb))
+		{
+			return FString::Printf(TEXT("THE SYNTHESIS asks for %s — a power you do not yet possess. Blend it at a cauldron, or find its shrine."),
+				*PowerVerbDisplayName(Verb));
+		}
+	}
 	return FString::Printf(TEXT("THE SYNTHESIS  —  show me %s  (%d/%d)"),
-		*PowerVerbDisplayName(Sequence.CurrentVerb()), Sequence.StageIndex + 1, FFinaleSequence::Num());
+		*PowerVerbDisplayName(Verb), Sequence.StageIndex + 1, FFinaleSequence::Num());
 }
 
 void AFinaleAltar::HandlePowerUsed(EPowerVerb Verb)
