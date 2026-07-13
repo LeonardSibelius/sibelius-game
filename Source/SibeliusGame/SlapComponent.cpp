@@ -133,6 +133,12 @@ void USlapComponent::DoSlap()
 			const FVector Impulse = LaunchDir * LaunchSpeed + FVector::UpVector * UpwardSpeed;
 			Mesh->AddImpulse(Impulse, NAME_None, true);
 
+			// Clothing (Gideon's Paragon-era APEX coat) treats the ragdoll
+			// detach as a violent teleport and stretches into room-sized
+			// sheets. Reset the cloth sim after the impulse; verified live
+			// that it un-taffies the coat and stays sane on the ragdoll.
+			Mesh->ForceClothNextUpdateTeleportAndReset();
+
 			// Despawn the ragdolled victim after a delay.
 			Victim->SetLifeSpan(RagdollLifetime);
 		}
