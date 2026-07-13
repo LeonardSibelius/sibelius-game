@@ -135,12 +135,12 @@ void ACarouselHUD::DrawHUD()
 	}
 
 	case ECarouselRunPhase::Won:
-		Line(FString::Printf(TEXT("RUN CLEARED!   [N] new run (stakes %d sauce)"),
+		Line(FString::Printf(TEXT("RUN CLEARED!   [E] new run (stakes %d sauce)"),
 			UCarouselRunSubsystem::EntryStake), Green, 1.2f);
 		break;
 
 	case ECarouselRunPhase::Lost:
-		Line(FString::Printf(TEXT("Run over.   [N] new run (stakes %d sauce)"),
+		Line(FString::Printf(TEXT("Run over.   [E] new run (stakes %d sauce)"),
 			UCarouselRunSubsystem::EntryStake), Dim, 1.2f);
 		break;
 
@@ -155,7 +155,7 @@ void ACarouselHUD::DrawHUD()
 		}
 		else
 		{
-			Line(FString::Printf(TEXT("[N] start a run — stakes %d SAUCE. Win: +%d plus %d per banked coin. Lose: +%d per cleared round."),
+			Line(FString::Printf(TEXT("[E] start a run — stakes %d SAUCE. Win: +%d plus %d per banked coin. Lose: +%d per cleared round."),
 				UCarouselRunSubsystem::EntryStake, UCarouselRunSubsystem::WinPayout,
 				UCarouselRunSubsystem::SaucePerLeftoverCurrency, UCarouselRunSubsystem::ConsolationPerClearedRound), Gold);
 		}

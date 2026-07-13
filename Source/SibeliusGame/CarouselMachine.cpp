@@ -92,10 +92,23 @@ void ACarouselMachine::TryEnableInput()
 
 void ACarouselMachine::OnPullLever()
 {
-	if (UCarouselRunSubsystem* RunSub = GetRun())
+	UCarouselRunSubsystem* RunSub = GetRun();
+	if (!RunSub)
 	{
-		if (RunSub->Spin()) { LeverPull = 1.0f; }   // the sim resolves it; we just animate the pull
+		return;
 	}
+
+	// Raymond's rule (Walt's catch): ONE verb, disambiguated by state. With no
+	// run live, E IS the stake — the HUD displays the price, so the press is
+	// consent. Mid-run, E pulls the lever. (N remains as an explicit restart.)
+	const ECarouselRunPhase Phase = RunSub->GetPhase();
+	if (Phase == ECarouselRunPhase::NotStarted || Phase == ECarouselRunPhase::Won || Phase == ECarouselRunPhase::Lost)
+	{
+		OnNewRun();
+		return;
+	}
+
+	if (RunSub->Spin()) { LeverPull = 1.0f; }   // the sim resolves it; we just animate the pull
 }
 
 void ACarouselMachine::OnBuy0()    { if (UCarouselRunSubsystem* R = GetRun()) { R->BuyOffering(0); } }
