@@ -145,9 +145,20 @@ void ACarouselHUD::DrawHUD()
 		break;
 
 	default:
-		Line(FString::Printf(TEXT("[N] start a run — stakes %d SAUCE. Win: +%d plus %d per banked coin. Lose: +%d per cleared round."),
-			UCarouselRunSubsystem::EntryStake, UCarouselRunSubsystem::WinPayout,
-			UCarouselRunSubsystem::SaucePerLeftoverCurrency, UCarouselRunSubsystem::ConsolationPerClearedRound), Gold);
+		// Walt's lost-refusal lesson: if the player can't afford the stake, the
+		// HUD says so PERMANENTLY — never a 4-second toast in a busy corner.
+		if (Progression && Progression->GetSauce() < UCarouselRunSubsystem::EntryStake)
+		{
+			Line(FString::Printf(TEXT("The Carousel demands %d SAUCE — you carry only %d."),
+				UCarouselRunSubsystem::EntryStake, Progression->GetSauce()), FLinearColor(1.0f, 0.6f, 0.25f), 1.2f);
+			Line(TEXT("Go earn more: books, curios, Refusers.   [O] back to office"), Dim);
+		}
+		else
+		{
+			Line(FString::Printf(TEXT("[N] start a run — stakes %d SAUCE. Win: +%d plus %d per banked coin. Lose: +%d per cleared round."),
+				UCarouselRunSubsystem::EntryStake, UCarouselRunSubsystem::WinPayout,
+				UCarouselRunSubsystem::SaucePerLeftoverCurrency, UCarouselRunSubsystem::ConsolationPerClearedRound), Gold);
+		}
 		break;
 	}
 
