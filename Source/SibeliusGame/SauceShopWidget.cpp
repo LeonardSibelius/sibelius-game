@@ -2,6 +2,7 @@
 
 #include "SauceShopWidget.h"
 #include "ProgressionSubsystem.h"
+#include "SibeliusHUD.h"   // purchase announcements (Walt's 120-sauce lesson)
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Widgets/SBoxPanel.h"
@@ -141,7 +142,21 @@ void USauceShopWidget::RefreshOffers()
 FReply USauceShopWidget::HandleBuyClicked(FSauceOffer Offer)
 {
 	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
-	FSauceShop::TryPurchase(Progression, GetOwningPlayerPawn(), Offer);
+	if (FSauceShop::TryPurchase(Progression, GetOwningPlayerPawn(), Offer))
+	{
+		// Walt's 120-sauce lesson: a purchase must ANNOUNCE itself — the
+		// ceremony banner says what was blended and what it cost. (Power
+		// unlocks already banner via OnPowerUnlocked; this covers upgrades.)
+		if (!Offer.bIsPowerUnlock)
+		{
+			APlayerController* PC = GetOwningPlayer();
+			if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+			{
+				HUD->ShowBanner(FString::Printf(TEXT("BLENDED:  %s   (−%d sauce)"),
+					*Offer.Title.ToUpper(), Offer.Cost), 4.0f);
+			}
+		}
+	}
 	RefreshOffers(); // bought powers vanish; stock counters update
 	return FReply::Handled();
 }
