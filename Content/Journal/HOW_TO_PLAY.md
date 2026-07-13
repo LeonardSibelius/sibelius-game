@@ -27,9 +27,10 @@ You spend it at THE CAULDRON — the stove in the kitchen. Press E on the
 pots. Prices are honest: what you see is what you get. Locked powers can
 be bought there if you'd rather pay than search.
 
-You risk it at THE CAROUSEL OF FATES — through the strange door near the
-kitchen. A run stakes 50 sauce. Clear the quotas and the Carousel pays
-out big; bust and it keeps your stake, less a small mercy for every
+You risk it at THE CAROUSEL OF FATES. Where? The kitchen keeps more than
+one secret, and secrets in this house reveal themselves to those who
+look properly. A run stakes 50 sauce. Clear the quotas and the Carousel
+pays out big; bust and it keeps your stake, less a small mercy for every
 round you cleared. Walking away mid-run is allowed — the run waits.
 
 
