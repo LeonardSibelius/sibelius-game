@@ -35,6 +35,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	float RagdollLifetime = 4.0f;
 
+	// True (default): the victim freezes mid-pose and is launched as ONE rigid
+	// piece — nothing deforms, so nothing can stretch. False: classic floppy
+	// ragdoll; the Paragon-era Gideon mesh stretches on this path (bad physics
+	// asset coverage + fragile converted APEX cloth), kept as a toggle for
+	// experimenting with other victim meshes.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
+	bool bRigidKnockback = true;
+
 	// FUN-2: a connected slap pays a little Sauce, so standing up to a Refuser
 	// is rewarded, not just survived.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap", meta=(ClampMin="0"))

@@ -81,21 +81,55 @@ void USlapComponent::DoSlap()
 			VictimController->UnPossess();
 		}
 
-		if (UCapsuleComponent* Capsule = Victim->GetCapsuleComponent())
-		{
-			Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		}
-
-		// Kill character movement BEFORE ragdolling. With the capsule's collision
-		// gone the movement component finds no floor and free-falls the capsule;
-		// bones without physics bodies are animated relative to that plummeting
-		// component transform, so the skin stretches between the simulated bodies
-		// (staying put in world space) and the falling capsule.
+		// Kill character movement BEFORE any physics takes over. With the
+		// capsule's collision changed the movement component finds no floor and
+		// free-falls the capsule; bones without physics bodies are animated
+		// relative to that plummeting component transform, so the skin
+		// stretches between the simulated bodies and the falling capsule.
 		if (UCharacterMovementComponent* Move = Victim->GetCharacterMovement())
 		{
 			Move->StopMovementImmediately();
 			Move->DisableMovement();
 			Move->SetComponentTickEnabled(false);
+		}
+
+		const FVector VictimLocation = Victim->GetActorLocation();
+		const FVector LaunchDir = (VictimLocation - ViewStart).GetSafeNormal();
+		const FVector Impulse = LaunchDir * LaunchSpeed + FVector::UpVector * UpwardSpeed;
+
+		if (bRigidKnockback)
+		{
+			// Freeze the victim mid-pose (animation AND cloth) and launch the
+			// whole character as one rigid piece via the capsule. Nothing
+			// deforms, so nothing can stretch — immune to the Paragon mesh's
+			// bad physics-asset coverage and fragile converted APEX cloth.
+			if (USkeletalMeshComponent* PoseMesh = Victim->GetMesh())
+			{
+				PoseMesh->bPauseAnims = true;
+				PoseMesh->SuspendClothingSimulation();
+			}
+			if (UCapsuleComponent* Capsule = Victim->GetCapsuleComponent())
+			{
+				Capsule->SetCollisionProfileName(TEXT("PhysicsActor"));
+				Capsule->SetSimulatePhysics(true);
+				Capsule->AddImpulse(Impulse, NAME_None, true);
+			}
+			Victim->SetLifeSpan(RagdollLifetime);
+
+			if (SlapSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(World, SlapSound, Hit.ImpactPoint);
+			}
+			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+			{
+				Progression->GrantSauce(SauceOnSlap);
+			}
+			break;
+		}
+
+		if (UCapsuleComponent* Capsule = Victim->GetCapsuleComponent())
+		{
+			Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 
 		// Pick which skeletal mesh to ragdoll. Prefer the default Character mesh
@@ -125,19 +159,12 @@ void USlapComponent::DoSlap()
 
 		if (Mesh)
 		{
+			// Freeze the cloth in its last live pose before the bodies detach
+			// (the converted APEX coat explodes if left simulating).
+			Mesh->SuspendClothingSimulation();
 			Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
 			Mesh->SetSimulatePhysics(true);
-
-			const FVector VictimLocation = Victim->GetActorLocation();
-			const FVector LaunchDir = (VictimLocation - ViewStart).GetSafeNormal();
-			const FVector Impulse = LaunchDir * LaunchSpeed + FVector::UpVector * UpwardSpeed;
 			Mesh->AddImpulse(Impulse, NAME_None, true);
-
-			// Clothing (Gideon's Paragon-era APEX coat) treats the ragdoll
-			// detach as a violent teleport and stretches into room-sized
-			// sheets. Reset the cloth sim after the impulse; verified live
-			// that it un-taffies the coat and stays sane on the ragdoll.
-			Mesh->ForceClothNextUpdateTeleportAndReset();
 
 			// Despawn the ragdolled victim after a delay.
 			Victim->SetLifeSpan(RagdollLifetime);
