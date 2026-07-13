@@ -79,13 +79,16 @@ void AFinaleAltar::Tick(float DeltaSeconds)
 		return;
 	}
 
-	// Entry prompt, once per approach: tell the player what the rite wants.
+	// Walt's lesson (the fifth of the night): the rite's ask must stay ON SCREEN
+	// the whole time the player stands in the circle — a six-second banner that
+	// fades leaves them staring at a mute box. Refreshing every tick pins the
+	// banner while inside; stepping out lets it fade naturally.
 	const bool bInside =
 		FVector::DistSquared(BoundCharacter->GetActorLocation(), GetActorLocation())
 			<= FMath::Square(ActivationRadius);
-	if (bInside && !bPlayerWasInside)
+	if (bInside)
 	{
-		Announce(StagePrompt());
+		Announce(StagePrompt(), 1.5f);
 	}
 	bPlayerWasInside = bInside;
 }
