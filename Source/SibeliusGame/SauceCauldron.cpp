@@ -2,6 +2,7 @@
 
 #include "SauceCauldron.h"
 #include "SauceShopWidget.h"
+#include "ProgressionSubsystem.h"   // the temple blend's one-time bounty
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Blueprint/UserWidget.h"
@@ -60,7 +61,18 @@ void ASauceCauldron::HandleComplete()
 
 	UE_LOG(LogTemp, Display, TEXT("[Sauce] The Sauce of All Knowledge is complete (BlendProgress=%.2f)."), BlendProgress);
 
-	// P5 TODO: set USibeliusProgressSubsystem::bSauceComplete and TriggerApparition(clue voice) here.
+	// Walt closed the June TODO: a completed blend PAYS — the temple ceremony
+	// grants a one-time sauce bounty (claimed through the progression save, so
+	// re-cooking on a revisit gives spectacle, not double riches).
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		constexpr int32 BlendBounty = 100;
+		if (Progression->ClaimOneTimeGrant(TEXT("Sauce.TempleBlend")))
+		{
+			Progression->GrantSauce(BlendBounty);
+		}
+	}
+
 	OnSauceComplete.Broadcast();
 }
 
