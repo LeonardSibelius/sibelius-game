@@ -2,6 +2,7 @@
 
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -85,6 +86,18 @@ void USlapComponent::DoSlap()
 			Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 
+		// Kill character movement BEFORE ragdolling. With the capsule's collision
+		// gone the movement component finds no floor and free-falls the capsule;
+		// bones without physics bodies are animated relative to that plummeting
+		// component transform, so the skin stretches between the simulated bodies
+		// (staying put in world space) and the falling capsule.
+		if (UCharacterMovementComponent* Move = Victim->GetCharacterMovement())
+		{
+			Move->StopMovementImmediately();
+			Move->DisableMovement();
+			Move->SetComponentTickEnabled(false);
+		}
+
 		// Pick which skeletal mesh to ragdoll. Prefer the default Character mesh
 		// when it has a physics asset; otherwise find a MetaHuman body mesh (a
 		// separate skeletal mesh component, not CharacterMesh0) that has one.
@@ -96,7 +109,12 @@ void USlapComponent::DoSlap()
 			Victim->GetComponents<USkeletalMeshComponent>(SkelMeshes);
 			for (USkeletalMeshComponent* SkelMesh : SkelMeshes)
 			{
-				if (SkelMesh && SkelMesh->GetPhysicsAsset() != nullptr)
+				// Never simulate a leader-pose FOLLOWER (MetaHuman face/torso/
+				// legs copy their bones from the body every frame) — physics
+				// fighting leader pose is what distorts the mesh. Only a leader
+				// with its own physics asset may ragdoll; followers ride along.
+				if (SkelMesh && SkelMesh->GetPhysicsAsset() != nullptr
+					&& SkelMesh->LeaderPoseComponent.Get() == nullptr)
 				{
 					PhysicsMesh = SkelMesh;
 					break;
