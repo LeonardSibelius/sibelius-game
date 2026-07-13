@@ -169,3 +169,6 @@ Content/ParagonGideon/
 #     content you want versioned, delete its line and commit it deliberately.
 Content/Helicopter/
 Content/Vehicles/
+
+# Modular Library Tower (Stormcrow, Fab) — the Carousel of Fates room kit
+Content/Library/
