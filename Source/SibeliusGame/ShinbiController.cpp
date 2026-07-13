@@ -8,11 +8,21 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "NavigationInvokerComponent.h" // forest roads: navmesh bubbles around agents
 #include "TimerManager.h"
 
 void AShinbiController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+
+	// Same navmesh bubble the Refusers get (see RefuserController::OnPossess).
+	if (InPawn && !InPawn->FindComponentByClass<UNavigationInvokerComponent>())
+	{
+		UNavigationInvokerComponent* Invoker =
+			NewObject<UNavigationInvokerComponent>(InPawn, TEXT("NavInvoker"));
+		Invoker->SetGenerationRadii(4000.f, 6000.f);
+		Invoker->RegisterComponent();
+	}
 
 	GetWorldTimerManager().SetTimer(
 		ThinkTimerHandle, this, &AShinbiController::Think,

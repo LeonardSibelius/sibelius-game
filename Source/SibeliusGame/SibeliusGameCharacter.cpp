@@ -28,12 +28,20 @@
 #include "TravelTransitionSubsystem.h"  // O-to-office travels through the transition cover
 #include "ProgressionSubsystem.h"       // FUN-1: the power gates + sauce cheats
 #include "SauceShop.h"                  // FUN-3: re-apply bought upgrades on spawn
+#include "NavigationInvokerComponent.h" // forest roads: navmesh bubbles around agents
 #include "SibeliusGame.h"
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+
+	// Navigation invoker: the huge World Partition forests generate navmesh
+	// only in bubbles around invokers (see DefaultEngine.ini) — the player
+	// carries one so AI goals at the player's feet are always on the mesh.
+	UNavigationInvokerComponent* NavInvoker =
+		CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavInvoker"));
+	NavInvoker->SetGenerationRadii(4000.f, 6000.f);
 	
 	// Create the first person mesh that will be viewed only by this character's owner
 	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("First Person Mesh"));
