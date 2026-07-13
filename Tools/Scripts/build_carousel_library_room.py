@@ -1,10 +1,17 @@
 # build_carousel_library_room.py — the Carousel of Fates gets a real room.
 #
-# Duplicates the Modular Library Tower demo scene (Content/Library, Fab) into
-# /Game/Maps/L_Carousel — vendor folder untouched — then gives it the Carousel
-# game mode, a PlayerStart, and the ACarouselMachine, and repoints the office
-# kitchen door at it. Idempotent: skips the duplicate if L_Carousel exists;
-# ensure-by-label for the actors.
+# HEADLESS PASS A (run editor-CLOSED via commandlet python — the live-editor
+# attempt crashed on world-teardown leaks, EditorServer.cpp:2524; in a
+# throwaway process a teardown grump after the save is harmless):
+#
+#   UnrealEditor-Cmd.exe SibeliusGame.uproject -run=pythonscript
+#       -script="Tools/Scripts/build_carousel_library_room.py" -stdout
+#
+# Duplicates the Modular Library Tower demo (Content/Library, Fab) into
+# /Game/Maps/L_Carousel — vendor folder untouched — quiets the pack's
+# editor-spawned book tilers (the 4k-actor weight), then wires the Carousel
+# game mode, a PlayerStart, and the ACarouselMachine, and SAVES. Pass B
+# (repoint_carousel_door.py) points the office door here. Idempotent.
 
 import unreal
 
@@ -25,30 +32,34 @@ eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 ues = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
 actors = eas.get_all_level_actors()
 
+# Quiet the pack's in-editor book spawners (listing's own advice: set
+# spawnBooksInEditor false; books respawn at play). Property name probed
+# defensively — BP-declared names can surface differently.
+tilers = 0
+for a in actors:
+    if "BookTiler" in a.get_class().get_name():
+        for prop in ("spawnBooksInEditor", "Spawn Books In Editor", "bSpawnBooksInEditor"):
+            try:
+                a.set_editor_property(prop, False)
+                a.rerun_construction_scripts()
+                tilers += 1
+                break
+            except Exception:
+                continue
+results.append("book tilers quieted: %d" % tilers)
 
-def find_by_class(cls_name):
-    for a in actors:
-        if a.get_class().get_name() == cls_name:
-            return a
-    return None
-
-
-def find_by_label(label):
-    for a in actors:
-        if a.get_actor_label() == label:
-            return a
-    return None
-
-
-# GameMode override (the build_carousel_test_map trick: WorldSettings is not a
-# "level actor" — fetch it by class).
+# GameMode override (WorldSettings is not a "level actor" — fetch by class).
 gm_cls = unreal.load_class(None, "/Script/SibeliusGame.CarouselGameMode")
 for ws in unreal.GameplayStatics.get_all_actors_of_class(ues.get_editor_world(), unreal.WorldSettings):
     ws.set_editor_property("default_game_mode", gm_cls)
 results.append("gamemode: CarouselGameMode")
 
-# PlayerStart: reuse the demo's if it has one, else spawn near the origin.
-start = find_by_class("PlayerStart")
+# PlayerStart: reuse the demo's if present, else spawn near the origin.
+start = None
+for a in eas.get_all_level_actors():
+    if a.get_class().get_name() == "PlayerStart":
+        start = a
+        break
 if start:
     results.append("playerstart: demo's own at %s" % start.get_actor_location())
 else:
@@ -57,8 +68,8 @@ else:
     start.set_actor_label("PlayerStart")
     results.append("playerstart: spawned at origin")
 
-# The machine, near the start so it can't be lost; Walt composes it properly by eye.
-if find_by_label("CarouselMachine"):
+# The machine, near the start so it can't be lost; Walt composes it by eye.
+if any(a.get_actor_label() == "CarouselMachine" for a in eas.get_all_level_actors()):
     results.append("machine: already placed")
 else:
     machine_cls = unreal.load_class(None, "/Script/SibeliusGame.CarouselMachine")
@@ -68,20 +79,6 @@ else:
     results.append("machine: placed at %s" % loc)
 
 unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).save_current_level()
-
-# --- 3) Repoint the office door ------------------------------------------------
-unreal.EditorLoadingAndSavingUtils.load_map("/Game/L_Office_v02")
-eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
-door = None
-for a in eas.get_all_level_actors():
-    if a.get_actor_label() == "CarouselDoor_Kitchen":
-        door = a
-        break
-if door:
-    door.set_editor_property("TargetLevelName", "L_Carousel")
-    unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).save_current_level()
-    results.append("door: repointed to L_Carousel")
-else:
-    results.append("door: NOT FOUND")
+results.append("SAVED")
 
 print("RESULT: " + " | ".join(results))
