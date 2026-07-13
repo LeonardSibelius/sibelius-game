@@ -1,13 +1,13 @@
 # set_carousel_arrival.py — Walt's arrival shot for the Carousel of Fates.
 #
-# Captured live from his PIE pawn (2026-07-12): stand at (6.4, 227.9, 208.7)
-# facing yaw 90 — bookshelves either side, the golden gallery dead ahead.
-# PlayerStart goes exactly there; the machine plants ~700 units down the view
-# axis, turned to face the arriving player. Machine keeps its own Z (floor).
+# Captured live from his PIE pawn (2026-07-12), then advanced one beat on his
+# next note ("stand where the cube is, push the cube ahead"): the start is now
+# 700 units down the carpet from the original capture, machine another 700
+# beyond, both on the yaw-90 view axis. Machine keeps its own Z (floor).
 
 import unreal
 
-ARRIVE = unreal.Vector(6.4, 227.9, 208.7)
+ARRIVE = unreal.Vector(6.4, 927.9, 208.7)
 ARRIVE_YAW = 90.0
 MACHINE_AHEAD = 700.0   # units down the +Y view axis
 
