@@ -89,6 +89,20 @@ void ASibeliusHUD::DrawPlayerLayer()
 	}
 	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
 
+	// Walt's ask: a launch hint, upper-left, sauce-green — the two keys that
+	// open everything else. Shows for the first stretch of each world, then
+	// fades (the M menu itself carries the full list). Suppressed while the
+	// dev overlay owns that corner.
+	constexpr double HintVisibleSeconds = 40.0;
+	constexpr double HintFadeSeconds = 5.0;
+	if (!bOverlayVisible && Now < HintVisibleSeconds + HintFadeSeconds)
+	{
+		const float HintAlpha = static_cast<float>(
+			FMath::Clamp((HintVisibleSeconds + HintFadeSeconds - Now) / HintFadeSeconds, 0.0, 1.0));
+		DrawText(TEXT("M for Status, J for Journal"),
+			FLinearColor(0.4f, 1.0f, 0.5f, 0.95f * HintAlpha), 16.0f, 24.0f, nullptr, OverlayTextScale);
+	}
+
 	// Sauce count, top-right — the one number the player always sees.
 	if (const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 	{
