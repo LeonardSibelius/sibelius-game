@@ -46,14 +46,19 @@ TSharedRef<SWidget> UGameMenuWidget::RebuildWidget()
 
 	SAssignNew(ContentBox, SVerticalBox);
 
+	// Walt's readability report: SBorder's default brush is translucent, so the
+	// tint barely darkened the scene. WhiteBrush is solid — the tint becomes the
+	// actual panel color.
 	return SNew(SBorder)
 		.HAlign(HAlign_Center)
 		.VAlign(VAlign_Center)
-		.BorderBackgroundColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.65f))
+		.BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+		.BorderBackgroundColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.55f))
 		[
 			SNew(SBorder)
 			.Padding(30.0f)
-			.BorderBackgroundColor(FLinearColor(0.02f, 0.02f, 0.03f, 0.96f))
+			.BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+			.BorderBackgroundColor(FLinearColor(0.03f, 0.04f, 0.05f, 0.94f))
 			[
 				SNew(SBox)
 				.WidthOverride(860.0f)
@@ -134,6 +139,7 @@ void UGameMenuWidget::BuildStatusTab(TSharedRef<SVerticalBox> Box)
 			.Text(FText::FromString(Text))
 			.Font(Font(Style, Size))
 			.ColorAndOpacity(Color)
+			.AutoWrapText(true)   // long explainer lines wrap instead of clipping
 		];
 	};
 

@@ -25,14 +25,18 @@ TSharedRef<SWidget> USauceShopWidget::RebuildWidget()
 	SAssignNew(OffersBox, SVerticalBox);
 	RefreshOffers();
 
+	// Solid WhiteBrush + tint = an actually-opaque panel (Walt's menu-readability
+	// report; the default border brush is translucent).
 	return SNew(SBorder)
 		.HAlign(HAlign_Center)
 		.VAlign(VAlign_Center)
-		.BorderBackgroundColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.6f))
+		.BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+		.BorderBackgroundColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.55f))
 		[
 			SNew(SBorder)
 			.Padding(28.0f)
-			.BorderBackgroundColor(FLinearColor(0.02f, 0.03f, 0.02f, 0.95f))
+			.BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
+			.BorderBackgroundColor(FLinearColor(0.02f, 0.04f, 0.03f, 0.94f))
 			[
 				SNew(SBox)
 				.WidthOverride(760.0f)
