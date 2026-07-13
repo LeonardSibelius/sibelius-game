@@ -1,9 +1,12 @@
 # HOW TO PLAY
 
-You are Leonard Sibelius. Your employer, Mrs. Hall, has locked this
-office down with red error-blocks and patrolling Refusers. The AI has
-offered you six powers — the six verbs of a software engineer — and the
-way out runs through all of them.
+You are Leonard Sibelius, a hybrid creature half human and half AI. To
+gain more powers, you must gather AI Sauce, the Sauce of All Knowledge.
+
+Your employer, Mrs. Hall, has locked this office down with red
+error-blocks and patrolling Refusers. The AI has offered you six powers
+— the six verbs of a software engineer — and the way out runs through
+all of them.
 
 Your goal: earn every power, blend what you need at the cauldron, and
 carry all six verbs to the cathedral for the Three-Part Synthesis.
