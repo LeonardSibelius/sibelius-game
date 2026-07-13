@@ -3,6 +3,8 @@
 #include "Curio.h"
 #include "CurioCollectionSubsystem.h"
 #include "ElsewhereSubsystem.h"
+#include "ProgressionSubsystem.h"   // FUN-5: curios pay Sauce
+#include "Engine/Engine.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Engine/StaticMesh.h"
@@ -132,6 +134,18 @@ bool ACurio::Collect(UObject* WorldContext)
 
 	bCollected = true;
 	Collection->CollectCurio(CurioId, PlaceTypeId);   // always succeeds for a known id (§1)
+
+	// FUN-5: the quiet payout. On-screen line only — no tally, no completion bar.
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->GrantSauce(SauceOnCollect);
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
+				FString::Printf(TEXT("+%d SAUCE  (total %d)"), SauceOnCollect, Progression->GetSauce()));
+		}
+	}
+
 	Destroy();
 	return true;
 }

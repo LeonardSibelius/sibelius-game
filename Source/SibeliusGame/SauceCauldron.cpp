@@ -1,7 +1,13 @@
-// SauceCauldron.cpp — P0 STUB (June 13, 2026). Source/SibeliusGame/ (RUNTIME module).
+// SauceCauldron.cpp — the Sauce shop (FUN-3, un-stubbed from the June 13 P0).
 
 #include "SauceCauldron.h"
+#include "SauceShopWidget.h"
+#include "ProgressionSubsystem.h"   // the temple blend's one-time bounty
+#include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Blueprint/UserWidget.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 
 ASauceCauldron::ASauceCauldron()
 {
@@ -9,6 +15,16 @@ ASauceCauldron::ASauceCauldron()
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
+
+	// FUN-8.1: the E-target. Invisible; sized/scaled in-editor to wrap the props
+	// that play the cauldron (the stove + pots). BookPickup's collision recipe.
+	InteractZone = CreateDefaultSubobject<UBoxComponent>(TEXT("InteractZone"));
+	InteractZone->SetupAttachment(SceneRoot);
+	InteractZone->SetBoxExtent(FVector(50.0f, 50.0f, 35.0f));
+	InteractZone->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	InteractZone->SetCollisionResponseToAllChannels(ECR_Block);
+	InteractZone->SetGenerateOverlapEvents(false);
+	InteractZone->SetCanEverAffectNavigation(false);
 
 	CauldronMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CauldronMesh"));
 	CauldronMesh->SetupAttachment(SceneRoot);
@@ -45,15 +61,49 @@ void ASauceCauldron::HandleComplete()
 
 	UE_LOG(LogTemp, Display, TEXT("[Sauce] The Sauce of All Knowledge is complete (BlendProgress=%.2f)."), BlendProgress);
 
-	// P5 TODO: set USibeliusProgressSubsystem::bSauceComplete and TriggerApparition(clue voice) here.
+	// Walt closed the June TODO: a completed blend PAYS — the temple ceremony
+	// grants a one-time sauce bounty (claimed through the progression save, so
+	// re-cooking on a revisit gives spectacle, not double riches).
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		constexpr int32 BlendBounty = 100;
+		if (Progression->ClaimOneTimeGrant(TEXT("Sauce.TempleBlend")))
+		{
+			Progression->GrantSauce(BlendBounty);
+		}
+	}
+
 	OnSauceComplete.Broadcast();
 }
 
-void ASauceCauldron::Interact_Implementation(AActor* /*Interactor*/)
+void ASauceCauldron::Interact_Implementation(AActor* Interactor)
 {
-	// P0: status read-out only. P3 will commit a held "true" book here.
-	UE_LOG(LogTemp, Display, TEXT("[Sauce] Interact: BlendProgress=%.2f, Complete=%s"),
-		BlendProgress, bComplete ? TEXT("true") : TEXT("false"));
+	// FUN-3: E opens the shop. Deterministic spend point — earned Sauce buys
+	// powers and upgrades at listed prices (the widget owns the catalog UI;
+	// FSauceShop owns the logic).
+	APawn* Pawn = Cast<APawn>(Interactor);
+	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+	if (!PC)
+	{
+		return;
+	}
+
+	if (!ShopWidget)
+	{
+		ShopWidget = CreateWidget<USauceShopWidget>(PC, USauceShopWidget::StaticClass());
+	}
+	if (ShopWidget && !ShopWidget->IsInViewport())
+	{
+		ShopWidget->AddToViewport(70);
+
+		// UIOnly + focus on the widget so Esc/E land in its NativeOnKeyDown and
+		// WASD stops moving the pawn (the Generate panel's pattern).
+		FInputModeUIOnly Mode;
+		Mode.SetWidgetToFocus(ShopWidget->TakeWidget());
+		PC->SetInputMode(Mode);
+		PC->SetShowMouseCursor(true);
+		ShopWidget->SetFocus();
+	}
 }
 
 FText ASauceCauldron::GetInteractionPrompt_Implementation() const

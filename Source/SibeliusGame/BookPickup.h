@@ -41,6 +41,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Pickup", meta = (ClampMin = "1"))
 	int32 Amount = 1;
 
+	// FUN-2: every book also pays a little Sauce — knowledge is the raw
+	// ingredient of the Sauce of All Knowledge, so collecting it feeds the
+	// wallet. Small and repeatable (books are finite, placed by hand).
+	UPROPERTY(EditAnywhere, Category = "Pickup", meta = (ClampMin = "0"))
+	int32 SauceOnCollect = 5;
+
 private:
 	bool bCollected = false; // re-entrancy guard (C3)
 	bool bInert = false;     // SIB-36: suspended while a branch is open

@@ -3,6 +3,7 @@
 #include "CarouselHUD.h"
 #include "CarouselMachine.h"
 #include "CarouselRunSubsystem.h"
+#include "ProgressionSubsystem.h"   // FUN-4: sauce balance + stake lines
 
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
@@ -51,6 +52,18 @@ void ACarouselHUD::DrawHUD()
 	UCarouselRunSubsystem* RunSub = GetRun();
 	if (!RunSub || !Canvas) { return; }
 
+	// Walt: the office reticle is ASibeliusHUD's; this room needs its own.
+	// Same "+" with a center gap (values mirror the office defaults).
+	{
+		const float CX = Canvas->ClipX * 0.5f, CY = Canvas->ClipY * 0.5f;
+		const float Arm = 10.0f, Thick = 2.0f, Gap = 3.0f;
+		const FLinearColor RetColor(1.0f, 1.0f, 1.0f, 0.85f);
+		DrawRect(RetColor, CX - Gap - Arm, CY - Thick * 0.5f, Arm, Thick);
+		DrawRect(RetColor, CX + Gap,       CY - Thick * 0.5f, Arm, Thick);
+		DrawRect(RetColor, CX - Thick * 0.5f, CY - Gap - Arm, Thick, Arm);
+		DrawRect(RetColor, CX - Thick * 0.5f, CY + Gap,       Thick, Arm);
+	}
+
 	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
 	const FLinearColor White(1, 1, 1), Gold(1.0f, 0.85f, 0.2f), Dim(0.7f, 0.7f, 0.7f), Green(0.4f, 1.0f, 0.4f);
 
@@ -75,7 +88,16 @@ void ACarouselHUD::DrawHUD()
 
 	const ECarouselRunPhase Phase = RunSub->GetPhase();
 
-	Line(TEXT("THE CAROUSEL OF FATES  (grey-box slice)"), Gold, 1.2f);
+	Line(TEXT("THE CAROUSEL OF FATES"), Gold, 1.2f);
+
+	// FUN-4: the player's real wallet, so the stakes read against something.
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (Progression)
+	{
+		Line(FString::Printf(TEXT("SAUCE: %d%s"), Progression->GetSauce(),
+			RunSub->IsRunStaked() ? TEXT("     (a stake is riding)") : TEXT("")), Green);
+	}
+
 	Line(FString::Printf(TEXT("Phase: %s     Round %d / %d"),
 		CarouselHUDNS::PhaseName(Phase), RunSub->GetRoundIndex() + 1, RunSub->GetNumRounds()), White);
 	Line(FString::Printf(TEXT("Chips this round: %d / %d      Spins left: %d"),
@@ -113,15 +135,33 @@ void ACarouselHUD::DrawHUD()
 	}
 
 	case ECarouselRunPhase::Won:
-		Line(TEXT("RUN CLEARED!   [N] new run"), Green, 1.2f);
+		Line(FString::Printf(TEXT("RUN CLEARED!   [E] new run (stakes %d sauce)"),
+			UCarouselRunSubsystem::EntryStake), Green, 1.2f);
 		break;
 
 	case ECarouselRunPhase::Lost:
-		Line(TEXT("Run over.   [N] new run"), Dim, 1.2f);
+		Line(FString::Printf(TEXT("Run over.   [E] new run (stakes %d sauce)"),
+			UCarouselRunSubsystem::EntryStake), Dim, 1.2f);
 		break;
 
 	default:
-		Line(TEXT("[N] start a run"), Gold);
+		// Walt's lost-refusal lesson: if the player can't afford the stake, the
+		// HUD says so PERMANENTLY — never a 4-second toast in a busy corner.
+		if (Progression && Progression->GetSauce() < UCarouselRunSubsystem::EntryStake)
+		{
+			Line(FString::Printf(TEXT("The Carousel demands %d SAUCE — you carry only %d."),
+				UCarouselRunSubsystem::EntryStake, Progression->GetSauce()), FLinearColor(1.0f, 0.6f, 0.25f), 1.2f);
+			Line(TEXT("Go earn more: books, curios, Refusers.   [O] back to office"), Dim);
+		}
+		else
+		{
+			Line(FString::Printf(TEXT("[E] start a run — stakes %d SAUCE. Win: +%d plus %d per banked coin. Lose: +%d per cleared round."),
+				UCarouselRunSubsystem::EntryStake, UCarouselRunSubsystem::WinPayout,
+				UCarouselRunSubsystem::SaucePerLeftoverCurrency, UCarouselRunSubsystem::ConsolationPerClearedRound), Gold);
+		}
 		break;
 	}
+
+	Y += 10.0f;
+	Line(TEXT("[O] back to office"), Dim);
 }

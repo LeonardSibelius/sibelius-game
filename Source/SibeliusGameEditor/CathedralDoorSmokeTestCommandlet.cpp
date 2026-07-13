@@ -141,8 +141,12 @@ int32 UCathedralDoorSmokeTestCommandlet::Main(const FString& Params)
 		// BlueprintNativeEvent thunk returns an EMPTY FText without this guard.
 		FEditorScriptExecutionGuard ScriptGuard;
 		const FText Prompt = IInteractable::Execute_GetInteractionPrompt(Door);
-		R.Check(Prompt.ToString() == TEXT("Enter the cathedral [E]"),
-			FString::Printf(TEXT("%s: prompt is the authored text (got \"%s\")"), *Door->GetName(), *Prompt.ToString()));
+		// PromptText is deliberately per-instance (CL10: the return door — and now
+		// FUN-4's Carousel door — say where THEY go), so the contract is "the thunk
+		// resolves a non-empty authored prompt", not one fixed string. EMPTY is the
+		// regression this guards (the ProcessEvent no-op above).
+		R.Check(!Prompt.IsEmpty(),
+			FString::Printf(TEXT("%s: prompt resolves non-empty (got \"%s\")"), *Door->GetName(), *Prompt.ToString()));
 	}
 
 	// --- 4) D1 travel guard, driven against a NewObject'd subsystem (BranchSmoke pattern).

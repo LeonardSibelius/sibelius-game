@@ -27,6 +27,8 @@ docs\sib-42-packaging-notes.md  (packaging + butler runbook)
 WHERE WE ARE (v0.5.4 shipped to itch; feat/forest-elsewhere MERGED to main)
 
 
+Build order #2 DONE — BP_Gideon_Refuser in Content/Characters, spawners repointed, Shinbi BlockAll, gates 12/12. Resume at build order #3 (forest nav).
+
 The Sauce Door shuffles a deck of 8 baked forests (L_Forest_01..08,
 Content/Maps). C++: ASauceDoor.TravelTargetLevels, random no-repeat pick.
 All 8 in MapsToCook. Smoke gates 12/12 green.
@@ -81,6 +83,7 @@ re-bake from L_Elsewhere_Dev (seeds are recorded in the worksheet).
 
 BUILD ORDER (agreed plan — de-risk order, cheapest reversible first)
 
+DECIDED: nav confined to the road corridor — demons and bodyguards are road-bound; off-road is sanctuary. Volumes identical across deck levels.
 
 Safety pass. git status (ParagonGideon must NOT appear); record
 license notes; confirm gates still 12/12 before touching anything.

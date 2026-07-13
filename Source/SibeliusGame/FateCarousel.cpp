@@ -77,6 +77,7 @@ void AFateCarousel::BuildCards()
 		{
 			UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Base, this);
 			MID->SetTextureParameterValue(TEXT("Sprite"), Tex);
+			MID->SetScalarParameterValue(TEXT("Glow"), CardGlow);   // per-instance brightness (Walt's library ring)
 			Card->SetMaterial(0, MID);
 		}
 		else

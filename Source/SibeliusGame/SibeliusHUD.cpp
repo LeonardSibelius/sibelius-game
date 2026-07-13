@@ -13,13 +13,59 @@
 #include "HatchLock.h"
 #include "RefactorableComponent.h"
 #include "GenerateComponent.h"                // Ch6 budget readout
+#include "ProgressionSubsystem.h"             // FUN-2: sauce + powers readout
 #include "SibeliusGameCharacter.h"            // IsAwayFromOffice() for the Back-to-Office hint
 
-bool ASibeliusHUD::bOverlayVisible = true; // default ON
+// FUN-8: default OFF now that the player has real surfaces (Tab menu, sauce
+// counter, banners). H brings it back — it's Walt's debug view, not the UI.
+bool ASibeliusHUD::bOverlayVisible = false;
 
 // Dev overlay text scale (2.0 = double size for Walt's 4K monitor). Single knob —
 // scales both the glyph size and the line spacing. Bump to taste.
 static constexpr float OverlayTextScale = 2.0f;
+
+void ASibeliusHUD::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// FUN-7: the subsystem outlives the HUD (GameInstance vs level), so both
+	// handles are released in EndPlay.
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		SauceChangedHandle = Progression->OnSauceChanged.AddUObject(this, &ASibeliusHUD::HandleSauceChanged);
+		PowerUnlockedHandle = Progression->OnPowerUnlocked.AddUObject(this, &ASibeliusHUD::HandlePowerUnlocked);
+	}
+}
+
+void ASibeliusHUD::EndPlay(const EEndPlayReason::Type Reason)
+{
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->OnSauceChanged.Remove(SauceChangedHandle);
+		Progression->OnPowerUnlocked.Remove(PowerUnlockedHandle);
+	}
+	Super::EndPlay(Reason);
+}
+
+void ASibeliusHUD::HandleSauceChanged(int32 /*NewTotal*/, int32 Delta)
+{
+	if (Delta != 0)
+	{
+		LastSauceDelta = Delta;
+		SauceFlashUntil = GetWorld() ? GetWorld()->GetTimeSeconds() + 2.5 : 0.0;
+	}
+}
+
+void ASibeliusHUD::HandlePowerUnlocked(EPowerVerb Verb)
+{
+	ShowBanner(FString::Printf(TEXT("%s  IS  YOURS"), *PowerVerbDisplayName(Verb)));
+}
+
+void ASibeliusHUD::ShowBanner(const FString& Text, float Seconds)
+{
+	BannerText = Text;
+	BannerUntil = GetWorld() ? GetWorld()->GetTimeSeconds() + Seconds : 0.0;
+}
 
 void ASibeliusHUD::DrawHUD()
 {
@@ -27,10 +73,75 @@ void ASibeliusHUD::DrawHUD()
 
 	DrawCrosshair();
 	DrawBackToOfficeHint();   // independent of the dev overlay toggle — a player affordance
+	DrawPlayerLayer();        // FUN-7: sauce count + ceremony banner, always on
 
 	if (bOverlayVisible)
 	{
 		DrawDevOverlay();
+	}
+}
+
+void ASibeliusHUD::DrawPlayerLayer()
+{
+	if (!Canvas)
+	{
+		return;
+	}
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+
+	// Walt's ask: a launch hint, upper-left, sauce-green — the two keys that
+	// open everything else. Shows for the first stretch of each world, then
+	// fades (the M menu itself carries the full list). Suppressed while the
+	// dev overlay owns that corner.
+	constexpr double HintVisibleSeconds = 40.0;
+	constexpr double HintFadeSeconds = 5.0;
+	if (!bOverlayVisible && Now < HintVisibleSeconds + HintFadeSeconds)
+	{
+		const float HintAlpha = static_cast<float>(
+			FMath::Clamp((HintVisibleSeconds + HintFadeSeconds - Now) / HintFadeSeconds, 0.0, 1.0));
+		DrawText(TEXT("M for Status, J for Journal"),
+			FLinearColor(0.4f, 1.0f, 0.5f, 0.95f * HintAlpha), 16.0f, 24.0f, nullptr, OverlayTextScale);
+	}
+
+	// Sauce count, top-right — the one number the player always sees.
+	if (const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		const FString SauceLine = FString::Printf(TEXT("SAUCE  %d"), Progression->GetSauce());
+		float W = 0.0f, H = 0.0f;
+		GetTextSize(SauceLine, W, H, nullptr, OverlayTextScale);
+		const float SauceX = Canvas->ClipX - W - 24.0f;
+		DrawText(SauceLine, FLinearColor(0.4f, 1.0f, 0.5f, 0.95f), SauceX, 24.0f, nullptr, OverlayTextScale);
+
+		// Walt's ask: a standing reminder of the menu key, tucked under the count.
+		// (M, not Tab — Slate eats Tab in PIE; see the character's key bindings.)
+		const FString MenuHint = TEXT("[M] status");
+		float HintW = 0.0f, HintH = 0.0f;
+		const float HintScale = OverlayTextScale * 0.7f;
+		GetTextSize(MenuHint, HintW, HintH, nullptr, HintScale);
+		DrawText(MenuHint, FLinearColor(0.7f, 0.7f, 0.7f, 0.7f),
+			Canvas->ClipX - HintW - 24.0f, 24.0f + H + 4.0f, nullptr, HintScale);
+
+		// The +N/-N delta floats under the hint, then fades.
+		if (Now < SauceFlashUntil && LastSauceDelta != 0)
+		{
+			const float Alpha = static_cast<float>(FMath::Clamp((SauceFlashUntil - Now) / 2.5, 0.0, 1.0));
+			const FString DeltaLine = FString::Printf(TEXT("%+d"), LastSauceDelta);
+			const FLinearColor DeltaColor = LastSauceDelta > 0
+				? FLinearColor(0.4f, 1.0f, 0.5f, Alpha)
+				: FLinearColor(1.0f, 0.55f, 0.3f, Alpha);
+			DrawText(DeltaLine, DeltaColor, SauceX, 24.0f + H + HintH + 8.0f, nullptr, OverlayTextScale);
+		}
+	}
+
+	// The ceremony banner — centered, above the reticle.
+	if (Now < BannerUntil && !BannerText.IsEmpty())
+	{
+		const float Scale = OverlayTextScale * 1.6f;
+		float W = 0.0f, H = 0.0f;
+		GetTextSize(BannerText, W, H, nullptr, Scale);
+		const float Alpha = static_cast<float>(FMath::Clamp((BannerUntil - Now) / 0.75, 0.0, 1.0)); // quick fade at the end
+		DrawText(BannerText, FLinearColor(0.55f, 0.95f, 1.0f, Alpha),
+			(Canvas->ClipX - W) * 0.5f, Canvas->ClipY * 0.32f, nullptr, Scale);
 	}
 }
 
@@ -148,7 +259,24 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(FString::Printf(TEXT("  refactored: %d/%d"), RefacOn, RefacTotal), White);
 	Line(FString::Printf(TEXT("  hatches locked: %d/%d"), HatchLocked, HatchTotal), White);
 	Line(FString::Printf(TEXT("  built sites: %d/%d"), SiteBuilt, SiteTotal), White);
-	Line(TEXT("  score: n/a"), Dim);
+
+	// --- FUN-2: sauce wallet + earned powers ---
+	if (const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Line(FString::Printf(TEXT("  SAUCE: %d"), Progression->GetSauce()),
+			FLinearColor(0.4f, 1.0f, 0.5f, 1.0f));
+		FString Powers;
+		for (uint8 i = 0; i < static_cast<uint8>(EPowerVerb::Count); ++i)
+		{
+			const EPowerVerb Verb = static_cast<EPowerVerb>(i);
+			if (Progression->IsUnlocked(Verb))
+			{
+				Powers += (Powers.IsEmpty() ? TEXT("") : TEXT("  ")) + PowerVerbDisplayName(Verb);
+			}
+		}
+		Line(FString::Printf(TEXT("  powers %d/%d: %s"),
+			Progression->NumUnlocked(), static_cast<int32>(EPowerVerb::Count), *Powers), White);
+	}
 
 	// --- GENERATE: live budget + catalog size (Ch6) ---
 	Line(TEXT("GENERATE"), Head);
@@ -167,6 +295,6 @@ void ASibeliusHUD::DrawDevOverlay()
 	Line(TEXT("  F slap    E interact    V vision"), White);
 	Line(TEXT("  R refactor    B build    G generate / ask"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
-	Line(TEXT("  J journal / story    H hide/show overlay    Q quit (press twice)"), White);
+	Line(TEXT("  M menu    J how to play    H hide/show overlay    Q quit (press twice)"), White);
 	Line(TEXT("  O back to office (in a wander world)"), White);
 }

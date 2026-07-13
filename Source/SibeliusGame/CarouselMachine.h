@@ -52,6 +52,7 @@ private:
 	void OnReroll();
 	void OnContinue();
 	void OnNewRun();
+	void OnLeave();   // FUN-4: O -> back to the office (the room's pawn has no character binding)
 
 	UFUNCTION()
 	void HandleSpinResolved(const FSpinResult& Result);

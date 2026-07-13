@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "ProgressionTypes.h"   // FUN-1: EPowerVerb for the input gates
 #include "SibeliusGameCharacter.generated.h"
 
 class UInputComponent;
@@ -23,6 +24,10 @@ class UGenerateRequestWidget;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
+
+/** FUN-6: fired whenever an UNLOCKED power verb is actually used (the gated
+    input handlers are the one chokepoint). The finale altar listens. */
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPowerVerbUsed, EPowerVerb);
 
 /**
  *  A basic first person character
@@ -71,6 +76,10 @@ class ASibeliusGameCharacter : public ACharacter
 	/** SIB-41: the Journal/story panel widget, created on first J press. */
 	UPROPERTY()
 	TObjectPtr<UJournalWidget> JournalWidget;
+
+	/** FUN-8: the Tab game menu (STATUS/CONTROLS), created on first Tab press. */
+	UPROPERTY()
+	TObjectPtr<class UGameMenuWidget> GameMenuWidget;
 
 	/** SIB-30 P1: the typed-request panel, created on first G press. */
 	UPROPERTY()
@@ -147,11 +156,42 @@ protected:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void DoInteract();
 
+	/** FUN-1 — the power gate. True when the verb is earned; otherwise shows a
+	    "not yet yours" line and returns false. EVERY power input routes through
+	    this (the components stay ungated so smoke tests drive them directly). */
+	bool CheckPowerUnlocked(EPowerVerb Verb) const;
+
+	/** FUN-1 gated input handlers — thin wrappers: gate, then forward to the
+	    component exactly as the old direct bindings did. */
+	void OnCodeVisionStarted();
+	void OnCodeVisionCompleted();   // ungated: releasing the key must always restore
+	void OnRefactorPressed();
+	void OnBuildPressed();          // the Compile chapter's verb
+	void OnBranchEnterPressed();    // Test-Drive verb (key 6)
+	void OnBranchMergePressed();    //                 (key 7)
+	void OnBranchDiscardPressed();  //                 (key 8)
+	void OnDeployPressed();         // Deploy verb     (key 0)
+
+public:
+	/** FUN-6: broadcast on every successful use of an unlocked verb. */
+	FOnPowerVerbUsed OnPowerVerbUsed;
+
+	/** FUN-1 dev cheats (console, backtick). GrantPower accepts loose names
+	    ("refactor", "test-drive"). ResetProgression wipes powers + sauce. */
+	UFUNCTION(Exec) void GrantPower(const FString& PowerName);
+	UFUNCTION(Exec) void GrantSauce(int32 Amount);
+	UFUNCTION(Exec) void UnlockAllPowers();
+	UFUNCTION(Exec) void ResetProgression();
+
+protected:
 	/** SIB-39: toggles the developer/HELP overlay (bound to H). */
 	void ToggleDevOverlay();
 
 	/** SIB-41: opens/closes the Journal story panel (bound to J). */
 	void ToggleJournal();
+
+	/** FUN-8: opens/closes the game menu (bound to Tab). */
+	void ToggleGameMenu();
 
 	/** SIB-30 P1: opens/closes the Generate typed-request panel (bound to G). */
 	void ToggleGenerate();
@@ -172,6 +212,10 @@ private:
 public:
 
 protected:
+
+	/** FUN-3: re-apply bought cauldron upgrades to this fresh pawn (components
+	    spawn with authored defaults; the purchase record lives in the save). */
+	virtual void BeginPlay() override;
 
 	/** Set up input action bindings */
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;

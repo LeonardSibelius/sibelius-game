@@ -25,6 +25,22 @@ class SIBELIUSGAME_API UCarouselRunSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
+	// FUN-4 (docs/FUN_PLAN.md Step 4) — the Carousel is where Sauce takes RISK.
+	// Entry stakes Sauce; a won run pays out big plus leftover bank conversion;
+	// a lost run pays a small consolation per cleared round (Raymond's rule R5:
+	// the floor of every interaction is "you still got something"). The cauldron
+	// stays deterministic; the gamble lives here, opt-in, currency-for-currency.
+	static constexpr int32 EntryStake = 50;
+	static constexpr int32 WinPayout = 150;
+	static constexpr int32 SaucePerLeftoverCurrency = 5;
+	static constexpr int32 ConsolationPerClearedRound = 10;
+
+	// Charge EntryStake sauce, then start. With NO progression subsystem (the
+	// bare grey-box slice) the run starts free — the slice stays portable.
+	// False = couldn't afford the stake (nothing starts, nothing spent).
+	UFUNCTION(BlueprintCallable, Category = "Carousel") bool StartStakedRun(int32 Seed);
+	UFUNCTION(BlueprintPure, Category = "Carousel") bool IsRunStaked() const { return bStakedRun; }
+
 	UFUNCTION(BlueprintCallable, Category = "Carousel") void StartRun(int32 Seed);
 	UFUNCTION(BlueprintCallable, Category = "Carousel") bool Spin();
 	UFUNCTION(BlueprintCallable, Category = "Carousel") bool Reroll();
@@ -49,4 +65,8 @@ public:
 
 private:
 	FCarouselRun Run;
+
+	// FUN-4: true while a sauce-staked run is unresolved; settled exactly once.
+	bool bStakedRun = false;
+	void SettleStake(bool bWon);
 };

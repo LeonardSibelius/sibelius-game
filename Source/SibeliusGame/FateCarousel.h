@@ -50,6 +50,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Fate Carousel")
 	float BobPeriodSeconds = 5.0f;
 
+	// Emissive strength pushed to the card MIDs' "Glow" param. Default matches
+	// M_fate_base's authored 5 (the cathedral altar look); Walt's library ring
+	// wants ~1-2 — at 5 the symbols white out in a dim room.
+	UPROPERTY(EditAnywhere, Category = "Fate Carousel", meta = (ClampMin = "0.1"))
+	float CardGlow = 5.0f;
+
 	// Orientation knobs: defaults stand the engine Plane (+Z normal) upright,
 	// face outward. If cards lie flat or face inward, fix HERE, not in code.
 	UPROPERTY(EditAnywhere, Category = "Fate Carousel")

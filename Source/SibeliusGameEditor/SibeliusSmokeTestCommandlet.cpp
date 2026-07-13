@@ -148,6 +148,12 @@ R.Warn(bHasBuildData,
 FString::Printf(TEXT("Static lighting build data present: %s (Lumen-dynamic => WARN is expected)"),
 bHasBuildData ? TEXT("yes") : TEXT("no")));
 
+// The exit-3 lesson (see ElsewhereSmokeTest / CompileSmokeTest): a commandlet
+// that initialised a world owes CleanupWorld on every exit path, or engine
+// shutdown aborts with exit 3 AFTER the assertions pass. This gate got away
+// without it until the FUN_PLAN actors (PowerGrant et al) joined the level.
+World->CleanupWorld();
+
 if (R.Failures == 0)
 {
 UE_LOG(LogSmokeTest, Display, TEXT("=== SMOKE TEST PASSED (CP1 green). ==="));
