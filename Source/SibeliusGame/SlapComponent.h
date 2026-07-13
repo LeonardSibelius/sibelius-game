@@ -43,6 +43,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	bool bRigidKnockback = true;
 
+	// Only Characters currently possessed by ARefuserController are slappable.
+	// Keeps the player from launching friendly Shinbi companions, and keeps
+	// the companions from slapping the player or each other.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
+	bool bOnlySlapRefusers = true;
+
 	// FUN-2: a connected slap pays a little Sauce, so standing up to a Refuser
 	// is rewarded, not just survived.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap", meta=(ClampMin="0"))

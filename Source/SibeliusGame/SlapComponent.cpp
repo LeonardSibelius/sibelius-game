@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 #include "ProgressionSubsystem.h"   // FUN-2: slaps pay Sauce
+#include "RefuserController.h"      // bOnlySlapRefusers target filter
 
 USlapComponent::USlapComponent()
 {
@@ -71,6 +72,11 @@ void USlapComponent::DoSlap()
 	{
 		ACharacter* Victim = Cast<ACharacter>(Hit.GetActor());
 		if (!Victim || Victim == OwnerPawn)
+		{
+			continue;
+		}
+
+		if (bOnlySlapRefusers && Cast<ARefuserController>(Victim->GetController()) == nullptr)
 		{
 			continue;
 		}
