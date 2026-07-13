@@ -55,28 +55,34 @@ void AShinbiCompanion::ApplyClothTuning()
 		return;
 	}
 
-	// The cloth simulation (and its interactor) is created lazily; if it isn't
-	// up yet at BeginPlay, retry once shortly after.
+	// The cloth simulation (and its per-cloth interactors) is created lazily —
+	// sometimes well after BeginPlay. Keep retrying until the damping actually
+	// lands on at least one cloth (a single retry provably loses the race:
+	// two of three placed Shinbis got tuned, the third kept flapping).
+	int32 Applied = 0;
 	UClothingSimulationInteractor* Sim = MeshComp->GetClothingSimulationInteractor();
 	USkeletalMesh* MeshAsset = MeshComp->GetSkeletalMeshAsset();
-	if (!Sim || !MeshAsset)
+	if (Sim && MeshAsset)
+	{
+		for (UClothingAssetBase* ClothAsset : MeshAsset->GetMeshClothingAssets())
+		{
+			if (!ClothAsset)
+			{
+				continue;
+			}
+			if (UChaosClothingInteractor* Cloth =
+				Cast<UChaosClothingInteractor>(Sim->GetClothingInteractor(ClothAsset->GetFName())))
+			{
+				Cloth->SetDamping(ClothDamping, ClothLocalDamping);
+				++Applied;
+			}
+		}
+	}
+
+	if (Applied == 0 && ++ClothTuneAttempts < 20)
 	{
 		GetWorldTimerManager().SetTimer(
 			ClothTuneRetryHandle, this, &AShinbiCompanion::ApplyClothTuning,
 			0.5f, /*bLoop=*/false);
-		return;
-	}
-
-	for (UClothingAssetBase* ClothAsset : MeshAsset->GetMeshClothingAssets())
-	{
-		if (!ClothAsset)
-		{
-			continue;
-		}
-		if (UChaosClothingInteractor* Cloth =
-			Cast<UChaosClothingInteractor>(Sim->GetClothingInteractor(ClothAsset->GetFName())))
-		{
-			Cloth->SetDamping(ClothDamping, ClothLocalDamping);
-		}
 	}
 }
