@@ -45,5 +45,4 @@ private:
 	void ApplyClothTuning();
 
 	FTimerHandle ClothTuneRetryHandle;
-	int32 ClothTuneAttempts = 0;
 };
