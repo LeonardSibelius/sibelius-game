@@ -185,43 +185,50 @@ FString ASibeliusHUD::ComputeObjective() const
 	const int32 Powers = Progression->NumUnlocked();
 	const int32 PowerCount = static_cast<int32>(EPowerVerb::Count);
 
-	// 1) The opening beat: books are the first thing a stranger can DO.
+	// 1) ALL POWERS outranks the early beats (Walt QA: a veteran whose keys
+	// were long spent got told to build a key while standing at the finale).
+	if (Powers >= PowerCount)
+	{
+		if (const USibeliusProgressSubsystem* Progress = GI->GetSubsystem<USibeliusProgressSubsystem>())
+		{
+			if (!Progress->bSlotPlayed)
+			{
+				// Location-aware: in the cathedral itself, say exactly what to do
+				// with the wall in your face.
+				FString Map = W->GetMapName();
+				Map.RemoveFromStart(W->StreamingLevelsPrefix);
+				if (Map.Contains(TEXT("Cathedral")))
+				{
+					return TEXT("Stand at the ALTAR (the low block before the wall) — it will call your six powers in turn; the wall falls when the rite completes");
+				}
+				return TEXT("You are whole. The cathedral altar awaits the Synthesis");
+			}
+		}
+		return FString();   // post-game free play: no nagging
+	}
+
+	// 2) The opening beat: books are the first thing a stranger can DO.
 	if (Books == 0 && Keys == 0 && Powers == 0)
 	{
 		return TEXT("Explore the office — collect the glowing books [E]");
 	}
 
-	// 2) Books in hand but no way to spend them yet: earn Compile.
+	// 3) Books in hand but no way to spend them yet: earn Compile.
 	if (Keys == 0 && !Progression->IsUnlocked(EPowerVerb::Compile))
 	{
 		return TEXT("A power is granted somewhere in this house — find COMPILE");
 	}
 
-	// 3) Compile earned: build the key from the books.
+	// 4) Compile earned: build the key from the books.
 	if (Keys == 0)
 	{
 		return TEXT("Take your books upstairs — face the build site and press [B] to build the key");
 	}
 
-	// 4) Key in hand, powers remain: the wider house opens.
-	if (Powers < PowerCount)
-	{
-		return FString::Printf(
-			TEXT("Your key opens the attic. Powers earned: %d of %d — seek the granting places"),
-			Powers, PowerCount);
-	}
-
-	// 5) Whole: the finale.
-	if (const USibeliusProgressSubsystem* Progress = GI->GetSubsystem<USibeliusProgressSubsystem>())
-	{
-		if (!Progress->bSlotPlayed)
-		{
-			return TEXT("You are whole. The cathedral altar awaits the Synthesis");
-		}
-	}
-
-	// 6) Post-game free play: no nagging.
-	return FString();
+	// 5) Key in hand, powers remain: the wider house opens.
+	return FString::Printf(
+		TEXT("Your key opens the attic. Powers earned: %d of %d — seek the granting places"),
+		Powers, PowerCount);
 }
 
 void ASibeliusHUD::DrawObjective()
