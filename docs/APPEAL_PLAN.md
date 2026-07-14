@@ -59,7 +59,7 @@ weirdness.
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | Download diet | ✅ **DONE on main, UNSHIPPED** — forests 8→4 (01/03/06/08; Poplar uncooked), 2K texture cap (`Config/DefaultDeviceProfiles.ini`), throne dragons deleted from the AI temple, stained glass deleted from the cathedral. Est. 9.7 → ~4–5 GB. **Next step: package v0.7.2 with `Tools/Scripts/package_v071.ps1` copied to v072 + version bump, verify size, butler push.** |
+| 1 | Download diet | ✅ **SHIPPED as v0.7.2 (2026-07-14)** — forests 8→4 (01/03/06/08; Poplar uncooked), 2K texture cap, dragons + stained glass deleted. **Real numbers: cook 18.6→12.1 GB, archive 10.6→8.1 GB (~7.4 GB download, −24%).** The cap halved characters/props; the holdout is **EasyBiomes (5.98→5.65 GB — foliage MESHES, textures already small; 4 forests = 4 biomes so the pack ships nearly whole).** **Queued follow-up ("two-forest experiment"):** keep 2 forests sharing a biome family, move the 2 orphaned curios into them (anchor placements to the existing curio actors), est. download ≈5 GB. |
 | 2 | First five minutes | ❌ not started |
 | 3 | Store-page story | ❌ not started (pure writing; Walt approves the words) |
 | 4 | GIFs | ❌ not started (capture in PIE or packaged build) |
