@@ -235,12 +235,15 @@ void ASibeliusHUD::DrawObjective()
 	{
 		return;
 	}
-	const float Scale = OverlayTextScale * 0.85f;
+	// Walt QA: the first cut was unreadable at 4K across a desk. Big, full-bright
+	// gold on a dark backing strip — a proper quest banner.
+	const float Scale = OverlayTextScale * 1.3f;
 	float W = 0.0f, H = 0.0f;
 	GetTextSize(Objective, W, H, nullptr, Scale);
-	// Gold, top-center — reads as "quest line" to anyone who has played anything.
-	DrawText(Objective, FLinearColor(1.0f, 0.85f, 0.35f, 0.9f),
-		(Canvas->ClipX - W) * 0.5f, 24.0f, nullptr, Scale);
+	const float X = (Canvas->ClipX - W) * 0.5f;
+	const float Y = 20.0f;
+	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.5f), X - 14.0f, Y - 6.0f, W + 28.0f, H + 12.0f);
+	DrawText(Objective, FLinearColor(1.0f, 0.85f, 0.35f, 1.0f), X, Y, nullptr, Scale);
 }
 
 void ASibeliusHUD::DrawWorldName()
@@ -268,12 +271,14 @@ void ASibeliusHUD::DrawWorldName()
 	else if (Map.Contains(TEXT("AI_Temple")))    { Name = TEXT("THE AI TEMPLE"); }
 	else                                          { return; }
 
-	const float Scale = OverlayTextScale * 0.6f;
+	const float Scale = OverlayTextScale * 0.9f;
 	float W = 0.0f, H = 0.0f;
 	GetTextSize(Name, W, H, nullptr, Scale);
-	// Small, dim, tucked under the objective line.
-	DrawText(Name, FLinearColor(0.85f, 0.8f, 0.65f, 0.6f),
-		(Canvas->ClipX - W) * 0.5f, 24.0f + H * 2.2f, nullptr, Scale);
+	// Under the objective banner, readable at 4K desk distance (Walt QA).
+	const float X = (Canvas->ClipX - W) * 0.5f;
+	const float Y = 20.0f + H * 2.6f;
+	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.4f), X - 10.0f, Y - 4.0f, W + 20.0f, H + 8.0f);
+	DrawText(Name, FLinearColor(0.9f, 0.85f, 0.7f, 0.95f), X, Y, nullptr, Scale);
 }
 
 void ASibeliusHUD::DrawBackToOfficeHint()
