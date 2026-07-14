@@ -172,3 +172,6 @@ Content/Vehicles/
 
 # Modular Library Tower (Stormcrow, Fab) — the Carousel of Fates room kit
 Content/Library/
+
+# BuildCookRun packaging logs (Tools/Scripts/package_v0*.ps1 output)
+pkg-v*.log
