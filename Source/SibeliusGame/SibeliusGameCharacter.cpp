@@ -189,6 +189,11 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// same as H/J/G/Q above. ReturnToOffice no-ops unless we're standing in a wander world,
 	// so the binding is harmless in the office / other levels.
 	PlayerInputComponent->BindKey(EKeys::O, IE_Pressed, this, &ASibeliusGameCharacter::ReturnToOffice);
+
+	// New Game: N, double-press confirm (Q-quit pattern) — the player-facing
+	// ResetProgression. (N is free here; the Carousel level's N lives on a
+	// different pawn.)
+	PlayerInputComponent->BindKey(EKeys::N, IE_Pressed, this, &ASibeliusGameCharacter::RequestNewGame);
 }
 
 
@@ -269,6 +274,38 @@ void ASibeliusGameCharacter::RequestQuit()
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(0xACE0F2, 2.0f, FColor::Yellow, TEXT("Press Q again to quit"));
+	}
+}
+
+void ASibeliusGameCharacter::RequestNewGame()
+{
+	const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+	if (Now - LastNewGamePressTime <= 3.0f)
+	{
+		LastNewGamePressTime = -100.0f;
+		if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+		{
+			Progression->ResetProgression();   // powers, sauce, claims, purchases + save file
+		}
+		if (BranchPIEComp)
+		{
+			BranchPIEComp->Debug_ClearDeploy();   // deployed world edits too — authored-clean
+		}
+		UTravelTransitionSubsystem::Travel(this, TEXT("L_Office_v02"));   // home, fresh
+		return;
+	}
+	LastNewGamePressTime = Now;
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			HUD->ShowBanner(TEXT("NEW GAME — press N again to ERASE ALL PROGRESS"), 3.0f);
+			return;
+		}
+	}
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(0xACE0F3, 3.0f, FColor::Orange, TEXT("NEW GAME - press N again to ERASE ALL PROGRESS"));
 	}
 }
 

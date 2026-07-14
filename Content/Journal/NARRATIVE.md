@@ -1,6 +1,6 @@
 ## Controls
 
-F Slap  E interact  V vision  R refactor  B build  6 enter  7 merge  8 discard
+F Slap  E interact  V vision  R refactor  C compile  6 enter  7 merge  8 discard
 
 ## Plot
 

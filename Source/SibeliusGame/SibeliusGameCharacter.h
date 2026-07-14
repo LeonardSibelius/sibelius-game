@@ -206,8 +206,13 @@ protected:
 	    anywhere else, so the same key is harmless in the office / other levels. */
 	void ReturnToOffice();
 
+	/** N N: the player-facing New Game (Walt: no tilde for players) — double-press
+	    confirm, wipes progression + the deploy save, travels to a fresh office. */
+	void RequestNewGame();
+
 private:
 	float LastQuitPressTime = -100.0f;   // double-press confirm window
+	float LastNewGamePressTime = -100.0f;   // N N confirm window
 
 public:
 

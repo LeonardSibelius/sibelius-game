@@ -48,7 +48,7 @@ walk into it and the power is yours, forever. In order:
   REFACTOR (R) — reshape what you're looking at. Tagged objects shrink,
     fade, or move aside.
 
-  COMPILE (B) — build at a build site, if you carry the books it needs.
+  COMPILE (C) — build at a build site, if you carry the books it needs.
     The key to the attic is built, not found.
 
   TEST-DRIVE (6 / 7 / 8) — branch reality (6), then merge what worked
@@ -94,7 +94,7 @@ nothing. It is a gift. Enjoy it.
   F                  slap
   V (hold)           Code Vision
   R                  Refactor
-  B                  Build / Compile
+  C                  Compile (build at a build site)
   6 7 8              branch / merge / discard
   0                  Deploy
   G                  Generate

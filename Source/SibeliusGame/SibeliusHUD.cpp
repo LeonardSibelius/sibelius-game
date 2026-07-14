@@ -189,22 +189,22 @@ FString ASibeliusHUD::ComputeObjective() const
 	// were long spent got told to build a key while standing at the finale).
 	if (Powers >= PowerCount)
 	{
-		if (const USibeliusProgressSubsystem* Progress = GI->GetSubsystem<USibeliusProgressSubsystem>())
+		// Walt QA #2: gate on the DURABLE save claim, not the session flag —
+		// the session flag sent a finished player to re-perform the rite at a
+		// rightly-silent altar (and to hurdle the altar block).
+		if (!Progression->HasClaimedGrant(TEXT("Finale.Synthesis")))
 		{
-			if (!Progress->bSlotPlayed)
+			// Location-aware: in the cathedral itself, say exactly what to do
+			// with the wall in your face.
+			FString Map = W->GetMapName();
+			Map.RemoveFromStart(W->StreamingLevelsPrefix);
+			if (Map.Contains(TEXT("Cathedral")))
 			{
-				// Location-aware: in the cathedral itself, say exactly what to do
-				// with the wall in your face.
-				FString Map = W->GetMapName();
-				Map.RemoveFromStart(W->StreamingLevelsPrefix);
-				if (Map.Contains(TEXT("Cathedral")))
-				{
-					return TEXT("Stand at the ALTAR (the low block before the wall) — it will call your six powers in turn; the wall falls when the rite completes");
-				}
-				return TEXT("You are whole. The cathedral altar awaits the Synthesis");
+				return TEXT("Stand at the ALTAR (the low block before the wall) and USE your six powers in turn — the wall falls when the rite completes");
 			}
+			return TEXT("All six powers are yours — the cathedral altar awaits the Synthesis");
 		}
-		return FString();   // post-game free play: no nagging
+		return FString();   // Synthesis done: free play, no nagging
 	}
 
 	// 2) The opening beat: books are the first thing a stranger can DO.
@@ -222,7 +222,7 @@ FString ASibeliusHUD::ComputeObjective() const
 	// 4) Compile earned: build the key from the books.
 	if (Keys == 0)
 	{
-		return TEXT("Take your books upstairs — face the build site and press [B] to build the key");
+		return TEXT("Take your books upstairs — face the build site and press [C] to compile the key");
 	}
 
 	// 5) Key in hand, powers remain: the wider house opens.
@@ -436,7 +436,7 @@ void ASibeliusHUD::DrawDevOverlay()
 	// --- CONTROLS: every binding, for reference ---
 	Line(TEXT("CONTROLS"), Head);
 	Line(TEXT("  F slap    E interact    V vision"), White);
-	Line(TEXT("  R refactor    B build    G generate / ask"), White);
+	Line(TEXT("  R refactor    C compile    G generate / ask"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
 	Line(TEXT("  M menu    J how to play    H hide/show overlay    Q quit (press twice)"), White);
 	Line(TEXT("  O back to office (in a wander world)"), White);
