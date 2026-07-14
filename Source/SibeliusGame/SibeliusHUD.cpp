@@ -15,6 +15,10 @@
 #include "GenerateComponent.h"                // Ch6 budget readout
 #include "ProgressionSubsystem.h"             // FUN-2: sauce + powers readout
 #include "SibeliusGameCharacter.h"            // IsAwayFromOffice() for the Back-to-Office hint
+#include "HallAlarmSubsystem.h"               // APPEAL-2: refuser-wave objective override
+#include "RefuserController.h"                // APPEAL-2: live-refuser check
+#include "SibeliusProgressSubsystem.h"        // APPEAL-2: bSlotPlayed endgame state
+#include "GameFramework/Character.h"
 
 // FUN-8: default OFF now that the player has real surfaces (Tab menu, sauce
 // counter, banners). H brings it back — it's Walt's debug view, not the UI.
@@ -74,6 +78,8 @@ void ASibeliusHUD::DrawHUD()
 	DrawCrosshair();
 	DrawBackToOfficeHint();   // independent of the dev overlay toggle — a player affordance
 	DrawPlayerLayer();        // FUN-7: sauce count + ceremony banner, always on
+	DrawObjective();          // APPEAL-2: the one guided goal, top-center
+	DrawWorldName();          // APPEAL extra: which world am I in
 
 	if (bOverlayVisible)
 	{
@@ -143,6 +149,131 @@ void ASibeliusHUD::DrawPlayerLayer()
 		DrawText(BannerText, FLinearColor(0.55f, 0.95f, 1.0f, Alpha),
 			(Canvas->ClipX - W) * 0.5f, Canvas->ClipY * 0.32f, nullptr, Scale);
 	}
+}
+
+FString ASibeliusHUD::ComputeObjective() const
+{
+	// APPEAL_PLAN point 2: a stranger should always know the ONE next thing.
+	// Derived from live state each frame — first unmet beat wins.
+	const UWorld* W = GetWorld();
+	const UGameInstance* GI = W ? W->GetGameInstance() : nullptr;
+	APawn* Pawn = PlayerOwner ? PlayerOwner->GetPawn() : nullptr;
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	const UInventoryComponent* Inv = Pawn ? Pawn->FindComponentByClass<UInventoryComponent>() : nullptr;
+	if (!W || !GI || !Progression)
+	{
+		return FString();
+	}
+
+	// 0) A refuser wave overrides everything — teach the slap under pressure.
+	if (const UHallAlarmSubsystem* Alarm = GI->GetSubsystem<UHallAlarmSubsystem>())
+	{
+		if (Alarm->IsAlarmTriggered())
+		{
+			for (TActorIterator<ACharacter> It(const_cast<UWorld*>(W)); It; ++It)
+			{
+				if (Cast<ARefuserController>(It->GetController()))
+				{
+					return TEXT("Mrs. Hall's Refusers are loose — get close and SLAP them [F]");
+				}
+			}
+		}
+	}
+
+	const int32 Books = Inv ? Inv->GetCount(EResourceType::Book) : 0;
+	const int32 Keys  = Inv ? Inv->GetCount(EResourceType::Key) : 0;
+	const int32 Powers = Progression->NumUnlocked();
+	const int32 PowerCount = static_cast<int32>(EPowerVerb::Count);
+
+	// 1) The opening beat: books are the first thing a stranger can DO.
+	if (Books == 0 && Keys == 0 && Powers == 0)
+	{
+		return TEXT("Explore the office — collect the glowing books [E]");
+	}
+
+	// 2) Books in hand but no way to spend them yet: earn Compile.
+	if (Keys == 0 && !Progression->IsUnlocked(EPowerVerb::Compile))
+	{
+		return TEXT("A power is granted somewhere in this house — find COMPILE");
+	}
+
+	// 3) Compile earned: build the key from the books.
+	if (Keys == 0)
+	{
+		return TEXT("Take your books upstairs — face the build site and press [B] to build the key");
+	}
+
+	// 4) Key in hand, powers remain: the wider house opens.
+	if (Powers < PowerCount)
+	{
+		return FString::Printf(
+			TEXT("Your key opens the attic. Powers earned: %d of %d — seek the granting places"),
+			Powers, PowerCount);
+	}
+
+	// 5) Whole: the finale.
+	if (const USibeliusProgressSubsystem* Progress = GI->GetSubsystem<USibeliusProgressSubsystem>())
+	{
+		if (!Progress->bSlotPlayed)
+		{
+			return TEXT("You are whole. The cathedral altar awaits the Synthesis");
+		}
+	}
+
+	// 6) Post-game free play: no nagging.
+	return FString();
+}
+
+void ASibeliusHUD::DrawObjective()
+{
+	if (!Canvas || bOverlayVisible)
+	{
+		return;   // the dev overlay owns the screen when visible
+	}
+	const FString Objective = ComputeObjective();
+	if (Objective.IsEmpty())
+	{
+		return;
+	}
+	const float Scale = OverlayTextScale * 0.85f;
+	float W = 0.0f, H = 0.0f;
+	GetTextSize(Objective, W, H, nullptr, Scale);
+	// Gold, top-center — reads as "quest line" to anyone who has played anything.
+	DrawText(Objective, FLinearColor(1.0f, 0.85f, 0.35f, 0.9f),
+		(Canvas->ClipX - W) * 0.5f, 24.0f, nullptr, Scale);
+}
+
+void ASibeliusHUD::DrawWorldName()
+{
+	if (!Canvas)
+	{
+		return;
+	}
+	const ASibeliusGameCharacter* PlayerChar = Cast<ASibeliusGameCharacter>(GetOwningPawn());
+	if (!PlayerChar || !PlayerChar->IsAwayFromOffice())
+	{
+		return;   // the office needs no nameplate
+	}
+
+	FString Map = GetWorld() ? GetWorld()->GetMapName() : FString();
+	Map.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);   // strip the PIE prefix
+
+	FString Name;
+	if      (Map.Contains(TEXT("Forest_01")))    { Name = TEXT("THE FIRST FOREST"); }
+	else if (Map.Contains(TEXT("Forest_03")))    { Name = TEXT("THE THIRD FOREST"); }
+	else if (Map.Contains(TEXT("Forest_06")))    { Name = TEXT("THE SIXTH FOREST"); }
+	else if (Map.Contains(TEXT("Forest_08")))    { Name = TEXT("THE EIGHTH FOREST"); }
+	else if (Map.Contains(TEXT("Poplar")))       { Name = TEXT("THE POPLAR FOREST"); }
+	else if (Map.Contains(TEXT("Cathedral")))    { Name = TEXT("THE CATHEDRAL"); }
+	else if (Map.Contains(TEXT("AI_Temple")))    { Name = TEXT("THE AI TEMPLE"); }
+	else                                          { return; }
+
+	const float Scale = OverlayTextScale * 0.6f;
+	float W = 0.0f, H = 0.0f;
+	GetTextSize(Name, W, H, nullptr, Scale);
+	// Small, dim, tucked under the objective line.
+	DrawText(Name, FLinearColor(0.85f, 0.8f, 0.65f, 0.6f),
+		(Canvas->ClipX - W) * 0.5f, 24.0f + H * 2.2f, nullptr, Scale);
 }
 
 void ASibeliusHUD::DrawBackToOfficeHint()

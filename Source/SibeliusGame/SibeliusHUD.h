@@ -59,6 +59,14 @@ private:
 
 	// --- FUN-7: player-facing layer ---
 	void DrawPlayerLayer();
+
+	// APPEAL_PLAN point 2: ONE guided objective line (top-center), derived
+	// entirely from existing state — no new save fields, no triggers.
+	void DrawObjective();
+	FString ComputeObjective() const;
+
+	// APPEAL_PLAN extra: which world am I in (forest name etc., small, top-center).
+	void DrawWorldName();
 	void HandleSauceChanged(int32 NewTotal, int32 Delta);
 	void HandlePowerUnlocked(EPowerVerb Verb);
 
