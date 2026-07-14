@@ -42,12 +42,13 @@ UGameViewportClient* UTravelTransitionSubsystem::GetViewport() const
 	return GI ? GI->GetGameViewportClient() : nullptr;
 }
 
-void UTravelTransitionSubsystem::Travel(const UObject* WorldContext, FName LevelName)
+void UTravelTransitionSubsystem::Travel(const UObject* WorldContext, FName LevelName, FName ArrivalTag)
 {
 	UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::ReturnNull) : nullptr;
 	UGameInstance* GI = World ? World->GetGameInstance() : nullptr;
 	if (UTravelTransitionSubsystem* Sub = GI ? GI->GetSubsystem<UTravelTransitionSubsystem>() : nullptr)
 	{
+		Sub->PendingArrivalTag = ArrivalTag;   // every travel overwrites (None clears) — no stale leaks
 		Sub->BeginTravel(LevelName);
 		return;
 	}
@@ -57,6 +58,13 @@ void UTravelTransitionSubsystem::Travel(const UObject* WorldContext, FName Level
 	{
 		UGameplayStatics::OpenLevel(World, LevelName);
 	}
+}
+
+FName UTravelTransitionSubsystem::ConsumeArrivalTag()
+{
+	const FName Tag = PendingArrivalTag;
+	PendingArrivalTag = NAME_None;
+	return Tag;
 }
 
 void UTravelTransitionSubsystem::BeginTravel(FName LevelName)

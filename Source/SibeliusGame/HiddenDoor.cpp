@@ -232,8 +232,9 @@ void AHiddenDoor::Interact_Implementation(AActor* Interactor)
 		return;
 	}
 
-	UE_LOG(LogHiddenDoor, Display, TEXT("[%s] the wall opens: travel to %s"), *GetName(), *TravelTargetLevel.ToString());
-	UTravelTransitionSubsystem::Travel(this, TravelTargetLevel);
+	UE_LOG(LogHiddenDoor, Display, TEXT("[%s] the wall opens: travel to %s (doorstep %s)"),
+		*GetName(), *TravelTargetLevel.ToString(), *ArrivalTag.ToString());
+	UTravelTransitionSubsystem::Travel(this, TravelTargetLevel, ArrivalTag);
 }
 
 bool AHiddenDoor::RunCollisionSelfTest()

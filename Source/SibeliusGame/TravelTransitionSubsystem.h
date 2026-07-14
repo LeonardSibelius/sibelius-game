@@ -29,8 +29,15 @@ public:
 
 	/** THE single travel entry point for every door / OpenLevel. Resolves the subsystem from
 	    any world-context object and shows the cover, then OpenLevel; falls back to a direct
-	    OpenLevel if there is no game instance / viewport (headless / commandlet). */
-	static void Travel(const UObject* WorldContext, FName LevelName);
+	    OpenLevel if there is no game instance / viewport (headless / commandlet).
+	    ArrivalTag (optional): which doorstep to arrive at — matched against
+	    APlayerStart.PlayerStartTag by a destination GameMode that consumes it (the library's
+	    ACarouselGameMode does; two doors, two doorsteps). Stashed on EVERY travel (None
+	    overwrites), so a stale tag can never leak into a later, untagged travel. */
+	static void Travel(const UObject* WorldContext, FName LevelName, FName ArrivalTag = NAME_None);
+
+	/** Read-and-clear the stashed arrival doorstep (destination GameMode calls this once). */
+	FName ConsumeArrivalTag();
 
 	/** Destination level name -> themed context line, shared by the cover and the MoviePlayer
 	    loading screen so both read the same. Substring match (PIE-prefix safe). */
@@ -50,6 +57,7 @@ private:
 	TSharedPtr<STravelShimmerScreen> CoverWidget;
 	bool bTravelInProgress = false;
 	FName PendingLevelName;
+	FName PendingArrivalTag;   // doorstep for the NEXT arrival; consumed by the destination GameMode
 	FTimerHandle OpenLevelTimer;
 	FDelegateHandle PostLoadMapHandle;
 	FTSTicker::FDelegateHandle WatchdogHandle;

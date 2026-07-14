@@ -45,6 +45,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Hidden Door|Travel")
 	FName TravelTargetLevel = NAME_None;   // e.g. L_Stacks; None = no travel
 
+	// Which doorstep to arrive at in the target level: matched against
+	// APlayerStart.PlayerStartTag by a GameMode that consumes it (the library's
+	// ACarouselGameMode does — kitchen door lands at the carousel, attic door at
+	// the slot shrine). None = the level's default start.
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Travel")
+	FName ArrivalTag = NAME_None;
+
 	UPROPERTY(EditAnywhere, Category = "Hidden Door|Travel")
 	FText TravelPromptText = NSLOCTEXT("Sibelius", "HiddenDoorTravelPrompt", "Enter the Stacks [E]");
 

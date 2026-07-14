@@ -17,4 +17,10 @@ class SIBELIUSGAME_API ACarouselGameMode : public AGameModeBase
 
 public:
 	ACarouselGameMode();
+
+	/** Two doors, two doorsteps: the kitchen door arrives at the carousel, the attic
+	    door at the slot shrine. The travelling door stashes an arrival tag on
+	    UTravelTransitionSubsystem; spawn at the APlayerStart whose PlayerStartTag
+	    matches it (consume-once), else fall back to the default pick. */
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 };
