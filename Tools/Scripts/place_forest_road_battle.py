@@ -108,7 +108,13 @@ else:
         template.set_actor_scale3d(want_scale)
 
         # --- combatants ------------------------------------------------------
-        anchor = find("BP_WorldAnchors1") or find("PlayerStart")
+        anchor = None
+        for a in actors:
+            if "WorldAnchors" in a.get_actor_label():
+                anchor = a
+                break
+        if not anchor:
+            anchor = find("PlayerStart")
         if not anchor:
             payload["notes"].append("no anchor/PlayerStart; skipping characters")
         else:
