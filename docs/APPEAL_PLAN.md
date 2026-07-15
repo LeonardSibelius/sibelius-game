@@ -63,7 +63,7 @@ weirdness.
 | 2 | First five minutes | ✅ **DONE (`d73ed1e`…`355d29f`)** — gold objective banner (readable at 4K, dark backing), state-derived chain (books → find COMPILE → compile key [C] → powers N/6 → cathedral Synthesis guidance; refuser-slap override; gates on the DURABLE Finale.Synthesis claim; silent post-game) + world nameplates. **Bonus shipped in the same arc:** Compile key is now **C** (was B; every text surface updated), **N N = player-facing New Game** (double-press confirm; full wipe + travel home — also the stranger-playtest button), and the finale altar wears **SM_Altar_Main_Marble** (from the cathedral's own pack, zero added download). Remaining nice-to-have: a full fresh-save walkthrough of every beat by a rested human. |
 | 3 | Store-page story | 📝 **DRAFTED** in `docs/ITCH_PAGE.md` — Walt edits the words + pastes onto the itch page (zero tokens). |
 | 4 | GIFs | 📝 **Shot list drafted** in `docs/ITCH_PAGE.md` — Walt records (Win+Alt+R), zero tokens. |
-| 5 | Stats / daily carousel | ❌ not started (stats fields → ProgressionState additive fields; STATUS-menu rows) |
+| 5 | Stats / daily carousel | 🟡 **Stats page DONE (`f0927b7`)** — RECORDS tab in the M menu: slaps, lifetime sauce, books, curios, chapters, carousel runs/wins/best round/biggest spin. `FProgressionState.LifetimeStats` map + `SibeliusStats::` keys; new stat = one FName + one bump line. Daily carousel (fixed-seed daily run) still open. |
 | 6 | Slap juice | ❌ not started (`USlapComponent::DoSlap` is the one code point; camera shake needs a C++ `UCameraShakeBase` subclass) |
 
 ## Milestone: the Carousel room stands on its own (2026-07-14 evening, `caae729`)
