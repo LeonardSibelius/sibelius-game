@@ -31,6 +31,21 @@ ACurio::ACurio()
 		Mesh->SetRelativeScale3D(FVector(0.6f));   // reads as treasure alone in the empty hall
 	}
 
+	// The beacon — a tall emissive pillar (engine cylinder) so the curio is
+	// findable across a whole forest, not just from the next clearing. Sized and
+	// placed at BeginPlay; tinted alongside the orb in Configure.
+	Beacon = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Beacon"));
+	Beacon->SetupAttachment(Mesh);
+	Beacon->SetCollisionEnabled(ECollisionEnabled::NoCollision);   // never blocks the interact trace
+	Beacon->SetCanEverAffectNavigation(false);
+	Beacon->SetCastShadow(false);
+	Beacon->SetUsingAbsoluteScale(true);
+	Beacon->SetUsingAbsoluteLocation(true);
+	if (UStaticMesh* Cylinder = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder")))
+	{
+		Beacon->SetStaticMesh(Cylinder);
+	}
+
 	// The glow — reads as "the one collectable" without an authored emissive material.
 	Glow = CreateDefaultSubobject<UPointLightComponent>(TEXT("Glow"));
 	Glow->SetupAttachment(Mesh);
@@ -47,6 +62,15 @@ ACurio::ACurio()
 void ACurio::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Stand the beacon up from the curio's world position (absolute scale +
+	// location — see header). Runs for every curio, hand-placed or built.
+	if (Beacon)
+	{
+		Beacon->SetVisibility(bShowBeacon);
+		Beacon->SetWorldScale3D(FVector(BeaconWidth / 100.f, BeaconWidth / 100.f, BeaconHeight / 100.f));
+		Beacon->SetWorldLocation(GetActorLocation() + FVector(0.f, 0.f, BeaconHeight * 0.5f));
+	}
 
 	// Builder-configured curios (the cathedral) already have an identity — leave them be.
 	if (!CurioId.IsNone())
@@ -93,12 +117,17 @@ void ACurio::Configure(FName InCurioId, FName InPlaceTypeId, FLinearColor GlowCo
 
 	// Make the payoff object read as treasure: an emissive material tinted to the curio
 	// color so it glows (and never shows the missing-material checker). If the base
-	// material can't load (kit absent), the mesh keeps its valid default material.
-	if (Mesh)
+	// material can't load (kit absent), the meshes keep their valid default materials.
+	// The beacon pillar wears the same tint so the light on the horizon IS the curio.
+	if (UMaterialInterface* Base = GlowMaterial.LoadSynchronous())
 	{
-		if (UMaterialInterface* Base = GlowMaterial.LoadSynchronous())
+		for (UStaticMeshComponent* Comp : { Mesh.Get(), Beacon.Get() })
 		{
-			if (UMaterialInstanceDynamic* MID = Mesh->CreateDynamicMaterialInstance(0, Base))
+			if (!Comp)
+			{
+				continue;
+			}
+			if (UMaterialInstanceDynamic* MID = Comp->CreateDynamicMaterialInstance(0, Base))
 			{
 				MID->SetVectorParameterValue(TEXT("Emissive"), GlowColor);
 				MID->SetVectorParameterValue(TEXT("BaseColor"), GlowColor);

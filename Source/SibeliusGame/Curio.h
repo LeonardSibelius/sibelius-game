@@ -65,6 +65,16 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Curio") TObjectPtr<UStaticMeshComponent> Mesh;
 	UPROPERTY(VisibleAnywhere, Category = "Curio") TObjectPtr<UPointLightComponent> Glow;
 
+	// APPEAL: the forests are big and a knee-high orb hides in them (Walt wandered
+	// whole forests without spotting one). The open-world convention: a vertical
+	// light pillar over the treetops marks the spot from anywhere — same emissive
+	// material, same mood tint as the orb. Absolute-scaled/-located so per-curio
+	// display-mesh swaps can't stretch or sink it.
+	UPROPERTY(VisibleAnywhere, Category = "Curio") TObjectPtr<UStaticMeshComponent> Beacon;
+	UPROPERTY(EditAnywhere, Category = "Curio") bool bShowBeacon = true;
+	UPROPERTY(EditAnywhere, Category = "Curio") float BeaconHeight = 6000.f;   // cm — clears the treetops
+	UPROPERTY(EditAnywhere, Category = "Curio") float BeaconWidth = 90.f;      // cm — readable at range
+
 	// Emissive base for the glowing-relic look (tinted to the curio color in Configure).
 	// Defaults to the Server Cathedral kit's emissive material; overridable in editor.
 	// If it fails to load (kit absent), the mesh keeps its valid default material — a
