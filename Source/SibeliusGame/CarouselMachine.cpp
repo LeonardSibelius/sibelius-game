@@ -32,15 +32,25 @@ void ACarouselMachine::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Placeholder cube meshes (engine assets — no project art dependency).
+	// Placeholder cube meshes (engine assets — no project art dependency)…
+	// dressed in the same black marble as Celestial Fortune's cabinet (Walt:
+	// the two fate machines should look like siblings, not shipping crates).
 	if (UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
 	{
-		if (Body)  { Body->SetStaticMesh(Cube);  Body->SetRelativeScale3D(FVector(1.0f, 1.5f, 2.0f)); }
+		UMaterialInterface* Marble = LoadObject<UMaterialInterface>(nullptr,
+			TEXT("/Game/StainedGlass3D/Materials/M_BlackMarbleFloor.M_BlackMarbleFloor"));
+		if (Body)
+		{
+			Body->SetStaticMesh(Cube);
+			Body->SetRelativeScale3D(FVector(1.0f, 1.5f, 2.0f));
+			if (Marble) { Body->SetMaterial(0, Marble); }
+		}
 		if (Lever)
 		{
 			Lever->SetStaticMesh(Cube);
 			Lever->SetRelativeScale3D(FVector(0.15f, 0.15f, 0.8f));
 			Lever->SetRelativeLocation(FVector(80.0f, 90.0f, 120.0f));   // jutting out the right side
+			if (Marble) { Lever->SetMaterial(0, Marble); }
 		}
 	}
 

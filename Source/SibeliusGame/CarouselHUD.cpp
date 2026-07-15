@@ -80,10 +80,12 @@ void ACarouselHUD::DrawHUD()
 	const float X = 60.0f;
 	float Y = 60.0f;
 	const float LineH = 26.0f;
+	// Walt QA: readable at 4K desk distance — everything drawn 1.8x.
+	const float HudScale = 1.8f;
 	auto Line = [&](const FString& S, const FLinearColor& C, float Scale = 1.0f)
 	{
-		DrawText(S, C, X, Y, Font, Scale);
-		Y += LineH * Scale;
+		DrawText(S, C, X, Y, Font, Scale * HudScale);
+		Y += LineH * Scale * HudScale;
 	};
 
 	const ECarouselRunPhase Phase = RunSub->GetPhase();
@@ -103,6 +105,7 @@ void ACarouselHUD::DrawHUD()
 	Line(FString::Printf(TEXT("Chips this round: %d / %d      Spins left: %d"),
 		RunSub->GetRoundChips(), RunSub->GetCurrentQuota(), RunSub->GetSpinsRemaining()), White);
 	Line(FString::Printf(TEXT("Currency (bank): %d"), RunSub->GetCurrency()), Gold);
+	Line(TEXT("chips fill the round quota - coins buy shop upgrades"), Dim, 0.8f);
 
 	const FSpinResult Last = RunSub->GetLastSpin();
 	Line(FString::Printf(TEXT("Last spin: payout %d   x%.2f%s%s"),
@@ -116,11 +119,13 @@ void ACarouselHUD::DrawHUD()
 	{
 	case ECarouselRunPhase::Spinning:
 		Line(TEXT("[E] pull the lever"), Gold);
+		Line(TEXT("meet the chip quota before your spins run out to clear the round"), Dim, 0.8f);
 		break;
 
 	case ECarouselRunPhase::Shop:
 	{
 		Line(TEXT("-- SHOP --   [1/2/3] buy    [R] reroll    [Enter] continue"), Gold);
+		Line(TEXT("round cleared! spend coins on upgrades - they last the whole run"), Dim, 0.8f);
 		const TArray<FShopItem> Offerings = RunSub->GetOfferings();
 		for (int32 i = 0; i < Offerings.Num(); ++i)
 		{
@@ -137,11 +142,13 @@ void ACarouselHUD::DrawHUD()
 	case ECarouselRunPhase::Won:
 		Line(FString::Printf(TEXT("RUN CLEARED!   [E] new run (stakes %d sauce)"),
 			UCarouselRunSubsystem::EntryStake), Green, 1.2f);
+		Line(TEXT("winnings paid: 150 sauce + 5 per leftover coin"), Dim, 0.8f);
 		break;
 
 	case ECarouselRunPhase::Lost:
 		Line(FString::Printf(TEXT("Run over.   [E] new run (stakes %d sauce)"),
 			UCarouselRunSubsystem::EntryStake), Dim, 1.2f);
+		Line(TEXT("consolation paid: 10 sauce per round you cleared"), Dim, 0.8f);
 		break;
 
 	default:
