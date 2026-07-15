@@ -106,6 +106,13 @@ each item driven by his live playtest questions:
 Remaining on the plan: daily carousel (5b), slap juice (6), Walt's itch-page
 words (3) and GIFs (4).
 
+## Milestone: v0.7.4 "slap dignity" (2026-07-15)
+
+Point 6's first slice shipped same-session: a slapped Gideon collapses in
+place playing his Paragon `Death_Back` (no launch; skeleton-checked with the
+freeze-and-launch as fallback, so the taffy fix stays protected). Walt called
+it good enough to justify a version. Full 14-gate sweep green.
+
 ## Handoff notes for the next session (read before working)
 
 - **Walt**: 71, learning Unreal, wants small numbered steps, pastes screenshots
