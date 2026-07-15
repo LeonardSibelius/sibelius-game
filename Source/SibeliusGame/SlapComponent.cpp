@@ -111,21 +111,20 @@ void USlapComponent::DoSlap()
 
 		if (bRigidKnockback)
 		{
-			// Freeze the victim mid-pose (animation AND cloth) and launch the
-			// whole character as one rigid piece via the capsule. Nothing
-			// deforms, so nothing can stretch — immune to the Paragon mesh's
-			// bad physics-asset coverage and fragile converted APEX cloth.
+			// APPEAL-6 (Walt's call): a slapped Gideon COLLAPSES where he stands —
+			// the death animation plays in place (single-node, non-looping, holds
+			// the final pose) and there is no launch at all. Only when the anim
+			// can't play (missing asset / wrong skeleton) do we fall back to the
+			// original stretch-proof freeze-and-launch, which works on any mesh.
+			bool bCollapsing = false;
 			if (USkeletalMeshComponent* PoseMesh = Victim->GetMesh())
 			{
-				// APPEAL-6: play the death animation while the body flies —
-				// single-node, non-looping, so he holds the collapsed pose where
-				// he lands. Skeleton must match (other victim meshes fall back to
-				// the frozen pose, which is stretch-proof on any mesh).
 				UAnimSequence* DeathAnim = SlapDeathAnim.LoadSynchronous();
 				if (DeathAnim && PoseMesh->GetSkeletalMeshAsset()
 					&& PoseMesh->GetSkeletalMeshAsset()->GetSkeleton() == DeathAnim->GetSkeleton())
 				{
 					PoseMesh->PlayAnimation(DeathAnim, false);
+					bCollapsing = true;
 				}
 				else
 				{
@@ -135,9 +134,17 @@ void USlapComponent::DoSlap()
 			}
 			if (UCapsuleComponent* Capsule = Victim->GetCapsuleComponent())
 			{
-				Capsule->SetCollisionProfileName(TEXT("PhysicsActor"));
-				Capsule->SetSimulatePhysics(true);
-				Capsule->AddImpulse(Impulse, NAME_None, true);
+				if (bCollapsing)
+				{
+					// The corpse shouldn't body-block the player while it fades.
+					Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				}
+				else
+				{
+					Capsule->SetCollisionProfileName(TEXT("PhysicsActor"));
+					Capsule->SetSimulatePhysics(true);
+					Capsule->AddImpulse(Impulse, NAME_None, true);
+				}
 			}
 			Victim->SetLifeSpan(RagdollLifetime);
 
