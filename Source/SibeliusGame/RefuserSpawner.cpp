@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
 #include "TimerManager.h"
+#include "EngineUtils.h"   // TActorIterator (trickle alive-count)
 
 ARefuserSpawner::ARefuserSpawner()
 {
@@ -97,6 +98,52 @@ void ARefuserSpawner::SpawnWave()
 			WaveTimerHandle, this, &ARefuserSpawner::SpawnWave,
 			FMath::Max(0.1f, TimeBetweenWaves), /*bLoop=*/false);
 	}
+	else if (RespawnInterval > 0.f)
+	{
+		// APPEAL-6b: waves done — switch to the endless trickle.
+		GetWorldTimerManager().SetTimer(
+			WaveTimerHandle, this, &ARefuserSpawner::SpawnTrickle,
+			RespawnInterval, /*bLoop=*/false);
+	}
+}
+
+void ARefuserSpawner::SpawnTrickle()
+{
+	// Quiet by design: no alarm feedback, no wave fanfare — just a fresh
+	// visitor or two, and only while the level isn't already crowded.
+	const int32 Alive = CountAlive();
+	int32 Spawned = 0;
+	for (int32 i = 0; i < RespawnCount && Alive + Spawned < MaxAlive; ++i)
+	{
+		if (SpawnOneRefuser())
+		{
+			++Spawned;
+		}
+	}
+	if (Spawned > 0)
+	{
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Spawner] Trickle: +%d Refuser(s) (%d alive)."), Spawned, Alive + Spawned);
+	}
+
+	GetWorldTimerManager().SetTimer(
+		WaveTimerHandle, this, &ARefuserSpawner::SpawnTrickle,
+		RespawnInterval, /*bLoop=*/false);
+}
+
+int32 ARefuserSpawner::CountAlive() const
+{
+	int32 Alive = 0;
+	if (const UWorld* World = GetWorld())
+	{
+		for (TActorIterator<APawn> It(World); It; ++It)
+		{
+			if (RefuserClass && It->IsA(RefuserClass))
+			{
+				++Alive;
+			}
+		}
+	}
+	return Alive;
 }
 
 bool ARefuserSpawner::SpawnOneRefuser()

@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 #include "Animation/AnimSequence.h"   // APPEAL-6: the slap death animation
+#include "UObject/ConstructorHelpers.h"
 #include "Engine/SkeletalMesh.h"
 #include "ProgressionSubsystem.h"   // FUN-2: slaps pay Sauce
 #include "RefuserController.h"      // bOnlySlapRefusers target filter
@@ -22,9 +23,14 @@ USlapComponent::USlapComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	// APPEAL-6: Gideon's own Paragon death — already on disk, zero download.
-	SlapDeathAnim = TSoftObjectPtr<UAnimSequence>(FSoftObjectPath(
-		TEXT("/Game/ParagonGideon/Characters/Heroes/Gideon/Animations/Death_Back.Death_Back")));
+	// APPEAL-6: Gideon's own Paragon death. FObjectFinder = a real CDO
+	// reference, so the cooker ships the asset (the v0.7.4 soft-ref miss).
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> DeathAnimFinder(
+		TEXT("/Game/ParagonGideon/Characters/Heroes/Gideon/Animations/Death_Back.Death_Back"));
+	if (DeathAnimFinder.Succeeded())
+	{
+		SlapDeathAnim = DeathAnimFinder.Object;
+	}
 }
 
 void USlapComponent::DoSlap()
@@ -119,7 +125,7 @@ void USlapComponent::DoSlap()
 			bool bCollapsing = false;
 			if (USkeletalMeshComponent* PoseMesh = Victim->GetMesh())
 			{
-				UAnimSequence* DeathAnim = SlapDeathAnim.LoadSynchronous();
+				UAnimSequence* DeathAnim = SlapDeathAnim;
 				if (DeathAnim && PoseMesh->GetSkeletalMeshAsset()
 					&& PoseMesh->GetSkeletalMeshAsset()->GetSkeleton() == DeathAnim->GetSkeleton())
 				{
