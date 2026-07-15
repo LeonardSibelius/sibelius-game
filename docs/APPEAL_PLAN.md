@@ -64,7 +64,7 @@ weirdness.
 | 3 | Store-page story | 📝 **DRAFTED** in `docs/ITCH_PAGE.md` — Walt edits the words + pastes onto the itch page (zero tokens). |
 | 4 | GIFs | 📝 **Shot list drafted** in `docs/ITCH_PAGE.md` — Walt records (Win+Alt+R), zero tokens. |
 | 5 | Stats / daily carousel | 🟡 **Stats page DONE (`f0927b7`)** — RECORDS tab in the M menu: slaps, lifetime sauce, books, curios, chapters, carousel runs/wins/best round/biggest spin. `FProgressionState.LifetimeStats` map + `SibeliusStats::` keys; new stat = one FName + one bump line. Daily carousel (fixed-seed daily run) still open. |
-| 6 | Slap juice | ❌ not started (`USlapComponent::DoSlap` is the one code point; camera shake needs a C++ `UCameraShakeBase` subclass) |
+| 6 | Slap juice | 🟡 **STARTED (`e954d02`)** — slapped Gideon now plays his Paragon `Death_Back` anim mid-flight and holds the collapsed pose (skeleton-checked; freeze fallback keeps the taffy fix safe). **Still to do at the same code point** (`USlapComponent::DoSlap`): death voice line (pick from `Gideon_Death_010`–`_050`), `P_Death_Gideon` particle, `MF_DeathFade` corpse dissolve, meatier sound, camera shake (needs a `UCameraShakeBase` subclass), sauce-number popup. All assets already on disk — zero download. |
 
 ## Milestone: the Carousel room stands on its own (2026-07-14 evening, `caae729`)
 
