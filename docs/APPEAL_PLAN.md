@@ -66,6 +66,28 @@ weirdness.
 | 5 | Stats / daily carousel | ❌ not started (stats fields → ProgressionState additive fields; STATUS-menu rows) |
 | 6 | Slap juice | ❌ not started (`USlapComponent::DoSlap` is the one code point; camera shake needs a C++ `UCameraShakeBase` subclass) |
 
+## Milestone: the Carousel room stands on its own (2026-07-14 evening, `caae729`)
+
+Walt: *"I am starting to get a better feeling about this game now that I have
+HUD help."* — the guided-HUD bet (point 2) is paying off in his own play.
+
+The Carousel of Fates got its comprehension pass, all driven by live playtest
+complaints rather than speculation:
+
+- **HUD readable + self-explaining** — CarouselHUD draws everything at 1.8x,
+  and every phase carries a dim one-line explainer (chips fill the quota /
+  coins buy upgrades / what a win or loss actually pays). A 71-year-old at a
+  4K monitor no longer squints.
+- **The machine looks like it belongs** — the placeholder checkered cubes now
+  wear the cathedral's black marble, so the two fate machines (Carousel +
+  Celestial Fortune) read as siblings. Zero download cost.
+- **The piano is dead** — the Fab library pack auto-played OrchestralPianoTrack
+  on entry via its own level scripting. Muted at the asset (volume 0) and
+  force-added past the `Content/Library/` gitignore so a pack reinstall can't
+  bring it back.
+
+Carousel + Sauce gates green. Both repos clean and pushed.
+
 ## Handoff notes for the next session (read before working)
 
 - **Walt**: 71, learning Unreal, wants small numbered steps, pastes screenshots
