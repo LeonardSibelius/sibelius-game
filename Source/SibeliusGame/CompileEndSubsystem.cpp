@@ -65,6 +65,7 @@ void UCompileEndSubsystem::HandleEndTriggerOverlap(AActor* /*OverlappedActor*/, 
 		if (Progression->ClaimOneTimeGrant(TEXT("Chapter.Compile.End")))
 		{
 			Progression->GrantSauce(ChapterReward);
+			Progression->BumpStat(SibeliusStats::ChaptersCompleted);
 			if (GEngine)
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 6.0f, FColor::Emerald,

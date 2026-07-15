@@ -30,6 +30,7 @@ bool ABookPickup::Collect(UInventoryComponent* Inventory)
 	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 	{
 		Progression->GrantSauce(SauceOnCollect);
+		Progression->BumpStat(SibeliusStats::BooksCollected);
 	}
 
 	Destroy();

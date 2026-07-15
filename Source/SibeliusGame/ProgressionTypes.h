@@ -32,6 +32,22 @@ enum class EPowerVerb : uint8
 // Display name for prompts/toasts ("CODE VISION", "TEST-DRIVE", ...).
 SIBELIUSGAME_API FString PowerVerbDisplayName(EPowerVerb Verb);
 
+// APPEAL-5 — lifetime stat keys (the RECORDS tab). One namespace so every bump
+// site and the menu spell a key identically; a new stat is a new FName here
+// plus a bump at its code point — the map needs no schema change.
+namespace SibeliusStats
+{
+	inline const FName RefusersSlapped(TEXT("RefusersSlapped"));
+	inline const FName SauceEarned(TEXT("SauceEarned"));         // lifetime gross, not the wallet
+	inline const FName BooksCollected(TEXT("BooksCollected"));
+	inline const FName CuriosCollected(TEXT("CuriosCollected"));
+	inline const FName ChaptersCompleted(TEXT("ChaptersCompleted"));
+	inline const FName CarouselRuns(TEXT("CarouselRuns"));
+	inline const FName CarouselWins(TEXT("CarouselWins"));
+	inline const FName CarouselBestRound(TEXT("CarouselBestRound"));   // max, not sum
+	inline const FName CarouselBestSpin(TEXT("CarouselBestSpin"));     // max, not sum
+}
+
 // Parse a loose name ("refactor", "TestDrive", "test-drive") — for the exec
 // cheats. False if nothing matched.
 SIBELIUSGAME_API bool ParsePowerVerb(const FString& Name, EPowerVerb& OutVerb);
@@ -72,6 +88,16 @@ struct SIBELIUSGAME_API FProgressionState
 
 	int32 GetPurchaseCount(FName OfferKey) const;
 	void RecordPurchase(FName OfferKey); // NAME_None ignored
+
+	// APPEAL-5: lifetime stats — counters that only ever go up (slot-floor
+	// wisdom: people return for records and streaks, not content). Additive
+	// field: old saves default-fill to an empty map, every stat reads 0.
+	UPROPERTY(SaveGame)
+	TMap<FName, int32> LifetimeStats;
+
+	int32 GetStat(FName Key) const;          // 0 for unknown keys
+	void BumpStat(FName Key, int32 Delta = 1);   // Delta <= 0 or NAME_None ignored
+	void RaiseStat(FName Key, int32 Value);      // record semantics: only ever raises
 };
 
 // Headless self-test (ProgressionSmokeTest). True when every assert passes.

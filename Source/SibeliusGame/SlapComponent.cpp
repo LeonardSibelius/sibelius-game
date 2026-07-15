@@ -129,6 +129,7 @@ void USlapComponent::DoSlap()
 			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 			{
 				Progression->GrantSauce(SauceOnSlap);
+				Progression->BumpStat(SibeliusStats::RefusersSlapped);
 			}
 			break;
 		}
@@ -185,6 +186,7 @@ void USlapComponent::DoSlap()
 		if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 		{
 			Progression->GrantSauce(SauceOnSlap);
+			Progression->BumpStat(SibeliusStats::RefusersSlapped);
 		}
 
 		break;

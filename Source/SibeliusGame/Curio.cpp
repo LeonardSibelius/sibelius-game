@@ -139,6 +139,7 @@ bool ACurio::Collect(UObject* WorldContext)
 	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 	{
 		Progression->GrantSauce(SauceOnCollect);
+		Progression->BumpStat(SibeliusStats::CuriosCollected);
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,

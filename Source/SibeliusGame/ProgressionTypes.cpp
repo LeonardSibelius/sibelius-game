@@ -125,6 +125,28 @@ void FProgressionState::RecordPurchase(FName OfferKey)
 	}
 }
 
+int32 FProgressionState::GetStat(FName Key) const
+{
+	const int32* Found = LifetimeStats.Find(Key);
+	return Found ? *Found : 0;
+}
+
+void FProgressionState::BumpStat(FName Key, int32 Delta)
+{
+	if (!Key.IsNone() && Delta > 0)
+	{
+		LifetimeStats.FindOrAdd(Key) += Delta;
+	}
+}
+
+void FProgressionState::RaiseStat(FName Key, int32 Value)
+{
+	if (!Key.IsNone() && Value > GetStat(Key))
+	{
+		LifetimeStats.FindOrAdd(Key) = Value;
+	}
+}
+
 bool RunProgressionSelfTest(FString& OutError)
 {
 	FProgressionState S;
@@ -162,6 +184,19 @@ bool RunProgressionSelfTest(FString& OutError)
 	S.RecordPurchase(NAME_None);
 	if (S.GetPurchaseCount(TEXT("Test.Offer")) != 2) { OutError = TEXT("purchase count must be 2 after 2 buys"); return false; }
 	if (S.GetPurchaseCount(NAME_None) != 0)          { OutError = TEXT("NAME_None must never record"); return false; }
+
+	// Lifetime stats (APPEAL-5): default 0, bumps add, records only raise.
+	if (S.GetStat(TEXT("Test.Stat")) != 0)     { OutError = TEXT("unknown stat must read 0"); return false; }
+	S.BumpStat(TEXT("Test.Stat"));
+	S.BumpStat(TEXT("Test.Stat"), 4);
+	S.BumpStat(TEXT("Test.Stat"), -3);                 // ignored
+	S.BumpStat(NAME_None, 100);                        // ignored
+	if (S.GetStat(TEXT("Test.Stat")) != 5)     { OutError = TEXT("BumpStat must sum positive deltas only"); return false; }
+	S.RaiseStat(TEXT("Test.Best"), 7);
+	S.RaiseStat(TEXT("Test.Best"), 3);                 // lower — ignored
+	if (S.GetStat(TEXT("Test.Best")) != 7)     { OutError = TEXT("RaiseStat must keep the max"); return false; }
+	S.RaiseStat(TEXT("Test.Best"), 9);
+	if (S.GetStat(TEXT("Test.Best")) != 9)     { OutError = TEXT("RaiseStat must accept a new record"); return false; }
 
 	// UnlockAll covers all six.
 	S.UnlockAll();

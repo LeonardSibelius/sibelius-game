@@ -4,6 +4,7 @@
 // A native (C++-built) UUserWidget in the SauceShopWidget mold: Tab opens it,
 // Tab/Esc closes it, two tabs —
 //   STATUS   : sauce, the six powers (earned vs not), inventory, generate budget
+//   RECORDS  : lifetime stats — counters that only go up (APPEAL-5)
 //   CONTROLS : the key reference, with unearned verbs greyed out
 // This replaces the dev overlay as the player's window into the game state; the
 // dev overlay remains on H for Walt (now default OFF — see SibeliusHUD).
@@ -35,12 +36,13 @@ protected:
 	virtual void NativeConstruct() override;
 
 private:
-	enum class ETab : uint8 { Status, Controls };
+	enum class ETab : uint8 { Status, Records, Controls };
 
 	void SetTab(ETab NewTab);
 	void RefreshContent();
 
 	void BuildStatusTab(TSharedRef<SVerticalBox> Box);
+	void BuildRecordsTab(TSharedRef<SVerticalBox> Box);
 	void BuildControlsTab(TSharedRef<SVerticalBox> Box);
 
 	ETab ActiveTab = ETab::Status;

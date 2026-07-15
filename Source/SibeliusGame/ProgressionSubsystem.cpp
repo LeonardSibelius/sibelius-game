@@ -82,6 +82,7 @@ void UProgressionSubsystem::GrantSauce(int32 Amount)
 		return;
 	}
 	State.AddSauce(Amount);
+	State.BumpStat(SibeliusStats::SauceEarned, Amount);   // APPEAL-5: lifetime gross rides every grant
 	SaveNow();
 	OnSauceChanged.Broadcast(State.Sauce, Amount);
 }
@@ -101,6 +102,26 @@ void UProgressionSubsystem::RecordPurchase(FName OfferKey)
 {
 	State.RecordPurchase(OfferKey);
 	SaveNow();
+}
+
+void UProgressionSubsystem::BumpStat(FName Key, int32 Delta)
+{
+	const int32 Before = State.GetStat(Key);
+	State.BumpStat(Key, Delta);
+	if (State.GetStat(Key) != Before)
+	{
+		SaveNow();
+	}
+}
+
+void UProgressionSubsystem::RaiseStat(FName Key, int32 Value)
+{
+	const int32 Before = State.GetStat(Key);
+	State.RaiseStat(Key, Value);
+	if (State.GetStat(Key) != Before)
+	{
+		SaveNow();
+	}
 }
 
 bool UProgressionSubsystem::ClaimOneTimeGrant(FName GrantKey)

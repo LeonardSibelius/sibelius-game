@@ -80,6 +80,8 @@ TSharedRef<SWidget> UGameMenuWidget::RebuildWidget()
 						+ SHorizontalBox::Slot().AutoWidth()
 						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabStatus", "STATUS"), ETab::Status) ]
 						+ SHorizontalBox::Slot().AutoWidth().Padding(10, 0, 0, 0)
+						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabRecords", "RECORDS"), ETab::Records) ]
+						+ SHorizontalBox::Slot().AutoWidth().Padding(10, 0, 0, 0)
 						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabControls", "CONTROLS"), ETab::Controls) ]
 					]
 
@@ -123,6 +125,7 @@ void UGameMenuWidget::RefreshContent()
 	switch (ActiveTab)
 	{
 	case ETab::Status:   BuildStatusTab(ContentBox.ToSharedRef());   break;
+	case ETab::Records:  BuildRecordsTab(ContentBox.ToSharedRef());  break;
 	case ETab::Controls: BuildControlsTab(ContentBox.ToSharedRef()); break;
 	}
 }
@@ -186,6 +189,74 @@ void UGameMenuWidget::BuildStatusTab(TSharedRef<SVerticalBox> Box)
 			Row(FString::Printf(TEXT("  Generate budget: %d"), Gen->GetRemainingBudget()), Body);
 		}
 	}
+}
+
+void UGameMenuWidget::BuildRecordsTab(TSharedRef<SVerticalBox> Box)
+{
+	using namespace GameMenuNS;
+
+	const UProgressionSubsystem* P = UProgressionSubsystem::Get(this);
+	auto Stat = [P](FName Key) { return P ? P->GetStat(Key) : 0; };
+
+	// Label + right-sized number column, same shape as the CONTROLS rows.
+	auto Row = [&Box](const FString& Label, const FString& Value, const FLinearColor& Color)
+	{
+		Box->AddSlot().AutoHeight().Padding(0, 3)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth()
+			[
+				SNew(SBox).WidthOverride(150.0f)
+				[
+					SNew(STextBlock)
+					.Text(FText::FromString(Value))
+					.Font(Font("Bold", 20))
+					.ColorAndOpacity(Color)
+				]
+			]
+			+ SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center)
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(Label))
+				.Font(Font("Regular", 18))
+				.ColorAndOpacity(Body)
+			]
+		];
+	};
+	auto Section = [&Box](const FText& Title)
+	{
+		Box->AddSlot().AutoHeight().Padding(0, 12, 0, 4)
+		[
+			SNew(STextBlock)
+			.Text(Title)
+			.Font(Font("Bold", 20))
+			.ColorAndOpacity(Heading)
+		];
+	};
+
+	Section(NSLOCTEXT("Sibelius", "RecLife", "A LIFE IN NUMBERS"));
+	Row(TEXT("Refusers slapped"),   FString::FromInt(Stat(SibeliusStats::RefusersSlapped)), SauceGreen);
+	Row(TEXT("sauce earned, lifetime (the wallet is on STATUS)"),
+		FString::FromInt(Stat(SibeliusStats::SauceEarned)), SauceGreen);
+	Row(TEXT("books collected"),    FString::FromInt(Stat(SibeliusStats::BooksCollected)), Body);
+	Row(TEXT("curios found"),       FString::FromInt(Stat(SibeliusStats::CuriosCollected)), Body);
+	Row(TEXT("chapters completed"), FString::FromInt(Stat(SibeliusStats::ChaptersCompleted)), Body);
+
+	Section(NSLOCTEXT("Sibelius", "RecCarousel", "THE CAROUSEL OF FATES"));
+	Row(TEXT("runs staked"), FString::FromInt(Stat(SibeliusStats::CarouselRuns)), Body);
+	Row(TEXT("runs won"),    FString::FromInt(Stat(SibeliusStats::CarouselWins)), SauceGreen);
+	Row(TEXT("best run — rounds cleared"),
+		FString::FromInt(Stat(SibeliusStats::CarouselBestRound)), Body);
+	Row(TEXT("biggest single spin (chips)"),
+		FString::FromInt(Stat(SibeliusStats::CarouselBestSpin)), Body);
+
+	Box->AddSlot().AutoHeight().Padding(0, 14, 0, 0)
+	[
+		SNew(STextBlock)
+		.Text(NSLOCTEXT("Sibelius", "RecFooter", "These survive everything except [N N] New Game."))
+		.Font(Font("Regular", 14))
+		.ColorAndOpacity(Dim)
+	];
 }
 
 void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)

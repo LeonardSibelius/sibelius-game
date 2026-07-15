@@ -38,6 +38,7 @@ bool UCarouselRunSubsystem::StartStakedRun(int32 Seed)
 	}
 	Run.StartRun(Seed);
 	bStakedRun = true;
+	Progression->BumpStat(SibeliusStats::CarouselRuns);   // APPEAL-5
 	return true;
 }
 
@@ -55,6 +56,14 @@ void UCarouselRunSubsystem::SettleStake(bool bWon)
 	{
 		return;
 	}
+
+	// APPEAL-5: the records the player returns to beat. Cleared rounds =
+	// every round on a win, RoundIndex (0-based) on a loss.
+	if (bWon)
+	{
+		Progression->BumpStat(SibeliusStats::CarouselWins);
+	}
+	Progression->RaiseStat(SibeliusStats::CarouselBestRound, bWon ? Run.NumRounds() : Run.RoundIndex);
 
 	// Won: the payout plus the leftover bank converts to Sauce. Lost: a small
 	// consolation per cleared round (RoundIndex is 0-based = rounds cleared).
@@ -85,6 +94,17 @@ bool UCarouselRunSubsystem::Spin()
 	}
 
 	OnSpinResolved.Broadcast(Run.LastSpin);
+
+	// APPEAL-5: biggest single spin, staked runs only (free grey-box play has
+	// no progression subsystem, so this is naturally a no-op there).
+	if (bStakedRun)
+	{
+		if (UProgressionSubsystem* Progression =
+			GetGameInstance() ? GetGameInstance()->GetSubsystem<UProgressionSubsystem>() : nullptr)
+		{
+			Progression->RaiseStat(SibeliusStats::CarouselBestSpin, Run.LastSpin.SpinPayout);
+		}
+	}
 
 	if (Before == ECarouselRunPhase::Spinning && Run.Phase == ECarouselRunPhase::Shop)
 	{

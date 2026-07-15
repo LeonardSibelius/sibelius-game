@@ -59,6 +59,13 @@ public:
 	int32 GetPurchaseCount(FName OfferKey) const { return State.GetPurchaseCount(OfferKey); }
 	void RecordPurchase(FName OfferKey);     // saves; the shop applies the effect
 
+	// --- Lifetime stats (APPEAL-5, the RECORDS tab) ---
+	// Keys live in SibeliusStats:: — every bump site spells them from there.
+	// GrantSauce bumps SauceEarned itself, so earn sites never double-book.
+	int32 GetStat(FName Key) const { return State.GetStat(Key); }
+	void BumpStat(FName Key, int32 Delta = 1);   // saves on change
+	void RaiseStat(FName Key, int32 Value);      // record semantics; saves only on a new record
+
 	// Read-only view of the pure state (FSauceShop::BuildOffers takes the state
 	// directly so the catalog logic stays headless-testable).
 	const FProgressionState& GetStateForRead() const { return State; }
