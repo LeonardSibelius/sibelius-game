@@ -5,6 +5,7 @@
 #include "SlapComponent.generated.h"
 
 class USoundBase;
+class UAnimSequence;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SIBELIUSGAME_API USlapComponent : public UActorComponent
@@ -48,6 +49,14 @@ public:
 	// the companions from slapping the player or each other.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	bool bOnlySlapRefusers = true;
+
+	// APPEAL-6 (slap juice): on a rigid knockback the victim PLAYS this death
+	// animation while flying, instead of freezing mid-stride — single-node,
+	// non-looping, so he holds the collapsed pose where he lands. Defaults to
+	// Gideon's own Paragon Death_Back; skipped (freeze fallback) if the asset
+	// is absent or the victim's skeleton doesn't match.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
+	TSoftObjectPtr<UAnimSequence> SlapDeathAnim;
 
 	// FUN-2: a connected slap pays a little Sauce, so standing up to a Refuser
 	// is rewarded, not just survived.

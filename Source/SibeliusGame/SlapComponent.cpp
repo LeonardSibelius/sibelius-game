@@ -13,12 +13,18 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "Animation/AnimSequence.h"   // APPEAL-6: the slap death animation
+#include "Engine/SkeletalMesh.h"
 #include "ProgressionSubsystem.h"   // FUN-2: slaps pay Sauce
 #include "RefuserController.h"      // bOnlySlapRefusers target filter
 
 USlapComponent::USlapComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+
+	// APPEAL-6: Gideon's own Paragon death — already on disk, zero download.
+	SlapDeathAnim = TSoftObjectPtr<UAnimSequence>(FSoftObjectPath(
+		TEXT("/Game/ParagonGideon/Characters/Heroes/Gideon/Animations/Death_Back.Death_Back")));
 }
 
 void USlapComponent::DoSlap()
@@ -111,7 +117,20 @@ void USlapComponent::DoSlap()
 			// bad physics-asset coverage and fragile converted APEX cloth.
 			if (USkeletalMeshComponent* PoseMesh = Victim->GetMesh())
 			{
-				PoseMesh->bPauseAnims = true;
+				// APPEAL-6: play the death animation while the body flies —
+				// single-node, non-looping, so he holds the collapsed pose where
+				// he lands. Skeleton must match (other victim meshes fall back to
+				// the frozen pose, which is stretch-proof on any mesh).
+				UAnimSequence* DeathAnim = SlapDeathAnim.LoadSynchronous();
+				if (DeathAnim && PoseMesh->GetSkeletalMeshAsset()
+					&& PoseMesh->GetSkeletalMeshAsset()->GetSkeleton() == DeathAnim->GetSkeleton())
+				{
+					PoseMesh->PlayAnimation(DeathAnim, false);
+				}
+				else
+				{
+					PoseMesh->bPauseAnims = true;
+				}
 				PoseMesh->SuspendClothingSimulation();
 			}
 			if (UCapsuleComponent* Capsule = Victim->GetCapsuleComponent())
