@@ -53,11 +53,12 @@ public:
 	UPROPERTY(EditAnywhere, Category="Spawner|Waves", meta=(ClampMin="0.0"))
 	float TimeBetweenWaves = 6.f;
 
-	// APPEAL-6b (Walt: "I want to slap more often"): the corkboard alarm was a
-	// one-shot party — after the scripted waves, the office went dry forever.
-	// Now the spawner keeps a slow trickle coming. 0 restores the one-shot.
+	// Optional ambient trickle after the scripted waves. OFF by default —
+	// Walt's ruling: fights start when the PLAYER starts them (E the
+	// corkboard, which is a repeatable summon now), demons don't just move in.
+	// Set > 0 only where an infested-room feel is wanted on purpose.
 	UPROPERTY(EditAnywhere, Category="Spawner|Waves", meta=(ClampMin="0.0"))
-	float RespawnInterval = 90.f;
+	float RespawnInterval = 0.f;
 
 	/** Refusers per trickle spawn (small — a visitor, not an invasion). */
 	UPROPERTY(EditAnywhere, Category="Spawner|Waves", meta=(ClampMin="1"))

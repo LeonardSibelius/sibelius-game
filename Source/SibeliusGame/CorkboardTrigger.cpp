@@ -27,13 +27,21 @@ ACorkboardTrigger::ACorkboardTrigger()
 
 void ACorkboardTrigger::Interact_Implementation(AActor* Interactor)
 {
-	if (bTriggered)
+	UWorld* World = GetWorld();
+	if (!World)
 	{
 		return;
 	}
 
-	UWorld* World = GetWorld();
-	UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
+	// APPEAL-6b: repeatable summon, cooldown-guarded (E-mashing must not stack
+	// three alarms of Refusers into the office).
+	const double Now = World->GetTimeSeconds();
+	if (Now - LastSummonTime < SummonCooldown)
+	{
+		return;
+	}
+
+	UGameInstance* GameInstance = World->GetGameInstance();
 	UHallAlarmSubsystem* Alarm = GameInstance ? GameInstance->GetSubsystem<UHallAlarmSubsystem>() : nullptr;
 	if (!Alarm)
 	{
@@ -42,12 +50,13 @@ void ACorkboardTrigger::Interact_Implementation(AActor* Interactor)
 	}
 
 	bTriggered = true;
+	LastSummonTime = Now;
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Corkboard] Interacted - firing Hall alarm."));
 	Alarm->TriggerAlarm();
 }
 
 FText ACorkboardTrigger::GetInteractionPrompt_Implementation() const
 {
-	// Once fired, stop advertising the prompt.
-	return bTriggered ? FText::GetEmpty() : Prompt;
+	// After the first summon the corkboard says what it really is.
+	return bTriggered ? RepeatPrompt : Prompt;
 }

@@ -4,11 +4,12 @@
 // individual actors and is reachable from anywhere. The corkboard fires it; the
 // Refuser spawners listen for it.
 //
-// Two guarantees that defeat ordering bugs:
-//   * Idempotent  — only the first TriggerAlarm() broadcasts.
-//   * Replayed    — AddAlarmListener() invokes a late subscriber immediately if
-//                   the alarm already fired, so a corkboard-before-spawner-
-//                   BeginPlay race can never drop the alarm.
+// Guarantees:
+//   * Repeatable  — every TriggerAlarm() broadcasts (APPEAL-6b: the corkboard
+//                   is a summon, not a one-shot). The latch records only
+//                   "has fired at least once".
+//   * Live only   — listeners are NOT replayed on subscribe; a wave spawns only
+//                   from a real E-press, never from re-entering the level.
 
 #pragma once
 
