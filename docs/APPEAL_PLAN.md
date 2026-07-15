@@ -88,6 +88,24 @@ complaints rather than speculation:
 
 Carousel + Sauce gates green. Both repos clean and pushed.
 
+## Milestone: v0.7.3 "worth coming back" (2026-07-14 evening)
+
+Walt: *"the game feels more complete now."* Shipped in one evening session,
+each item driven by his live playtest questions:
+
+- **RECORDS tab** (point 5, first half) — lifetime stats in the M menu.
+- **Curio treetop beacons** — Walt wandered whole forests without seeing a
+  curio; every curio now flies a 60 m mood-tinted light pillar. Findable.
+- **Temple blend wired** — the AI temple's book rain now actually fills the
+  cauldron (FeedPerBook 0.01, was 0/spectacle-only); completing the Sauce of
+  All Knowledge pays a one-time +100 bounty with an emerald ceremony banner.
+  The unreachable June stub is now the temple's reason to visit.
+- **Carousel room comprehension pass** — HUD 1.8x + phase explainers, black
+  marble machine, library piano muted (see the earlier milestone).
+
+Remaining on the plan: daily carousel (5b), slap juice (6), Walt's itch-page
+words (3) and GIFs (4).
+
 ## Handoff notes for the next session (read before working)
 
 - **Walt**: 71, learning Unreal, wants small numbered steps, pastes screenshots

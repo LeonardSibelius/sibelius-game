@@ -41,6 +41,21 @@ Paste-ready text for the itch.io page. Walt owns the final words — edit freely
 > over the temple throne released back into the wild. Same game. Half the
 > wait. — Walt
 
+## The v0.7.3 devlog (paste-ready — Walt edits freely)
+
+> **v0.7.3: worth coming back.**
+> This one came from playing my own game and asking the obvious questions.
+> Why can't I find the glowing curios in the forests? Now every one flies a
+> column of colored light above the treetops — walk toward the light. What's
+> that temple cauldron with the books raining into it actually for? Now the
+> books really do fill it, and when the Sauce of All Knowledge completes,
+> the temple pays you for watching. And a new RECORDS tab in the menu keeps
+> your lifetime numbers — demons slapped, sauce earned, best carousel run —
+> because a slot-machine designer knows people come back for their own
+> records, not for new content. Also: the casino library is finally quiet
+> (the pack's piano is dead), the machine wears black marble, and the rules
+> are printed in type a 71-year-old can read. — Walt
+
 ## GIF capture list (point 4 — Walt records, any tool: Xbox Game Bar Win+Alt+R, or ScreenToGif)
 
 1. **The slap**: stand near a road battle in Forest 01, slap a Gideon as he

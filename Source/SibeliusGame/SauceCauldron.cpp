@@ -3,6 +3,7 @@
 #include "SauceCauldron.h"
 #include "SauceShopWidget.h"
 #include "ProgressionSubsystem.h"   // the temple blend's one-time bounty
+#include "Engine/Engine.h"          // GEngine screen messages (the blend ceremony)
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Blueprint/UserWidget.h"
@@ -70,6 +71,18 @@ void ASauceCauldron::HandleComplete()
 		if (Progression->ClaimOneTimeGrant(TEXT("Sauce.TempleBlend")))
 		{
 			Progression->GrantSauce(BlendBounty);
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 8.0f, FColor::Emerald,
+					FString::Printf(TEXT("THE SAUCE OF ALL KNOWLEDGE IS COMPLETE  +%d SAUCE  (total %d)"),
+						BlendBounty, Progression->GetSauce()));
+			}
+		}
+		else if (GEngine)
+		{
+			// Revisit: the ceremony replays but the bounty was already claimed.
+			GEngine->AddOnScreenDebugMessage(-1, 6.0f, FColor::Silver,
+				TEXT("The Sauce of All Knowledge is complete once more. Its riches were already given."));
 		}
 	}
 
