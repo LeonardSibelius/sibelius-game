@@ -28,6 +28,8 @@
 #include "TravelTransitionSubsystem.h"  // O-to-office travels through the transition cover
 #include "ProgressionSubsystem.h"       // FUN-1: the power gates + sauce cheats
 #include "SauceShop.h"                  // FUN-3: re-apply bought upgrades on spawn
+#include "SauceBowl.h"                  // temple ritual: C claims a filled pot in reach
+#include "EngineUtils.h"                // TActorIterator (the pot scan)
 #include "NavigationInvokerComponent.h" // forest roads: navmesh bubbles around agents
 #include "SibeliusGame.h"
 
@@ -544,7 +546,25 @@ void ASibeliusGameCharacter::OnRefactorPressed()
 
 void ASibeliusGameCharacter::OnBuildPressed()
 {
-	if (BuildComp && CheckPowerUnlocked(EPowerVerb::Compile))
+	if (!CheckPowerUnlocked(EPowerVerb::Compile))
+	{
+		return;
+	}
+
+	// One verb, disambiguated by state (Raymond's rule): a filled sauce pot
+	// within reach compiles FIRST — the temple ritual; otherwise the press
+	// goes to the build sites as always. (The pot's own raw BindKey lost the
+	// argument with Enhanced Input and never fired.)
+	for (TActorIterator<ASauceBowl> It(GetWorld()); It; ++It)
+	{
+		if (It->TryClaim(this))
+		{
+			OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);
+			return;
+		}
+	}
+
+	if (BuildComp)
 	{
 		BuildComp->TriggerBuild();
 		OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);

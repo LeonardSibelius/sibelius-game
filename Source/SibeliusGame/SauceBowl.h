@@ -34,6 +34,11 @@ public:
 	virtual void Interact_Implementation(AActor* Interactor) override;
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
+	// [C]: called by the character's Compile verb (one verb, disambiguated by
+	// state — a raw BindKey lost the argument with Enhanced Input and never
+	// fired). Claims if filled and the claimer is within ClaimRadius.
+	bool TryClaim(APawn* Claimer);
+
 	UPROPERTY(EditAnywhere, Category = "SauceBowl", meta = (ClampMin = "0"))
 	int32 SaucePerBowl = 40;
 
@@ -52,19 +57,17 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<USceneComponent> SceneRoot;
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> TableMesh;
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> BowlMesh;
-	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> SauceMesh; // the green glow; hidden until filled
+	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> SauceMesh;  // the green glow; hidden until filled
+	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> StreamMesh; // the visible drip while recharging
 
 private:
-	void TryEnableInput();
-	void OnCompilePressed();          // [C]: claim the filled bowl
 	bool IsLadleReady() const;
 
 	bool bFilled = false;
 	double LastClaimTime = -1.0e9;    // world seconds of the last claim
-	int32 InputAttempts = 0;
-	FTimerHandle InputRetryHandle;
 };

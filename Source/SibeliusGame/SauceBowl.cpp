@@ -19,7 +19,7 @@
 
 ASauceBowl::ASauceBowl()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;   // the drip and the meniscus pulse
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
@@ -61,42 +61,53 @@ ASauceBowl::ASauceBowl()
 	SauceMesh->SetVisibility(false);
 	if (Cylinder.Succeeded()) { SauceMesh->SetStaticMesh(Cylinder.Object); }
 	if (Basic.Succeeded()) { SauceMesh->SetMaterial(0, Basic.Object); }
+
+	// The DRIP made visible (Walt: saw no ladle or dripping): a thin glowing
+	// stream pouring from the air into the pot for the whole recharge. Stream
+	// stops = the ladle is ready.
+	StreamMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StreamMesh"));
+	StreamMesh->SetupAttachment(SceneRoot);
+	StreamMesh->SetRelativeScale3D(FVector(0.035f, 0.035f, 1.1f));
+	StreamMesh->SetRelativeLocation(FVector(0.f, 0.f, 218.f));   // cylinder center; spans ~163..273
+	StreamMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	StreamMesh->SetVisibility(false);
+	if (Cylinder.Succeeded()) { StreamMesh->SetStaticMesh(Cylinder.Object); }
+	if (Basic.Succeeded()) { StreamMesh->SetMaterial(0, Basic.Object); }
+}
+
+void ASauceBowl::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (bFilled && SauceMesh)
+	{
+		// The waiting sauce breathes — a slow pulse so a filled pot reads
+		// as alive and claimable from across the room.
+		const float T = GetWorld() ? static_cast<float>(GetWorld()->GetTimeSeconds()) : 0.f;
+		SauceMesh->SetRelativeLocation(FVector(0.f, 0.f, 163.f + 2.5f * FMath::Sin(T * 3.f)));
+	}
+	if (StreamMesh)
+	{
+		StreamMesh->SetVisibility(!bFilled && !IsLadleReady());
+	}
 }
 
 void ASauceBowl::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Tint the sauce disk sauce-green (MID from the hard-ref'd base).
-	if (SauceMesh)
+	// Tint the sauce surfaces sauce-green (MIDs from the hard-ref'd base).
+	for (UStaticMeshComponent* Comp : { SauceMesh.Get(), StreamMesh.Get() })
 	{
-		if (UMaterialInstanceDynamic* MID = SauceMesh->CreateDynamicMaterialInstance(0))
+		if (Comp)
 		{
-			MID->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.15f, 1.0f, 0.35f));
+			if (UMaterialInstanceDynamic* MID = Comp->CreateDynamicMaterialInstance(0))
+			{
+				MID->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.15f, 1.0f, 0.35f));
+			}
 		}
 	}
 
-	TryEnableInput();
-}
-
-void ASauceBowl::TryEnableInput()
-{
-	APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
-	if (!PC)
-	{
-		if (++InputAttempts < 40)
-		{
-			GetWorldTimerManager().SetTimer(InputRetryHandle, this, &ASauceBowl::TryEnableInput, 0.25f, false);
-		}
-		return;
-	}
-	EnableInput(PC);
-	if (InputComponent)
-	{
-		// The Compile key claims the sauce — one verb, disambiguated by
-		// distance (the guard in OnCompilePressed). CarouselMachine's pattern.
-		InputComponent->BindKey(EKeys::C, IE_Pressed, this, &ASauceBowl::OnCompilePressed);
-	}
 }
 
 bool ASauceBowl::IsLadleReady() const
@@ -129,16 +140,15 @@ void ASauceBowl::Interact_Implementation(AActor* Interactor)
 	}
 }
 
-void ASauceBowl::OnCompilePressed()
+bool ASauceBowl::TryClaim(APawn* Claimer)
 {
 	if (!bFilled)
 	{
-		return;
+		return false;
 	}
-	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
-	if (!Pawn || FVector::Dist(Pawn->GetActorLocation(), GetActorLocation()) > ClaimRadius)
+	if (!Claimer || FVector::Dist(Claimer->GetActorLocation(), GetActorLocation()) > ClaimRadius)
 	{
-		return;   // a Compile elsewhere in the temple is not for this bowl
+		return false;   // a Compile elsewhere in the temple is not for this bowl
 	}
 
 	bFilled = false;
@@ -158,6 +168,7 @@ void ASauceBowl::OnCompilePressed()
 					SaucePerBowl, Progression->GetSauce()));
 		}
 	}
+	return true;
 }
 
 FText ASauceBowl::GetInteractionPrompt_Implementation() const
