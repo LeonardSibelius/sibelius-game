@@ -27,14 +27,13 @@ URefactorComponent::URefactorComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// APPEAL-R: hard-referenced base creatures so the zoo is never empty and
-	// these two always cook (the Death_Back lesson). The real variety comes
-	// from the MenagerieFolders scan in BeginPlay.
-	// NOT the EasyBiomes insects: their material flaps the wings via world
-	// position offset tuned for life size, and a chair-sized butterfly is a
-	// room-filling smear (Walt: "it turned into a tornado").
+	// APPEAL-R: hard-referenced base creature so the zoo is never empty and it
+	// always cooks (the Death_Back lesson). The real variety comes from the
+	// MenagerieFolders scan in BeginPlay.
+	// Evicted by Walt: the EasyBiomes insects (world-position-offset wings —
+	// a chair-sized butterfly is a "tornado") and SM_Dragons (a fused PAIR of
+	// throne dragons that reads as a mess at furniture scale).
 	const TCHAR* CreaturePaths[] = {
-		TEXT("/Game/Dragon_Rise/Meshes/SM_Dragons.SM_Dragons"),
 		TEXT("/Game/HouseFurniture/Meshes/SM_ToyRabbit_A1.SM_ToyRabbit_A1"),
 	};
 	for (const TCHAR* Path : CreaturePaths)
@@ -67,6 +66,15 @@ void URefactorComponent::BeginPlay()
 
 	ScannedCreatures.Reset();
 	RegistryModule.Get().GetAssets(Filter, ScannedCreatures);
+
+	// Packs ship body PARTS as separate meshes (the elephant's tusk variants).
+	// A rolled tusk is two thin ivory curves floating at chair height — Walt
+	// read it as "the chair disappeared completely." Whole animals only.
+	ScannedCreatures.RemoveAll([](const FAssetData& Asset)
+	{
+		return Asset.AssetName.ToString().Contains(TEXT("Tusk"));
+	});
+
 	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] Menagerie: %d scanned + %d built-in creatures."),
 		ScannedCreatures.Num(), Menagerie.Num());
 }
@@ -173,7 +181,10 @@ bool URefactorComponent::TryWildRefactor()
 			VC->StopMovement();
 			VC->UnPossess();
 		}
-		SpawnCreatureActor(PickCreature(), Victim->GetActorTransform(), RefuserCreatureSize);
+		// Feet, not capsule center — the spawner plants bounds-bottom at this Z.
+		FTransform Feet = Victim->GetActorTransform();
+		Feet.SetLocation(Feet.GetLocation() - FVector(0.f, 0.f, Victim->GetSimpleCollisionHalfHeight()));
+		SpawnCreatureActor(PickCreature(), Feet, RefuserCreatureSize);
 		UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] Refuser transmuted."));
 		Victim->Destroy();
 		return true;
@@ -224,7 +235,14 @@ bool URefactorComponent::TryWildRefactor()
 
 	// Spawn the creature where the prop stands, then hide the prop — never
 	// modify it, so R on the creature restores it exactly as it was.
-	AActor* Creature = SpawnCreatureActor(PickCreature(), Target->GetActorTransform(), LargestSide);
+	// Location = the prop's bounds center, dropped to its bounds floor: actor
+	// PIVOTS are unreliable (a belly-pivot creature spawned at a floor-pivot
+	// chair ends up underground — invisible AND untraceable, which read as
+	// "the chair disappeared completely").
+	const FBox TargetBox = Target->GetComponentsBoundingBox();
+	FTransform Where = Target->GetActorTransform();
+	Where.SetLocation(FVector(TargetBox.GetCenter().X, TargetBox.GetCenter().Y, TargetBox.Min.Z));
+	AActor* Creature = SpawnCreatureActor(PickCreature(), Where, LargestSide);
 	if (!Creature)
 	{
 		return false;
@@ -273,15 +291,39 @@ AActor* URefactorComponent::SpawnCreatureActor(UObject* CreatureMesh, const FTra
 		return FMath::Clamp(MatchSize / CreatureSize, 0.05f, 25.f);
 	};
 
+	// Where.Z is the FLOOR of the space being filled. Actor pivots are
+	// unreliable (belly-pivot creatures sank underground and were lost), so
+	// place the actor such that the creature's scaled bounds BOTTOM sits at
+	// Where.Z, computed from the mesh's local bounds:
+	//   world bounds center = ActorZ + Scale * LocalOrigin.Z
+	//   bounds bottom       = center - Scale * LocalExtent.Z  == Where.Z
+	auto FeetDownZ = [&Where](const FBoxSphereBounds& Bounds, float Scale)
+	{
+		return Where.GetLocation().Z + Scale * (Bounds.BoxExtent.Z - Bounds.Origin.Z);
+	};
+
+	// Every creature must block the R-trace (ECC_Visibility), or it can never
+	// be restored — an untraceable creature over a hidden prop is a softlock.
+	auto MakeTraceable = [](UPrimitiveComponent* Comp)
+	{
+		Comp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		Comp->SetCollisionResponseToAllChannels(ECR_Block);
+		Comp->SetCanEverAffectNavigation(false);
+	};
+
 	if (UStaticMesh* SM = Cast<UStaticMesh>(CreatureMesh))
 	{
 		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>(
 			Where.GetLocation(), Where.Rotator(), SpawnParams);
 		if (Actor)
 		{
+			const float Scale = FitScale(SM->GetBounds());
 			Actor->SetMobility(EComponentMobility::Movable);
 			Actor->GetStaticMeshComponent()->SetStaticMesh(SM);
-			Actor->SetActorScale3D(FVector(FitScale(SM->GetBounds())));
+			Actor->SetActorScale3D(FVector(Scale));
+			Actor->SetActorLocation(FVector(Where.GetLocation().X, Where.GetLocation().Y,
+				FeetDownZ(SM->GetBounds(), Scale)));
+			MakeTraceable(Actor->GetStaticMeshComponent());
 		}
 		return Actor;
 	}
@@ -294,8 +336,12 @@ AActor* URefactorComponent::SpawnCreatureActor(UObject* CreatureMesh, const FTra
 		{
 			if (USkeletalMeshComponent* Comp = Actor->GetSkeletalMeshComponent())
 			{
+				const float Scale = FitScale(SK->GetBounds());
 				Comp->SetSkeletalMesh(SK);
-				Actor->SetActorScale3D(FVector(FitScale(SK->GetBounds())));
+				Actor->SetActorScale3D(FVector(Scale));
+				Actor->SetActorLocation(FVector(Where.GetLocation().X, Where.GetLocation().Y,
+					FeetDownZ(SK->GetBounds(), Scale)));
+				MakeTraceable(Comp);
 			}
 		}
 		return Actor;
