@@ -5,6 +5,7 @@
 #include "RefactorComponent.h"
 #include "RefactorableComponent.h"
 #include "RefuserController.h"      // wild refactor: only Refusers transmute
+#include "Interactable.h"           // interactables keep their jobs (never wild targets)
 #include "SibeliusGame.h"
 
 #include "GameFramework/Pawn.h"
@@ -130,6 +131,41 @@ void URefactorComponent::TriggerRefactor()
 	TryWildRefactor();
 }
 
+namespace
+{
+	// R on a creature: destroy it, un-hide the first draft, give a restored
+	// Refuser his mind back. Shared by the pawn sweep AND the visibility ray —
+	// a ragdolled animal sprawled on the floor is exactly what a thin ray
+	// misses (Walt's downed fox refused to become the couch again).
+	bool RestoreWildDraft(AActor* CreatureActor)
+	{
+		if (!CreatureActor)
+		{
+			return false;
+		}
+		UWildRefactorState* State = CreatureActor->FindComponentByClass<UWildRefactorState>();
+		if (!State)
+		{
+			return false;
+		}
+		if (AActor* Original = State->OriginalActor)
+		{
+			Original->SetActorHiddenInGame(false);
+			Original->SetActorEnableCollision(true);
+			if (ACharacter* Char = Cast<ACharacter>(Original))
+			{
+				if (!Char->GetController())
+				{
+					Char->SpawnDefaultController();
+				}
+			}
+			UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s restored."), *Original->GetName());
+		}
+		CreatureActor->Destroy();
+		return true;
+	}
+}
+
 bool URefactorComponent::TryWildRefactor()
 {
 	APawn* Pawn = Cast<APawn>(GetOwner());
@@ -145,57 +181,102 @@ bool URefactorComponent::TryWildRefactor()
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(Pawn);
 
-	FHitResult Hit;
-	if (!World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	// Refusers first, hunted with the slap's own generous pawn-channel sweep —
+	// the thin visibility ray below often misses a moving pawn entirely
+	// (capsules don't block visibility), which made R feel broken on Gideon
+	// while F worked fine.
+	TArray<FHitResult> PawnHits;
+	if (World->SweepMultiByChannel(PawnHits, Start, End, FQuat::Identity, ECC_Pawn,
+			FCollisionShape::MakeSphere(45.f), Params))
 	{
-		return false;
-	}
-	AActor* Target = Hit.GetActor();
-	if (!Target)
-	{
-		return false;
-	}
-
-	// --- R on a creature: destroy it and un-hide the first draft. ---
-	if (UWildRefactorState* State = Target->FindComponentByClass<UWildRefactorState>())
-	{
-		if (AActor* Original = State->OriginalActor)
+		for (const FHitResult& PawnHit : PawnHits)
 		{
-			Original->SetActorHiddenInGame(false);
-			Original->SetActorEnableCollision(true);
-			UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s restored."), *Original->GetName());
+			// Downed creatures answer the sweep even when the thin ray misses.
+			if (RestoreWildDraft(PawnHit.GetActor()))
+			{
+				return true;
+			}
+			ACharacter* Victim = Cast<ACharacter>(PawnHit.GetActor());
+			if (Victim && Cast<ARefuserController>(Victim->GetController()))
+			{
+				if (AController* VC = Victim->GetController())
+				{
+					VC->StopMovement();
+					VC->UnPossess();
+				}
+				FTransform Feet = Victim->GetActorTransform();
+				Feet.SetLocation(Feet.GetLocation() - FVector(0.f, 0.f, Victim->GetSimpleCollisionHalfHeight()));
+				AActor* Creature = SpawnCreatureActor(PickCreature(), Feet, RefuserCreatureSize);
+				if (!Creature)
+				{
+					if (!Victim->GetController())
+					{
+						Victim->SpawnDefaultController();   // zoo empty — put him back to work
+					}
+					return false;
+				}
+				// Same reversible contract as props (Walt: Gideon should come
+				// back): hide him behind the animal, restore re-possesses him.
+				UWildRefactorState* State = NewObject<UWildRefactorState>(Creature);
+				State->RegisterComponent();
+				State->OriginalActor = Victim;
+				Victim->SetActorHiddenInGame(true);
+				Victim->SetActorEnableCollision(false);
+				UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] Refuser transmuted."));
+				return true;
+			}
 		}
-		Target->Destroy();
-		return true;
 	}
 
-	// --- R on a Refuser: he was always meant to be something gentler. ---
-	if (ACharacter* Victim = Cast<ACharacter>(Target))
+	// The office is full of INVISIBLE interaction boxes hovering over the
+	// furniture (the AI clue terminal over the desk, the corkboard volume,
+	// the cauldron zone) — they block the visibility ray so E-prompts work,
+	// and they ate R presses aimed at whatever sits underneath. When the ray
+	// hits something untransmutable, look past it (a few hops, no more).
+	AActor* Target = nullptr;
+	for (int32 Hop = 0; Hop < 4; ++Hop)
 	{
-		if (Cast<ARefuserController>(Victim->GetController()) == nullptr)
+		FHitResult Hit;
+		if (!World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+		{
+			return false;
+		}
+		AActor* HitTarget = Hit.GetActor();
+		if (!HitTarget)
+		{
+			return false;
+		}
+
+		// --- R on a creature: destroy it and un-hide the first draft. ---
+		if (RestoreWildDraft(HitTarget))
+		{
+			return true;
+		}
+
+		// (Refusers are handled by the pawn sweep above.)
+		if (Cast<ACharacter>(HitTarget))
 		{
 			return false;   // players, Shinbi, and civilians are not clay
 		}
-		if (AController* VC = Victim->GetController())
-		{
-			VC->StopMovement();
-			VC->UnPossess();
-		}
-		// Feet, not capsule center — the spawner plants bounds-bottom at this Z.
-		FTransform Feet = Victim->GetActorTransform();
-		Feet.SetLocation(Feet.GetLocation() - FVector(0.f, 0.f, Victim->GetSimpleCollisionHalfHeight()));
-		SpawnCreatureActor(PickCreature(), Feet, RefuserCreatureSize);
-		UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] Refuser transmuted."));
-		Victim->Destroy();
-		return true;
-	}
 
-	// --- R on a plain prop: desk becomes creature, size-matched. ---
-	// Plain AStaticMeshActor ONLY (Blueprint props carry logic — a microwave
-	// that is secretly a rabbit still owes the player a working door), unless
-	// the actor opts in with the WildRefactorOK tag.
-	const bool bPlainProp = Target->IsA<AStaticMeshActor>() || Target->ActorHasTag(TEXT("WildRefactorOK"));
-	if (!bPlainProp || Target->ActorHasTag(TEXT("NoWildRefactor")))
+		// --- Scenery candidate — stop hopping. ---
+		// Anything wearing a static mesh qualifies, INCLUDING dumb Blueprint
+		// decor (Walt's desk is BP_WorkingTable_A1): transmutation only hides
+		// the original, so nothing breaks. The exceptions keep their jobs:
+		// interactables (books, curios, doors, the cauldron, machines) are
+		// never wild targets, and the NoWildRefactor tag opts anything out.
+		const bool bHasMesh = HitTarget->FindComponentByClass<UStaticMeshComponent>() != nullptr;
+		const bool bInteractable = HitTarget->GetClass()->ImplementsInterface(UInteractable::StaticClass());
+		const bool bCandidate = (bHasMesh && !bInteractable) || HitTarget->ActorHasTag(TEXT("WildRefactorOK"));
+		if (bCandidate && !HitTarget->ActorHasTag(TEXT("NoWildRefactor")))
+		{
+			Target = HitTarget;
+			break;
+		}
+
+		Params.AddIgnoredActor(HitTarget);   // look past it
+	}
+	if (!Target)
 	{
 		return false;
 	}

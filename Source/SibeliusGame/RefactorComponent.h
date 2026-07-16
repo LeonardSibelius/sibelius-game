@@ -7,9 +7,10 @@
 
 // APPEAL-R (Walt): R is also the WILD refactor — point at nearly any prop (the
 // office desk, a chair) or a Refuser and rewrite it as a creature from the
-// Menagerie. Props are reversible (R again restores the original — drafts are
-// drafts); a refactored Refuser is gone for good. Pre-authored
-// URefactorableComponents always win over the wild path.
+// Menagerie. EVERYTHING is reversible (drafts are drafts): R on the creature
+// restores the original — a prop reappears untouched, a Refuser gets his body
+// unhidden and his mind re-possessed. Pre-authored URefactorableComponents
+// always win over the wild path.
 
 #pragma once
 

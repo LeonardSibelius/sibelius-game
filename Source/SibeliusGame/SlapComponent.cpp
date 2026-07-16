@@ -18,6 +18,8 @@
 #include "Engine/SkeletalMesh.h"
 #include "ProgressionSubsystem.h"   // FUN-2: slaps pay Sauce
 #include "RefuserController.h"      // bOnlySlapRefusers target filter
+#include "RefactorComponent.h"      // APPEAL-6c: wild creatures are slappable
+#include "Components/StaticMeshComponent.h"
 
 USlapComponent::USlapComponent()
 {
@@ -82,6 +84,45 @@ void USlapComponent::DoSlap()
 
 	for (const FHitResult& Hit : Hits)
 	{
+		// APPEAL-6c: wild-refactored creatures are fair game — pure comedy, no
+		// sauce and no stat (a zebra is not a Refuser, and paying would make an
+		// infinite R-then-slap sauce farm). Skeletals ragdoll on their pack's
+		// own physics assets; statues launch as rigid bodies. The creature
+		// keeps its UWildRefactorState wherever it lands, so R still restores
+		// the original at its original spot.
+		if (AActor* HitActor = Hit.GetActor())
+		{
+			if (HitActor->FindComponentByClass<UWildRefactorState>())
+			{
+				const FVector CreatureImpulse =
+					(HitActor->GetActorLocation() - ViewStart).GetSafeNormal() * LaunchSpeed
+					+ FVector::UpVector * UpwardSpeed;
+				if (USkeletalMeshComponent* SkelComp = HitActor->FindComponentByClass<USkeletalMeshComponent>())
+				{
+					SkelComp->SetCollisionProfileName(TEXT("Ragdoll"));
+					SkelComp->SetSimulatePhysics(true);
+					SkelComp->AddImpulse(CreatureImpulse, NAME_None, true);
+					// The Ragdoll profile dropped the R-trace guarantee (Walt's
+					// downed fox could never give the couch back). Re-block it.
+					SkelComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+					SkelComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+				}
+				else if (UStaticMeshComponent* MeshComp = HitActor->FindComponentByClass<UStaticMeshComponent>())
+				{
+					MeshComp->SetCollisionProfileName(TEXT("PhysicsActor"));
+					MeshComp->SetSimulatePhysics(true);
+					MeshComp->AddImpulse(CreatureImpulse, NAME_None, true);
+					MeshComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+					MeshComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+				}
+				if (SlapSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(World, SlapSound, Hit.ImpactPoint);
+				}
+				break;
+			}
+		}
+
 		ACharacter* Victim = Cast<ACharacter>(Hit.GetActor());
 		if (!Victim || Victim == OwnerPawn)
 		{
