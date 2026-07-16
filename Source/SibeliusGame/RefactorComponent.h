@@ -15,21 +15,23 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "AssetRegistry/AssetData.h"
 #include "RefactorComponent.generated.h"
 
 class URefactorableComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 
-// Bookkeeping stamped onto a wild-refactored prop so R can restore it.
+// Bookkeeping stamped onto the spawned CREATURE: which hidden prop it stands
+// in for. R on the creature destroys it and un-hides the original — the prop
+// itself is never modified, so restore is always perfect.
 UCLASS()
 class SIBELIUSGAME_API UWildRefactorState : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY() TObjectPtr<UStaticMesh> OriginalMesh;
-	UPROPERTY() FVector OriginalScale = FVector::OneVector;
+	UPROPERTY() TObjectPtr<AActor> OriginalActor;
 };
 
 UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))
@@ -59,11 +61,22 @@ protected:
 
 	// --- Wild refactor (APPEAL-R) --------------------------------------------
 
-	// The creatures a wild refactor can produce. HARD references (the
-	// soft-refs-don't-cook lesson): defaults found in the constructor —
-	// dragon, toy rabbit, butterfly, dragonfly — extendable in editor.
+	// Folders auto-scanned for creatures at BeginPlay (every StaticMesh and
+	// SkeletalMesh inside joins the zoo — drop in a new Fab pack, add its
+	// folder here, done). These folders MUST also be in DefaultGame.ini's
+	// DirectoriesToAlwaysCook or packaged builds ship an empty zoo (the
+	// soft-refs-don't-cook lesson: a scan is not a reference).
 	UPROPERTY(EditAnywhere, Category = "Refactor|Wild")
-	TArray<TObjectPtr<UStaticMesh>> Menagerie;
+	TArray<FName> MenagerieFolders = {
+		TEXT("/Game/AfricanAnimalsPack"),
+		TEXT("/Game/AnimalVarietyPack"),
+		TEXT("/Game/UltimateFarmAnimalsCollection"),
+	};
+
+	// Hard-referenced base creatures (dragon statue, toy rabbit) — these cook
+	// via the CDO and guarantee the zoo is never empty even with no packs.
+	UPROPERTY(EditAnywhere, Category = "Refactor|Wild")
+	TArray<TObjectPtr<UObject>> Menagerie;
 
 	// Props whose bounding box exceeds this (largest side, cm) are refused —
 	// keeps walls, floors, and whole buildings out of the zoo.
@@ -74,14 +87,19 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Refactor|Wild")
 	float RefuserCreatureSize = 180.f;
 
+	virtual void BeginPlay() override;
+
 private:
 	URefactorableComponent* TraceForRefactorable() const;
 
-	// The wild path: prop → creature, creature-prop → original, Refuser →
-	// creature statue. Returns true if anything changed.
+	// The wild path: prop → hidden + creature spawned in its place, creature →
+	// original restored, Refuser → creature for good. True if anything changed.
 	bool TryWildRefactor();
-	UStaticMesh* PickCreature() const;
-	static void ApplyCreature(UStaticMeshComponent* Target, UStaticMesh* Creature, float MatchSize);
+	UObject* PickCreature() const;
+	AActor* SpawnCreatureActor(UObject* CreatureMesh, const FTransform& Where, float MatchSize);
 
 	UPROPERTY() TObjectPtr<URefactorableComponent> CurrentTarget;
+
+	// Creatures found by the folder scan; loaded lazily on first use.
+	TArray<FAssetData> ScannedCreatures;
 };

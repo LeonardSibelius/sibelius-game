@@ -44,7 +44,9 @@ public class SibeliusGame : ModuleRules
 			"MoviePlayer",
 			// Shinbi cloth-flutter fix: runtime damping via the Chaos cloth interactor.
 			"ClothingSystemRuntimeInterface",
-			"ChaosCloth"
+			"ChaosCloth",
+			// APPEAL-R wild refactor: the Menagerie auto-scans animal-pack folders.
+			"AssetRegistry"
 		});
 
 // SIB-19 smoke-test commandlet uses UEditorLoadingAndSavingUtils (editor-only)

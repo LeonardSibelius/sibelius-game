@@ -12,18 +12,24 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
+#include "Engine/SkeletalMesh.h"
+#include "Animation/SkeletalMeshActor.h"
 #include "Engine/World.h"
 #include "CollisionQueryParams.h"
 #include "UObject/ConstructorHelpers.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Modules/ModuleManager.h"
 
 URefactorComponent::URefactorComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// APPEAL-R: the default Menagerie — creatures already on disk, hard CDO
-	// references so all of them actually cook (the Death_Back lesson).
+	// APPEAL-R: hard-referenced base creatures so the zoo is never empty and
+	// these two always cook (the Death_Back lesson). The real variety comes
+	// from the MenagerieFolders scan in BeginPlay.
 	// NOT the EasyBiomes insects: their material flaps the wings via world
 	// position offset tuned for life size, and a chair-sized butterfly is a
 	// room-filling smear (Walt: "it turned into a tornado").
@@ -39,6 +45,30 @@ URefactorComponent::URefactorComponent()
 			Menagerie.Add(Finder.Object);
 		}
 	}
+}
+
+void URefactorComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Scan the animal-pack folders: every static or skeletal mesh inside is a
+	// possible second draft. Lazy-loaded in PickCreature, so this costs a
+	// registry query, not forty mesh loads.
+	FAssetRegistryModule& RegistryModule =
+		FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+	FARFilter Filter;
+	Filter.bRecursivePaths = true;
+	for (const FName& Folder : MenagerieFolders)
+	{
+		Filter.PackagePaths.Add(Folder);
+	}
+	Filter.ClassPaths.Add(UStaticMesh::StaticClass()->GetClassPathName());
+	Filter.ClassPaths.Add(USkeletalMesh::StaticClass()->GetClassPathName());
+
+	ScannedCreatures.Reset();
+	RegistryModule.Get().GetAssets(Filter, ScannedCreatures);
+	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] Menagerie: %d scanned + %d built-in creatures."),
+		ScannedCreatures.Num(), Menagerie.Num());
 }
 
 void URefactorComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -118,16 +148,16 @@ bool URefactorComponent::TryWildRefactor()
 		return false;
 	}
 
-	// --- R on an already-refactored prop: restore the first draft. ---
+	// --- R on a creature: destroy it and un-hide the first draft. ---
 	if (UWildRefactorState* State = Target->FindComponentByClass<UWildRefactorState>())
 	{
-		if (UStaticMeshComponent* SMC = Target->FindComponentByClass<UStaticMeshComponent>())
+		if (AActor* Original = State->OriginalActor)
 		{
-			SMC->SetStaticMesh(State->OriginalMesh);
-			SMC->SetWorldScale3D(State->OriginalScale);
+			Original->SetActorHiddenInGame(false);
+			Original->SetActorEnableCollision(true);
+			UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s restored."), *Original->GetName());
 		}
-		State->DestroyComponent();
-		UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s restored."), *Target->GetName());
+		Target->Destroy();
 		return true;
 	}
 
@@ -143,15 +173,7 @@ bool URefactorComponent::TryWildRefactor()
 			VC->StopMovement();
 			VC->UnPossess();
 		}
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		AStaticMeshActor* Creature = World->SpawnActor<AStaticMeshActor>(
-			Victim->GetActorLocation(), Victim->GetActorRotation(), SpawnParams);
-		if (Creature)
-		{
-			Creature->SetMobility(EComponentMobility::Movable);
-			ApplyCreature(Creature->GetStaticMeshComponent(), PickCreature(), RefuserCreatureSize);
-		}
+		SpawnCreatureActor(PickCreature(), Victim->GetActorTransform(), RefuserCreatureSize);
 		UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] Refuser transmuted."));
 		Victim->Destroy();
 		return true;
@@ -179,33 +201,105 @@ bool URefactorComponent::TryWildRefactor()
 		return false;   // walls, floors, buildings: not zoo material
 	}
 
-	UWildRefactorState* State = NewObject<UWildRefactorState>(Target);
-	State->RegisterComponent();
-	State->OriginalMesh = SMC->GetStaticMesh();
-	State->OriginalScale = SMC->GetComponentScale();
+	// Architecture refuses the treatment BY NAME — a window is desk-sized, so
+	// the bounds cap can't catch it, and a window that becomes a dragon leaves
+	// a dragon-shaped hole to the outside world (Walt found this immediately).
+	// Kit meshes reliably carry these words; furniture doesn't.
+	{
+		static const TCHAR* ArchitectureWords[] = {
+			TEXT("wall"), TEXT("window"), TEXT("door"), TEXT("floor"),
+			TEXT("roof"), TEXT("ceiling"), TEXT("fence"), TEXT("stair"),
+			TEXT("beam"), TEXT("column"), TEXT("pillar"), TEXT("railing"),
+		};
+		const FString MeshName = SMC->GetStaticMesh()->GetName().ToLower();
+		const FString ActorName = Target->GetName().ToLower();
+		for (const TCHAR* Word : ArchitectureWords)
+		{
+			if (MeshName.Contains(Word) || ActorName.Contains(Word))
+			{
+				return false;
+			}
+		}
+	}
 
-	ApplyCreature(SMC, PickCreature(), LargestSide);
+	// Spawn the creature where the prop stands, then hide the prop — never
+	// modify it, so R on the creature restores it exactly as it was.
+	AActor* Creature = SpawnCreatureActor(PickCreature(), Target->GetActorTransform(), LargestSide);
+	if (!Creature)
+	{
+		return false;
+	}
+	UWildRefactorState* State = NewObject<UWildRefactorState>(Creature);
+	State->RegisterComponent();
+	State->OriginalActor = Target;
+	Target->SetActorHiddenInGame(true);
+	Target->SetActorEnableCollision(false);
+
 	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s transmuted."), *Target->GetName());
 	return true;
 }
 
-UStaticMesh* URefactorComponent::PickCreature() const
+UObject* URefactorComponent::PickCreature() const
 {
-	return Menagerie.Num() > 0 ? Menagerie[FMath::RandRange(0, Menagerie.Num() - 1)].Get() : nullptr;
+	const int32 Total = Menagerie.Num() + ScannedCreatures.Num();
+	if (Total == 0)
+	{
+		return nullptr;
+	}
+	const int32 Index = FMath::RandRange(0, Total - 1);
+	if (Index < Menagerie.Num())
+	{
+		return Menagerie[Index].Get();
+	}
+	return ScannedCreatures[Index - Menagerie.Num()].GetAsset();   // lazy load
 }
 
-void URefactorComponent::ApplyCreature(UStaticMeshComponent* Target, UStaticMesh* Creature, float MatchSize)
+AActor* URefactorComponent::SpawnCreatureActor(UObject* CreatureMesh, const FTransform& Where, float MatchSize)
 {
-	if (!Target || !Creature)
+	UWorld* World = GetWorld();
+	if (!World || !CreatureMesh)
 	{
-		return;
+		return nullptr;
 	}
-	// Uniform-scale the creature so it roughly fills the space of what it
-	// replaced (a desk-sized rabbit, a Gideon-sized dragonfly).
-	const float CreatureSize = FMath::Max(Creature->GetBounds().BoxExtent.GetMax() * 2.f, 1.f);
-	const float Scale = FMath::Clamp(MatchSize / CreatureSize, 0.05f, 25.f);
 
-	Target->SetMobility(EComponentMobility::Movable);
-	Target->SetStaticMesh(Creature);
-	Target->SetWorldScale3D(FVector(Scale));
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	// Uniform-scale the creature so it roughly fills the space of what it
+	// replaced (a desk-sized rabbit, a Gideon-sized zebra).
+	auto FitScale = [MatchSize](const FBoxSphereBounds& Bounds)
+	{
+		const float CreatureSize = FMath::Max(Bounds.BoxExtent.GetMax() * 2.f, 1.f);
+		return FMath::Clamp(MatchSize / CreatureSize, 0.05f, 25.f);
+	};
+
+	if (UStaticMesh* SM = Cast<UStaticMesh>(CreatureMesh))
+	{
+		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>(
+			Where.GetLocation(), Where.Rotator(), SpawnParams);
+		if (Actor)
+		{
+			Actor->SetMobility(EComponentMobility::Movable);
+			Actor->GetStaticMeshComponent()->SetStaticMesh(SM);
+			Actor->SetActorScale3D(FVector(FitScale(SM->GetBounds())));
+		}
+		return Actor;
+	}
+
+	if (USkeletalMesh* SK = Cast<USkeletalMesh>(CreatureMesh))
+	{
+		ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>(
+			Where.GetLocation(), Where.Rotator(), SpawnParams);
+		if (Actor)
+		{
+			if (USkeletalMeshComponent* Comp = Actor->GetSkeletalMeshComponent())
+			{
+				Comp->SetSkeletalMesh(SK);
+				Actor->SetActorScale3D(FVector(FitScale(SK->GetBounds())));
+			}
+		}
+		return Actor;
+	}
+
+	return nullptr;
 }
