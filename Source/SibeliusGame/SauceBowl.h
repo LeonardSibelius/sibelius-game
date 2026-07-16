@@ -46,6 +46,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "SauceBowl", meta = (ClampMin = "0.0"))
 	float RechargeSeconds = 90.f;
 
+	// Walt's ritual grammar: E starts a short POUR (the stream falls for this
+	// many seconds), then the pour stops and the sauce appears — full pot.
+	UPROPERTY(EditAnywhere, Category = "SauceBowl", meta = (ClampMin = "0.5"))
+	float PourSeconds = 4.f;
+
 	// [C] only claims when the player is at least this close (cm).
 	UPROPERTY(EditAnywhere, Category = "SauceBowl", meta = (ClampMin = "0.0"))
 	float ClaimRadius = 350.f;
@@ -57,7 +62,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
 
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<USceneComponent> SceneRoot;
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> TableMesh;
@@ -67,7 +71,10 @@ protected:
 
 private:
 	bool IsLadleReady() const;
+	void OnPourComplete();            // stream stops, sauce appears
 
+	bool bPouring = false;
 	bool bFilled = false;
 	double LastClaimTime = -1.0e9;    // world seconds of the last claim
+	FTimerHandle PourTimer;
 };

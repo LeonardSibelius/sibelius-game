@@ -19,18 +19,16 @@
 
 ASauceBowl::ASauceBowl()
 {
-	PrimaryActorTick.bCanEverTick = true;   // the drip and the meniscus pulse
+	PrimaryActorTick.bCanEverTick = false;   // event-driven: pour timer + state flips
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
 
-	// Real props from the magician's lab (hard CDO refs so they cook):
-	// SM_Pot_Table is 106 cm tall (extent 53, origin-centered), SM_Pot is
-	// 56 cm (extent 28). The old engine-shape dome read as an UPSIDE-DOWN
-	// bowl and hid the sauce disk inside itself — Walt filled it and saw
-	// nothing happen.
+	// Real props (hard CDO refs so they cook): a four-legged old table (85 cm
+	// surface — the magician's two-legged pot stand read as broken furniture
+	// to Walt) with the magician's pot (56 cm, extent 28) on top.
 	ConstructorHelpers::FObjectFinder<UStaticMesh> PotTable(
-		TEXT("/Game/MagicianLabatory/Source/Props/PotTable/SM_Pot_Table.SM_Pot_Table"));
+		TEXT("/Game/HouseFurniture/Meshes/SM_OldTable_A1/SM_OldTable_A1.SM_OldTable_A1"));
 	ConstructorHelpers::FObjectFinder<UStaticMesh> Pot(
 		TEXT("/Game/MagicianLabatory/Source/Props/Pot/SM_Pot.SM_Pot"));
 	ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
@@ -40,23 +38,23 @@ ASauceBowl::ASauceBowl()
 	// The table (origin-centered → lift by its extent so it stands on the floor).
 	TableMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TableMesh"));
 	TableMesh->SetupAttachment(SceneRoot);
-	TableMesh->SetRelativeLocation(FVector(0.f, 0.f, 53.f));
+	TableMesh->SetRelativeLocation(FVector(0.f, 0.f, 42.6f));
 	TableMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	if (PotTable.Succeeded()) { TableMesh->SetStaticMesh(PotTable.Object); }
 
-	// The pot, sitting on the tabletop (106 + 28 = center at 134).
+	// The pot, sitting on the tabletop (85 + 28 = center at 113).
 	BowlMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BowlMesh"));
 	BowlMesh->SetupAttachment(SceneRoot);
-	BowlMesh->SetRelativeLocation(FVector(0.f, 0.f, 134.f));
+	BowlMesh->SetRelativeLocation(FVector(0.f, 0.f, 113.f));
 	BowlMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	if (Pot.Succeeded()) { BowlMesh->SetStaticMesh(Pot.Object); }
 
-	// The sauce: a glowing green meniscus cresting the pot's rim (162) so a
-	// filled pot is unmissable from anywhere in the room.
+	// The sauce: a glowing meniscus sunk just below the pot's rim (Walt-tuned:
+	// wide enough to read as a full pot, low enough to sit IN it, not on it).
 	SauceMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SauceMesh"));
 	SauceMesh->SetupAttachment(SceneRoot);
-	SauceMesh->SetRelativeScale3D(FVector(0.30f, 0.30f, 0.04f));
-	SauceMesh->SetRelativeLocation(FVector(0.f, 0.f, 163.f));
+	SauceMesh->SetRelativeScale3D(FVector(0.44f, 0.44f, 0.03f));
+	SauceMesh->SetRelativeLocation(FVector(0.f, 0.f, 136.f));
 	SauceMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SauceMesh->SetVisibility(false);
 	if (Cylinder.Succeeded()) { SauceMesh->SetStaticMesh(Cylinder.Object); }
@@ -67,29 +65,23 @@ ASauceBowl::ASauceBowl()
 	// stops = the ladle is ready.
 	StreamMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StreamMesh"));
 	StreamMesh->SetupAttachment(SceneRoot);
-	StreamMesh->SetRelativeScale3D(FVector(0.035f, 0.035f, 1.1f));
-	StreamMesh->SetRelativeLocation(FVector(0.f, 0.f, 218.f));   // cylinder center; spans ~163..273
+	// Walt-tuned: a 7.5 m pour descending from high above INTO the pot — the
+	// recharge should look like the temple itself refilling the vessel.
+	StreamMesh->SetRelativeScale3D(FVector(0.035f, 0.035f, 7.5f));
+	StreamMesh->SetRelativeLocation(FVector(0.f, 0.f, 505.f));   // cylinder center; spans ~130..880
 	StreamMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	StreamMesh->SetVisibility(false);
 	if (Cylinder.Succeeded()) { StreamMesh->SetStaticMesh(Cylinder.Object); }
 	if (Basic.Succeeded()) { StreamMesh->SetMaterial(0, Basic.Object); }
 }
 
-void ASauceBowl::Tick(float DeltaSeconds)
+void ASauceBowl::OnPourComplete()
 {
-	Super::Tick(DeltaSeconds);
-
-	if (bFilled && SauceMesh)
-	{
-		// The waiting sauce breathes — a slow pulse so a filled pot reads
-		// as alive and claimable from across the room.
-		const float T = GetWorld() ? static_cast<float>(GetWorld()->GetTimeSeconds()) : 0.f;
-		SauceMesh->SetRelativeLocation(FVector(0.f, 0.f, 163.f + 2.5f * FMath::Sin(T * 3.f)));
-	}
-	if (StreamMesh)
-	{
-		StreamMesh->SetVisibility(!bFilled && !IsLadleReady());
-	}
+	// Walt's ritual grammar: the stream stops, the sauce appears — full pot.
+	bPouring = false;
+	bFilled = true;
+	if (StreamMesh) { StreamMesh->SetVisibility(false); }
+	if (SauceMesh) { SauceMesh->SetVisibility(true); }
 }
 
 void ASauceBowl::BeginPlay()
@@ -118,15 +110,17 @@ bool ASauceBowl::IsLadleReady() const
 
 void ASauceBowl::Interact_Implementation(AActor* Interactor)
 {
-	if (bFilled || !IsLadleReady())
+	if (bFilled || bPouring || !IsLadleReady())
 	{
 		return;
 	}
-	bFilled = true;
-	if (SauceMesh)
-	{
-		SauceMesh->SetVisibility(true);
-	}
+
+	// E starts the POUR: the stream falls for PourSeconds, then the pot is
+	// full (OnPourComplete). Short performance, not a fixture.
+	bPouring = true;
+	if (StreamMesh) { StreamMesh->SetVisibility(true); }
+	GetWorldTimerManager().SetTimer(PourTimer, this, &ASauceBowl::OnPourComplete,
+		FMath::Max(0.5f, PourSeconds), /*bLoop=*/false);
 
 	// The pour draws attention (Walt's design): the temple's spawner answers
 	// the same alarm the corkboard rings. Survive the visit, then Compile.
@@ -173,6 +167,10 @@ bool ASauceBowl::TryClaim(APawn* Claimer)
 
 FText ASauceBowl::GetInteractionPrompt_Implementation() const
 {
+	if (bPouring)
+	{
+		return FText::FromString(TEXT("The temple pours..."));
+	}
 	if (bFilled)
 	{
 		return FText::FromString(TEXT("Compile the sauce [C]"));
@@ -181,7 +179,7 @@ FText ASauceBowl::GetInteractionPrompt_Implementation() const
 	{
 		const int32 Wait = FMath::CeilToInt(
 			RechargeSeconds - (GetWorld()->GetTimeSeconds() - LastClaimTime));
-		return FText::FromString(FString::Printf(TEXT("The ladle drips... (%ds)"), Wait));
+		return FText::FromString(FString::Printf(TEXT("The temple gathers sauce... (%ds)"), Wait));
 	}
 	return FText::FromString(TEXT("Fill the bowl [E]"));
 }
