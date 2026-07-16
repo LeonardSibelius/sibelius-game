@@ -70,7 +70,9 @@ protected:
 	TArray<FName> MenagerieFolders = {
 		TEXT("/Game/AfricanAnimalsPack"),
 		TEXT("/Game/AnimalVarietyPack"),
-		TEXT("/Game/UltimateFarmAnimalsCollection"),
+		// Walt's three keepers (rooster/pig/rabbit statues), pruned out of the
+		// 2.6 GB UltimateFarmAnimalsCollection — the rest was deleted.
+		TEXT("/Game/FarmKeepers"),
 	};
 
 	// Hard-referenced base creatures (dragon statue, toy rabbit) — these cook
