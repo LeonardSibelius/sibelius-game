@@ -133,6 +133,12 @@ for Gideon") became the game's funniest system, built and debugged live:
 - **NOT yet shipped to itch** — goes out in v0.7.6 (adds ~0.5 GB of animals;
   weigh against the diet before pushing).
 
+## Shipped: v0.7.7 (2026-07-16, build #1801360)
+
+The temple sauce fountain (Walt's E-pour/C-compile/quiet-recharge ritual,
++40 per bowl, Gideons crash every pour), temple navmesh + resident spawner,
+and Greystone as the player's mirror body. 496 MB patch.
+
 ## Parked: real mirrors (2026-07-16)
 
 The player is now **Paragon Greystone** (BP_FirstPersonCharacter Mesh + his
