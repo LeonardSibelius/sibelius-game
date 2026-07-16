@@ -22,13 +22,14 @@ URefactorComponent::URefactorComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// APPEAL-R: the default Menagerie — every creature already on disk, hard
-	// CDO references so all of them actually cook (the Death_Back lesson).
+	// APPEAL-R: the default Menagerie — creatures already on disk, hard CDO
+	// references so all of them actually cook (the Death_Back lesson).
+	// NOT the EasyBiomes insects: their material flaps the wings via world
+	// position offset tuned for life size, and a chair-sized butterfly is a
+	// room-filling smear (Walt: "it turned into a tornado").
 	const TCHAR* CreaturePaths[] = {
 		TEXT("/Game/Dragon_Rise/Meshes/SM_Dragons.SM_Dragons"),
 		TEXT("/Game/HouseFurniture/Meshes/SM_ToyRabbit_A1.SM_ToyRabbit_A1"),
-		TEXT("/Game/EasyBiomes/StaticMeshes/FX/Insects/SM_Butterfly_01.SM_Butterfly_01"),
-		TEXT("/Game/EasyBiomes/StaticMeshes/FX/Insects/SM_DragonFly_01.SM_DragonFly_01"),
 	};
 	for (const TCHAR* Path : CreaturePaths)
 	{
