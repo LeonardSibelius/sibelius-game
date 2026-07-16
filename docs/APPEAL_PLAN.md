@@ -113,6 +113,26 @@ place playing his Paragon `Death_Back` (no launch; skeleton-checked with the
 freeze-and-launch as fallback, so the taffy fix stays protected). Walt called
 it good enough to justify a version. Full 14-gate sweep green.
 
+## Milestone: the Wild Refactor + the Menagerie (2026-07-16, unshipped)
+
+Walt's ask ("point at the desk, press R, turn the desk into an animal — same
+for Gideon") became the game's funniest system, built and debugged live:
+
+- **R transmutes almost anything** into a random creature from the Menagerie;
+  R again restores the original perfectly (hide-and-spawn, never modify).
+  Refusers too: Gideon hides behind the zebra and comes back re-possessed.
+- **The zoo (16)**: 12 skeletal animals (AfricanAnimalsPack + AnimalVarietyPack,
+  kept; tusk part-meshes excluded), rooster/pig/rabbit statues (pruned from the
+  2.6 GB farm pack into /Game/FarmKeepers, rest deleted), toy rabbit mascot.
+  Auto-scanned from MenagerieFolders; folders in DirectoriesToAlwaysCook.
+- **Animals are slappable** (APPEAL-6c): skeletals ragdoll on pack physics
+  assets, statues launch rigid. No sauce (R-then-slap would be an infinite
+  farm). Creatures never despawn and always answer the R-trace.
+- Guard rails: interactables/architecture-by-name/>3.5 m/people never
+  transmute; the R-ray hops past invisible interaction boxes.
+- **NOT yet shipped to itch** — goes out in v0.7.6 (adds ~0.5 GB of animals;
+  weigh against the diet before pushing).
+
 ## Handoff notes for the next session (read before working)
 
 - **Walt**: 71, learning Unreal, wants small numbered steps, pastes screenshots
