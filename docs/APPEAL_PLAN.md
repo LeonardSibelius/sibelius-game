@@ -133,6 +133,18 @@ for Gideon") became the game's funniest system, built and debugged live:
 - **NOT yet shipped to itch** — goes out in v0.7.6 (adds ~0.5 GB of animals;
   weigh against the diet before pushing).
 
+## Parked: real mirrors (2026-07-16)
+
+The player is now **Paragon Greystone** (BP_FirstPersonCharacter Mesh + his
+AnimBlueprint — Walt's pick over the pale mannequin). But the attic mirror
+smears characters into mud: Lumen reflections have no lighting cache for
+skinned meshes. A PlanarReflection actor was tried (r.AllowGlobalClipPlane
+is now ON in DefaultEngine.ini — the shader recompile is already paid) but
+never engaged visibly; deleted, PARKED by Walt ("more trouble than it is
+worth"). If revived: likely needs hit-lighting-for-reflections (HW ray
+tracing) or a SceneCapture2D mirror material. Walt's carrot: "if the player
+is attractive enough, I will put more mirrors in the game."
+
 ## Handoff notes for the next session (read before working)
 
 - **Walt**: 71, learning Unreal, wants small numbered steps, pastes screenshots
