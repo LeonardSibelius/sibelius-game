@@ -45,6 +45,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "SauceBowl", meta = (ClampMin = "0.0"))
 	float ClaimRadius = 350.f;
 
+	// Walt's risk-reward: filling the bowl RINGS THE ALARM — any RefuserSpawner
+	// in the level answers. Earn the sauce by surviving the pour.
+	UPROPERTY(EditAnywhere, Category = "SauceBowl")
+	bool bSummonRefusersOnFill = true;
+
 protected:
 	virtual void BeginPlay() override;
 

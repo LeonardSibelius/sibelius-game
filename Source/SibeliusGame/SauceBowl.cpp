@@ -2,6 +2,8 @@
 
 #include "SauceBowl.h"
 #include "ProgressionSubsystem.h"
+#include "HallAlarmSubsystem.h"   // filling the bowl rings the alarm
+#include "Engine/GameInstance.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Engine.h"
@@ -22,38 +24,39 @@ ASauceBowl::ASauceBowl()
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
 
-	// Engine shapes + cook-guaranteed materials (all hard CDO references).
-	ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
-	ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+	// Real props from the magician's lab (hard CDO refs so they cook):
+	// SM_Pot_Table is 106 cm tall (extent 53, origin-centered), SM_Pot is
+	// 56 cm (extent 28). The old engine-shape dome read as an UPSIDE-DOWN
+	// bowl and hid the sauce disk inside itself — Walt filled it and saw
+	// nothing happen.
+	ConstructorHelpers::FObjectFinder<UStaticMesh> PotTable(
+		TEXT("/Game/MagicianLabatory/Source/Props/PotTable/SM_Pot_Table.SM_Pot_Table"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> Pot(
+		TEXT("/Game/MagicianLabatory/Source/Props/Pot/SM_Pot.SM_Pot"));
 	ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
-	ConstructorHelpers::FObjectFinder<UMaterialInterface> Marble(
-		TEXT("/Game/StainedGlass3D/Materials/M_BlackMarbleFloor.M_BlackMarbleFloor"));
 	ConstructorHelpers::FObjectFinder<UMaterialInterface> Basic(
 		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
 
-	// The table: a waist-high marble slab. The interact trace hits it.
+	// The table (origin-centered → lift by its extent so it stands on the floor).
 	TableMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TableMesh"));
 	TableMesh->SetupAttachment(SceneRoot);
-	TableMesh->SetRelativeScale3D(FVector(1.2f, 0.8f, 0.9f));
-	TableMesh->SetRelativeLocation(FVector(0.f, 0.f, 45.f));
+	TableMesh->SetRelativeLocation(FVector(0.f, 0.f, 53.f));
 	TableMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	if (Cube.Succeeded()) { TableMesh->SetStaticMesh(Cube.Object); }
-	if (Marble.Succeeded()) { TableMesh->SetMaterial(0, Marble.Object); }
+	if (PotTable.Succeeded()) { TableMesh->SetStaticMesh(PotTable.Object); }
 
-	// The bowl: a squashed marble sphere sitting on the slab.
+	// The pot, sitting on the tabletop (106 + 28 = center at 134).
 	BowlMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BowlMesh"));
 	BowlMesh->SetupAttachment(SceneRoot);
-	BowlMesh->SetRelativeScale3D(FVector(0.55f, 0.55f, 0.28f));
-	BowlMesh->SetRelativeLocation(FVector(0.f, 0.f, 98.f));
+	BowlMesh->SetRelativeLocation(FVector(0.f, 0.f, 134.f));
 	BowlMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	if (Sphere.Succeeded()) { BowlMesh->SetStaticMesh(Sphere.Object); }
-	if (Marble.Succeeded()) { BowlMesh->SetMaterial(0, Marble.Object); }
+	if (Pot.Succeeded()) { BowlMesh->SetStaticMesh(Pot.Object); }
 
-	// The sauce: a glowing green disk revealed when the bowl is filled.
+	// The sauce: a glowing green meniscus cresting the pot's rim (162) so a
+	// filled pot is unmissable from anywhere in the room.
 	SauceMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SauceMesh"));
 	SauceMesh->SetupAttachment(SceneRoot);
-	SauceMesh->SetRelativeScale3D(FVector(0.42f, 0.42f, 0.03f));
-	SauceMesh->SetRelativeLocation(FVector(0.f, 0.f, 110.f));
+	SauceMesh->SetRelativeScale3D(FVector(0.30f, 0.30f, 0.04f));
+	SauceMesh->SetRelativeLocation(FVector(0.f, 0.f, 163.f));
 	SauceMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SauceMesh->SetVisibility(false);
 	if (Cylinder.Succeeded()) { SauceMesh->SetStaticMesh(Cylinder.Object); }
@@ -112,6 +115,17 @@ void ASauceBowl::Interact_Implementation(AActor* Interactor)
 	if (SauceMesh)
 	{
 		SauceMesh->SetVisibility(true);
+	}
+
+	// The pour draws attention (Walt's design): the temple's spawner answers
+	// the same alarm the corkboard rings. Survive the visit, then Compile.
+	if (bSummonRefusersOnFill)
+	{
+		UGameInstance* GI = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
+		if (UHallAlarmSubsystem* Alarm = GI ? GI->GetSubsystem<UHallAlarmSubsystem>() : nullptr)
+		{
+			Alarm->TriggerAlarm();
+		}
 	}
 }
 
