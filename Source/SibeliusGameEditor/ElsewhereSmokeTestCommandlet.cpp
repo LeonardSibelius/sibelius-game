@@ -19,9 +19,9 @@ DEFINE_LOG_CATEGORY_STATIC(LogElsewhereSmokeTest, Log, All);
 
 namespace ElsewhereSmokeTestNS
 {
-	// The fixed authored forest the Sauce Door now travels into (Mode A), the office it
-	// returns to (the O-key OpenLevel target), and a host map to spawn transient actors in.
-	const FString ForestMapPackage = TEXT("/Game/Maps/L_Poplar_Forest");
+	// The office the O key returns to, and a host map to spawn transient actors in.
+	// (The forests are GONE — Walt's cut, 2026-07-16: the Many Worlds deck and its
+	// baked forest levels were deleted; this gate now guards the return path only.)
 	const FString OfficeMapPackage = TEXT("/Game/L_Office_v02");
 	const FString HostMapPackage   = TEXT("/Game/Maps/L_AI_Temple");
 
@@ -68,16 +68,9 @@ int32 UElsewhereSmokeTestCommandlet::Main(const FString& Params)
 	// Function-scoped so the namespace doesn't leak into other TUs under unity build.
 	using namespace ElsewhereSmokeTestNS;
 
-	UE_LOG(LogElsewhereSmokeTest, Display, TEXT("=== THE MANY WORLDS door smoke test: forest loads + back-to-office path ==="));
+	UE_LOG(LogElsewhereSmokeTest, Display, TEXT("=== Away-worlds smoke test: back-to-office path ==="));
 
 	FResult R;
-
-	// --- ASSERT 1: the fixed authored forest level (Mode A) exists and loads. ----------
-	UE_LOG(LogElsewhereSmokeTest, Display, TEXT("--- ASSERT 1: the Poplar forest level loads ---"));
-	{
-		UWorld* ForestWorld = LoadMapWorld(ForestMapPackage);
-		R.Check(ForestWorld != nullptr, FString::Printf(TEXT("forest level exists and loads (%s)"), *ForestMapPackage));
-	}
 
 	// --- ASSERT 2: the Back-to-Office travel path exists. ------------------------------
 	// Headless can't press O, so prove the path structurally: the O-key destination (the
@@ -92,11 +85,11 @@ int32 UElsewhereSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(CharCDO != nullptr, TEXT("player character CDO resolves"));
 		if (CharCDO)
 		{
-			// O / the hint are live in EVERY away-from-office level (forest, temple, cathedral, ...).
-			R.Check(CharCDO->IsAwayFromOfficeLevelName(TEXT("L_Poplar_Forest")) &&
+			// O / the hint are live in EVERY away-from-office level (temple, cathedral, carousel).
+			R.Check(CharCDO->IsAwayFromOfficeLevelName(TEXT("L_Carousel")) &&
 				CharCDO->IsAwayFromOfficeLevelName(TEXT("L_AI_Temple")) &&
 				CharCDO->IsAwayFromOfficeLevelName(TEXT("L_Cathedral")),
-				TEXT("O is live in every away-from-office level (forest / temple / cathedral)"));
+				TEXT("O is live in every away-from-office level (carousel / temple / cathedral)"));
 
 			// ...and a no-op in the office itself.
 			R.Check(!CharCDO->IsAwayFromOfficeLevelName(TEXT("L_Office_v02")),

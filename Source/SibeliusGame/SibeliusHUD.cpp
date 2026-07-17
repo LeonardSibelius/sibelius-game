@@ -269,12 +269,7 @@ void ASibeliusHUD::DrawWorldName()
 	Map.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);   // strip the PIE prefix
 
 	FString Name;
-	if      (Map.Contains(TEXT("Forest_01")))    { Name = TEXT("THE FIRST FOREST"); }
-	else if (Map.Contains(TEXT("Forest_03")))    { Name = TEXT("THE THIRD FOREST"); }
-	else if (Map.Contains(TEXT("Forest_06")))    { Name = TEXT("THE SIXTH FOREST"); }
-	else if (Map.Contains(TEXT("Forest_08")))    { Name = TEXT("THE EIGHTH FOREST"); }
-	else if (Map.Contains(TEXT("Poplar")))       { Name = TEXT("THE POPLAR FOREST"); }
-	else if (Map.Contains(TEXT("Cathedral")))    { Name = TEXT("THE CATHEDRAL"); }
+	if      (Map.Contains(TEXT("Cathedral")))    { Name = TEXT("THE CATHEDRAL"); }
 	else if (Map.Contains(TEXT("AI_Temple")))    { Name = TEXT("THE AI TEMPLE"); }
 	else                                          { return; }
 

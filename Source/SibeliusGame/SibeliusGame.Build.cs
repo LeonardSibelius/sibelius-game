@@ -42,9 +42,6 @@ public class SibeliusGame : ModuleRules
 			// Travel-door transition: animated loading screen during the blocking level load
 			// (registered on PreLoadMap in SibeliusGame.cpp).
 			"MoviePlayer",
-			// Shinbi cloth-flutter fix: runtime damping via the Chaos cloth interactor.
-			"ClothingSystemRuntimeInterface",
-			"ChaosCloth",
 			// APPEAL-R wild refactor: the Menagerie auto-scans animal-pack folders.
 			"AssetRegistry"
 		});

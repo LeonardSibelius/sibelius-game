@@ -74,21 +74,8 @@ void FElsewhereGen::BuildDefaultPlaceTypes(TArray<FPlaceTypeDef>& OutPlaces)
 		FLinearColor(0.06f, 0.05f, 0.05f), FLinearColor(1.0f, 0.5f, 0.3f), 0.015f, 1.8f,
 		{ TEXT("UpsideSpoon"), TEXT("RecursiveRecipe"), TEXT("SauceThatDreams") });
 
-	// --- The Winter Forest (SIB Forest) — the showcase PRE-MADE Elsewhere. NOT builder-assembled:
-	// TravelLevelName routes the Sauce Door straight to the hand-built L_Elsewhere_Forest, which
-	// brings its own PCG scenery + a hand-placed, plan-configured curio. An AI dreamworld (surreal
-	// flowers + ferns through snow), not a natural one. Kit/layout fields go unused here.
-	{
-		FPlaceTypeDef Forest;
-		Forest.Id = TEXT("WinterForest");
-		Forest.DisplayName = FText::FromString(TEXT("The Winter Forest"));
-		Forest.Weight = 10;
-		Forest.TravelLevelName = TEXT("L_Elsewhere_Forest");
-		Forest.AmbientColor = FLinearColor(0.10f, 0.12f, 0.16f);
-		Forest.CurioGlowColor = FLinearColor(0.6f, 0.9f, 1.0f);   // cold aurora glow
-		Forest.CurioPool = { TEXT("FrostPetal"), TEXT("DreamingFern"), TEXT("AuroraSeed") };
-		OutPlaces.Add(MoveTemp(Forest));
-	}
+	// (The Winter Forest place-type was removed with the forest cut, 2026-07-16 —
+	// its L_Elsewhere_Forest level and PCG scenery packs left the project.)
 
 	// --- The Server Cathedral (§5) — the AI's "mind" as a temple. The FIRST dressed
 	// place-type (SIB-47 dressing): its kit palette points at the REAL Crebotoly
@@ -185,10 +172,7 @@ void FElsewhereGen::BuildDefaultCurios(TArray<FCurioDef>& OutCurios)
 	MakeCurio(TEXT("TheFirstPacket"), TEXT("The First Packet"),      EElsewhereRarity::Rare,       7, TEXT("The very first thing it ever heard. Still unread receipts."));
 	MakeCurio(TEXT("KernelRelic"),    TEXT("The Kernel Relic"),      EElsewhereRarity::Legendary,  2, TEXT("Warm to the touch, and it remembers being switched on."));
 
-	// --- Winter Forest (SIB Forest) — surreal blooms through snow (no Mesh override: glowing orb) ---
-	MakeCurio(TEXT("FrostPetal"),    TEXT("A Frost Petal"),         EElsewhereRarity::Common,    16, TEXT("A flower that bloomed because the snow asked it to."));
-	MakeCurio(TEXT("DreamingFern"),  TEXT("A Dreaming Fern"),       EElsewhereRarity::Rare,       7, TEXT("It unfurls toward a sun only it remembers."));
-	MakeCurio(TEXT("AuroraSeed"),    TEXT("An Aurora Seed"),        EElsewhereRarity::Legendary,  2, TEXT("Plant it and the sky grows colours for one night."));
+	// (Winter Forest curios removed with the forest cut, 2026-07-16.)
 }
 
 const FPlaceTypeDef* FElsewhereGen::FindPlace(const TArray<FPlaceTypeDef>& Places, const FName& Id)
