@@ -56,7 +56,14 @@ data the model loads — the Workshop needs this plumbing anyway), higher
 volatility, per-spin sauce bet with the slam-stop reels already built. The
 first machine where the player risks real wallet on the reels themselves.
 
-### G5 — Video Poker: Jacks or Better  (M)
+### G5 — Video Poker: Jacks or Better  (M)  ✅ BUILT 2026-07-18 (out of order — Walt's pick)
+*Shipped in `ee5f1dca` + `e7626414`: full-pay 9/6 model (97.3% RTP simple-
+strategy sim), PokerSmokeTest gate (the sweep is 15 gates now), text-card
+native face, felt-green cabinet on the library's bookshelf wall, kitchen
+door PokerDoor_Kitchen with the four-suits sign arriving at the Poker
+doorstep. Established the door-per-game pattern: one library level, one
+door + tagged doorstep + proximity-scoped screen per machine. Walt parked
+the Workshop's future home in the AI Temple's unused hall.*
 The other machine on every real floor Walt's data warehouse watched. Draw
 poker model (deal 5, hold, draw, paytable) — well-specified math, perfectly
 gate-able, and the hold/draw decision gives players real agency the slots
