@@ -2,6 +2,7 @@
 
 #include "CarouselHUD.h"
 #include "CarouselMachine.h"
+#include "PokerMachine.h"
 #include "CarouselRunSubsystem.h"
 #include "ProgressionSubsystem.h"   // FUN-4: sauce balance + stake lines
 
@@ -35,6 +36,17 @@ ACarouselMachine* ACarouselHUD::GetMachine()
 	return nullptr;
 }
 
+APokerMachine* ACarouselHUD::GetPoker()
+{
+	if (CachedPoker.IsValid()) { return CachedPoker.Get(); }
+	for (TActorIterator<APokerMachine> It(GetWorld()); It; ++It)
+	{
+		CachedPoker = *It;
+		return *It;
+	}
+	return nullptr;
+}
+
 void ACarouselHUD::DrawHUD()
 {
 	Super::DrawHUD();
@@ -54,24 +66,38 @@ void ACarouselHUD::DrawHUD()
 		DrawRect(RetColor, CX - Thick * 0.5f, CY + Gap,       Thick, Arm);
 	}
 
+	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
+	const FLinearColor White(1, 1, 1), Gold(1.0f, 0.85f, 0.2f), Dim(0.7f, 0.7f, 0.7f), Green(0.4f, 1.0f, 0.4f);
+
 	// Walt 2026-07-18: two machines share this floor now (the poker cabinet
-	// arrived). The carousel's panel only draws NEAR the carousel — unless a
-	// run is live (a stake is riding; the numbers follow you). Far away, the
-	// screen belongs to whatever machine you're standing at.
+	// arrived). The carousel's panel — and its KEYS (CarouselMachine gates
+	// them the same way) — belong to standing at the carousel. Far away, the
+	// screen belongs to the machine you're at: a courtesy prompt at the poker
+	// cabinet, and a one-line reminder if a carousel stake is still riding.
 	{
 		const ECarouselRunPhase P = RunSub->GetPhase();
 		const bool bRunLive = (P == ECarouselRunPhase::Spinning || P == ECarouselRunPhase::Shop);
 		const ACarouselMachine* M = GetMachine();
 		const APawn* Pawn = GetOwningPawn();
-		if (!bRunLive && M && Pawn
-			&& FVector::Dist2D(Pawn->GetActorLocation(), M->GetActorLocation()) > 1000.0f)
+		if (M && Pawn && FVector::Dist2D(Pawn->GetActorLocation(), M->GetActorLocation()) > 1000.0f)
 		{
-			return;   // reticle only; the room speaks for itself
+			if (APokerMachine* PM = GetPoker())
+			{
+				if (!PM->IsScreenOpen()
+					&& FVector::Dist2D(Pawn->GetActorLocation(), PM->GetActorLocation()) <= 450.0f)
+				{
+					DrawText(FString::Printf(TEXT("VIDEO POKER — press E to sit down  (%d sauce a hand)"), PM->BetPerHand),
+						FLinearColor(0.55f, 1.0f, 0.65f), 60.0f, 60.0f, Font, 1.2f * 1.8f);
+				}
+			}
+			if (bRunLive)
+			{
+				DrawText(TEXT("A stake rides at the Carousel — walk back to finish the round"),
+					Dim, 60.0f, 130.0f, Font, 0.8f * 1.8f);
+			}
+			return;
 		}
 	}
-
-	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
-	const FLinearColor White(1, 1, 1), Gold(1.0f, 0.85f, 0.2f), Dim(0.7f, 0.7f, 0.7f), Green(0.4f, 1.0f, 0.4f);
 
 	// --- Big-win flash overlay (scaled by the machine's reaction state) ---
 	if (ACarouselMachine* M = GetMachine())

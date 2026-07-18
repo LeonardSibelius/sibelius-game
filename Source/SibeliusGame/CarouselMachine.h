@@ -44,6 +44,13 @@ private:
 	UCarouselRunSubsystem* GetRun() const;
 	void TryEnableInput();
 
+	// Walt's poker-cube catch: this machine's keys are LEVEL-GLOBAL raw binds,
+	// so E at the poker cabinet pulled the carousel lever. Every machine verb
+	// now demands the player actually stand at the machine (O stays global —
+	// it's the way home, not a machine verb).
+	bool IsPlayerNear(float Radius) const;
+	static constexpr float MachineKeyRadius = 1000.0f;   // matches the HUD panel radius
+
 	// Input handlers (commands to the subsystem — never payout math).
 	void OnPullLever();
 	void OnBuy0();

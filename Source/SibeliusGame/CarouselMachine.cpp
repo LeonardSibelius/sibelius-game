@@ -100,8 +100,16 @@ void ACarouselMachine::TryEnableInput()
 	}
 }
 
+bool ACarouselMachine::IsPlayerNear(float Radius) const
+{
+	const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+	return Pawn && FVector::Dist2D(Pawn->GetActorLocation(), GetActorLocation()) <= Radius;
+}
+
 void ACarouselMachine::OnPullLever()
 {
+	if (!IsPlayerNear(MachineKeyRadius)) { return; }   // E belongs to whatever machine you stand at
 	UCarouselRunSubsystem* RunSub = GetRun();
 	if (!RunSub)
 	{
@@ -121,14 +129,15 @@ void ACarouselMachine::OnPullLever()
 	if (RunSub->Spin()) { LeverPull = 1.0f; }   // the sim resolves it; we just animate the pull
 }
 
-void ACarouselMachine::OnBuy0()    { if (UCarouselRunSubsystem* R = GetRun()) { R->BuyOffering(0); } }
-void ACarouselMachine::OnBuy1()    { if (UCarouselRunSubsystem* R = GetRun()) { R->BuyOffering(1); } }
-void ACarouselMachine::OnBuy2()    { if (UCarouselRunSubsystem* R = GetRun()) { R->BuyOffering(2); } }
-void ACarouselMachine::OnReroll()  { if (UCarouselRunSubsystem* R = GetRun()) { R->Reroll(); } }
-void ACarouselMachine::OnContinue(){ if (UCarouselRunSubsystem* R = GetRun()) { R->AdvanceToNextRound(); } }
+void ACarouselMachine::OnBuy0()    { if (IsPlayerNear(MachineKeyRadius)) { if (UCarouselRunSubsystem* R = GetRun()) { R->BuyOffering(0); } } }
+void ACarouselMachine::OnBuy1()    { if (IsPlayerNear(MachineKeyRadius)) { if (UCarouselRunSubsystem* R = GetRun()) { R->BuyOffering(1); } } }
+void ACarouselMachine::OnBuy2()    { if (IsPlayerNear(MachineKeyRadius)) { if (UCarouselRunSubsystem* R = GetRun()) { R->BuyOffering(2); } } }
+void ACarouselMachine::OnReroll()  { if (IsPlayerNear(MachineKeyRadius)) { if (UCarouselRunSubsystem* R = GetRun()) { R->Reroll(); } } }
+void ACarouselMachine::OnContinue(){ if (IsPlayerNear(MachineKeyRadius)) { if (UCarouselRunSubsystem* R = GetRun()) { R->AdvanceToNextRound(); } } }
 
 void ACarouselMachine::OnNewRun()
 {
+	if (!IsPlayerNear(MachineKeyRadius)) { return; }
 	// FUN-4: a new run stakes Sauce (free only in the bare slice, where no
 	// progression subsystem exists). Refusal is loud so the player knows why.
 	if (UCarouselRunSubsystem* R = GetRun())

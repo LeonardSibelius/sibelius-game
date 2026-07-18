@@ -5,10 +5,12 @@
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/InputComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Misc/DateTime.h"
+#include "TimerManager.h"
 #include "PokerScreenWidget.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogPokerMachine, Log, All);
@@ -31,6 +33,47 @@ APokerMachine::APokerMachine()
 	Glow->SetIntensity(2500.f);
 	Glow->SetAttenuationRadius(500.f);
 	Glow->CastShadows = false;
+}
+
+void APokerMachine::BeginPlay()
+{
+	Super::BeginPlay();
+	TryEnableInput();
+}
+
+void APokerMachine::TryEnableInput()
+{
+	APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	if (!PC)
+	{
+		if (++InputAttempts < 40)
+		{
+			GetWorldTimerManager().SetTimer(InputRetryHandle, this, &APokerMachine::TryEnableInput, 0.25f, false);
+		}
+		return;
+	}
+
+	EnableInput(PC);
+	if (InputComponent)
+	{
+		InputComponent->BindKey(EKeys::E, IE_Pressed, this, &APokerMachine::OnInteractKey);
+	}
+}
+
+bool APokerMachine::IsPlayerNear(float Radius) const
+{
+	const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+	return Pawn && FVector::Dist2D(Pawn->GetActorLocation(), GetActorLocation()) <= Radius;
+}
+
+void APokerMachine::OnInteractKey()
+{
+	if (bScreenOpen || !IsPlayerNear(SitDownRadius)) { return; }
+	if (APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr)
+	{
+		OpenScreen(PC);
+	}
 }
 
 void APokerMachine::Interact_Implementation(AActor* Interactor)

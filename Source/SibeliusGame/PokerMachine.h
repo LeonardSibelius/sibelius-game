@@ -52,9 +52,24 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Poker Machine")
 	TObjectPtr<UPointLightComponent> Glow;
 
+protected:
+	virtual void BeginPlay() override;
+
 private:
 	void OpenScreen(APlayerController* PC);
 	void CloseScreen();   // SC1: the one place input mode is restored
+
+	// The library level has no interaction tracer (plain DefaultPawn, raw key
+	// binds — the CarouselMachine pattern), so IInteractable::Interact never
+	// fires there. The cabinet binds E itself, gated to standing right at it.
+	// In tracer levels (the office character) the IInteractable path still works.
+	void TryEnableInput();
+	void OnInteractKey();
+	bool IsPlayerNear(float Radius) const;
+	static constexpr float SitDownRadius = 450.0f;
+
+	int32 InputAttempts = 0;
+	FTimerHandle InputRetryHandle;
 
 	UPROPERTY()
 	TObjectPtr<UPokerScreenWidget> Screen;

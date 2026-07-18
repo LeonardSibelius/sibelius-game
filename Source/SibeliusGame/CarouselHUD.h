@@ -13,6 +13,7 @@
 
 class UCarouselRunSubsystem;
 class ACarouselMachine;
+class APokerMachine;
 
 UCLASS()
 class SIBELIUSGAME_API ACarouselHUD : public AHUD
@@ -25,6 +26,8 @@ public:
 private:
 	UCarouselRunSubsystem* GetRun() const;
 	ACarouselMachine* GetMachine();
+	APokerMachine* GetPoker();   // the floor's second machine (courtesy prompt)
 
 	TWeakObjectPtr<ACarouselMachine> CachedMachine;
+	TWeakObjectPtr<APokerMachine> CachedPoker;
 };
