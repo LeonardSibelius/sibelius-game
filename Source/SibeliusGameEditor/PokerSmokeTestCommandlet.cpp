@@ -168,6 +168,27 @@ int32 UPokerSmokeTestCommandlet::Main(const FString& /*Params*/)
 	/* ---------- S2 hookup ---------- */
 	R.Check(UPokerScreenWidget::StaticClass() != nullptr, TEXT("S2: UPokerScreenWidget class resolves"));
 
+	/* ---------- the genuine deck (Walt's ask) ---------- */
+	{
+		static const TCHAR* RankIds[13] = {
+			TEXT("2"), TEXT("3"), TEXT("4"), TEXT("5"), TEXT("6"), TEXT("7"), TEXT("8"),
+			TEXT("9"), TEXT("10"), TEXT("j"), TEXT("q"), TEXT("k"), TEXT("a")
+		};
+		static const TCHAR* SuitIds[4] = { TEXT("s"), TEXT("h"), TEXT("d"), TEXT("c") };
+		int32 Found = 0;
+		for (int32 Suit = 0; Suit < 4; ++Suit)
+		{
+			for (int32 Rank = 0; Rank < 13; ++Rank)
+			{
+				const FString Path = FString::Printf(TEXT("/Game/Cards/T_card_%s_%s.T_card_%s_%s"),
+					RankIds[Rank], SuitIds[Suit], RankIds[Rank], SuitIds[Suit]);
+				if (LoadObject<UObject>(nullptr, *Path)) { ++Found; }
+			}
+		}
+		if (LoadObject<UObject>(nullptr, TEXT("/Game/Cards/T_card_back.T_card_back"))) { ++Found; }
+		R.Check(Found == 53, FString::Printf(TEXT("Deck art: %d/53 card textures resolve in /Game/Cards (run Tools/Scripts/import_cards.py)"), Found));
+	}
+
 	if (R.Failures == 0)
 	{
 		UE_LOG(LogPokerSmoke, Display, TEXT("=== POKER SMOKE TEST PASSED (model math + screen class green). ==="));

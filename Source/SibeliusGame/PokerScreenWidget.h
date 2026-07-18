@@ -25,6 +25,8 @@
 
 class UTextBlock;
 class UBorder;
+class UImage;
+class UTexture2D;
 
 DECLARE_DELEGATE(FOnPokerScreenClosed);
 
@@ -58,6 +60,7 @@ private:
 	void RefreshHolds();
 	void UpdateHud();
 	void UpdateLesson();   // Walt: a child could play it — HOW TO PLAY + the house's advice
+	void LoadCardTextures();
 
 	// Procedural sound (the slot's cook-proof PCM trick, small edition).
 	void BuildSoundBank();
@@ -67,11 +70,20 @@ private:
 	TObjectPtr<UPokerGameModel> Model;
 
 	UPROPERTY()
-	TArray<TObjectPtr<UBorder>> CardFaces;    // 5 white panels
+	TArray<TObjectPtr<UBorder>> CardFaces;    // fallback panels (SC4: loud, never blank)
 	UPROPERTY()
-	TArray<TObjectPtr<UTextBlock>> CardTexts; // rank+suit glyphs
+	TArray<TObjectPtr<UTextBlock>> CardTexts; // fallback rank+suit glyphs
+	UPROPERTY()
+	TArray<TObjectPtr<UImage>> CardImages;    // the genuine deck (Walt's ask)
 	UPROPERTY()
 	TArray<TObjectPtr<UTextBlock>> HeldTexts; // "HELD" tags above cards
+
+	// /Game/Cards/T_card_<rank>_<suit>, keyed by the model's card int. Missing
+	// textures fall back to the text cards — visible, never a crash.
+	UPROPERTY()
+	TMap<int32, TObjectPtr<UTexture2D>> CardTextures;
+	UPROPERTY()
+	TObjectPtr<UTexture2D> CardBackTexture;
 
 	UPROPERTY()
 	TObjectPtr<UTextBlock> SauceText;

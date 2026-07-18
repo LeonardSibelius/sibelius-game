@@ -10,8 +10,12 @@
 #include "Components/VerticalBoxSlot.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
+#include "Components/Overlay.h"
+#include "Components/OverlaySlot.h"
 #include "Components/SizeBox.h"
+#include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Engine/Texture2D.h"
 #include "Sound/SoundWaveProcedural.h"
 #include "Kismet/GameplayStatics.h"
 #include "Styling/CoreStyle.h"
@@ -112,6 +116,7 @@ TSharedRef<SWidget> UPokerScreenWidget::RebuildWidget()
 		UHorizontalBox* CardRow = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("PokerCards"));
 		CardFaces.SetNum(UPokerGameModel::HAND_SIZE);
 		CardTexts.SetNum(UPokerGameModel::HAND_SIZE);
+		CardImages.SetNum(UPokerGameModel::HAND_SIZE);
 		HeldTexts.SetNum(UPokerGameModel::HAND_SIZE);
 		for (int32 i = 0; i < UPokerGameModel::HAND_SIZE; ++i)
 		{
@@ -129,12 +134,20 @@ TSharedRef<SWidget> UPokerScreenWidget::RebuildWidget()
 			CardSize->SetWidthOverride(CARD_W);
 			CardSize->SetHeightOverride(CARD_H);
 
+			UOverlay* CardOv = WidgetTree->ConstructWidget<UOverlay>(UOverlay::StaticClass());
+			CardSize->AddChild(CardOv);
+
+			// Fallback face (SC4): text cards, shown only if a texture is missing.
 			UBorder* Face = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
 			Face->SetBrushColor(FLinearColor(0.06f, 0.06f, 0.14f, 1.0f));   // card back until dealt
 			Face->SetHorizontalAlignment(HAlign_Center);
 			Face->SetVerticalAlignment(VAlign_Center);
 			CardFaces[i] = Face;
-			CardSize->AddChild(Face);
+			if (UOverlaySlot* OS = CardOv->AddChildToOverlay(Face))
+			{
+				OS->SetHorizontalAlignment(HAlign_Fill);
+				OS->SetVerticalAlignment(VAlign_Fill);
+			}
 
 			UTextBlock* CardText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
 			CardText->SetText(FText::FromString(TEXT("✦")));   // ✦ on the back
@@ -143,6 +156,16 @@ TSharedRef<SWidget> UPokerScreenWidget::RebuildWidget()
 			CardText->SetJustification(ETextJustify::Center);
 			CardTexts[i] = CardText;
 			Face->SetContent(CardText);
+
+			// The genuine deck (Walt's ask) rides on top when textures exist.
+			UImage* CardImg = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
+			CardImg->SetVisibility(ESlateVisibility::Collapsed);
+			CardImages[i] = CardImg;
+			if (UOverlaySlot* OS = CardOv->AddChildToOverlay(CardImg))
+			{
+				OS->SetHorizontalAlignment(HAlign_Fill);
+				OS->SetVerticalAlignment(VAlign_Fill);
+			}
 
 			CardCol->AddChildToVerticalBox(CardSize);
 			if (UHorizontalBoxSlot* CS = CardRow->AddChildToHorizontalBox(CardCol)) { CS->SetPadding(FMargin(9, 0)); }
@@ -207,10 +230,47 @@ void UPokerScreenWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	BuildSoundBank();
+	LoadCardTextures();
+	for (int32 i = 0; i < UPokerGameModel::HAND_SIZE; ++i) { ShowCardBack(i); }
 	if (ResultText) { ResultText->SetText(FText::GetEmpty()); }
 	if (WinText) { WinText->SetText(FText::FromString(TEXT("WIN  —"))); }
 	UpdateHud();
 	UpdateLesson();
+}
+
+void UPokerScreenWidget::LoadCardTextures()
+{
+	// /Game/Cards, guaranteed cooked by DirectoriesToAlwaysCook (the menagerie
+	// pattern — never trust PIE on soft paths). Rank/suit ids mirror the deck
+	// generator; a missing texture leaves that card on the text fallback.
+	static const TCHAR* RankIds[13] = {
+		TEXT("2"), TEXT("3"), TEXT("4"), TEXT("5"), TEXT("6"), TEXT("7"), TEXT("8"),
+		TEXT("9"), TEXT("10"), TEXT("j"), TEXT("q"), TEXT("k"), TEXT("a")
+	};
+	static const TCHAR* SuitIds[4] = { TEXT("s"), TEXT("h"), TEXT("d"), TEXT("c") };
+
+	int32 Loaded = 0;
+	for (int32 Card = 0; Card < UPokerGameModel::DECK_SIZE; ++Card)
+	{
+		const FString Path = FString::Printf(TEXT("/Game/Cards/T_card_%s_%s.T_card_%s_%s"),
+			RankIds[UPokerGameModel::RankOf(Card)], SuitIds[UPokerGameModel::SuitOf(Card)],
+			RankIds[UPokerGameModel::RankOf(Card)], SuitIds[UPokerGameModel::SuitOf(Card)]);
+		if (UTexture2D* Tex = LoadObject<UTexture2D>(nullptr, *Path))
+		{
+			CardTextures.Add(Card, Tex);
+			++Loaded;
+		}
+	}
+	CardBackTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Game/Cards/T_card_back.T_card_back"));
+	if (Loaded < UPokerGameModel::DECK_SIZE || !CardBackTexture)
+	{
+		UE_LOG(LogPokerScreen, Error, TEXT("[Poker] DECK INCOMPLETE: %d/52 faces%s — run Tools/Scripts/import_cards.py (text fallback active)"),
+			Loaded, CardBackTexture ? TEXT("") : TEXT(", no back"));
+	}
+	else
+	{
+		UE_LOG(LogPokerScreen, Display, TEXT("[Poker] genuine deck loaded (52 faces + back)"));
+	}
 }
 
 FReply UPokerScreenWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
@@ -318,6 +378,17 @@ void UPokerScreenWidget::ToggleHold(int32 Index)
 void UPokerScreenWidget::ShowCard(int32 Index, int32 Card)
 {
 	if (!CardFaces.IsValidIndex(Index) || !CardFaces[Index] || !CardTexts[Index]) { return; }
+
+	// The genuine deck when the texture exists; the text card otherwise (SC4).
+	if (TObjectPtr<UTexture2D>* Tex = CardTextures.Find(Card); Tex && *Tex && CardImages.IsValidIndex(Index) && CardImages[Index])
+	{
+		CardImages[Index]->SetBrushFromTexture(*Tex, /*bMatchSize=*/false);
+		CardImages[Index]->SetVisibility(ESlateVisibility::HitTestInvisible);
+		CardFaces[Index]->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+	if (CardImages.IsValidIndex(Index) && CardImages[Index]) { CardImages[Index]->SetVisibility(ESlateVisibility::Collapsed); }
+	CardFaces[Index]->SetVisibility(ESlateVisibility::Visible);
 	const int32 Rank = UPokerGameModel::RankOf(Card);
 	const int32 Suit = UPokerGameModel::SuitOf(Card);
 	CardFaces[Index]->SetBrushColor(FLinearColor(0.94f, 0.93f, 0.87f, 1.0f));   // ivory card stock
@@ -331,6 +402,16 @@ void UPokerScreenWidget::ShowCard(int32 Index, int32 Card)
 void UPokerScreenWidget::ShowCardBack(int32 Index)
 {
 	if (!CardFaces.IsValidIndex(Index) || !CardFaces[Index] || !CardTexts[Index]) { return; }
+
+	if (CardBackTexture && CardImages.IsValidIndex(Index) && CardImages[Index])
+	{
+		CardImages[Index]->SetBrushFromTexture(CardBackTexture, /*bMatchSize=*/false);
+		CardImages[Index]->SetVisibility(ESlateVisibility::HitTestInvisible);
+		CardFaces[Index]->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+	}
+	if (CardImages.IsValidIndex(Index) && CardImages[Index]) { CardImages[Index]->SetVisibility(ESlateVisibility::Collapsed); }
+	CardFaces[Index]->SetVisibility(ESlateVisibility::Visible);
 	CardFaces[Index]->SetBrushColor(FLinearColor(0.06f, 0.06f, 0.14f, 1.0f));
 	CardTexts[Index]->SetText(FText::FromString(TEXT("✦")));
 	CardTexts[Index]->SetColorAndOpacity(FSlateColor(FLinearColor(0.83f, 0.66f, 0.21f, 1.0f)));
