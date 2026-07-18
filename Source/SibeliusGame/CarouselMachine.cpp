@@ -87,16 +87,24 @@ void ACarouselMachine::TryEnableInput()
 	if (InputComponent)
 	{
 		// Direct key binds — no Input Mapping Context needed (portable).
-		InputComponent->BindKey(EKeys::E,         IE_Pressed, this, &ACarouselMachine::OnPullLever);
-		InputComponent->BindKey(EKeys::One,       IE_Pressed, this, &ACarouselMachine::OnBuy0);
-		InputComponent->BindKey(EKeys::Two,       IE_Pressed, this, &ACarouselMachine::OnBuy1);
-		InputComponent->BindKey(EKeys::Three,     IE_Pressed, this, &ACarouselMachine::OnBuy2);
-		InputComponent->BindKey(EKeys::R,         IE_Pressed, this, &ACarouselMachine::OnReroll);
-		InputComponent->BindKey(EKeys::Enter,     IE_Pressed, this, &ACarouselMachine::OnContinue);
-		InputComponent->BindKey(EKeys::N,         IE_Pressed, this, &ACarouselMachine::OnNewRun);
+		// bConsumeInput=false on every bind (Walt's dead-E catch): machines
+		// share the floor and each gates by distance; a consumed bind starves
+		// every other machine's handler of the key.
+		auto Bind = [this](const FKey& Key, void (ACarouselMachine::*Fn)())
+		{
+			FInputKeyBinding& KB = InputComponent->BindKey(Key, IE_Pressed, this, Fn);
+			KB.bConsumeInput = false;
+		};
+		Bind(EKeys::E,     &ACarouselMachine::OnPullLever);
+		Bind(EKeys::One,   &ACarouselMachine::OnBuy0);
+		Bind(EKeys::Two,   &ACarouselMachine::OnBuy1);
+		Bind(EKeys::Three, &ACarouselMachine::OnBuy2);
+		Bind(EKeys::R,     &ACarouselMachine::OnReroll);
+		Bind(EKeys::Enter, &ACarouselMachine::OnContinue);
+		Bind(EKeys::N,     &ACarouselMachine::OnNewRun);
 		// FUN-4: the carousel room is an away level, but its pawn is a plain
 		// DefaultPawn (no character O-binding) — so the machine carries the exit.
-		InputComponent->BindKey(EKeys::O,         IE_Pressed, this, &ACarouselMachine::OnLeave);
+		Bind(EKeys::O,     &ACarouselMachine::OnLeave);
 	}
 }
 

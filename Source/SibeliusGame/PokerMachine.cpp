@@ -56,7 +56,11 @@ void APokerMachine::TryEnableInput()
 	EnableInput(PC);
 	if (InputComponent)
 	{
-		InputComponent->BindKey(EKeys::E, IE_Pressed, this, &APokerMachine::OnInteractKey);
+		// bConsumeInput=false — Walt's dead-E catch: a consumed bind eats the
+		// key for EVERY machine on the floor even when this one ignores it
+		// (too far). Distance gates arbitrate; nobody consumes.
+		FInputKeyBinding& KB = InputComponent->BindKey(EKeys::E, IE_Pressed, this, &APokerMachine::OnInteractKey);
+		KB.bConsumeInput = false;
 	}
 }
 
