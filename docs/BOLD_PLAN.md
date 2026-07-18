@@ -89,6 +89,26 @@ remains, dormant — the Workshop or a future Elsewhere may revive it.
 maps in its TravelTargetLevels deck — it must be retired/disabled in
 L_Office_v02 before the next cook, or E on it soft-crashes a packaged build.
 
+## NEXT SESSION: dress up the native slot face (Walt-approved 2026-07-17)
+
+The native Celestial Fortune (USlotScreenWidget, the plain sprite grid) gets
+the showmanship of the web build. This face runs the shrine TRIALS today and
+is the only possible face for the WORKSHOP later — polish here serves both.
+
+Build, in order (all in SlotScreenWidget.cpp — model untouched, "reels are
+theater, model is law"):
+1. **Spinning reels**: each reel = a vertical strip of the sprite art
+   (/Game/SlotFactory/SymbolSprites) scrolling fast with eased deceleration,
+   staggered stops left-to-right, small bounce on stop. Replace the current
+   dim-then-reveal.
+2. **Win presentation**: payline glow overlays, credits COUNT UP instead of
+   jumping, win text pulse; free-spins banner moment (x3 celebration).
+3. **Sound**: spin whir, per-reel stop tick, win sting, bonus fanfare — check
+   /Game/Audio and the SlotFactory for existing assets before importing.
+4. Keep TRIAL mode intact (SetTrial/OnTrialWon, hint lines, THE MACHINE
+   YIELDS) — it must survive the facelift; SlotSmokeTest guards the model.
+Reference for the target feel: the web build in the cathedral cabinet.
+
 ## The order to build it (when budget exists)
 
 1. Retire the kitchen door (ship blocker — minutes, editor session).
