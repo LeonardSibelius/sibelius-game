@@ -124,7 +124,9 @@ Reference for the target feel: the web build in the cathedral cabinet.
 3. ~~Six memoir sentences at the shrines + two placards~~ DONE (MEMOIR_VOICE.md).
 4. Slap juice (APPEAL-6 remainder: death voice lines, P_Death_Gideon,
    MF_DeathFade dissolve, camera shake — assets on disk, one code point).
-5. Daily carousel (fixed seed, one stake, a record to beat).
+5. Daily carousel (fixed seed, one stake, a record to beat) — now part of
+   **docs/SIDE_GAMES_PLAN.md** (Walt 2026-07-17: fill the library floor;
+   Wheel of Employers → daily carousel → keno → high-limit → video poker).
 6. THE WORKSHOP — the big rock, its own design conversation. Show Raymond
    this document first; his GhostCam instincts sharpened on exactly this
    question of one-loop clarity. The native slot face it needs is now built.
