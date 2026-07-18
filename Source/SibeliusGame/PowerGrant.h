@@ -61,13 +61,16 @@ public:
 	bool bSlotTrial = true;
 
 	// Trial odds (measured, 100k-attempt sim vs the real par sheet, 2026-07-17):
-	// 1200 -> 1500 wins ~43% of attempts (~12 spins each). The old 750 -> 1500
-	// was ~24% — a 5-bet stake made it gambler's ruin, not a trial.
+	// 2100 -> 2250 wins ~62% of attempts (~18 spins each) — one good line hit
+	// usually seals it. History: 750 -> 1500 was ~24% (5-bet stake = gambler's
+	// ruin), 1200 -> 1500 was ~43% (Walt still kept losing). Raw stake barely
+	// helps past ~50% (the house edge eats long sessions); the generosity lever
+	// is a SHORT climb on a comfortable bankroll.
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
-	int64 TrialStartCredits = 1200;
+	int64 TrialStartCredits = 2100;
 
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
-	int64 TrialTargetCredits = 1500;
+	int64 TrialTargetCredits = 2250;
 
 	// Walt: Gideon appears when Celestial Fortune pops up. Opening the trial
 	// rings the hall alarm — any RefuserSpawner in the level answers. They
