@@ -28,12 +28,15 @@ The three audiences it reaches, in order of receptiveness:
 FACTORY, GIFs are its byproducts.** Record devlogs; every hook GIF below
 falls out of the footage in one conversion step.
 
-- [ ] **The video stack (Walt's, chosen for him)**: OBS Studio captures
-      PIE gameplay (one-time setup; agent supplies numbered settings).
-      **Descript** edits — narration auto-transcribed, video edited by
-      editing the TEXT (delete a sentence, that footage is cut; filler
-      words removed automatically). Auto-captions always on (feeds play
-      muted). CapCut auto-reframes clips into vertical Shorts.
+- [ ] **The video stack (Walt's, chosen for him — corrected 2026-07-18,
+      Walt's catch: Descript no longer has a free tier)**: OBS Studio
+      captures PIE gameplay (one-time setup; agent supplies numbered
+      settings). **CapCut desktop (free)** edits — auto-captions,
+      transcript-based cutting, and vertical Shorts reframing in one
+      tool. Clipchamp (in Windows 11) is the zero-learning fallback.
+      Escalation ONLY if tool friction blocks the cadence: one paid month
+      of Descript (~$16, text-based editing, then cancel). Auto-captions
+      always on (feeds play muted).
       **RULE: AI edits real footage, never generates it** — synthesized
       gameplay would poison the evidence-over-advocacy brand instantly.
 - [ ] **Per-release devlog video, 3-6 min, Walt narrating**: the voice is
