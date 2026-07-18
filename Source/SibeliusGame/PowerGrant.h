@@ -66,6 +66,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
 	int64 TrialTargetCredits = 1500;
 
+	// Walt: Gideon appears when Celestial Fortune pops up. Opening the trial
+	// rings the hall alarm — any RefuserSpawner in the level answers. They
+	// cannot interrupt the reels; they CAN be waiting when you stand up.
+	UPROPERTY(EditAnywhere, Category = "Power Grant")
+	bool bSummonRefusersOnTrial = true;
+
 	UPROPERTY(VisibleAnywhere, Category = "Power Grant")
 	TObjectPtr<USphereComponent> Trigger;
 

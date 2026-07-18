@@ -3,8 +3,10 @@
 #include "PowerGrant.h"
 #include "ProgressionSubsystem.h"
 #include "SlotScreenWidget.h"
+#include "HallAlarmSubsystem.h"   // the trial rings the alarm (temple-pour pattern)
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
+#include "Engine/GameInstance.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
@@ -168,6 +170,17 @@ void APowerGrant::OpenTrial(APlayerController* PC)
 	PC->SetInputMode(Mode);
 	TrialWidget->SetFocus();
 	bTrialOpen = true;
+
+	// The machine draws a crowd (Walt's design, the temple pour's pattern):
+	// the alarm rings while you spin, and Gideon is waiting when you stand up.
+	if (bSummonRefusersOnTrial)
+	{
+		UGameInstance* GI = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
+		if (UHallAlarmSubsystem* Alarm = GI ? GI->GetSubsystem<UHallAlarmSubsystem>() : nullptr)
+		{
+			Alarm->TriggerAlarm();
+		}
+	}
 }
 
 void APowerGrant::HandleTrialWon()
