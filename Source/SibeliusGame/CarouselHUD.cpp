@@ -11,21 +11,11 @@
 #include "Engine/GameInstance.h"
 #include "EngineUtils.h"
 
-namespace CarouselHUDNS
-{
-	static const TCHAR* PhaseName(ECarouselRunPhase P)
-	{
-		switch (P)
-		{
-		case ECarouselRunPhase::NotStarted: return TEXT("Not started");
-		case ECarouselRunPhase::Spinning:   return TEXT("Spinning");
-		case ECarouselRunPhase::Shop:       return TEXT("Shop");
-		case ECarouselRunPhase::Won:        return TEXT("WON");
-		case ECarouselRunPhase::Lost:       return TEXT("LOST");
-		default:                            return TEXT("?");
-		}
-	}
-}
+// Walt 2026-07-17: the old HUD dumped every number at once (Phase, quota,
+// bank, multiplier) and he couldn't follow the game. New rule: plain words,
+// only what matters RIGHT NOW, and the money has exactly two in-ride names —
+// CHIPS (fill the round bar) and COINS (spend in the shop). Sauce stays the
+// outside wallet.
 
 UCarouselRunSubsystem* ACarouselHUD::GetRun() const
 {
@@ -97,58 +87,71 @@ void ACarouselHUD::DrawHUD()
 	if (Progression)
 	{
 		Line(FString::Printf(TEXT("SAUCE: %d%s"), Progression->GetSauce(),
-			RunSub->IsRunStaked() ? TEXT("     (a stake is riding)") : TEXT("")), Green);
+			RunSub->IsRunStaked()
+				? *FString::Printf(TEXT("     (%d staked on this ride)"), UCarouselRunSubsystem::EntryStake)
+				: TEXT("")), Green);
 	}
-
-	Line(FString::Printf(TEXT("Phase: %s     Round %d / %d"),
-		CarouselHUDNS::PhaseName(Phase), RunSub->GetRoundIndex() + 1, RunSub->GetNumRounds()), White);
-	Line(FString::Printf(TEXT("Chips this round: %d / %d      Spins left: %d"),
-		RunSub->GetRoundChips(), RunSub->GetCurrentQuota(), RunSub->GetSpinsRemaining()), White);
-	Line(FString::Printf(TEXT("Currency (bank): %d"), RunSub->GetCurrency()), Gold);
-	Line(TEXT("chips fill the round quota - coins buy shop upgrades"), Dim, 0.8f);
-
-	const FSpinResult Last = RunSub->GetLastSpin();
-	Line(FString::Printf(TEXT("Last spin: payout %d   x%.2f%s%s"),
-		Last.SpinPayout, Last.GlobalMultiplierPercent / 100.0f,
-		Last.bBonusTriggered ? TEXT("   [SCATTER!]") : TEXT(""),
-		Last.bWasFreeSpin ? TEXT("   (free spin)") : TEXT("")), Last.SpinPayout > 0 ? Green : Dim);
 
 	Y += 10.0f;
 
 	switch (Phase)
 	{
 	case ECarouselRunPhase::Spinning:
-		Line(TEXT("[E] pull the lever"), Gold);
-		Line(TEXT("meet the chip quota before your spins run out to clear the round"), Dim, 0.8f);
+	{
+		Line(FString::Printf(TEXT("ROUND %d of %d"), RunSub->GetRoundIndex() + 1, RunSub->GetNumRounds()), White, 1.1f);
+		Line(FString::Printf(TEXT("CHIPS  %d / %d        PULLS LEFT  %d"),
+			RunSub->GetRoundChips(), RunSub->GetCurrentQuota(), RunSub->GetSpinsRemaining()), White, 1.1f);
+		Line(FString::Printf(TEXT("COINS  %d   (shop money — spend between rounds)"), RunSub->GetCurrency()), Gold);
+
+		const FSpinResult Last = RunSub->GetLastSpin();
+		if (Last.SpinPayout > 0 || Last.bBonusTriggered)
+		{
+			Line(FString::Printf(TEXT("Last pull: +%d chips%s%s"),
+				Last.SpinPayout,
+				Last.bBonusTriggered ? TEXT("   BONUS!") : TEXT(""),
+				Last.bWasFreeSpin ? TEXT("   (free pull)") : TEXT("")), Green);
+		}
+
+		Y += 10.0f;
+		Line(TEXT("[E] pull the lever"), Gold, 1.1f);
+		Line(FString::Printf(TEXT("Reach %d chips before your pulls run out."), RunSub->GetCurrentQuota()), Dim, 0.8f);
 		break;
+	}
 
 	case ECarouselRunPhase::Shop:
 	{
-		Line(TEXT("-- SHOP --   [1/2/3] buy    [R] reroll    [Enter] continue"), Gold);
-		Line(TEXT("round cleared! spend coins on upgrades - they last the whole run"), Dim, 0.8f);
+		Line(TEXT("ROUND CLEARED — welcome to the shop."), Green, 1.1f);
+		Line(FString::Printf(TEXT("COINS  %d   (upgrades last the whole ride)"), RunSub->GetCurrency()), Gold);
+		Y += 6.0f;
 		const TArray<FShopItem> Offerings = RunSub->GetOfferings();
 		for (int32 i = 0; i < Offerings.Num(); ++i)
 		{
 			const FShopItem& It = Offerings[i];
 			const bool bAfford = RunSub->GetCurrency() >= It.Cost;
-			Line(FString::Printf(TEXT("  [%d] %s  (cost %d)%s"),
-				i + 1, *It.Label.ToString(), It.Cost, bAfford ? TEXT("") : TEXT("  -- too expensive")),
+			Line(FString::Printf(TEXT("  [%d]  %s  — %d coins%s"),
+				i + 1, *It.Label.ToString(), It.Cost, bAfford ? TEXT("") : TEXT("   (not enough coins)")),
 				bAfford ? White : Dim);
 		}
-		if (Offerings.Num() == 0) { Line(TEXT("  (sold out — [Enter] to continue)"), Dim); }
+		if (Offerings.Num() == 0) { Line(TEXT("  (sold out)"), Dim); }
+		Y += 6.0f;
+		Line(TEXT("[1/2/3] buy      [R] new offers      [Enter] next round"), Gold);
 		break;
 	}
 
 	case ECarouselRunPhase::Won:
-		Line(FString::Printf(TEXT("RUN CLEARED!   [E] new run (stakes %d sauce)"),
-			UCarouselRunSubsystem::EntryStake), Green, 1.2f);
-		Line(TEXT("winnings paid: 150 sauce + 5 per leftover coin"), Dim, 0.8f);
+		Line(TEXT("YOU BEAT THE CAROUSEL"), Green, 1.2f);
+		Line(FString::Printf(TEXT("Paid out: %d sauce, plus %d for every leftover coin."),
+			UCarouselRunSubsystem::WinPayout, UCarouselRunSubsystem::SaucePerLeftoverCurrency), White);
+		Y += 6.0f;
+		Line(FString::Printf(TEXT("[E] ride again — %d sauce"), UCarouselRunSubsystem::EntryStake), Gold);
 		break;
 
 	case ECarouselRunPhase::Lost:
-		Line(FString::Printf(TEXT("Run over.   [E] new run (stakes %d sauce)"),
-			UCarouselRunSubsystem::EntryStake), Dim, 1.2f);
-		Line(TEXT("consolation paid: 10 sauce per round you cleared"), Dim, 0.8f);
+		Line(TEXT("The ride bucks you off."), Dim, 1.2f);
+		Line(FString::Printf(TEXT("Paid out: %d sauce for each round you beat."),
+			UCarouselRunSubsystem::ConsolationPerClearedRound), White);
+		Y += 6.0f;
+		Line(FString::Printf(TEXT("[E] ride again — %d sauce"), UCarouselRunSubsystem::EntryStake), Gold);
 		break;
 
 	default:
@@ -158,13 +161,21 @@ void ACarouselHUD::DrawHUD()
 		{
 			Line(FString::Printf(TEXT("The Carousel demands %d SAUCE — you carry only %d."),
 				UCarouselRunSubsystem::EntryStake, Progression->GetSauce()), FLinearColor(1.0f, 0.6f, 0.25f), 1.2f);
-			Line(TEXT("Go earn more: books, curios, Refusers.   [O] back to office"), Dim);
+			Line(TEXT("Go earn more: books, Refusers, the temple fountain.   [O] back to office"), Dim);
 		}
 		else
 		{
-			Line(FString::Printf(TEXT("[E] start a run — stakes %d SAUCE. Win: +%d plus %d per banked coin. Lose: +%d per cleared round."),
-				UCarouselRunSubsystem::EntryStake, UCarouselRunSubsystem::WinPayout,
-				UCarouselRunSubsystem::SaucePerLeftoverCurrency, UCarouselRunSubsystem::ConsolationPerClearedRound), Gold);
+			Line(TEXT("HOW TO PLAY"), White, 1.1f);
+			Line(FString::Printf(TEXT("1. Pay %d sauce to climb on  [E]"), UCarouselRunSubsystem::EntryStake), White);
+			Line(TEXT("2. Pull the lever. Every pull wins CHIPS."), White);
+			Line(TEXT("3. Fill the round's chip bar before your pulls run out."), White);
+			Line(TEXT("4. Each round you beat pays COINS — spend them in the shop on upgrades."), White);
+			Line(FString::Printf(TEXT("5. Beat every round: %d sauce, plus %d per leftover coin."),
+				UCarouselRunSubsystem::WinPayout, UCarouselRunSubsystem::SaucePerLeftoverCurrency), White);
+			Line(FString::Printf(TEXT("   Fall short: %d sauce for each round you beat."),
+				UCarouselRunSubsystem::ConsolationPerClearedRound), Dim);
+			Y += 10.0f;
+			Line(FString::Printf(TEXT("[E] climb on — %d sauce"), UCarouselRunSubsystem::EntryStake), Gold, 1.1f);
 		}
 		break;
 	}
