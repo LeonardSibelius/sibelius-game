@@ -78,4 +78,10 @@ private:
 
 	FString BannerText;
 	double BannerUntil = 0.0;
+
+	// MEMOIR_VOICE: Walt's message to a former employer, shown under the
+	// ceremony banner when a power is claimed — the memoir surfacing at the
+	// exact moment the player is rewarded. Slower fade than the banner.
+	FString MemoirText;
+	double MemoirUntil = 0.0;
 };

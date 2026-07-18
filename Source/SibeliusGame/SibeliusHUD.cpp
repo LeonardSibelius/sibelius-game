@@ -60,9 +60,41 @@ void ASibeliusHUD::HandleSauceChanged(int32 /*NewTotal*/, int32 Delta)
 	}
 }
 
+namespace
+{
+	// MEMOIR_VOICE (docs/MEMOIR_VOICE.md): Walt's messages to former employers,
+	// in his own template — one per power, forty years in six lines. The two
+	// machine placards (Bally, San Diego County) live in the levels as signs.
+	const TCHAR* MemoirLineForVerb(EPowerVerb Verb)
+	{
+		switch (Verb)
+		{
+		case EPowerVerb::CodeVision:
+			return TEXT("Hey SAIC, you could have used this AI skill on the CHCS project in 1988.");
+		case EPowerVerb::Refactor:
+			return TEXT("Hey Seagate, you could have used this AI skill in 1998.");
+		case EPowerVerb::Compile:
+			return TEXT("Hey IBM, you could have used this AI skill in 1995 on the San Francisco Project for distributed Java.");
+		case EPowerVerb::TestDrive:
+			return TEXT("Hey Motorola, you could have used this AI skill in 2001.");
+		case EPowerVerb::Deploy:
+			return TEXT("Hey Northrop Grumman, you could have used this AI skill on the Electronic Family Housing system for the Navy in 2002.");
+		case EPowerVerb::Generate:
+			return TEXT("Hey Army Recruiting, you could have used this AI skill on iKrome in 2022. It is being retired now, like all the rest.");
+		default:
+			return TEXT("");
+		}
+	}
+}
+
 void ASibeliusHUD::HandlePowerUnlocked(EPowerVerb Verb)
 {
 	ShowBanner(FString::Printf(TEXT("%s  IS  YOURS"), *PowerVerbDisplayName(Verb)));
+
+	// The memoir line lingers past the banner — the player should have time
+	// to read forty years' worth of one sentence.
+	MemoirText = MemoirLineForVerb(Verb);
+	MemoirUntil = GetWorld() ? GetWorld()->GetTimeSeconds() + 12.0 : 0.0;
 }
 
 void ASibeliusHUD::ShowBanner(const FString& Text, float Seconds)
@@ -148,6 +180,20 @@ void ASibeliusHUD::DrawPlayerLayer()
 		const float Alpha = static_cast<float>(FMath::Clamp((BannerUntil - Now) / 0.75, 0.0, 1.0)); // quick fade at the end
 		DrawText(BannerText, FLinearColor(0.55f, 0.95f, 1.0f, Alpha),
 			(Canvas->ClipX - W) * 0.5f, Canvas->ClipY * 0.32f, nullptr, Scale);
+	}
+
+	// The memoir line — Walt's message to a former employer, under the banner,
+	// warm white on a dark backing strip so it reads at 4K desk distance.
+	if (Now < MemoirUntil && !MemoirText.IsEmpty())
+	{
+		const float Scale = OverlayTextScale * 0.95f;
+		float W = 0.0f, H = 0.0f;
+		GetTextSize(MemoirText, W, H, nullptr, Scale);
+		const float Alpha = static_cast<float>(FMath::Clamp((MemoirUntil - Now) / 1.5, 0.0, 1.0));
+		const float X = (Canvas->ClipX - W) * 0.5f;
+		const float Y = Canvas->ClipY * 0.32f + 90.0f;
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.55f * Alpha), X - 14.0f, Y - 6.0f, W + 28.0f, H + 12.0f);
+		DrawText(MemoirText, FLinearColor(0.95f, 0.92f, 0.80f, Alpha), X, Y, nullptr, Scale);
 	}
 }
 

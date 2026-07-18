@@ -150,7 +150,7 @@ void UGameMenuWidget::BuildStatusTab(TSharedRef<SVerticalBox> Box)
 	APawn* Pawn = GetOwningPlayerPawn();
 
 	Row(FString::Printf(TEXT("SAUCE   %d"), Progression ? Progression->GetSauce() : 0), SauceGreen, 26, "Bold");
-	Row(TEXT("Earn it: books, curios in the Many Worlds, slapped Refusers, chapters. Spend it: the kitchen cauldron. Risk it: the Carousel of Fates."), Dim, 14);
+	Row(TEXT("Earn it: books, slapped Refusers, chapters, the temple fountain. Spend it: the kitchen cauldron. Risk it: the Carousel of Fates."), Dim, 14);
 
 	Row(TEXT(""), Body);
 	Row(TEXT("POWERS"), Heading, 20, "Bold");
@@ -239,7 +239,8 @@ void UGameMenuWidget::BuildRecordsTab(TSharedRef<SVerticalBox> Box)
 	Row(TEXT("sauce earned, lifetime (the wallet is on STATUS)"),
 		FString::FromInt(Stat(SibeliusStats::SauceEarned)), SauceGreen);
 	Row(TEXT("books collected"),    FString::FromInt(Stat(SibeliusStats::BooksCollected)), Body);
-	Row(TEXT("curios found"),       FString::FromInt(Stat(SibeliusStats::CuriosCollected)), Body);
+	// ("curios found" removed with the forest cut — never show a counter the
+	// player cannot raise. The stat key survives for a future curio revival.)
 	Row(TEXT("chapters completed"), FString::FromInt(Stat(SibeliusStats::ChaptersCompleted)), Body);
 
 	Section(NSLOCTEXT("Sibelius", "RecCarousel", "THE CAROUSEL OF FATES"));
