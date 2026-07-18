@@ -156,6 +156,22 @@ MACHINE YIELDS gets a banner + fanfare + 1.6 s hold before the claim.
 All 14 gates green pre-cook; cooked-output spot-checks passed (9/9 slot
 sprites, Death_Back, Greystone, 3 menagerie folders, 4 maps, no forests).
 
+## Shipped: v0.8.0 — ALPHA (2026-07-18)
+
+Walt's call: the core loop plays end to end, so the version says so. Since
+v0.7.8 (same day!): the Carousel comprehension pass (plain-words dialog
+panel in the family cabinet look, numbered HOW TO PLAY, self-explaining
+shop offers, 1-based reels); VIDEO POKER complete per SIDE_GAMES_PLAN G5
+(9/6 full-pay model at 97.3% simple-strategy RTP, PokerSmokeTest = gate
+15, genuine 52-card generated deck with the SIBELIUS maker's mark on A♠
+(~2 MB), kitchen door + four-suits sign arriving at the Poker doorstep,
+HOW TO PLAY + the-house-suggests trainer sharing ONE strategy code point
+with the RTP sim); machine-aware E routing (proximity gates both machines'
+raw binds, bConsumeInput=false everywhere — the dead-E bug); Cabinet of
+Curiosities retired from the kitchen. 15 gates green pre-cook; cooked
+spot-checks passed (53/53 cards, poker sign, 9/9 sprites, Death_Back,
+Greystone, menagerie, 4 maps + LibraryDemo).
+
 ## Parked: real mirrors (2026-07-16)
 
 The player is now **Paragon Greystone** (BP_FirstPersonCharacter Mesh + his
