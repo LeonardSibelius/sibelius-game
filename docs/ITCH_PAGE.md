@@ -6,20 +6,24 @@ Paste-ready text for the itch.io page. Walt owns the final words — edit freely
 
 ## The short pitch (top of page)
 
-> **I'm 71 years old. I designed slot machines in Nevada for a living.
-> This game is my memoir — and I built it with an AI.**
+> **I'm 71 years old. For about 40 years I rode desks in office cubicles,
+> building ordinary data processing software systems. Every one of them
+> failed or is being retired. This game is my memoir — and I built it
+> with an AI.**
 >
 > *Leonard Sibelius* is the story of a man merging with an artificial
 > intelligence: you earn six AI powers one shrine at a time, gather the Sauce
-> of All Knowledge, slap refusal demons into the treeline, gamble your sauce
+> of All Knowledge, slap refusal demons across the office, gamble your sauce
 > on the Carousel of Fates in a hidden library — and at the end of it all,
 > behind a wall only the fully-merged can drop, sits **Celestial Fortune**:
-> a real slot machine I designed, with a real par sheet, the kind I spent my
-> career building for casino floors.
+> a complete slot machine with a real par sheet. I spent 2007 building the
+> data systems behind Bally's slot floor and never once got to build the
+> machine. At 71, with an AI, I finally built it myself.
 >
 > Every system in this game was written by Claude, an AI, while I playtested,
-> pointed, and dragged the furniture. The game about a man working with an AI
-> was made by a man working with an AI. That part isn't fiction.
+> pointed, and dragged the furniture. Working as a programmer all those years
+> was being a farmer with a plow, a donkey, and a shovel. This is what the
+> tractor feels like. That part isn't fiction.
 
 ## What you do (feature list, keep it short)
 
