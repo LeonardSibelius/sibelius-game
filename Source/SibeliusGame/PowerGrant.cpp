@@ -2,6 +2,9 @@
 
 #include "PowerGrant.h"
 #include "ProgressionSubsystem.h"
+#include "SlotScreenWidget.h"
+#include "Blueprint/UserWidget.h"
+#include "GameFramework/PlayerController.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
@@ -126,11 +129,76 @@ void APowerGrant::OnTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	APawn* Pawn = Cast<APawn>(OtherActor);
-	if (bConsumed || !Pawn || !Pawn->IsPlayerControlled())
+	if (bConsumed || bTrialOpen || !Pawn || !Pawn->IsPlayerControlled())
 	{
 		return;
 	}
 
+	// Walt's trial: a POWER must be won at the machine, not collected like
+	// loose change. Sauce-only markers keep the instant walk-in grant.
+	if (bSlotTrial && bGrantsPower)
+	{
+		if (APlayerController* PC = Cast<APlayerController>(Pawn->GetController()))
+		{
+			OpenTrial(PC);
+		}
+		return;
+	}
+
+	ClaimNow();
+}
+
+void APowerGrant::OpenTrial(APlayerController* PC)
+{
+	// Fresh widget per entry = fresh stake per entry, no state to reset.
+	TrialWidget = CreateWidget<USlotScreenWidget>(PC, USlotScreenWidget::StaticClass());
+	if (!TrialWidget)
+	{
+		return;
+	}
+	TrialWidget->InitModel(FMath::Rand());
+	TrialWidget->SetTrial(TrialStartCredits, TrialTargetCredits);
+	TrialWidget->OnTrialWon.BindUObject(this, &APowerGrant::HandleTrialWon);
+	TrialWidget->OnClosed.BindUObject(this, &APowerGrant::HandleTrialClosed);
+	TrialWidget->AddToViewport(80);
+
+	// SC1's pattern: UIOnly + focus so Space reaches the reels and WASD stops.
+	FInputModeUIOnly Mode;
+	Mode.SetWidgetToFocus(TrialWidget->TakeWidget());
+	PC->SetInputMode(Mode);
+	TrialWidget->SetFocus();
+	bTrialOpen = true;
+}
+
+void APowerGrant::HandleTrialWon()
+{
+	CloseTrialWidget();
+	ClaimNow();
+}
+
+void APowerGrant::HandleTrialClosed()
+{
+	// Retreat or bust: put the world back; step out and in again to retry.
+	CloseTrialWidget();
+}
+
+void APowerGrant::CloseTrialWidget()
+{
+	if (TrialWidget && TrialWidget->IsInViewport())
+	{
+		TrialWidget->RemoveFromParent();
+	}
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
+	}
+	TrialWidget = nullptr;
+	bTrialOpen = false;
+}
+
+void APowerGrant::ClaimNow()
+{
 	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
 	if (!Progression || !Progression->ClaimOneTimeGrant(EffectiveGrantKey()))
 	{

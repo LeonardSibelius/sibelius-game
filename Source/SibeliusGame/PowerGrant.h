@@ -53,6 +53,19 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Power Grant")
 	TObjectPtr<USoundBase> GrantSound;
 
+	// THE TRIAL (Walt: more should happen than walking in): stepping into a
+	// power shrine pops the native Celestial Fortune with a trial stake; reach
+	// the target and the power yields. Bust or Esc = step out and back in for
+	// a fresh stake. Sauce-only markers never demand a trial.
+	UPROPERTY(EditAnywhere, Category = "Power Grant")
+	bool bSlotTrial = true;
+
+	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
+	int64 TrialStartCredits = 750;
+
+	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
+	int64 TrialTargetCredits = 1500;
+
 	UPROPERTY(VisibleAnywhere, Category = "Power Grant")
 	TObjectPtr<USphereComponent> Trigger;
 
@@ -84,6 +97,17 @@ private:
 		const FHitResult& SweepResult);
 
 	FName EffectiveGrantKey() const;
+
+	void OpenTrial(class APlayerController* PC);
+	void HandleTrialWon();
+	void HandleTrialClosed();
+	void CloseTrialWidget();
+	void ClaimNow();   // the original walk-in grant, now the trial's prize
+
+	UPROPERTY()
+	TObjectPtr<class USlotScreenWidget> TrialWidget;
+
+	bool bTrialOpen = false;
 
 	float BobPhase = 0.0f;
 	FVector RestLocation = FVector::ZeroVector; // mesh rest point the bob oscillates around

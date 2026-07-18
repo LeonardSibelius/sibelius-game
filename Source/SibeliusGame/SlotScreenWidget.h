@@ -28,6 +28,7 @@ class UImage;
 class USlotGameModel;
 
 DECLARE_DELEGATE(FOnSlotScreenClosed);
+DECLARE_DELEGATE(FOnSlotTrialWon);
 
 UCLASS()
 class SIBELIUSGAME_API USlotScreenWidget : public UUserWidget
@@ -40,8 +41,16 @@ public:
 	// Cabinet calls once after CreateWidget. Seeds the model (SC10).
 	void InitModel(int32 Seed);
 
+	// SHRINE TRIAL (Walt): a stake and a target instead of the leisure bankroll.
+	// Call after InitModel, before AddToViewport. Reaching Target fires
+	// OnTrialWon exactly once. 0 target = normal free play.
+	void SetTrial(int64 StartCredits, int64 TargetCredits);
+
 	// Fired on Esc — the cabinet restores input mode (SC1's one close path).
 	FOnSlotScreenClosed OnClosed;
+
+	// Fired once when a trial target is reached (the shrine claims through this).
+	FOnSlotTrialWon OnTrialWon;
 
 	static constexpr int64 START_CREDITS = 25000;
 	static constexpr int32 TOTAL_BET = 150;   // multiple of 15 lines
@@ -84,6 +93,8 @@ private:
 	TArray<FTimerHandle> RevealTimers;    // SC7: cleared on destruct/close
 
 	int64 Credits = START_CREDITS;
+	int64 TrialTarget = 0;                // 0 = leisure mode (the cathedral coda)
+	bool bTrialWon = false;               // fire OnTrialWon exactly once
 	bool bRevealing = false;              // SC7 latch
 	bool bModelReady = false;
 };

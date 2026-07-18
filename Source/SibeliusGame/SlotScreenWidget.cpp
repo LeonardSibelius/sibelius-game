@@ -225,12 +225,24 @@ FReply USlotScreenWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
 	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
+void USlotScreenWidget::SetTrial(int64 StartCredits, int64 TargetCredits)
+{
+	Credits = StartCredits;
+	TrialTarget = TargetCredits;
+	bTrialWon = false;
+}
+
 void USlotScreenWidget::TrySpin()
 {
 	if (!bModelReady || bRevealing) { return; }                       // SC7 latch
 	if (!Model->IsInFreeSpins() && Credits < TOTAL_BET)               // SC6 guard
 	{
-		if (HintText) { HintText->SetText(FText::FromString(TEXT("Out of credits — Esc to leave (it resets next visit)"))); }
+		if (HintText)
+		{
+			HintText->SetText(FText::FromString(TrialTarget > 0
+				? TEXT("The shrine keeps its power — Esc, then step in again for a fresh stake")
+				: TEXT("Out of credits — Esc to leave (it resets next visit)")));
+		}
 		return;
 	}
 
@@ -297,6 +309,14 @@ void USlotScreenWidget::FinishReveal()
 	if (LinesText) { LinesText->SetText(FText::FromString(Lines)); }
 	if (WinText) { WinText->SetText(FText::FromString(FString::Printf(TEXT("WIN  %.0f"), PendingResult.TotalWin))); }
 	UpdateHud();
+
+	// SHRINE TRIAL: target reached — the machine yields exactly once.
+	if (TrialTarget > 0 && !bTrialWon && Credits >= TrialTarget)
+	{
+		bTrialWon = true;
+		if (HintText) { HintText->SetText(FText::FromString(TEXT("THE MACHINE YIELDS"))); }
+		OnTrialWon.ExecuteIfBound();
+	}
 }
 
 void USlotScreenWidget::SetCell(int32 Reel, int32 Row, ESlotSymbol Symbol, bool bDimmed)
@@ -327,7 +347,12 @@ void USlotScreenWidget::UpdateHud()
 			? FText::FromString(FString::Printf(TEXT("FREE SPINS  %d  (×%d)"), FS, USlotGameModel::FREE_SPIN_MULTIPLIER))
 			: FText::FromString(FString::Printf(TEXT("BET  %d"), TOTAL_BET)));
 	}
-	if (HintText) { HintText->SetText(FText::FromString(TEXT("SPACE — spin        Esc — leave"))); }
+	if (HintText)
+	{
+		HintText->SetText(FText::FromString(TrialTarget > 0
+			? FString::Printf(TEXT("REACH %lld CREDITS TO CLAIM THE POWER        SPACE — spin        Esc — retreat"), TrialTarget)
+			: FString(TEXT("SPACE — spin        Esc — leave"))));
+	}
 }
 
 void USlotScreenWidget::LoadSymbolTextures()
