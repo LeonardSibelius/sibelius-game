@@ -17,6 +17,25 @@ namespace CarouselRunNS
 		TEXT("ScatterShrine"), TEXT("NearMissMercy"), TEXT("Hoarder"), TEXT("TwinReels"), TEXT("StickyFate")
 	};
 
+	// Walt 2026-07-17: shop offers must explain themselves — "Charm: HighRoller"
+	// told him nothing. Every offer label says what the thing DOES, in the words
+	// the HUD already taught (chips, coins, pulls, the round bar).
+	static FString CharmOfferLabel(const FName& Id)
+	{
+		const FString S = Id.ToString();
+		if (S == TEXT("Wildfire"))      { return TEXT("Wildfire charm — Flame symbols match anything, like a Wild"); }
+		if (S == TEXT("Cascade"))       { return TEXT("Cascade charm — every line win re-spins the last reel for more"); }
+		if (S == TEXT("Compounder"))    { return TEXT("Compounder charm — each win in a row pays +0.5x more (dud resets it)"); }
+		if (S == TEXT("MundaneRiches")) { return TEXT("Mundane Riches charm — Cog, Key and Coin pay double"); }
+		if (S == TEXT("HighRoller"))    { return TEXT("High Roller charm — all wins pay +50%, but round bars grow 25%"); }
+		if (S == TEXT("ScatterShrine")) { return TEXT("Scatter Shrine charm — free pulls trigger on 2 Carousels, not 3"); }
+		if (S == TEXT("NearMissMercy")) { return TEXT("Near-Miss Mercy charm — bust within 10% of the bar: one extra pull"); }
+		if (S == TEXT("Hoarder"))       { return TEXT("Hoarder charm — banked coins earn better interest between rounds"); }
+		if (S == TEXT("TwinReels"))     { return TEXT("Twin Reels charm — the middle reel copies itself onto its neighbor"); }
+		if (S == TEXT("StickyFate"))    { return TEXT("Sticky Fate charm — Wilds that land stay put for one more pull"); }
+		return FString::Printf(TEXT("%s charm"), *S);
+	}
+
 	// Extra payline patterns (beyond the starter 5) the shop can sell — the slot's 15-line set tail.
 	static const int32 ExtraLines[10][5] = {
 		{0,0,1,2,2}, {2,2,1,0,0}, {1,0,1,2,1}, {1,2,1,0,1}, {0,1,1,1,0},
@@ -186,7 +205,7 @@ void FCarouselRun::GenerateOfferings()
 				const int32 Idx = Rng.RandRange(0, BuyableCharms.Num() - 1);
 				FShopItem It; It.Type = EShopItemType::Charm; It.Id = BuyableCharms[Idx];
 				It.Cost = CharmCostById.Contains(It.Id) ? CharmCostById[It.Id] : CharmCost;
-				It.Label = FText::FromString(FString::Printf(TEXT("Charm: %s"), *It.Id.ToString()));
+				It.Label = FText::FromString(CarouselRunNS::CharmOfferLabel(It.Id));
 				Offerings.Add(It);
 				BuyableCharms.RemoveAt(Idx);   // no dupes in one shop
 				break;
@@ -194,7 +213,7 @@ void FCarouselRun::GenerateOfferings()
 			if (Roll == 1 && PaylinePool.Num() > 0)
 			{
 				FShopItem It; It.Type = EShopItemType::Payline; It.Cost = PaylineCost;
-				It.Label = FText::FromString(TEXT("Extra payline"));
+				It.Label = FText::FromString(TEXT("Extra payline — one more line across the reels that can win"));
 				Offerings.Add(It);
 				break;
 			}
@@ -203,7 +222,8 @@ void FCarouselRun::GenerateOfferings()
 				const FName SymId = SymbolIds[Rng.RandRange(0, SymbolIds.Num() - 1)];
 				const int32 Reel = Rng.RandRange(0, Build.NumReels - 1);
 				FShopItem It; It.Type = EShopItemType::Symbol; It.Id = SymId; It.TargetReel = Reel; It.Cost = SymbolCost;
-				It.Label = FText::FromString(FString::Printf(TEXT("Symbol: %s -> reel %d"), *SymId.ToString(), Reel));
+				// Reels are numbered 1-based for the player (reel 0 is programmer-speak).
+				It.Label = FText::FromString(FString::Printf(TEXT("Add a %s to reel %d — it will land there more often"), *SymId.ToString(), Reel + 1));
 				Offerings.Add(It);
 				break;
 			}

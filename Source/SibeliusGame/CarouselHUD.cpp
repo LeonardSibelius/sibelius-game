@@ -128,8 +128,8 @@ void ACarouselHUD::DrawHUD()
 		{
 			const FShopItem& It = Offerings[i];
 			const bool bAfford = RunSub->GetCurrency() >= It.Cost;
-			Line(FString::Printf(TEXT("  [%d]  %s  — %d coins%s"),
-				i + 1, *It.Label.ToString(), It.Cost, bAfford ? TEXT("") : TEXT("   (not enough coins)")),
+			Line(FString::Printf(TEXT("  [%d]  %s   (%d coins%s)"),
+				i + 1, *It.Label.ToString(), It.Cost, bAfford ? TEXT("") : TEXT(" — too rich for you")),
 				bAfford ? White : Dim);
 		}
 		if (Offerings.Num() == 0) { Line(TEXT("  (sold out)"), Dim); }
