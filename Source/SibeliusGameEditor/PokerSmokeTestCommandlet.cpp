@@ -37,62 +37,9 @@ namespace PokerSmokeTestNS
 
 	int32 Card(int32 Rank, int32 Suit) { return Suit * 13 + Rank; }
 
-	// The sim player's simple strategy (deliberately NOT optimal — a human
-	// baseline): keep made hands sensibly, chase 4-flushes, keep low pairs,
-	// keep high cards. Returns the hold mask.
-	int32 SimpleStrategy(const TArray<int32>& Hand)
-	{
-		const EPokerHandRank Rank = UPokerGameModel::EvaluateHand(Hand);
-
-		// Straight or better (incl. full house / quads / royals): stand pat.
-		if (Rank >= EPokerHandRank::Straight) { return 0b11111; }
-
-		int32 RankCount[13] = {};
-		for (const int32 C : Hand) { ++RankCount[UPokerGameModel::RankOf(C)]; }
-
-		// Trips: hold the three, draw two.
-		if (Rank == EPokerHandRank::ThreeOfAKind)
-		{
-			int32 Mask = 0;
-			for (int32 i = 0; i < Hand.Num(); ++i)
-			{
-				if (RankCount[UPokerGameModel::RankOf(Hand[i])] == 3) { Mask |= (1 << i); }
-			}
-			return Mask;
-		}
-
-		// Two pair / any pair (high or low): hold the paired cards.
-		int32 PairMask = 0;
-		for (int32 i = 0; i < Hand.Num(); ++i)
-		{
-			if (RankCount[UPokerGameModel::RankOf(Hand[i])] == 2) { PairMask |= (1 << i); }
-		}
-		if (PairMask != 0) { return PairMask; }
-
-		// Four to a flush: hold them.
-		int32 SuitCount[4] = {};
-		for (const int32 C : Hand) { ++SuitCount[UPokerGameModel::SuitOf(C)]; }
-		for (int32 S = 0; S < 4; ++S)
-		{
-			if (SuitCount[S] == 4)
-			{
-				int32 Mask = 0;
-				for (int32 i = 0; i < Hand.Num(); ++i)
-				{
-					if (UPokerGameModel::SuitOf(Hand[i]) == S) { Mask |= (1 << i); }
-				}
-				return Mask;
-			}
-		}
-
-		// High cards (J+): hold them all, draw the rest.
-		int32 HighMask = 0;
-		for (int32 i = 0; i < Hand.Num(); ++i)
-		{
-			if (UPokerGameModel::RankOf(Hand[i]) >= 9) { HighMask |= (1 << i); }
-		}
-		return HighMask;
-	}
+	// The sim plays UPokerGameModel::SuggestHoldMask — the SAME strategy the
+	// screen's "the house suggests" trainer line shows, so the measured RTP is
+	// the RTP of following the advice.
 }
 
 UPokerSmokeTestCommandlet::UPokerSmokeTestCommandlet()
@@ -191,7 +138,7 @@ int32 UPokerSmokeTestCommandlet::Main(const FString& /*Params*/)
 		for (int32 i = 0; i < SimHands; ++i)
 		{
 			const TArray<int32> Dealt = M->Deal();
-			const int32 Mask = SimpleStrategy(Dealt);
+			const int32 Mask = UPokerGameModel::SuggestHoldMask(Dealt);
 			const FPokerHandResult Res = M->Draw(Mask);
 			TotalPay += Res.PayMultiplier;
 			++HandCounts[static_cast<int32>(Res.Rank)];

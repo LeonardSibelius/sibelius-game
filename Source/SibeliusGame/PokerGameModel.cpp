@@ -120,6 +120,61 @@ int32 UPokerGameModel::PayMultiplier(EPokerHandRank Rank)
 	}
 }
 
+int32 UPokerGameModel::SuggestHoldMask(const TArray<int32>& Cards)
+{
+	if (Cards.Num() != HAND_SIZE) { return 0; }
+	const EPokerHandRank Rank = EvaluateHand(Cards);
+
+	// Straight or better: stand pat.
+	if (Rank >= EPokerHandRank::Straight) { return 0b11111; }
+
+	int32 RankCount[13] = {};
+	for (const int32 C : Cards) { ++RankCount[RankOf(C)]; }
+
+	// Trips: hold the three, draw two.
+	if (Rank == EPokerHandRank::ThreeOfAKind)
+	{
+		int32 Mask = 0;
+		for (int32 i = 0; i < Cards.Num(); ++i)
+		{
+			if (RankCount[RankOf(Cards[i])] == 3) { Mask |= (1 << i); }
+		}
+		return Mask;
+	}
+
+	// Any pair (high or low), or both pairs of two pair: hold the paired cards.
+	int32 PairMask = 0;
+	for (int32 i = 0; i < Cards.Num(); ++i)
+	{
+		if (RankCount[RankOf(Cards[i])] == 2) { PairMask |= (1 << i); }
+	}
+	if (PairMask != 0) { return PairMask; }
+
+	// Four to a flush: hold them.
+	int32 SuitCount[4] = {};
+	for (const int32 C : Cards) { ++SuitCount[SuitOf(C)]; }
+	for (int32 S = 0; S < 4; ++S)
+	{
+		if (SuitCount[S] == 4)
+		{
+			int32 Mask = 0;
+			for (int32 i = 0; i < Cards.Num(); ++i)
+			{
+				if (SuitOf(Cards[i]) == S) { Mask |= (1 << i); }
+			}
+			return Mask;
+		}
+	}
+
+	// High cards (J+): hold them all, draw the rest.
+	int32 HighMask = 0;
+	for (int32 i = 0; i < Cards.Num(); ++i)
+	{
+		if (RankOf(Cards[i]) >= 9) { HighMask |= (1 << i); }
+	}
+	return HighMask;
+}
+
 const TCHAR* UPokerGameModel::RankDisplayName(EPokerHandRank Rank)
 {
 	switch (Rank)

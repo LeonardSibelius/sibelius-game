@@ -176,12 +176,21 @@ TSharedRef<SWidget> UPokerScreenWidget::RebuildWidget()
 		WinText = MakeHudText(TEXT("PokerWin"));
 		if (UVerticalBoxSlot* S = Box->AddChildToVerticalBox(Hud)) { S->SetHorizontalAlignment(HAlign_Fill); S->SetPadding(FMargin(0, 0, 0, 10)); }
 
-		// Hint.
+		// Hint (the key summary).
 		HintText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("PokerHint"));
 		HintText->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 22));
 		HintText->SetColorAndOpacity(FSlateColor(FLinearColor(0.65f, 0.70f, 0.68f, 1.0f)));
 		HintText->SetJustification(ETextJustify::Center);
-		if (UVerticalBoxSlot* S = Box->AddChildToVerticalBox(HintText)) { S->SetHorizontalAlignment(HAlign_Fill); }
+		if (UVerticalBoxSlot* S = Box->AddChildToVerticalBox(HintText)) { S->SetHorizontalAlignment(HAlign_Fill); S->SetPadding(FMargin(0, 0, 0, 12)); }
+
+		// The lesson block (Walt: a child could play it). HOW TO PLAY between
+		// hands; while cards are up, what's worth keeping + the house's advice.
+		LessonText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("PokerLesson"));
+		LessonText->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 20));
+		LessonText->SetColorAndOpacity(FSlateColor(FLinearColor(0.82f, 0.78f, 0.60f, 1.0f)));
+		LessonText->SetJustification(ETextJustify::Center);
+		LessonText->SetAutoWrapText(true);
+		if (UVerticalBoxSlot* S = Box->AddChildToVerticalBox(LessonText)) { S->SetHorizontalAlignment(HAlign_Fill); }
 
 		// SC3: stretch anchors, never point-anchor + SetSize.
 		if (UCanvasPanelSlot* CSlot = Canvas->AddChildToCanvas(Gold))
@@ -201,6 +210,7 @@ void UPokerScreenWidget::NativeConstruct()
 	if (ResultText) { ResultText->SetText(FText::GetEmpty()); }
 	if (WinText) { WinText->SetText(FText::FromString(TEXT("WIN  —"))); }
 	UpdateHud();
+	UpdateLesson();
 }
 
 FReply UPokerScreenWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
@@ -260,6 +270,7 @@ void UPokerScreenWidget::TryDeal()
 	if (WinText) { WinText->SetText(FText::FromString(TEXT("WIN  —"))); }
 	PlayPcm(DealPcm, 0.45f);
 	UpdateHud();
+	UpdateLesson();
 }
 
 void UPokerScreenWidget::DoDraw()
@@ -295,6 +306,7 @@ void UPokerScreenWidget::DoDraw()
 	}
 	if (WinText) { WinText->SetText(FText::FromString(FString::Printf(TEXT("WIN  %d"), Win))); }
 	UpdateHud();
+	UpdateLesson();
 }
 
 void UPokerScreenWidget::ToggleHold(int32 Index)
@@ -345,6 +357,45 @@ void UPokerScreenWidget::UpdateHud()
 		HintText->SetText(FText::FromString(Phase == EPokerPhase::Holding
 			? TEXT("[1]-[5] hold a card        SPACE — draw        Esc — leave")
 			: FString::Printf(TEXT("SPACE — deal a hand (%d sauce)        Esc — leave"), Stake)));
+	}
+}
+
+void UPokerScreenWidget::UpdateLesson()
+{
+	if (!LessonText) { return; }
+
+	if (Phase == EPokerPhase::Holding)
+	{
+		// The live coach: what's worth keeping, and the house's exact advice —
+		// UPokerGameModel::SuggestHoldMask, the same strategy the smoke test
+		// measured the 97% RTP under. Following the advice IS that RTP.
+		const int32 Suggest = UPokerGameModel::SuggestHoldMask(Hand);
+		FString CardNames, KeyNames;
+		for (int32 i = 0; i < Hand.Num(); ++i)
+		{
+			if (Suggest & (1 << i))
+			{
+				if (!CardNames.IsEmpty()) { CardNames += TEXT("  "); KeyNames += TEXT(", "); }
+				CardNames += FString::Printf(TEXT("%s%s"),
+					RankGlyph(UPokerGameModel::RankOf(Hand[i])), SuitGlyph(UPokerGameModel::SuitOf(Hand[i])));
+				KeyNames += FString::Printf(TEXT("%d"), i + 1);
+			}
+		}
+		const FString Advice = (Suggest != 0)
+			? FString::Printf(TEXT("The house suggests: keep %s — press %s.  Then SPACE swaps the rest."), *CardNames, *KeyNames)
+			: FString(TEXT("The house suggests: keep nothing — just press SPACE for five fresh cards."));
+		LessonText->SetText(FText::FromString(FString::Printf(
+			TEXT("Worth keeping: two cards with the same number · four cards of one symbol · any J, Q, K or A.\n%s"),
+			*Advice)));
+	}
+	else
+	{
+		LessonText->SetText(FText::FromString(FString::Printf(
+			TEXT("HOW TO PLAY\n")
+			TEXT("1.  Press SPACE — five cards appear (a hand costs %d sauce).\n")
+			TEXT("2.  Keep the good cards: press 1-5 to mark them HELD (press again to unmark).\n")
+			TEXT("3.  Press SPACE — the unmarked cards are swapped. Your final five cards win by the table at the top."),
+			Stake)));
 	}
 }
 

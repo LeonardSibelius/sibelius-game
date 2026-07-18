@@ -83,6 +83,13 @@ public:
 	static int32 PayMultiplier(EPokerHandRank Rank);
 	static const TCHAR* RankDisplayName(EPokerHandRank Rank);
 
+	// The baseline sensible-player strategy: keep made hands, keep pairs, chase
+	// 4-flushes, keep J/Q/K/A. Deliberately simple, not optimal. ONE code point
+	// shared by the screen's trainer line ("the house suggests") and the smoke
+	// test's RTP sim — the advice shown is exactly the strategy the RTP was
+	// measured under.
+	static int32 SuggestHoldMask(const TArray<int32>& Cards);
+
 	static int32 RankOf(int32 Card) { return Card % 13; }   // 0=Two .. 9=Jack .. 12=Ace
 	static int32 SuitOf(int32 Card) { return Card / 13; }   // 0=♠ 1=♥ 2=♦ 3=♣
 

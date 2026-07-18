@@ -57,6 +57,7 @@ private:
 	void ShowCardBack(int32 Index);
 	void RefreshHolds();
 	void UpdateHud();
+	void UpdateLesson();   // Walt: a child could play it — HOW TO PLAY + the house's advice
 
 	// Procedural sound (the slot's cook-proof PCM trick, small edition).
 	void BuildSoundBank();
@@ -82,6 +83,9 @@ private:
 	TObjectPtr<UTextBlock> ResultText;
 	UPROPERTY()
 	TObjectPtr<UTextBlock> HintText;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> LessonText;   // the teaching block (per-phase)
 
 	TArray<int32> Hand;
 	int32 HoldMask = 0;
