@@ -54,6 +54,22 @@ void ACarouselHUD::DrawHUD()
 		DrawRect(RetColor, CX - Thick * 0.5f, CY + Gap,       Thick, Arm);
 	}
 
+	// Walt 2026-07-18: two machines share this floor now (the poker cabinet
+	// arrived). The carousel's panel only draws NEAR the carousel — unless a
+	// run is live (a stake is riding; the numbers follow you). Far away, the
+	// screen belongs to whatever machine you're standing at.
+	{
+		const ECarouselRunPhase P = RunSub->GetPhase();
+		const bool bRunLive = (P == ECarouselRunPhase::Spinning || P == ECarouselRunPhase::Shop);
+		const ACarouselMachine* M = GetMachine();
+		const APawn* Pawn = GetOwningPawn();
+		if (!bRunLive && M && Pawn
+			&& FVector::Dist2D(Pawn->GetActorLocation(), M->GetActorLocation()) > 1000.0f)
+		{
+			return;   // reticle only; the room speaks for itself
+		}
+	}
+
 	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
 	const FLinearColor White(1, 1, 1), Gold(1.0f, 0.85f, 0.2f), Dim(0.7f, 0.7f, 0.7f), Green(0.4f, 1.0f, 0.4f);
 
