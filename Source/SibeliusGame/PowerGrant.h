@@ -60,8 +60,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Power Grant")
 	bool bSlotTrial = true;
 
+	// Trial odds (measured, 100k-attempt sim vs the real par sheet, 2026-07-17):
+	// 1200 -> 1500 wins ~43% of attempts (~12 spins each). The old 750 -> 1500
+	// was ~24% — a 5-bet stake made it gambler's ruin, not a trial.
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
-	int64 TrialStartCredits = 750;
+	int64 TrialStartCredits = 1200;
 
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
 	int64 TrialTargetCredits = 1500;
