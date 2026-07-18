@@ -118,11 +118,13 @@ Reference for the target feel: the web build in the cathedral cabinet.
 
 ## The order to build it (when budget exists)
 
-1. Retire the kitchen door (ship blocker — minutes, editor session).
-2. Ship v0.7.8: the ~3.5 GB download. That number changes who tries the game.
-3. Six memoir sentences at the shrines + two placards (Walt writes, agent wires).
-4. Slap juice (APPEAL-6 remainder).
-5. Daily carousel.
+1. ~~Retire the kitchen door~~ DONE (ship blocker cleared, `d01af837`).
+2. ~~Ship v0.7.8~~ DONE 2026-07-17 (build #1804147): the small download + the
+   memoir voice + the shrine trials with the dressed-up native slot face.
+3. ~~Six memoir sentences at the shrines + two placards~~ DONE (MEMOIR_VOICE.md).
+4. Slap juice (APPEAL-6 remainder: death voice lines, P_Death_Gideon,
+   MF_DeathFade dissolve, camera shake — assets on disk, one code point).
+5. Daily carousel (fixed seed, one stake, a record to beat).
 6. THE WORKSHOP — the big rock, its own design conversation. Show Raymond
    this document first; his GhostCam instincts sharpened on exactly this
-   question of one-loop clarity.
+   question of one-loop clarity. The native slot face it needs is now built.

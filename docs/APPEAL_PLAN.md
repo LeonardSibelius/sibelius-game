@@ -139,6 +139,23 @@ The temple sauce fountain (Walt's E-pour/C-compile/quiet-recharge ritual,
 +40 per bowl, Gideons crash every pour), temple navmesh + resident spawner,
 and Greystone as the player's mirror body. 496 MB patch.
 
+## Shipped: v0.7.8 (2026-07-17, build #1804147)
+
+The big one. The forest cut lands for players (4.13 GB staged, 311 MB patch,
+92.6% butler savings — the download is roughly half of v0.7.7's). The memoir
+voice: six shrine messages to former employers + the Bally and San Diego
+County placards. Shrine glow beacons; shrine slot TRIALS on the native
+Celestial Fortune face — now with spinning reels fed from the real par-sheet
+strips, staggered eased stops with bounce, Space slam-stop, payline glow,
+credit count-up, free-spins banner, and PROCEDURAL C++ sounds (whir, stop
+ticks, win sting, fanfare — no assets, cook-proof). Gideon crowds ring the
+hall alarm when a trial opens. Trial stake tuned by 100k-attempt simulation:
+2100 → 2250 (~62% win per attempt; 750 → 1500 was 24% gambler's ruin —
+Walt kept losing; the lever is a short climb, not a bigger stake). THE
+MACHINE YIELDS gets a banner + fanfare + 1.6 s hold before the claim.
+All 14 gates green pre-cook; cooked-output spot-checks passed (9/9 slot
+sprites, Death_Back, Greystone, 3 menagerie folders, 4 maps, no forests).
+
 ## Parked: real mirrors (2026-07-16)
 
 The player is now **Paragon Greystone** (BP_FirstPersonCharacter Mesh + his
