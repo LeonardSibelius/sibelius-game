@@ -24,12 +24,32 @@ The three audiences it reaches, in order of receptiveness:
 
 ## The asset checklist (make once, spend forever)
 
-- [ ] **3-5 hook GIFs, 10-15 s each, no sound needed**: the zebra slap; the
+**Revised 2026-07-18 (Walt: "what about YouTube videos?"): video is the
+FACTORY, GIFs are its byproducts.** Record devlogs; every hook GIF below
+falls out of the footage in one conversion step.
+
+- [ ] **The video stack (Walt's, chosen for him)**: OBS Studio captures
+      PIE gameplay (one-time setup; agent supplies numbered settings).
+      **Descript** edits — narration auto-transcribed, video edited by
+      editing the TEXT (delete a sentence, that footage is cut; filler
+      words removed automatically). Auto-captions always on (feeds play
+      muted). CapCut auto-reframes clips into vertical Shorts.
+      **RULE: AI edits real footage, never generates it** — synthesized
+      gameplay would poison the evidence-over-advocacy brand instantly.
+- [ ] **Per-release devlog video, 3-6 min, Walt narrating**: the voice is
+      the moat — the devlog genre is twenty-somethings; a 71-year-old
+      with a Bally data-warehouse story is the most differentiated thing
+      the genre could receive. Title pattern: "I'm 71 and I'm building my
+      memoir as a casino with an AI — Devlog N: <release name>". Agent
+      drafts script + shot list from the session log; Walt records.
+- [ ] **2-3 Shorts cut from each devlog** (45 s, vertical) — Shorts is
+      where YouTube discovery happens now.
+- [ ] **3-5 hook GIFs cut from the same footage**: the zebra slap; the
       reels slam-stopping on a win; a poker hand with "the house suggests"
       visible; the shrine trial with Gideons crowding in; the kitchen door
-      shimmer reveal. (Walt records — OBS or ShareX; agent can't.)
-- [ ] **One 60-90 s trailer**: story cards in Walt's voice between GIF
-      shots. Cut later from the same clips; not a blocker.
+      shimmer reveal.
+- [ ] **One 60-90 s trailer**: story cards in Walt's voice between the
+      best shots. Cut later from the same footage; not a blocker.
 - [ ] **Press kit page** (docs/PRESS_KIT.md → later a web page): the one-
       sentence hook, the longer story, 8-10 screenshots, the GIFs, facts
       (free, Windows, ~3.5 GB, alpha, made with Claude), contact. Agent
