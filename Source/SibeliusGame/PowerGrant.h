@@ -20,6 +20,7 @@
 
 class USphereComponent;
 class UStaticMeshComponent;
+class UPointLightComponent;
 class USoundBase;
 
 UCLASS()
@@ -58,6 +59,18 @@ public:
 	// Assign in the editor; any mesh works. Spins + bobs (see Tick).
 	UPROPERTY(VisibleAnywhere, Category = "Power Grant")
 	TObjectPtr<UStaticMeshComponent> Mesh;
+
+	// The shrine glow (Walt: like the curio beacons — he stood two meters from
+	// the DEPLOY shrine and couldn't see it). A room-height light pillar +
+	// point light, cyan for power shrines, gold for sauce-only markers.
+	UPROPERTY(VisibleAnywhere, Category = "Power Grant")
+	TObjectPtr<UStaticMeshComponent> BeaconMesh;
+
+	UPROPERTY(VisibleAnywhere, Category = "Power Grant")
+	TObjectPtr<UPointLightComponent> Glow;
+
+	UPROPERTY(EditAnywhere, Category = "Power Grant")
+	bool bShowBeacon = true;
 
 	virtual void Tick(float DeltaSeconds) override;
 

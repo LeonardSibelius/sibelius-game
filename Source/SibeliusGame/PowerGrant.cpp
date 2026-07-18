@@ -4,10 +4,14 @@
 #include "ProgressionSubsystem.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PointLightComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 #include "Engine/Engine.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "UObject/ConstructorHelpers.h"
 
 APowerGrant::APowerGrant()
 {
@@ -28,6 +32,30 @@ APowerGrant::APowerGrant()
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); // walk-through; the sphere does the work
 	Mesh->SetGenerateOverlapEvents(false);
 	Mesh->SetCanEverAffectNavigation(false);
+
+	// The shrine glow (Walt's ask, after standing 2 m from an invisible DEPLOY
+	// shrine): the curio-beacon recipe at indoor scale — a slim room-height
+	// pillar + a colored point light. Hard CDO refs so both always cook.
+	ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	ConstructorHelpers::FObjectFinder<UMaterialInterface> Basic(
+		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+
+	BeaconMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BeaconMesh"));
+	BeaconMesh->SetupAttachment(Trigger);
+	BeaconMesh->SetRelativeScale3D(FVector(0.12f, 0.12f, 2.4f));   // 12 cm wide, 2.4 m tall
+	BeaconMesh->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
+	BeaconMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BeaconMesh->SetCanEverAffectNavigation(false);
+	BeaconMesh->SetCastShadow(false);
+	if (Cylinder.Succeeded()) { BeaconMesh->SetStaticMesh(Cylinder.Object); }
+	if (Basic.Succeeded()) { BeaconMesh->SetMaterial(0, Basic.Object); }
+
+	Glow = CreateDefaultSubobject<UPointLightComponent>(TEXT("Glow"));
+	Glow->SetupAttachment(Trigger);
+	Glow->SetRelativeLocation(FVector(0.f, 0.f, 120.f));
+	Glow->SetIntensity(3000.f);
+	Glow->SetAttenuationRadius(600.f);
+	Glow->CastShadows = false;
 }
 
 void APowerGrant::BeginPlay()
@@ -49,6 +77,24 @@ void APowerGrant::BeginPlay()
 	{
 		RestLocation = Mesh->GetRelativeLocation();
 	}
+
+	// Tint the beacon: cyan = a power waits here, gold = a sauce stash.
+	const FLinearColor GlowColor = bGrantsPower
+		? FLinearColor(0.35f, 0.9f, 1.0f)
+		: FLinearColor(1.0f, 0.85f, 0.3f);
+	if (Glow)
+	{
+		Glow->SetLightColor(GlowColor);
+	}
+	if (BeaconMesh)
+	{
+		BeaconMesh->SetVisibility(bShowBeacon);
+		if (UMaterialInstanceDynamic* MID = BeaconMesh->CreateDynamicMaterialInstance(0))
+		{
+			MID->SetVectorParameterValue(TEXT("Color"), GlowColor);
+		}
+	}
+
 	Trigger->OnComponentBeginOverlap.AddDynamic(this, &APowerGrant::OnTriggerOverlap);
 }
 
