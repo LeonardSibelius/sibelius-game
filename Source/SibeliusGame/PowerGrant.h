@@ -106,6 +106,7 @@ private:
 
 	void OpenTrial(class APlayerController* PC);
 	void HandleTrialWon();
+	void FinishTrialClaim();   // deferred so THE MACHINE YIELDS moment lands
 	void HandleTrialClosed();
 	void CloseTrialWidget();
 	void ClaimNow();   // the original walk-in grant, now the trial's prize

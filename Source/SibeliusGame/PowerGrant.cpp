@@ -185,6 +185,17 @@ void APowerGrant::OpenTrial(APlayerController* PC)
 
 void APowerGrant::HandleTrialWon()
 {
+	// Hold the screen 1.6 s so the widget's THE MACHINE YIELDS banner and
+	// fanfare land before the claim ceremony takes over. If the player Escs
+	// during the hold, the close is a no-op and the claim still pays — a won
+	// trial is won.
+	FTimerHandle Handle;
+	GetWorldTimerManager().SetTimer(Handle,
+		FTimerDelegate::CreateUObject(this, &APowerGrant::FinishTrialClaim), 1.6f, false);
+}
+
+void APowerGrant::FinishTrialClaim()
+{
 	CloseTrialWidget();
 	ClaimNow();
 }

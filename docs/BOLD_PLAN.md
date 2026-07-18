@@ -89,7 +89,14 @@ remains, dormant — the Workshop or a future Elsewhere may revive it.
 maps in its TravelTargetLevels deck — it must be retired/disabled in
 L_Office_v02 before the next cook, or E on it soft-crashes a packaged build.
 
-## NEXT SESSION: dress up the native slot face (Walt-approved 2026-07-17)
+## DONE 2026-07-17: dress up the native slot face (Walt-approved 2026-07-17)
+
+*Shipped as speced below, all in SlotScreenWidget — plus: Space mid-spin
+slam-stops the reels, Esc mid-spin settles the result before closing (a win
+can never be eaten), sounds are PROCEDURAL C++ PCM (no slot sound assets
+existed; synthesized whir/tick/sting/fanfare can never be missed by the
+cooker), and PowerGrant now holds 1.6 s after a trial win so THE MACHINE
+YIELDS banner + fanfare land before the claim ceremony.*
 
 The native Celestial Fortune (USlotScreenWidget, the plain sprite grid) gets
 the showmanship of the web build. This face runs the shrine TRIALS today and
