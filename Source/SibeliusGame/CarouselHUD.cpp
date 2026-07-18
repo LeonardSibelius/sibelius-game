@@ -17,6 +17,11 @@
 // only what matters RIGHT NOW, and the money has exactly two in-ride names —
 // CHIPS (fill the round bar) and COINS (spend in the shop). Sauce stays the
 // outside wallet.
+//
+// Walt 2026-07-18: the text now sits on a DIALOG PANEL — the family cabinet
+// look (gold rim wrapping dark navy, same as the poker/slot screens) —
+// instead of floating naked over the room. Lines are buffered, measured,
+// then drawn onto the panel.
 
 UCarouselRunSubsystem* ACarouselHUD::GetRun() const
 {
@@ -69,11 +74,46 @@ void ACarouselHUD::DrawHUD()
 	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
 	const FLinearColor White(1, 1, 1), Gold(1.0f, 0.85f, 0.2f), Dim(0.7f, 0.7f, 0.7f), Green(0.4f, 1.0f, 0.4f);
 
-	// Walt 2026-07-18: two machines share this floor now (the poker cabinet
-	// arrived). The carousel's panel — and its KEYS (CarouselMachine gates
-	// them the same way) — belong to standing at the carousel. Far away, the
-	// screen belongs to the machine you're at: a courtesy prompt at the poker
-	// cabinet, and a one-line reminder if a carousel stake is still riding.
+	// --- The dialog panel machinery (buffer, measure, draw) -----------------
+	const float HudScale = 1.8f;   // Walt QA: readable at 4K desk distance
+	const float LineH = 26.0f;
+	const float Pad = 26.0f;
+	struct FHudLine { FString Text; FLinearColor Color; float Scale; float GapPx; };
+	TArray<FHudLine> L;
+	auto Line = [&L](const FString& S, const FLinearColor& C, float Scale = 1.0f) { L.Add({ S, C, Scale, 0.0f }); };
+	auto Gap = [&L](float Px) { L.Add({ FString(), FLinearColor::White, 0.0f, Px }); };
+	auto DrawPanel = [&](float X, float Y)
+	{
+		if (L.Num() == 0) { return; }
+		float MaxW = 0.0f, TotH = 0.0f;
+		for (const FHudLine& Ln : L)
+		{
+			if (Ln.Scale <= 0.0f) { TotH += Ln.GapPx; continue; }
+			float W = 0.0f, H = 0.0f;
+			GetTextSize(Ln.Text, W, H, Font, Ln.Scale * HudScale);
+			MaxW = FMath::Max(MaxW, W);
+			TotH += LineH * Ln.Scale * HudScale;
+		}
+		const float Rim = 4.0f;
+		DrawRect(FLinearColor(0.83f, 0.66f, 0.21f, 0.95f),
+			X - Pad - Rim, Y - Pad - Rim, MaxW + 2.0f * (Pad + Rim), TotH + 2.0f * (Pad + Rim));
+		DrawRect(FLinearColor(0.035f, 0.035f, 0.10f, 0.94f),
+			X - Pad, Y - Pad, MaxW + 2.0f * Pad, TotH + 2.0f * Pad);
+		float CurY = Y;
+		for (const FHudLine& Ln : L)
+		{
+			if (Ln.Scale <= 0.0f) { CurY += Ln.GapPx; continue; }
+			DrawText(Ln.Text, Ln.Color, X, CurY, Font, Ln.Scale * HudScale);
+			CurY += LineH * Ln.Scale * HudScale;
+		}
+		L.Reset();
+	};
+	const float PanelX = 64.0f, PanelY = 64.0f;
+
+	// Two machines share this floor: the carousel's panel — and its KEYS
+	// (CarouselMachine gates them the same way) — belong to standing at the
+	// carousel. Far away, the screen belongs to the machine you're at: a
+	// courtesy panel at the poker cabinet, a reminder if a stake still rides.
 	{
 		const ECarouselRunPhase P = RunSub->GetPhase();
 		const bool bRunLive = (P == ECarouselRunPhase::Spinning || P == ECarouselRunPhase::Shop);
@@ -86,15 +126,16 @@ void ACarouselHUD::DrawHUD()
 				if (!PM->IsScreenOpen()
 					&& FVector::Dist2D(Pawn->GetActorLocation(), PM->GetActorLocation()) <= 450.0f)
 				{
-					DrawText(FString::Printf(TEXT("VIDEO POKER — press E to sit down  (%d sauce a hand)"), PM->BetPerHand),
-						FLinearColor(0.55f, 1.0f, 0.65f), 60.0f, 60.0f, Font, 1.2f * 1.8f);
+					Line(FString::Printf(TEXT("VIDEO POKER — press E to sit down  (%d sauce a hand)"), PM->BetPerHand),
+						FLinearColor(0.55f, 1.0f, 0.65f), 1.2f);
 				}
 			}
 			if (bRunLive)
 			{
-				DrawText(TEXT("A stake rides at the Carousel — walk back to finish the round"),
-					Dim, 60.0f, 130.0f, Font, 0.8f * 1.8f);
+				if (L.Num() > 0) { Gap(14.0f); }
+				Line(TEXT("A stake rides at the Carousel — walk back to finish the round"), Dim, 0.8f);
 			}
+			DrawPanel(PanelX, PanelY);
 			return;
 		}
 	}
@@ -108,17 +149,6 @@ void ACarouselHUD::DrawHUD()
 			DrawRect(FLinearColor(1.0f, 0.84f, 0.2f, 0.35f * Flash), 0, 0, Canvas->SizeX, Canvas->SizeY);
 		}
 	}
-
-	const float X = 60.0f;
-	float Y = 60.0f;
-	const float LineH = 26.0f;
-	// Walt QA: readable at 4K desk distance — everything drawn 1.8x.
-	const float HudScale = 1.8f;
-	auto Line = [&](const FString& S, const FLinearColor& C, float Scale = 1.0f)
-	{
-		DrawText(S, C, X, Y, Font, Scale * HudScale);
-		Y += LineH * Scale * HudScale;
-	};
 
 	const ECarouselRunPhase Phase = RunSub->GetPhase();
 
@@ -134,7 +164,7 @@ void ACarouselHUD::DrawHUD()
 				: TEXT("")), Green);
 	}
 
-	Y += 10.0f;
+	Gap(10.0f);
 
 	switch (Phase)
 	{
@@ -154,7 +184,7 @@ void ACarouselHUD::DrawHUD()
 				Last.bWasFreeSpin ? TEXT("   (free pull)") : TEXT("")), Green);
 		}
 
-		Y += 10.0f;
+		Gap(10.0f);
 		Line(TEXT("[E] pull the lever"), Gold, 1.1f);
 		Line(FString::Printf(TEXT("Reach %d chips before your pulls run out."), RunSub->GetCurrentQuota()), Dim, 0.8f);
 		break;
@@ -164,7 +194,7 @@ void ACarouselHUD::DrawHUD()
 	{
 		Line(TEXT("ROUND CLEARED — welcome to the shop."), Green, 1.1f);
 		Line(FString::Printf(TEXT("COINS  %d   (upgrades last the whole ride)"), RunSub->GetCurrency()), Gold);
-		Y += 6.0f;
+		Gap(6.0f);
 		const TArray<FShopItem> Offerings = RunSub->GetOfferings();
 		for (int32 i = 0; i < Offerings.Num(); ++i)
 		{
@@ -175,7 +205,7 @@ void ACarouselHUD::DrawHUD()
 				bAfford ? White : Dim);
 		}
 		if (Offerings.Num() == 0) { Line(TEXT("  (sold out)"), Dim); }
-		Y += 6.0f;
+		Gap(6.0f);
 		Line(TEXT("[1/2/3] buy      [R] new offers      [Enter] next round"), Gold);
 		break;
 	}
@@ -184,7 +214,7 @@ void ACarouselHUD::DrawHUD()
 		Line(TEXT("YOU BEAT THE CAROUSEL"), Green, 1.2f);
 		Line(FString::Printf(TEXT("Paid out: %d sauce, plus %d for every leftover coin."),
 			UCarouselRunSubsystem::WinPayout, UCarouselRunSubsystem::SaucePerLeftoverCurrency), White);
-		Y += 6.0f;
+		Gap(6.0f);
 		Line(FString::Printf(TEXT("[E] ride again — %d sauce"), UCarouselRunSubsystem::EntryStake), Gold);
 		break;
 
@@ -192,7 +222,7 @@ void ACarouselHUD::DrawHUD()
 		Line(TEXT("The ride bucks you off."), Dim, 1.2f);
 		Line(FString::Printf(TEXT("Paid out: %d sauce for each round you beat."),
 			UCarouselRunSubsystem::ConsolationPerClearedRound), White);
-		Y += 6.0f;
+		Gap(6.0f);
 		Line(FString::Printf(TEXT("[E] ride again — %d sauce"), UCarouselRunSubsystem::EntryStake), Gold);
 		break;
 
@@ -216,12 +246,14 @@ void ACarouselHUD::DrawHUD()
 				UCarouselRunSubsystem::WinPayout, UCarouselRunSubsystem::SaucePerLeftoverCurrency), White);
 			Line(FString::Printf(TEXT("   Fall short: %d sauce for each round you beat."),
 				UCarouselRunSubsystem::ConsolationPerClearedRound), Dim);
-			Y += 10.0f;
+			Gap(10.0f);
 			Line(FString::Printf(TEXT("[E] climb on — %d sauce"), UCarouselRunSubsystem::EntryStake), Gold, 1.1f);
 		}
 		break;
 	}
 
-	Y += 10.0f;
+	Gap(10.0f);
 	Line(TEXT("[O] back to office"), Dim);
+
+	DrawPanel(PanelX, PanelY);
 }
