@@ -22,16 +22,32 @@ the most ridiculed genre on itch, hands the press the wrong headline
 ("AI girlfriend casino" would eat the memoir alive), and poisons the
 evidence-over-advocacy mission. The memoir's sincerity is the moat.
 
-## The body: MetaHuman (Walt designs her)
+## The body
 
-- MetaHuman Creator (free, browser): **Walt sculpts her himself** — face,
-  age, bearing, hair. A zero-token job that guarantees she is the person
-  he means. Import via Quixel Bridge; the project already handles
-  MetaHuman meshes (see SlapComponent's leader-pose notes).
-- A subtle holographic/translucent shimmer material over the MetaHuman
-  = instantly reads as AI, no exposition needed.
-- v1 animation scope: ONE idle (retargeted or MetaHuman default), maybe
-  a head look-at later. She is a presence, not an action character.
+[W] **MetaHuman RULED OUT** (2026-07-19): already tried for the Refuser —
+Walt's PC lacks the memory; lowest settings looked terrible. Do not
+retry without a hardware upgrade.
+
+**Leading candidate: Windwalker Echo** (free on Fab —
+fab.com/listings/36a9d7fb-6769-4e45-a0b3-950890da82c1). The face of the
+UE5 reveal demos: production quality but stylized-realistic, so she
+holds up on Walt's hardware. Elegant, robed, unarmed as shipped;
+control rig + sample animations + ARKit face included. USE THE HAIR
+CARDS OPTION (not the strand groom) — dramatically lighter.
+
+**Alternate: City Sample Crowds** (free Epic) — realistic everyday
+people with game-optimized LODs, incl. composed middle-aged women who
+fit the 70s-office world, if The Presence should read "from Leonard's
+world" rather than "oracle". Also: check Fab's rotating free content
+(unrealengine.com/fabfreecontent) periodically.
+
+**The hardware-rescuing insight: she is a HOLOGRAM.** The translucent
+shimmer material hides every fidelity sin — a mid-weight character as
+a hologram looks intentional; a low-settings MetaHuman just looks
+broken. The PC constraint and the design agree.
+
+- v1 animation scope: ONE idle from her sample set, maybe a head
+  look-at later. She is a presence, not an action character.
 
 ## The voice: she already exists
 
