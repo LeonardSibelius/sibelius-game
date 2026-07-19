@@ -171,6 +171,35 @@ void USlapComponent::DoSlap()
 				if (DeathAnim && PoseMesh->GetSkeletalMeshAsset()
 					&& PoseMesh->GetSkeletalMeshAsset()->GetSkeleton() == DeathAnim->GetSkeleton())
 				{
+					// Walt's clip catch, take two (take one — a ragdoll handoff —
+					// resurrected the Paragon stretch this whole path exists to
+					// avoid). Death_Back lays the body toward the actor's BACK,
+					// so pick the clearest fall lane BEFORE falling: trace 8
+					// directions at knee height and spin him so his back faces
+					// the most open floor. Ties prefer falling away from the
+					// slapper (reads as impact).
+					{
+						const FVector Knee = VictimLocation + FVector(0.f, 0.f, 40.f);
+						const float LaneLength = 260.f;
+						FCollisionQueryParams LaneParams(SCENE_QUERY_STAT(SlapFallLane), false, Victim);
+						LaneParams.AddIgnoredActor(OwnerPawn);
+						float BestScore = -1.f;
+						float BestYaw = ViewRot.Yaw;   // fallback: away from the player
+						for (int32 LaneIdx = 0; LaneIdx < 8; ++LaneIdx)
+						{
+							const float Yaw = LaneIdx * 45.f;
+							const FVector Dir = FRotator(0.f, Yaw, 0.f).Vector();
+							FHitResult LaneHit;
+							const bool bBlocked = World->LineTraceSingleByChannel(
+								LaneHit, Knee, Knee + Dir * LaneLength, ECC_Visibility, LaneParams);
+							const float Clearance = bBlocked ? LaneHit.Distance : LaneLength;
+							const float Score = Clearance + 25.f * FVector::DotProduct(Dir, LaunchDir);
+							if (Score > BestScore) { BestScore = Score; BestYaw = Yaw; }
+						}
+						// Back faces the clear lane => forward faces the opposite way.
+						Victim->SetActorRotation(FRotator(0.f, BestYaw + 180.f, 0.f));
+					}
+
 					PoseMesh->PlayAnimation(DeathAnim, false);
 					bCollapsing = true;
 				}
@@ -192,31 +221,6 @@ void USlapComponent::DoSlap()
 					Capsule->SetCollisionProfileName(TEXT("PhysicsActor"));
 					Capsule->SetSimulatePhysics(true);
 					Capsule->AddImpulse(Impulse, NAME_None, true);
-				}
-			}
-			if (bCollapsing)
-			{
-				// Walt's clip catch: with the capsule dead, the animated pose
-				// ignored the room (legs in walls, head in the couch). Let the
-				// anim sell the stagger, then hand the body to physics with NO
-				// impulse — the Ragdoll profile collides with the world (and
-				// ignores the player), so the crumple settles on whatever is
-				// actually there.
-				if (USkeletalMeshComponent* PoseMesh = Victim->GetMesh();
-					PoseMesh && PoseMesh->GetPhysicsAsset() != nullptr)
-				{
-					TWeakObjectPtr<USkeletalMeshComponent> WeakMesh = PoseMesh;
-					FTimerHandle HandoffTimer;
-					World->GetTimerManager().SetTimer(HandoffTimer,
-						FTimerDelegate::CreateWeakLambda(Victim, [WeakMesh]()
-						{
-							if (USkeletalMeshComponent* HandoffMesh = WeakMesh.Get())
-							{
-								HandoffMesh->SetCollisionProfileName(TEXT("Ragdoll"));
-								HandoffMesh->SetSimulatePhysics(true);   // zero impulse: a crumple, not a launch
-							}
-						}),
-						FMath::Max(0.01f, CollapseRagdollDelay), false);
 				}
 			}
 			Victim->SetLifeSpan(RagdollLifetime);

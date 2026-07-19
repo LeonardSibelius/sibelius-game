@@ -64,13 +64,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap", meta=(ClampMin="0"))
 	int32 SauceOnSlap = 2;
 
-	// Walt's clip catch (2026-07-18): the collapse anim played with all collision
-	// off, so legs sank into walls and heads into couches. The anim now sells
-	// only the first moments of the stagger; after this many seconds the mesh
-	// hands off to a ZERO-impulse ragdoll (a crumple, not a launch — the launch
-	// was the original complaint) so the body settles against real furniture.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap", meta=(ClampMin="0.0"))
-	float CollapseRagdollDelay = 0.7f;
+	// Walt's clip catch (2026-07-19): the collapse anim ignored the room —
+	// legs in walls, head in the couch. A ragdoll handoff was tried and
+	// REJECTED (it resurrects the Paragon mesh stretch this rigid path exists
+	// to avoid). Instead the slap picks the clearest FALL LANE: 8 knee-height
+	// traces, spin the victim so Death_Back lays him into open floor (ties
+	// prefer falling away from the slapper). See DoSlap.
 
 	UFUNCTION(BlueprintCallable, Category="Slap")
 	void DoSlap();
