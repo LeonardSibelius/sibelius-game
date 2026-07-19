@@ -1,5 +1,10 @@
 # DEVLOG 1 — script + shot list (v0.8.0: "the library opens its floor")
 
+> **PUBLISHED 2026-07-18: https://youtu.be/CIVmhXeCpPE**
+> ("Sibelius Game version 0 8", Walt Parkman channel — recorded as live
+> commentary rather than this script; the script below remains the
+> template for future devlogs.) Embedded on the itch page same day.
+
 *Drafted by the agent 2026-07-18 from the session log, written FOR Walt's
 voice — edit freely; anything that doesn't sound like you, cut. Target
 3-4 minutes ≈ 500 words of narration. Read it over the footage in CapCut;
