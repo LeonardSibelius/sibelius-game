@@ -175,3 +175,6 @@ Content/Library/
 
 # BuildCookRun packaging logs (Tools/Scripts/package_v0*.ps1 output)
 pkg-v*.log
+
+# Exported devlog videos (belong in Videos/, not the repo)
+/*.mp4
