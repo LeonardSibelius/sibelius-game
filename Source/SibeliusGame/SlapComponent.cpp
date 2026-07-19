@@ -8,6 +8,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "Engine/EngineTypes.h"
+#include "TimerManager.h"
 #include "CollisionQueryParams.h"
 #include "CollisionShape.h"
 #include "DrawDebugHelpers.h"
@@ -191,6 +192,31 @@ void USlapComponent::DoSlap()
 					Capsule->SetCollisionProfileName(TEXT("PhysicsActor"));
 					Capsule->SetSimulatePhysics(true);
 					Capsule->AddImpulse(Impulse, NAME_None, true);
+				}
+			}
+			if (bCollapsing)
+			{
+				// Walt's clip catch: with the capsule dead, the animated pose
+				// ignored the room (legs in walls, head in the couch). Let the
+				// anim sell the stagger, then hand the body to physics with NO
+				// impulse — the Ragdoll profile collides with the world (and
+				// ignores the player), so the crumple settles on whatever is
+				// actually there.
+				if (USkeletalMeshComponent* PoseMesh = Victim->GetMesh();
+					PoseMesh && PoseMesh->GetPhysicsAsset() != nullptr)
+				{
+					TWeakObjectPtr<USkeletalMeshComponent> WeakMesh = PoseMesh;
+					FTimerHandle HandoffTimer;
+					World->GetTimerManager().SetTimer(HandoffTimer,
+						FTimerDelegate::CreateWeakLambda(Victim, [WeakMesh]()
+						{
+							if (USkeletalMeshComponent* HandoffMesh = WeakMesh.Get())
+							{
+								HandoffMesh->SetCollisionProfileName(TEXT("Ragdoll"));
+								HandoffMesh->SetSimulatePhysics(true);   // zero impulse: a crumple, not a launch
+							}
+						}),
+						FMath::Max(0.01f, CollapseRagdollDelay), false);
 				}
 			}
 			Victim->SetLifeSpan(RagdollLifetime);
