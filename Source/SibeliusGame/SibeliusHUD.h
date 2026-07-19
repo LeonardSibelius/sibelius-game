@@ -67,6 +67,12 @@ private:
 
 	// APPEAL_PLAN extra: which world am I in (forest name etc., small, top-center).
 	void DrawWorldName();
+
+	// Walt (2026-07-19): Test-Drive lived only in debug messages — invisible in
+	// Shipping builds and undiscoverable in any build. Branched: the BRANCH ×N
+	// marker + exit keys. Depth 0: a hint when standing near a branchable
+	// object with the power owned.
+	void DrawBranchLayer();
 	void HandleSauceChanged(int32 NewTotal, int32 Delta);
 	void HandlePowerUnlocked(EPowerVerb Verb);
 

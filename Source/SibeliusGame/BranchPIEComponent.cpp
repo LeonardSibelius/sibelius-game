@@ -6,6 +6,10 @@
 #include "RefuserController.h"
 #include "SibeliusGameCharacter.h"
 #include "ElsewhereGameMode.h"      // SIB-47: skip deploy restore in the throwaway Elsewhere
+#include "BuildSite.h"              // Test-Drive hint: what counts as branchable
+#include "HatchLock.h"
+#include "RefactorableComponent.h"
+#include "UObject/UObjectIterator.h"
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Pawn.h"
@@ -35,6 +39,13 @@ void UBranchPIEComponent::BeginPlay()
 	{
 		DepthHandle = Branch->OnBranchDepthChanged.AddUObject(this, &UBranchPIEComponent::OnDepthChanged);
 		OnDepthChanged(Branch->GetDepth()); // sync to current state (depth 0 at start)
+	}
+
+	// Walt (2026-07-19): the Test-Drive hint's proximity scan (timer, not tick).
+	if (UWorld* ScanWorld = GetWorld())
+	{
+		ScanWorld->GetTimerManager().SetTimer(
+			BranchableScanTimer, this, &UBranchPIEComponent::ScanForBranchable, 0.5f, true);
 	}
 
 	// Ch5 PIE hook (SIB-37): apply the deployed save on load. Gate input NOW so the
@@ -99,13 +110,54 @@ void UBranchPIEComponent::EndPlay(const EEndPlayReason::Type Reason)
 	{
 		Branch->OnBranchDepthChanged.Remove(DepthHandle);
 	}
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(BranchableScanTimer);
+	}
 	Super::EndPlay(Reason);
+}
+
+void UBranchPIEComponent::ScanForBranchable()
+{
+	bNearBranchable = false;
+	const AActor* Owner = GetOwner();
+	if (!Owner || !GetWorld()) { return; }
+	const FVector Loc = Owner->GetActorLocation();
+	const float RadiusSq = FMath::Square(BranchableHintRadius);
+
+	for (TActorIterator<ABuildSite> It(GetWorld()); It; ++It)
+	{
+		if (!It->IsConsumed() && FVector::DistSquared(Loc, It->GetActorLocation()) <= RadiusSq)
+		{
+			bNearBranchable = true;
+			return;
+		}
+	}
+	for (TActorIterator<AHatchLock> It(GetWorld()); It; ++It)
+	{
+		if (FVector::DistSquared(Loc, It->GetActorLocation()) <= RadiusSq)
+		{
+			bNearBranchable = true;
+			return;
+		}
+	}
+	for (TObjectIterator<URefactorableComponent> It; It; ++It)
+	{
+		const AActor* Refactorable = It->GetOwner();
+		if (Refactorable && Refactorable->GetWorld() == GetWorld()
+			&& FVector::DistSquared(Loc, Refactorable->GetActorLocation()) <= RadiusSq)
+		{
+			bNearBranchable = true;
+			return;
+		}
+	}
 }
 
 void UBranchPIEComponent::OnDepthChanged(int32 Depth)
 {
 	ApplyDesaturation(Depth);
-	UpdateHudMarker(Depth);
+	// (The BRANCH marker moved to ASibeliusHUD::DrawBranchLayer — the old
+	// AddOnScreenDebugMessage marker is compiled out of Shipping builds.)
 	SetPickupsInert(Depth >= 1);
 	FreezeRefusers(Depth >= 1);
 }
@@ -160,24 +212,6 @@ void UBranchPIEComponent::ApplyDesaturation(int32 Depth)
 
 	PP.bOverride_ColorGain = true;                // per-channel multiplier: pull warmth, push cold
 	PP.ColorGain = FVector4(0.82f, 0.92f, 1.20f, 1.0f); // R down, B up = cold blue cast
-}
-
-void UBranchPIEComponent::UpdateHudMarker(int32 Depth)
-{
-	if (!GEngine)
-	{
-		return;
-	}
-	constexpr uint64 MarkerKey = 28036; // stable on-screen slot for the branch marker
-	if (Depth >= 1)
-	{
-		GEngine->AddOnScreenDebugMessage(MarkerKey, 1.0e8f, FColor(190, 160, 255),
-			FString::Printf(TEXT("BRANCH x%d   [7] merge   [8] discard"), Depth));
-	}
-	else
-	{
-		GEngine->RemoveOnScreenDebugMessage(MarkerKey);
-	}
 }
 
 void UBranchPIEComponent::SetPickupsInert(bool bInert)

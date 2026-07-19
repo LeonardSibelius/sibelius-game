@@ -34,6 +34,11 @@ public:
 	// Debug (SIB-37): true while the load-time apply input-gate is holding input off.
 	bool IsLoadInputGated() const { return bLoadInputGated; }
 
+	// Walt (2026-07-19): Test-Drive discoverability — true while the player
+	// stands near a branchable thing (build site, hatch lock, refactorable).
+	// ASibeliusHUD draws the "[6] branch reality" hint off this.
+	bool IsNearBranchable() const { return bNearBranchable; }
+
 	// SIB-39 dev overlay: last deploy/clear outcome, for display.
 	const FString& GetLastDeployStatus() const { return LastDeployStatus; }
 
@@ -46,7 +51,6 @@ private:
 	void OnDepthChanged(int32 Depth);
 
 	void ApplyDesaturation(int32 Depth);
-	void UpdateHudMarker(int32 Depth);
 	void SetPickupsInert(bool bInert);
 	void FreezeRefusers(bool bFreeze);
 	void Toast(const FString& Msg, const FColor& Color) const;
@@ -57,6 +61,16 @@ private:
 	// their own state there) — the deployed deltas then land on top.
 	void ApplyDeployedOnLoad();
 	void SetPlayerInputEnabled(bool bEnabled);
+
+	// Walt (2026-07-19): timer-driven proximity scan for the Test-Drive hint
+	// (the BuildComponent ghost-scan pattern — never per-frame).
+	void ScanForBranchable();
+
+	UPROPERTY(EditAnywhere, Category = "Branch", meta = (ClampMin = "50.0"))
+	float BranchableHintRadius = 400.f;
+
+	FTimerHandle BranchableScanTimer;
+	bool bNearBranchable = false;
 
 	FDelegateHandle DepthHandle;
 	bool bLoadInputGated = false; // SIB-37: tracks whether apply-on-load currently holds input off

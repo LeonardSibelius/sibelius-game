@@ -18,6 +18,8 @@
 #include "HallAlarmSubsystem.h"               // APPEAL-2: refuser-wave objective override
 #include "RefuserController.h"                // APPEAL-2: live-refuser check
 #include "SibeliusProgressSubsystem.h"        // APPEAL-2: bSlotPlayed endgame state
+#include "BranchSubsystem.h"                  // Test-Drive marker (Shipping-safe HUD draw)
+#include "BranchPIEComponent.h"               // Test-Drive near-branchable hint
 #include "GameFramework/Character.h"
 
 // FUN-8: default OFF now that the player has real surfaces (Tab menu, sauce
@@ -111,11 +113,51 @@ void ASibeliusHUD::DrawHUD()
 	DrawBackToOfficeHint();   // independent of the dev overlay toggle — a player affordance
 	DrawPlayerLayer();        // FUN-7: sauce count + ceremony banner, always on
 	DrawObjective();          // APPEAL-2: the one guided goal, top-center
+	DrawBranchLayer();        // Test-Drive marker + discoverability hint (Shipping-safe)
 	DrawWorldName();          // APPEAL extra: which world am I in
 
 	if (bOverlayVisible)
 	{
 		DrawDevOverlay();
+	}
+}
+
+void ASibeliusHUD::DrawBranchLayer()
+{
+	UWorld* World = GetWorld();
+	if (!World || !Canvas) { return; }
+	UBranchSubsystem* Branch = World->GetSubsystem<UBranchSubsystem>();
+	if (!Branch) { return; }
+
+	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
+
+	// Branched: the marker + exit keys, front and center under the objective.
+	// (Was an AddOnScreenDebugMessage — compiled out of Shipping builds.)
+	const int32 Depth = Branch->GetDepth();
+	if (Depth >= 1)
+	{
+		const FString Marker = FString::Printf(
+			TEXT("BRANCH x%d — a test reality      [7] keep it      [8] undo it"), Depth);
+		float W = 0.f, H = 0.f;
+		GetTextSize(Marker, W, H, Font, 1.6f);
+		DrawText(Marker, FLinearColor(0.75f, 0.63f, 1.0f, 0.95f),
+			(Canvas->ClipX - W) * 0.5f, Canvas->ClipY * 0.12f, Font, 1.6f);
+		return;
+	}
+
+	// Depth 0: the discoverability hint — near a branchable, power owned.
+	APawn* Pawn = GetOwningPawn();
+	const UBranchPIEComponent* BranchPIE = Pawn ? Pawn->FindComponentByClass<UBranchPIEComponent>() : nullptr;
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (BranchPIE && BranchPIE->IsNearBranchable()
+		&& Progression && Progression->IsUnlocked(EPowerVerb::TestDrive))
+	{
+		const FString Hint =
+			TEXT("TEST-DRIVE: press [6] to branch reality — experiment freely; [7] keeps it, [8] undoes it");
+		float W = 0.f, H = 0.f;
+		GetTextSize(Hint, W, H, Font, 1.1f);
+		DrawText(Hint, FLinearColor(0.75f, 0.63f, 1.0f, 0.65f),
+			(Canvas->ClipX - W) * 0.5f, Canvas->ClipY * 0.84f, Font, 1.1f);
 	}
 }
 
