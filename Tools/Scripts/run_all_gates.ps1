@@ -4,7 +4,8 @@ $uproject = "C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject"
 $gates = @(
   "SibeliusSmokeTest","CodeVisionSmokeTest","RefactorSmokeTest","CompileSmokeTest",
   "RefuserSmokeTest","BranchSmokeTest","GenerateSmokeTest","CathedralDoorSmokeTest",
-  "CarouselSmokeTest","ElsewhereSmokeTest","SauceSmokeTest","SlotSmokeTest"
+  "CarouselSmokeTest","ElsewhereSmokeTest","SauceSmokeTest","SlotSmokeTest",
+  "FinaleSmokeTest","ProgressionSmokeTest","PokerSmokeTest"
 )
 $results = foreach ($g in $gates) {
   $runArg = "-run=" + $g
