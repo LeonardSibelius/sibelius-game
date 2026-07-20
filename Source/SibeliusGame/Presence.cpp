@@ -82,15 +82,44 @@ void APresence::BeginPlay()
 	{
 		ApplyHologram();
 	}
-	GreetingTrigger->OnComponentBeginOverlap.AddDynamic(this, &APresence::OnGreetingOverlap);
+	if (UWorld* World = GetWorld())
+	{
+		// The project's lesson, learned a fourth time (Walt arrived in the
+		// temple already INSIDE the trigger — BeginOverlap fired into the void
+		// before possession and never again): raw overlap is fragile, the
+		// distance poll is bulletproof.
+		World->GetTimerManager().SetTimer(GreetScanTimer, this, &APresence::GreetScan, 0.5f, true);
+	}
 }
 
-void APresence::OnGreetingOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void APresence::EndPlay(const EEndPlayReason::Type Reason)
 {
-	APawn* Pawn = Cast<APawn>(OtherActor);
-	if (!Pawn || !Pawn->IsPlayerControlled()) { return; }
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(GreetScanTimer);
+	}
+	Super::EndPlay(Reason);
+}
 
+void APresence::GreetScan()
+{
+	APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+	if (!Pawn) { return; }
+
+	const float Radius = GreetingTrigger ? GreetingTrigger->GetScaledSphereRadius() : 450.f;
+	const bool bInside =
+		FVector::DistSquared(Pawn->GetActorLocation(), GetActorLocation()) <= FMath::Square(Radius);
+
+	if (bInside && !bPlayerInside)
+	{
+		TryGreet(PC);
+	}
+	bPlayerInside = bInside;
+}
+
+void APresence::TryGreet(APlayerController* PC)
+{
 	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
 	if (bGreetedThisVisit)
 	{
@@ -100,14 +129,22 @@ void APresence::OnGreetingOverlap(UPrimitiveComponent* OverlappedComp, AActor* O
 	NextGreetingTime = Now + GreetingCooldown;
 
 	// Her own subtitle channel (the ceremony banner got stomped by the
-	// cauldron's +100 grant — shared slot, two speakers). Lower-third,
-	// her cyan: the register of a person speaking, not an announcement.
-	if (APlayerController* PC = Cast<APlayerController>(Pawn->GetController()))
+	// cauldron's +100 grant — shared slot, two speakers). A cleared Details
+	// field once muted her — empty falls back to the built-in line, never
+	// silence.
+	FString Line = GreetingText.TrimStartAndEnd();
+	if (Line.IsEmpty())
 	{
-		if (ASibeliusHUD* Hud = Cast<ASibeliusHUD>(PC->GetHUD()))
-		{
-			Hud->ShowPresenceLine(GreetingText, GreetingSeconds);
-		}
+		Line = TEXT("I am here. I have always been here.");
+	}
+	if (ASibeliusHUD* Hud = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+	{
+		Hud->ShowPresenceLine(Line, GreetingSeconds);
+		UE_LOG(LogTemp, Display, TEXT("[Presence] greeting shown: %s"), *Line);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Presence] greeting FIRED but no SibeliusHUD on the controller"));
 	}
 	if (GreetingSound)
 	{

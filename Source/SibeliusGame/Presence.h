@@ -82,14 +82,21 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
 private:
-	UFUNCTION()
-	void OnGreetingOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-		const FHitResult& SweepResult);
+	// The project's lesson, learned a fourth time (Walt arrived in the temple
+	// already INSIDE the trigger — BeginOverlap fired into the void before
+	// possession and never again): raw overlap is fragile, the distance poll
+	// is bulletproof. Half-second timer, greets on the outside->inside
+	// transition. GreetingTrigger's radius stays the tuning knob.
+	void GreetScan();
+	void TryGreet(class APlayerController* PC);
 
 	void ApplyHologram();
+
+	FTimerHandle GreetScanTimer;
+	bool bPlayerInside = false;
 
 	UPROPERTY()
 	TObjectPtr<UAnimSequence> IdleAnim;   // Idle_Long, hard-ref'd in ctor
