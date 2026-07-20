@@ -73,6 +73,19 @@ private:
 	// marker + exit keys. Depth 0: a hint when standing near a branchable
 	// object with the power owned.
 	void DrawBranchLayer();
+
+	// THE PRESENCE's own speech channel (her greeting was stomped by the
+	// cauldron's +100 ceremony in the shared banner slot — one channel, two
+	// speakers). Subtitle register: lower-third, centered, her cyan on a
+	// dark strip. She will speak more as her phases build out.
+	void DrawPresenceLine();
+
+public:
+	void ShowPresenceLine(const FString& Text, float Seconds);
+
+private:
+	FString PresenceText;
+	double PresenceUntil = 0.0;
 	void HandleSauceChanged(int32 NewTotal, int32 Delta);
 	void HandlePowerUnlocked(EPowerVerb Verb);
 

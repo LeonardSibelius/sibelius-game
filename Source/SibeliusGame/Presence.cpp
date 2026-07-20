@@ -99,14 +99,14 @@ void APresence::OnGreetingOverlap(UPrimitiveComponent* OverlappedComp, AActor* O
 	bGreetedThisVisit = true;
 	NextGreetingTime = Now + GreetingCooldown;
 
-	// The greeting rides the HUD ceremony banner — Shipping-safe, and it puts
-	// her words in the same visual register as the power ceremonies (they
-	// were always hers).
+	// Her own subtitle channel (the ceremony banner got stomped by the
+	// cauldron's +100 grant — shared slot, two speakers). Lower-third,
+	// her cyan: the register of a person speaking, not an announcement.
 	if (APlayerController* PC = Cast<APlayerController>(Pawn->GetController()))
 	{
 		if (ASibeliusHUD* Hud = Cast<ASibeliusHUD>(PC->GetHUD()))
 		{
-			Hud->ShowBanner(GreetingText, GreetingSeconds);
+			Hud->ShowPresenceLine(GreetingText, GreetingSeconds);
 		}
 	}
 	if (GreetingSound)

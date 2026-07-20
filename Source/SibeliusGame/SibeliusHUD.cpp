@@ -114,12 +114,39 @@ void ASibeliusHUD::DrawHUD()
 	DrawPlayerLayer();        // FUN-7: sauce count + ceremony banner, always on
 	DrawObjective();          // APPEAL-2: the one guided goal, top-center
 	DrawBranchLayer();        // Test-Drive marker + discoverability hint (Shipping-safe)
+	DrawPresenceLine();       // The Presence's subtitle channel
 	DrawWorldName();          // APPEAL extra: which world am I in
 
 	if (bOverlayVisible)
 	{
 		DrawDevOverlay();
 	}
+}
+
+void ASibeliusHUD::ShowPresenceLine(const FString& Text, float Seconds)
+{
+	PresenceText = Text;
+	PresenceUntil = GetWorld() ? GetWorld()->GetTimeSeconds() + Seconds : 0.0;
+}
+
+void ASibeliusHUD::DrawPresenceLine()
+{
+	if (!Canvas || PresenceText.IsEmpty()) { return; }
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (Now >= PresenceUntil) { return; }
+
+	// Subtitle register: lower-third, her cyan, on a soft dark strip. Fades
+	// in the final second.
+	const float Alpha = static_cast<float>(FMath::Clamp(PresenceUntil - Now, 0.0, 1.0));
+	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
+	const float Scale = 1.5f;
+	float W = 0.f, H = 0.f;
+	GetTextSize(PresenceText, W, H, Font, Scale);
+	const float X = (Canvas->ClipX - W) * 0.5f;
+	const float Y = Canvas->ClipY * 0.72f;
+	DrawRect(FLinearColor(0.01f, 0.02f, 0.05f, 0.55f * Alpha),
+		X - 24.f, Y - 10.f, W + 48.f, H + 20.f);
+	DrawText(PresenceText, FLinearColor(0.65f, 0.90f, 1.0f, Alpha), X, Y, Font, Scale);
 }
 
 void ASibeliusHUD::DrawBranchLayer()
