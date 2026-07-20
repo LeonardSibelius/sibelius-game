@@ -139,7 +139,7 @@ void ASibeliusHUD::DrawPresenceLine()
 	// in the final second.
 	const float Alpha = static_cast<float>(FMath::Clamp(PresenceUntil - Now, 0.0, 1.0));
 	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
-	const float Scale = 1.5f;
+	const float Scale = 4.8f;   // Walt, twice: "tiny", then "at least twice as large" — she speaks LARGE
 	float W = 0.f, H = 0.f;
 	GetTextSize(PresenceText, W, H, Font, Scale);
 	const float X = (Canvas->ClipX - W) * 0.5f;
