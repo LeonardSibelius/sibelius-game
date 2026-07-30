@@ -39,12 +39,18 @@ falls out of the footage in one conversion step.
       always on (feeds play muted).
       **RULE: AI edits real footage, never generates it** — synthesized
       gameplay would poison the evidence-over-advocacy brand instantly.
-- [ ] **Per-release devlog video, 3-6 min, Walt narrating**: the voice is
-      the moat — the devlog genre is twenty-somethings; a 71-year-old
-      with a Bally data-warehouse story is the most differentiated thing
-      the genre could receive. Title pattern: "I'm 71 and I'm building my
-      memoir as a casino with an AI — Devlog N: <release name>". Agent
-      drafts script + shot list from the session log; Walt records.
+- [ ] **Per-release devlog video, 3-6 min** (REVISED 2026-07-18: Walt
+      retracted the live-commentary take-one from YouTube; take two is
+      SCRIPTED with an AI VOICE reading Walt's words — on-brand for the
+      merge thesis, DISCLOSED in the description + YouTube's altered-
+      content box). Pipeline: Walt writes the script → agent returns an
+      annotated shot list (incl. ToggleDebugCamera console free-cam for
+      cinematic b-roll — real footage, drone-style passes) → CapCut
+      built-in text-to-speech first, ElevenLabs free tier if quality
+      disappoints (paid tier can clone Walt's own voice — the literal
+      merge). Guardrail unchanged: anything presented as the game is
+      genuine capture. Title pattern: "I'm 71 and I'm building my memoir
+      as a casino with an AI — Devlog N: <release name>".
 - [ ] **2-3 Shorts cut from each devlog** (45 s, vertical) — Shorts is
       where YouTube discovery happens now.
 - [ ] **3-5 hook GIFs cut from the same footage**: the zebra slap; the
