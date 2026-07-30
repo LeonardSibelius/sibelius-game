@@ -1,4 +1,4 @@
-﻿GATE SWEEP on merged main 06/19/2026 16:22:05
+GATE SWEEP on v0.8.2 main 07/30/2026 00:41:31
 SibeliusSmokeTest        exit=0 PASS
 CodeVisionSmokeTest      exit=0 PASS
 RefactorSmokeTest        exit=0 PASS
@@ -8,8 +8,11 @@ BranchSmokeTest          exit=0 PASS
 GenerateSmokeTest        exit=0 PASS
 CathedralDoorSmokeTest   exit=0 PASS
 CarouselSmokeTest        exit=0 PASS
-SlotSmokeTest            exit=0 PASS
-SauceSmokeTest           exit=0 PASS
 ElsewhereSmokeTest       exit=0 PASS
+SauceSmokeTest           exit=0 PASS
+SlotSmokeTest            exit=0 PASS
+FinaleSmokeTest          exit=0 PASS
+ProgressionSmokeTest     exit=0 PASS
+PokerSmokeTest           exit=0 PASS
 
-OVERALL: ALL 12 PASS
+OVERALL: ALL 15 PASS  (sweep took 3.0 minutes)
