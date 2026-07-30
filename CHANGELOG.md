@@ -3,6 +3,15 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.8.2 — Two at the throne
+
+- **Aisling and Elise** now stand either side of The Presence in the AI Temple —
+  two MetaHuman figures in matching pink, breathing, and solid enough to walk
+  into rather than through.
+
+> Changelog gap: v0.5.0 through v0.8.1 shipped without entries here. That
+> history lives in the git log and `docs/sib-42-packaging-notes.md`.
+
 ## v0.4.2 — Return-door polish
 
 - The Elsewhere's **return door no longer reads sideways** — its facing is a tunable
