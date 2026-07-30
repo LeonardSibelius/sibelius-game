@@ -51,9 +51,10 @@ versioned) — not here — and is what lifts the pawn clear of the spawn surfac
 ## AI Temple agents — `MHC_Aisling/BP_MHC_Aisling`, `MHC_Elise/BP_MHC_Elise`
 
 Two feminine MetaHumans flanking the throne in `L_AI_Temple`. Set dressing, not
-pawns: the assembled Blueprints derive from **`AActor`**, so there is no capsule
-and none of the Refuser's capsule/movement tuning applies. They stand where they
-are placed and play a looping idle.
+pawns: the assembled Blueprints derive from **`AActor`**, so they get no capsule
+of their own and none of the Refuser's movement tuning applies. They stand where
+they are placed and play a looping idle. A collision capsule is added by hand —
+see the table; without it the player walks straight through them.
 
 `Content/Maps/L_AI_Temple.umap` **is** tracked and references both Blueprints, so
 a fresh clone opens that level with two missing actors until these are rebuilt.
@@ -74,7 +75,7 @@ a fresh clone opens that level with two missing actors until these are rebuilt.
 5. **Assembly** tab → settings per the table below → **Assemble**.
 6. Apply the Compatible Skeletons entry and the idle-animation settings below.
 
-### Known-good edits the look depends on
+### Known-good edits the look and the blocking depend on
 
 | Where | Setting | Value | Why |
 |---|---|---|---|
@@ -85,13 +86,22 @@ a fresh clone opens that level with two missing actors until these are rebuilt.
 | `BP_MHC_*` → `Body` component | Animation Mode | **Use Animation Asset** | Assembly ships only post-process AnimBPs (`ABP_Body/Face/Clothing_PostProcess`). Nothing drives the skeleton, so without this they stand in A-pose. |
 | `BP_MHC_*` → `Body` component | Anim to Play | `AS_MH_Neutral_Stand_Idle_Loop` | In `/MetaHumanCharacter/Optional/Animation/UEFNAnimPreset/Locomotion/`. Requires **Show Plugin Content**. MetaHuman-native — the mannequin's `MM_Idle` would need an IK retarget. |
 | `BP_MHC_*` → `Body` component | Looping | **✓** | |
+| `BP_MHC_*` → **add a Capsule Collision component** under `Root`, sibling of `Body` | Capsule Half Height / Radius | **88** / **34** | Assembly ships the meshes with collision off — they are authored for cinematics, where nothing bumps into them. 88 matches the 176 cm MetaHuman body; 34 is Unreal's standard character radius. |
+| `BP_MHC_*` → `Capsule` | Relative Location Z | **+88** | These actors' origin is at the **feet**, so the capsule has to be raised to straddle the body. Note this is the *opposite sign* to the Refuser's −88 — that one is `ACharacter`-based, where the capsule is the root and the mesh hangs below it. Do not copy the −88 here. |
+| `BP_MHC_*` → `Capsule` | Collision Presets | **BlockAllDynamic** | |
 
 Set the animation on **`Body` only**. The face mesh follows via Leader Pose and
 keeps its own `ABP_Face_PostProcess`; driving it directly fights that.
 
-Optional polish, not currently applied: give one of the two a non-zero
-**Initial Position** (~`1.7`) on the same component so the pair don't breathe in
-lockstep from level start.
+Parent the capsule to `Root`, not to `Body` — if it lands inside `Body` it
+inherits the mesh's transform and sits in the wrong place. A per-bone alternative
+exists (set the `Body` component's own collision to use the generated
+`PHYS_MHC_*` physics asset), but the capsule is cheaper and cannot snag on a
+finger bone.
+
+Both play the same idle from `Initial Position` 0, so they breathe in sync.
+Considered and deliberately left alone — offsetting one is a one-field change if
+it ever grates.
 
 ### Gotchas that cost time the first go
 
