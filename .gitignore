@@ -105,12 +105,18 @@ Content/AnimalVarietyPack/
 Content/FarmKeepers/
 
 # --- Mocap / animation packs (Fab, re-downloadable from the account library) ---
-#     Source animation only. What we AUTHOR from them — the IK Rig, the retargeter,
-#     and the retargeted output — lives under Content/Characters/Retargeting/ and IS
-#     tracked, so the pipeline survives a fresh clone even though its inputs do not.
+#     Track the MACHINE, not the MATERIAL. The IK Rig and the IK Retargeter under
+#     Content/Characters/Retargeting/ are configuration WE authored against our own
+#     SKM_Manny_Simple — no vendor data in them — so they stay tracked and the
+#     pipeline survives a fresh clone. The retargeted OUTPUT does not: resampling
+#     mocap onto another skeleton does not make it ours, and this repo is public.
 #     Never build a tracked asset that references a path in here.
 Content/MorroMotion/
 Content/XenoMocap/
+# Retargeted output — vendor motion on our skeleton. Local only; re-export from
+# RTG_Mannequin_to_MetaHuman after re-downloading the source pack.
+Content/Characters/Retargeting/Anims/
+Content/Characters/Retargeting/*_MH.uasset
 # The Morro Motion installer also drops raw FBX at the PROJECT ROOT, outside
 # Content/ entirely — 50 MB that no ignore rule was covering. Same vendor bytes.
 Anim_Source/

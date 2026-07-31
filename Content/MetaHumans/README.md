@@ -117,3 +117,71 @@ it ever grates.
 
 > Same rule as above: change any of this in-editor and update these tables in the
 > same commit. The assets are ignored; this note is all a fresh clone gets.
+
+---
+
+## Dance animations — the mannequin → MetaHuman retarget
+
+MetaHuman body animation does not exist as a product category. Fab's MetaHuman
+channel is characters, grooms and clothing only — filtering it by "dance" returns
+costumes. Animation packs live in the Unreal Engine channel and are authored on a
+**mannequin** skeleton, so a retarget is unavoidable. Buy on that basis.
+
+**The pipeline is tracked; the motion is not.** `IK_Mannequin` and
+`RTG_Mannequin_to_MetaHuman` under `Content/Characters/Retargeting/` are
+configuration authored against our own `SKM_Manny_Simple` and survive a fresh
+clone. The retargeted output is vendor mocap resampled onto our skeleton —
+git-ignored, and re-exported after re-downloading the pack.
+
+### Buying
+
+Check the listing for the **skeleton**, which almost nobody states. Of four packs
+surveyed, only **Morro Motion** said it outright ("Updated to UE5 Mannequin"), and
+that one word is the difference between a 15-minute job and a 90-minute one:
+
+| Source skeleton | Consequence |
+|---|---|
+| **UE5 Mannequin** (Manny/Quinn) | `IK_Mannequin` works as-is. This is what we own. |
+| UE4 Mannequin (`UE4_Mannequin_Skeleton`) | Needs a *second* IK Rig authored from scratch. The free XenoMocap pack is this. |
+
+Also confirm the listing covers **UE 5.7** — several dance packs stop at 5.6.
+
+### How to rebuild it
+
+1. Re-download the pack (Morro Motion, *Dance MoCap 05*) from the Fab library.
+   It installs to `Content/MorroMotion/` and **also drops raw FBX at the project
+   root** as `Anim_Source/`. Both are git-ignored.
+2. Open `Content/Characters/Mannequins/Meshes/SK_Mannequin` → **Retarget Manager**
+   → **Manage Compatible Skeletons** → **Add Skeleton** →
+   `/Game/MorroMotion/Characters/Mannequins/Meshes/SK_Mannequin`. **Save.**
+3. `Content/Characters/Retargeting/IK_Mannequin` and `RTG_Mannequin_to_MetaHuman`
+   are already in the repo — no need to rebuild them. If you ever do, see the
+   table below.
+4. Open the retargeter, select animations in the **Asset Browser**, and
+   **Export Selected Animations** with Suffix `_MH`.
+5. Assign to `BP_MHC_*` → `Body` → **Anim to Play**, same field as the idle.
+
+### Known-good settings and the UI names that hide them
+
+| Where | What | Why |
+|---|---|---|
+| `SK_Mannequin` → Retarget Manager → **Manage Compatible Skeletons** | add Morro's `SK_Mannequin` | **The load-bearing one.** Their animations sit on *their* copy of the mannequin skeleton; our IK Rig is on *ours*. Without this entry the animations never appear in the retargeter's Asset Browser and the whole thing looks broken. Not bi-directional — set it on ours. |
+| `IK_Mannequin` | built on our `SKM_Manny_Simple` | Three other `SKM_Manny_Simple` copies exist, all inside **git-ignored vendor folders**. Picking one of those puts the pipeline on a foundation absent from a fresh clone. Hover the picker to check the path. |
+| IK Rig editor | **Import Hierarchy** (green button, Hierarchy panel) | This is how an IK Rig takes its mesh. It is *not* in Preview Scene Settings, and the asset is created empty without asking. |
+| IK Rig editor | right-click pelvis → **Set Pelvis** | This is what "set the retarget root" is called in 5.7. |
+| IK Rig editor | toolbar → **Auto Create Retarget Chains** | Builds spine/arms/legs/head automatically. Don't author chains by hand. |
+| Retargeter | "Assign IK Rig to All Ops?" → **Assign** | 5.7's retargeter is an Ops stack; each op needs the rig. Answering No leaves them unassigned. |
+| Retargeter → **Target Preview Mesh** | `SKM_MHC_Aisling_BodyMesh` | Exported animations inherit this mesh's skeleton, so they land on *our* MetaHuman skeleton rather than the plugin's. |
+| Export dialog | **Use Source Path — UNCHECKED** | Ticked, it writes output into `/Game/MorroMotion/`, i.e. inside the ignored vendor folder. The one setting that silently undoes the whole arrangement. |
+
+### Non-issues that look like problems
+
+- **Two figures, four arms** in the retargeter viewport — both preview meshes draw
+  at the origin. Cosmetic; separate them with **Preview Offset → Source Mesh Offset**.
+- **Aisling has no head** — `SKM_MHC_*_BodyMesh` is the body only; the head is a
+  separate Face mesh that follows via Leader Pose at runtime.
+- **`Root ... chain too short` and `Root Motion Remap Op, missing root bone`** in
+  the retarget log — expected. The Root chain is a single bone, and root motion is
+  unused: these play through `Anim to Play`, which does not consume it.
+- **Exported assets don't appear on disk** — the batch export creates them dirty
+  in memory. **Save All** before looking for the files.
