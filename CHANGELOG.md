@@ -3,6 +3,13 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.8.5 — The office fills up
+
+- **Two more dancers in the office** — Nyra and Isla, joining Kaia. Five dancers
+  across the game now.
+- **You start facing the room, not the desk.** The office spawn point pointed at the
+  computer monitor; it now looks into the room, tilted slightly down.
+
 ## v0.8.4 — The dancers get their own light
 
 - **Every dancer now carries her own key light**, so faces read as skin rather than

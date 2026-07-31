@@ -156,6 +156,83 @@ was meant to avoid.
 
 ---
 
+## The office dancers — Kaia, Nyra, Isla (`L_Office_v02`)
+
+Three more MetaHumans, same set-dressing pattern as the AI Temple pair: `AActor`-derived,
+no capsule of their own, a looping retargeted dance, a hand-added collision capsule.
+`Content/L_Office_v02.umap` **is** tracked and references all three, so a fresh clone
+opens that level with three missing actors until they are rebuilt.
+
+### The roster, and the numbers that differ per character
+
+| Character | Blueprint placed | Height | Capsule Half Height | Capsule Z |
+|---|---|---|---|---|
+| Kaia | `BP_Dancer_Kaia` (child of `BP_MHC_Kaia`) | not recorded | not recorded | not recorded |
+| Nyra Solmere | `BP_MHC_NyraSolmere` | 159.85 cm (parametric) | **80** | **+80** |
+| Isla Rowan | `BP_MHC_IslaRowan` | ~171 cm (measured — see below) | **85** | **+85** |
+
+**Capsule Half Height is half the character's height; Z is the same number, positive.**
+The `88`/`+88` in the AI Temple table above is *not* a constant — it is half of the
+176 cm Medium archetype. Copy it onto a 160 cm character and her capsule floats 8 cm
+off the floor with her head sticking out of the top.
+
+Radius `34` and `BlockAllDynamic` are the same for everyone.
+
+### Only Kaia has a child Blueprint — the other two are exposed
+
+`BP_Dancer_Kaia` is a child of the generated `BP_MHC_Kaia`, so her capsule, animation
+and light survive a re-assembly. **Nyra and Isla carry theirs directly on the generated
+`BP_MHC_*`, which re-assembly overwrites.** If either is ever re-assembled, all of it is
+silently lost. Promoting both to child Blueprints is the outstanding fix.
+
+### Vendor MetaHumans do not all arrive in the same state
+
+Fab characters differ in what is prebuilt, and it changes the steps:
+
+| Arrives as | How you can tell | What to do |
+|---|---|---|
+| Unrigged, no textures | ~8 MB on disk, generic placeholder thumbnail | **Create Full Rig**, then **Download Texture Sources** |
+| Pre-rigged | `Remove Rig` is *not* greyed, and a warning says the rig must be deleted to unlock editing | **Skip Create Full Rig.** `Body → Model` is locked — see below |
+
+A fully prepared character lands at **135–142 MB**. That number is the check: well under
+it and the texture download either has not finished or has not been saved. Assembly
+output is likewise created dirty in memory — **Save All** before looking for it on disk.
+
+### Reading the height of a pre-rigged character
+
+`Body → Model` is greyed out while a character is rigged, and the height lives there.
+**Do not remove the rig just to read it** — that throws away work you would have to redo.
+
+Measure by comparison instead. Stand the new character at the *exact same X/Y* as one
+whose height you know, so perspective cancels out, and note where the known character's
+head falls. Eye height is ~**93.6%** of stature, so a head reaching the taller one's eyes
+means `known_height / 0.936`. That is how Isla's ~171 cm came from Nyra's 159.85 cm.
+
+### Parametric bodies do not need their own skeleton
+
+Nyra is a **parametric** body — sculpted from raw measurements, with no
+Female/Medium/NormalWeight archetype to read — and 16 cm shorter than the others. She
+still assembled into the *same* `Common/Female/Medium/NormalWeight/Body/metahuman_base_skel`.
+The compatible-skeletons entry made once for Aisling covers every character since, and the
+existing retargeted dances work with no extra step. **Height variation does not fork the
+skeleton.** Worth knowing before budgeting a retarget for each new dancer.
+
+### Restart the editor between characters
+
+Opening one MetaHuman Character asset takes the editor from ~12 GB to ~19 GB, and it never
+gives the memory back. Assembly refuses below 10 GiB. On a 32 GB machine that means a
+restart before **each** character — routine, not a remedy. Loading an Empty Level barely
+helps, because it is the MetaHuman Creator holding the memory, not the level.
+
+### The key light is optional
+
+The RectLight recipe above solves a *dark room*. `L_Office_v02` is lit well enough that all
+three office dancers shipped without one. Two dynamic lights per dancer is exactly the cost
+that makes ten dancers a frame-rate problem — spend it only where the room is actually
+failing them.
+
+---
+
 ## Dance animations — the mannequin → MetaHuman retarget
 
 MetaHuman body animation does not exist as a product category. Fab's MetaHuman
