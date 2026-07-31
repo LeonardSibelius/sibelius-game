@@ -103,6 +103,42 @@ Both play the same idle from `Initial Position` 0, so they breathe in sync.
 Considered and deliberately left alone — offsetting one is a one-field change if
 it ever grates.
 
+### Each dancer carries her own key light
+
+MetaHuman skin needs a **directional key** or it renders flat and grey — subsurface
+scattering has nothing to scatter through. In a torch-lit room full of small point
+lights you get ambient fill and no shaping, and faces read as waxworks. This cost
+an evening of chasing texture and assembly theories before the answer turned out
+to be "stand them somewhere brighter."
+
+The durable fix is a **RectLight component on each dancer Blueprint**, so lighting
+travels with the character instead of being re-done per level. A rect light rather
+than a spot: it is a panel, so shadow falloff is soft — the softbox principle.
+
+Starting values (tune by eye; these are a baseline, not gospel):
+
+| Setting | Value | Why |
+|---|---|---|
+| Location / Rotation | X `150`, Z `170` · Yaw `180`, Pitch `-25` | in front, head height, angled down. Straight-down gives raccoon eyes; straight-on goes flat. |
+| Source Width / Height | `80` / `120` | the softbox — bigger is softer |
+| Temperature | `4500` K, Use Temperature ✓ | skin dies under cold light |
+| Attenuation Radius | `400` | keeps the light on her, not on the room |
+| Volumetric Scattering | `0` | otherwise it makes fog beams |
+
+**Lighting Channels are the trick that makes this usable in a dark scene.** Put the
+RectLight on **Channel 1 only**, and the character's `Body` and `Face` on **both
+Channel 0 and 1**. Her key light then affects only her, while the room's own lights
+still reach her normally — so you can light a face like a film subject without
+washing out a deliberately moody room.
+
+Optional rim light: a second RectLight behind and above, ~half intensity, cooler
+(`6500` K), **Cast Shadows OFF**. That is what separates a dancer from a dark
+background. Shadow-casting lights are the expensive ones; the rim does not need it.
+
+Cost note: this is one or two dynamic lights per dancer. Fine at two or three per
+level; at ten in one room it becomes the performance problem the per-level split
+was meant to avoid.
+
 ### Gotchas that cost time the first go
 
 - **Assembly needs ≥ 10 GiB free RAM** and refuses below that. The MetaHuman

@@ -3,6 +3,13 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.8.4 — The dancers get their own light
+
+- **Every dancer now carries her own key light**, so faces read as skin rather than
+  waxwork wherever they're standing. MetaHuman skin needs directional light to look
+  alive, and a room lit by torches and small point lights gives it nothing to work
+  with.
+
 ## v0.8.3 — Kaia, and they dance
 
 - **Aisling and Elise now dance** at the AI Temple instead of standing still, on
