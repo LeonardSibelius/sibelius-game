@@ -104,6 +104,17 @@ Content/AfricanAnimalsPack/
 Content/AnimalVarietyPack/
 Content/FarmKeepers/
 
+# --- Mocap / animation packs (Fab, re-downloadable from the account library) ---
+#     Source animation only. What we AUTHOR from them — the IK Rig, the retargeter,
+#     and the retargeted output — lives under Content/Characters/Retargeting/ and IS
+#     tracked, so the pipeline survives a fresh clone even though its inputs do not.
+#     Never build a tracked asset that references a path in here.
+Content/MorroMotion/
+Content/XenoMocap/
+# The Morro Motion installer also drops raw FBX at the PROJECT ROOT, outside
+# Content/ entirely — 50 MB that no ignore rule was covering. Same vendor bytes.
+Anim_Source/
+
 # --- Generic paid-asset zones (policy's predefined partition) ---
 Content/Paid/
 Content/Fab/
