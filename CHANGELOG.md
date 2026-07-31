@@ -3,6 +3,15 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.8.3 — Kaia, and they dance
+
+- **Aisling and Elise now dance** at the AI Temple instead of standing still, on
+  retargeted motion-capture, and they've moved to a better-lit spot where they
+  look like people rather than waxworks.
+- **Kaia** — a third dancer, in the hallway outside the office.
+
+> Expect a larger download: each MetaHuman adds roughly 600 MB.
+
 ## v0.8.2 — Two at the throne
 
 - **Aisling and Elise** now stand either side of The Presence in the AI Temple —
