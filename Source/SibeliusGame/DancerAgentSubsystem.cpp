@@ -38,6 +38,20 @@ void UDancerAgentSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 		/*bLoop=*/true);
 }
 
+void UDancerAgentSubsystem::RegisterDancer(UDancerAgentComponent* Dancer)
+{
+	if (!Dancer)
+	{
+		return;
+	}
+
+	// Drop anything that has gone stale while we are here, so the list cannot grow
+	// without bound across level streaming.
+	Dancers.RemoveAll([](const TWeakObjectPtr<UDancerAgentComponent>& D) { return !D.IsValid(); });
+
+	Dancers.AddUnique(Dancer);
+}
+
 int32 UDancerAgentSubsystem::ScanForDancers()
 {
 	UWorld* World = GetWorld();

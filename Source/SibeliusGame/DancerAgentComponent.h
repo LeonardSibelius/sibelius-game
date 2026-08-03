@@ -101,6 +101,18 @@ public:
 	/** The prompt shown while the player is looking at her. */
 	FText GetPrompt() const;
 
+	/**
+	 * Where to aim at her RIGHT NOW — the centre of her dancing mesh's bounds, which
+	 * follows the pose frame by frame.
+	 *
+	 * Her collision capsule is a fixed 34 cm cylinder at the actor origin and does NOT
+	 * move with the animation. Nyra's dance travels far enough that her body spends much
+	 * of it outside her own capsule, so a camera trace missed her over and over (Walt:
+	 * "I had to hit E seven times even when I moved really close"). Bounds move with her;
+	 * the capsule does not.
+	 */
+	FVector GetAimPoint() const;
+
 	/** True if this sequence is one of the dances we recognise (used by the scan). */
 	static bool IsKnownDance(const UAnimSequence* Anim);
 

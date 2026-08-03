@@ -27,6 +27,8 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "DancerAgentSubsystem.generated.h"
 
+class UDancerAgentComponent;
+
 UCLASS()
 class SIBELIUSGAME_API UDancerAgentSubsystem : public UWorldSubsystem
 {
@@ -43,9 +45,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Dancer")
 	int32 ScanForDancers();
 
+	/**
+	 * Every live dancer. UInteractorComponent walks this each tick to aim-assist onto a
+	 * dancer, so it must stay cheap — iterating all ~1000 level actors per frame would
+	 * not be. Components register themselves in BeginPlay, which covers both the ones
+	 * this subsystem adopts and any added by hand.
+	 */
+	const TArray<TWeakObjectPtr<UDancerAgentComponent>>& GetDancers() const { return Dancers; }
+
+	/** Idempotent — safe to call for a component that is already registered. */
+	void RegisterDancer(UDancerAgentComponent* Dancer);
+
 	/** Real gameplay worlds only — not the editor preview or the commandlet worlds. */
 	virtual bool DoesSupportWorldType(EWorldType::Type WorldType) const override
 	{
 		return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
 	}
+
+private:
+	/** Weak, so a destroyed dancer simply goes stale — no unregister bookkeeping needed. */
+	TArray<TWeakObjectPtr<UDancerAgentComponent>> Dancers;
 };

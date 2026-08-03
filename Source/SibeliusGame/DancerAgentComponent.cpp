@@ -4,6 +4,7 @@
 
 #include "SibeliusHUD.h"
 #include "SibeliusGame.h"                  // LogSibeliusGame
+#include "DancerAgentSubsystem.h"          // the aim-assist registry
 
 #include "Animation/AnimSequence.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -127,6 +128,16 @@ void UDancerAgentComponent::BeginPlay()
 	{
 		CurrentDanceIndex = Dances.IndexOfByKey(Mesh->AnimationData.AnimToPlay);
 	}
+
+	// Join the registry the interactor's aim-assist reads. Doing it here rather than in
+	// the subsystem's scan means a hand-placed component registers itself too.
+	if (UWorld* World = GetWorld())
+	{
+		if (UDancerAgentSubsystem* Sub = World->GetSubsystem<UDancerAgentSubsystem>())
+		{
+			Sub->RegisterDancer(this);
+		}
+	}
 }
 
 bool UDancerAgentComponent::IsKnownDance(const UAnimSequence* Anim)
@@ -188,6 +199,19 @@ USkeletalMeshComponent* UDancerAgentComponent::FindDanceMesh() const
 	}
 
 	return Meshes.Num() > 0 ? Meshes[0] : nullptr;
+}
+
+FVector UDancerAgentComponent::GetAimPoint() const
+{
+	if (const USkeletalMeshComponent* Mesh = FindDanceMesh())
+	{
+		// Bounds are recomputed from the current pose, so this is her actual body,
+		// not the actor's stationary origin.
+		return Mesh->Bounds.Origin;
+	}
+
+	const AActor* Owner = GetOwner();
+	return Owner ? Owner->GetActorLocation() : FVector::ZeroVector;
 }
 
 FText UDancerAgentComponent::GetPrompt() const
