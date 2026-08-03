@@ -119,17 +119,27 @@ Starting values (tune by eye; these are a baseline, not gospel):
 
 | Setting | Value | Why |
 |---|---|---|
+| **Intensity** | **`100` cd** | **The one that actually decides whether she is lit.** A RectLight defaults to **8 cd**, which is nothing at a metre and a half in a torch-lit room. This table shipped without an Intensity row in v0.8.4, so the AI Temple pair went out with default-dim key lights and had to be fixed in v0.8.6. Do not omit it again. |
 | Location / Rotation | X `150`, Z `170` · Yaw `180`, Pitch `-25` | in front, head height, angled down. Straight-down gives raccoon eyes; straight-on goes flat. |
 | Source Width / Height | `80` / `120` | the softbox — bigger is softer |
 | Temperature | `4500` K, Use Temperature ✓ | skin dies under cold light |
-| Attenuation Radius | `400` | keeps the light on her, not on the room |
+| Attenuation Radius | `400` | keeps the light on her, not on the room. If she is lit but her edges fall dark, raise toward `700` before reaching for more Intensity. |
 | Volumetric Scattering | `0` | otherwise it makes fog beams |
 
-**Lighting Channels are the trick that makes this usable in a dark scene.** Put the
-RectLight on **Channel 1 only**, and the character's `Body` and `Face` on **both
-Channel 0 and 1**. Her key light then affects only her, while the room's own lights
-still reach her normally — so you can light a face like a film subject without
-washing out a deliberately moody room.
+**Lighting Channels are optional, and NOT what ships.** Neither Aisling nor Elise
+carries a channel override — both the RectLight and the character sit on the
+default Channel 0, and it looks fine. Reach for channels only if a key light
+starts spilling onto the room.
+
+If you do: put the RectLight on **Channel 1 only**, and the character's `Body` and
+`Face` on **both Channel 0 and 1**. Her key light then affects only her, while the
+room's own lights still reach her normally — a face lit like a film subject
+without washing out a deliberately moody room.
+
+> **Half-applying this makes her darker, not better.** A RectLight moved to
+> Channel 1 while `Body` and `Face` stay on the default Channel 0 lights nothing
+> at all: the light and the character no longer share a channel. If you set the
+> light's channel, you must set hers in the same sitting.
 
 Optional rim light: a second RectLight behind and above, ~half intensity, cooler
 (`6500` K), **Cast Shadows OFF**. That is what separates a dancer from a dark
