@@ -77,6 +77,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Finale")
 	FName GrantKey = TEXT("Finale.Synthesis");
 
+	// Key hint shown in the rite's prompt, per verb ("show me DEPLOY  [0]").
+	// Without this the altar names a verb the player cannot map to a key: the six
+	// powers sit on V / B / 6 / 0 / G and one Enhanced Input binding, deliberately
+	// dodging the editor's gizmo keys 1-5. Walt hunted for Deploy by pressing every
+	// number key, and 6/7/8 are live branch ops — he ended up two branches deep and
+	// the world went monochrome mid-rite.
+	//
+	// Defaults cover the keys that are hard-bound in C++ or named in the input
+	// comments. Refactor's lives in IA_Refactor/IMC_Default and is NOT readable
+	// from C++, so it ships empty — fill it in on the placed altar. An empty or
+	// missing entry simply prints no hint, so a blank is safe and a wrong guess
+	// is a one-field edit rather than a rebuild.
+	UPROPERTY(EditAnywhere, Category = "Finale")
+	TMap<EPowerVerb, FString> VerbKeyHints;
+
 	UPROPERTY(EditAnywhere, Category = "Finale")
 	TObjectPtr<USoundBase> StageSound;
 

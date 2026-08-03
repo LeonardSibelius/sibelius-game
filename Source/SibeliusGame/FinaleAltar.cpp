@@ -26,6 +26,15 @@ AFinaleAltar::AFinaleAltar()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(SceneRoot);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	// See the header. Refactor is deliberately absent — its key is an Enhanced
+	// Input binding, not a C++ BindKey, so guessing it here would be worse than
+	// printing nothing.
+	VerbKeyHints.Add(EPowerVerb::CodeVision, TEXT("V"));
+	VerbKeyHints.Add(EPowerVerb::Compile,    TEXT("B"));
+	VerbKeyHints.Add(EPowerVerb::TestDrive,  TEXT("6"));
+	VerbKeyHints.Add(EPowerVerb::Deploy,     TEXT("0"));
+	VerbKeyHints.Add(EPowerVerb::Generate,   TEXT("G"));
 }
 
 void AFinaleAltar::BeginPlay()
@@ -102,16 +111,24 @@ FString AFinaleAltar::StagePrompt() const
 	// prompt's every-tick refresh (Walt, stage 5, locked Deploy: "0 does
 	// nothing"), so the guidance must live HERE.
 	const EPowerVerb Verb = Sequence.CurrentVerb();
+
+	// "  [0]" when we know the key, nothing when we don't. Naming a verb without
+	// its key is what sent Walt down the number row into two nested branches.
+	const FString* Hint = VerbKeyHints.Find(Verb);
+	const FString KeyHint = (Hint && !Hint->IsEmpty())
+		? FString::Printf(TEXT("  [%s]"), **Hint)
+		: FString();
+
 	if (const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 	{
 		if (!Progression->IsUnlocked(Verb))
 		{
-			return FString::Printf(TEXT("THE SYNTHESIS asks for %s — a power you do not yet possess. Blend it at a cauldron, or find its shrine."),
-				*PowerVerbDisplayName(Verb));
+			return FString::Printf(TEXT("THE SYNTHESIS asks for %s%s — a power you do not yet possess. Blend it at a cauldron, or find its shrine."),
+				*PowerVerbDisplayName(Verb), *KeyHint);
 		}
 	}
-	return FString::Printf(TEXT("THE SYNTHESIS  —  show me %s  (%d/%d)"),
-		*PowerVerbDisplayName(Verb), Sequence.StageIndex + 1, FFinaleSequence::Num());
+	return FString::Printf(TEXT("THE SYNTHESIS  —  show me %s%s  (%d/%d)"),
+		*PowerVerbDisplayName(Verb), *KeyHint, Sequence.StageIndex + 1, FFinaleSequence::Num());
 }
 
 void AFinaleAltar::HandlePowerUsed(EPowerVerb Verb)
