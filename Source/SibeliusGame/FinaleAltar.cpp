@@ -6,6 +6,8 @@
 #include "SibeliusHUD.h"
 #include "SibeliusGame.h"
 #include "Components/StaticMeshComponent.h"
+#include "CollisionQueryParams.h"
+#include "Engine/HitResult.h"
 #include "EngineUtils.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -144,6 +146,8 @@ void AFinaleAltar::CompleteSynthesis(bool bAlreadyClaimed)
 {
 	bCompleted = true;
 	DropWalls();
+	SummonDancer();   // before the revisit early-out: the apse should look the
+	                  // same when you come back, just without the fanfare
 
 	if (bAlreadyClaimed)
 	{
@@ -163,6 +167,94 @@ void AFinaleAltar::CompleteSynthesis(bool bAlreadyClaimed)
 	}
 	Announce(TEXT("THE THREE-PART SYNTHESIS IS COMPLETE"), 10.0f);
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Finale] Synthesis complete — walls down, +%d sauce"), SauceReward);
+}
+
+void AFinaleAltar::SummonDancer()
+{
+	// Nothing assigned is a valid setup (a level without a dancer just skips it),
+	// and a revisit must not stack a second one on top of the first.
+	if (!DancerClass || SpawnedDancer.IsValid())
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	// A placed marker beats coordinates every time — if one is set, it wins.
+	// Otherwise the offset is expressed in the altar's own space, so rotating the
+	// altar carries her round with it rather than leaving her behind a pillar.
+	const FRotator AltarRotation = GetActorRotation();
+	FVector SpawnLocation;
+	FRotator SpawnRotation;
+	if (DancerSpawnPoint)
+	{
+		SpawnLocation = DancerSpawnPoint->GetActorLocation();
+		SpawnRotation = FRotator(0.0f, DancerSpawnPoint->GetActorRotation().Yaw, 0.0f);
+	}
+	else
+	{
+		SpawnLocation = GetActorLocation() + AltarRotation.RotateVector(DancerSpawnOffset);
+		SpawnRotation = FRotator(0.0f, AltarRotation.Yaw + DancerSpawnYaw, 0.0f);
+	}
+
+	// Put her feet on the floor. See the header for why SpawnCollisionHandling
+	// cannot do this for a MetaHuman.
+	if (bSnapDancerToFloor)
+	{
+		const FVector TraceStart = SpawnLocation + FVector(0.0f, 0.0f, FloorTraceHeight);
+		const FVector TraceEnd = SpawnLocation - FVector(0.0f, 0.0f, FloorTraceDepth);
+
+		// bTraceComplex MUST be true. Architectural meshes (the altar steps here)
+		// routinely ship with no simple collision hull, only per-triangle. A simple
+		// trace passes straight through them and finds the ground plane far below —
+		// which is how she first landed at Z=-0.5, buried to the neck on steps that
+		// are visibly 150 cm up.
+		FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(FinaleDancerFloor), /*bTraceComplex=*/true, this);
+		TraceParams.AddIgnoredActor(this);
+		if (DancerSpawnPoint)
+		{
+			TraceParams.AddIgnoredActor(DancerSpawnPoint);
+		}
+
+		FHitResult Hit;
+		if (World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_WorldStatic, TraceParams))
+		{
+			SpawnLocation.Z = Hit.ImpactPoint.Z;
+			// Name the surface she landed on: if she is ever sunk or floating again,
+			// this line says immediately whether the trace found the right thing.
+			UE_LOG(LogSibeliusGame, Display, TEXT("[Finale] dancer floor = '%s' at Z=%.1f"),
+				*GetNameSafe(Hit.GetActor()), Hit.ImpactPoint.Z);
+		}
+		else
+		{
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Finale] no floor found under the dancer point %s — spawning at the given Z"),
+				*SpawnLocation.ToCompactString());
+		}
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	AActor* Dancer = World->SpawnActor<AActor>(DancerClass, SpawnLocation, SpawnRotation, SpawnParams);
+	SpawnedDancer = Dancer;
+
+	if (Dancer)
+	{
+		// She needs no start call: the dancer Blueprints drive their Body component
+		// from Anim to Play with Looping set, so she is dancing the moment she exists.
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Finale] summoned dancer '%s' at %s"),
+			*Dancer->GetName(), *SpawnLocation.ToCompactString());
+	}
+	else
+	{
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Finale] DancerClass set but the spawn failed at %s"),
+			*SpawnLocation.ToCompactString());
+	}
 }
 
 void AFinaleAltar::DropWalls()

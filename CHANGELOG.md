@@ -3,6 +3,14 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.8.6 — A dancer at the altar
+
+- **Finish the Synthesis and a dancer comes out to dance.** Show all six powers at
+  the cathedral altar and she arrives at the top of the steps — and she's still
+  there every time you come back.
+- **The AI Temple pair are brighter.** Their key lights were too dim for a room lit
+  by torches, so Aisling and Elise read as people rather than shadows.
+
 ## v0.8.5 — The office fills up
 
 - **Two more dancers in the office** — Nyra and Isla, joining Kaia. Five dancers
