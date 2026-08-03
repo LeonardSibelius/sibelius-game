@@ -3,6 +3,17 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.8.7 — The Refusers mean it now
+
+- **Refusers turn to face you and attack.** They used to walk up, stop a metre
+  away, and stand there. Now they track you as they close and swing when they
+  reach you.
+- **Which makes Test-Drive worth having.** Branching freezes Refusers — and now
+  that they're actually swinging, freezing one mid-swing is a rescue rather than
+  a shrug. Press **6** to branch, **7** to merge back.
+- **The altar tells you which key.** The Synthesis now reads *"show me DEPLOY
+  [0]"* instead of naming a power and leaving you to hunt the keyboard for it.
+
 ## v0.8.6 — A dancer at the altar
 
 - **Finish the Synthesis and a dancer comes out to dance.** Show all six powers at
