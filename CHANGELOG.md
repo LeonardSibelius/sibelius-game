@@ -3,6 +3,22 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.8.8 — The dancers are AI Agents
+
+- **Talk to a dancer.** Walk up to any of them and press **E**: *"Hi. I am AI Agent
+  Nyra. Wanna Fight? (I don't really fight, I just dance)"*
+- **Press F and she changes her dance** — one of ten motion-capture routines, picked at
+  random. F is the fight key, which is the joke: she isn't going to fight you.
+- **No sniper aim required.** A dancer's collision shape doesn't travel with her
+  animation, so the livelier dances used to swallow key presses — Nyra could take seven.
+  The game now looks for a dancer near the middle of your screen instead of demanding a
+  pixel-perfect crosshair.
+- **A reticle you can actually see** — bigger, outlined so it reads against bright walls
+  as well as dark ones, and it scales with your resolution instead of shrinking to a
+  speck on a 4K display.
+- **F is "Fight", not "Slap"** everywhere it's named — the menu, the journal, and the
+  cauldron's upgrade (now **Fighting Strength**).
+
 ## v0.8.7 — The Refusers mean it now
 
 - **Refusers turn to face you and attack.** They used to walk up, stop a metre
