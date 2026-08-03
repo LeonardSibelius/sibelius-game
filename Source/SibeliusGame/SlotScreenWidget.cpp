@@ -3,6 +3,7 @@
 
 #include "SlotScreenWidget.h"
 
+#include "ProceduralPcm.h"          // SND_SR + AppendSample, shared with the poker machine
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -78,14 +79,7 @@ namespace
 	constexpr float BOUNCE_PX = 14.0f;    // landing overshoot
 	constexpr float BOUNCE_SECS = 0.16f;
 
-	constexpr int32 SND_SR = 22050;       // procedural PCM sample rate (mono s16)
-
-	void AppendSample(TArray<uint8>& Pcm, float S)
-	{
-		const int16 V = static_cast<int16>(FMath::Clamp(S, -1.0f, 1.0f) * 32767.0f);
-		Pcm.Add(static_cast<uint8>(V & 0xFF));
-		Pcm.Add(static_cast<uint8>((V >> 8) & 0xFF));
-	}
+	// SND_SR / AppendSample now live in ProceduralPcm.h — see that header for why.
 }
 
 USlotScreenWidget::USlotScreenWidget(const FObjectInitializer& ObjectInitializer)

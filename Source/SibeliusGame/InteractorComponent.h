@@ -35,6 +35,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Interaction")
 	void TryInteract();
 
+	/**
+	 * What the player is looking at right now, or null. USlapComponent reads this so
+	 * F can reshuffle a dancer's dance instead of fighting her — one focus, two verbs.
+	 */
+	UFUNCTION(BlueprintPure, Category="Interaction")
+	AActor* GetFocusedActor() const { return FocusedActor.Get(); }
+
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

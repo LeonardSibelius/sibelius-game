@@ -20,6 +20,8 @@
 #include "ProgressionSubsystem.h"   // FUN-2: slaps pay Sauce
 #include "RefuserController.h"      // bOnlySlapRefusers target filter
 #include "RefactorComponent.h"      // APPEAL-6c: wild creatures are slappable
+#include "DancerAgentComponent.h"   // F on a dancer reshuffles her dance
+#include "InteractorComponent.h"    // ...using the same focus E uses
 #include "Components/StaticMeshComponent.h"
 
 USlapComponent::USlapComponent()
@@ -36,6 +38,39 @@ USlapComponent::USlapComponent()
 	}
 }
 
+namespace
+{
+	/**
+	 * The dancer agent for whatever a trace hit, or null.
+	 *
+	 * A MetaHuman is not one tidy actor: the capsule, the body mesh and the grooms can
+	 * belong to attached or child actors, so a sweep may report a hit on something whose
+	 * OWNER is the dancer rather than the dancer herself. UDancerAgentSubsystem attaches
+	 * the component to the actor that carries the dancing mesh, so we walk up the owner
+	 * and attachment chain before giving up.
+	 *
+	 * Depth-limited because Owner/AttachParent chains can, in principle, cycle.
+	 */
+	UDancerAgentComponent* FindDancerAgent(AActor* Actor)
+	{
+		for (int32 Hops = 0; Actor && Hops < 4; ++Hops)
+		{
+			if (UDancerAgentComponent* Agent = Actor->FindComponentByClass<UDancerAgentComponent>())
+			{
+				return Agent;
+			}
+
+			AActor* Next = Actor->GetOwner();
+			if (!Next)
+			{
+				Next = Actor->GetAttachParentActor();
+			}
+			Actor = Next;
+		}
+		return nullptr;
+	}
+}
+
 void USlapComponent::DoSlap()
 {
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
@@ -48,6 +83,22 @@ void USlapComponent::DoSlap()
 	if (!World)
 	{
 		return;
+	}
+
+	// Walt (2026-08-03): F on a dancing girl does not fight her — it reshuffles her
+	// dance. That is the joke her greeting sets up ("Wanna Fight? I don't really
+	// fight, I just dance"). Reuse the interactor's focus so E and F agree about who
+	// the player is looking at; a separate sweep here could disagree with the prompt
+	// on screen, which reads as a bug.
+	if (const UInteractorComponent* Interactor = OwnerPawn->FindComponentByClass<UInteractorComponent>())
+	{
+		if (UDancerAgentComponent* Agent = FindDancerAgent(Interactor->GetFocusedActor()))
+		{
+			if (Agent->ShuffleDance())
+			{
+				return;   // handled — no fight, no sauce, no stat bump
+			}
+		}
 	}
 
 	FVector ViewStart = OwnerPawn->GetActorLocation();
@@ -81,6 +132,25 @@ void USlapComponent::DoSlap()
 	if (!bAnyHit)
 	{
 		return;
+	}
+
+	// A dancer found by the FIGHT'S OWN sweep also counts.
+	//
+	// The intercept at the top of this function uses the interactor's focus, which is a
+	// 30 cm sphere on ECC_Visibility — the same trace that puts the prompt on screen.
+	// This sweep is 60 cm on ECC_Pawn. So there is a band where the fight reaches a
+	// dancer but the interactor never focused her: F then fell through and ran the
+	// fight, which is what Walt saw as "red flashes like with Gideon" on Nyra while
+	// Isla worked. Rule now: anywhere the fight can reach her, the shuffle reaches her.
+	for (const FHitResult& Hit : Hits)
+	{
+		if (UDancerAgentComponent* Agent = FindDancerAgent(Hit.GetActor()))
+		{
+			if (Agent->ShuffleDance())
+			{
+				return;
+			}
+		}
 	}
 
 	for (const FHitResult& Hit : Hits)

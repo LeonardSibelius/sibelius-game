@@ -90,8 +90,9 @@ nothing. It is a gift. Enjoy it.
 ## EVERY KEY
 
   W A S D + mouse    move and look
-  E                  interact: books, doors, the stove, machines
-  F                  fight
+  E                  interact: books, doors, the stove, machines,
+                     talk to an AI Agent
+  F                  fight a Refuser, or change an AI Agent's dance
   V (hold)           Code Vision
   R                  Refactor
   C                  Compile (build at a build site)

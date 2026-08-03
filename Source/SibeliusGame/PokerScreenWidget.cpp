@@ -2,6 +2,7 @@
 
 #include "PokerScreenWidget.h"
 
+#include "ProceduralPcm.h"          // SND_SR + AppendSample, shared with the slot machine
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -28,7 +29,7 @@ namespace
 {
 	constexpr float CARD_W = 150.0f;
 	constexpr float CARD_H = 210.0f;
-	constexpr int32 SND_SR = 22050;
+	// SND_SR / AppendSample now live in ProceduralPcm.h — see that header for why.
 
 	const TCHAR* RankGlyph(int32 Rank)
 	{
@@ -43,13 +44,6 @@ namespace
 	{
 		static const TCHAR* Glyphs[4] = { TEXT("♠"), TEXT("♥"), TEXT("♦"), TEXT("♣") };   // ♠ ♥ ♦ ♣
 		return (Suit >= 0 && Suit < 4) ? Glyphs[Suit] : TEXT("?");
-	}
-
-	void AppendSample(TArray<uint8>& Pcm, float S)
-	{
-		const int16 V = static_cast<int16>(FMath::Clamp(S, -1.0f, 1.0f) * 32767.0f);
-		Pcm.Add(static_cast<uint8>(V & 0xFF));
-		Pcm.Add(static_cast<uint8>((V >> 8) & 0xFF));
 	}
 }
 

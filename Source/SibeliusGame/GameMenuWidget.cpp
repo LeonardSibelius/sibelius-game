@@ -274,8 +274,8 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 	struct FControlRow { FString Keys; FString Action; bool bShown; };
 	const TArray<FControlRow> Rows = {
 		{ TEXT("W A S D / mouse"), TEXT("move / look"), true },
-		{ TEXT("E"), TEXT("interact — collect, doors, the cauldron"), true },
-		{ TEXT("F"), TEXT("fight a Refuser"), true },
+		{ TEXT("E"), TEXT("interact — collect, doors, the cauldron, talk to an AI Agent"), true },
+		{ TEXT("F"), TEXT("fight a Refuser / change an AI Agent's dance"), true },
 		{ TEXT("V (hold)"), TEXT("Code Vision"), Owned(EPowerVerb::CodeVision) },
 		{ TEXT("R"), TEXT("Refactor what you're looking at"), Owned(EPowerVerb::Refactor) },
 		{ TEXT("C"), TEXT("Compile at a build site"), Owned(EPowerVerb::Compile) },
