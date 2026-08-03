@@ -21,7 +21,7 @@ SAUCE is the green number in the top-right corner. It is knowledge,
 distilled. You earn it by playing:
 
   - Books pay 5 each — collect them with E.
-  - Slapping a Refuser (F) pays 2. Stand your ground.
+  - Fighting a Refuser (F) pays 2. Stand your ground.
   - Curios hidden in the Many Worlds pay 15. Some forests keep one,
     some keep none.
   - Finishing a chapter pays a bonus, once.
@@ -91,7 +91,7 @@ nothing. It is a gift. Enjoy it.
 
   W A S D + mouse    move and look
   E                  interact: books, doors, the stove, machines
-  F                  slap
+  F                  fight
   V (hold)           Code Vision
   R                  Refactor
   C                  Compile (build at a build site)

@@ -150,7 +150,7 @@ void UGameMenuWidget::BuildStatusTab(TSharedRef<SVerticalBox> Box)
 	APawn* Pawn = GetOwningPlayerPawn();
 
 	Row(FString::Printf(TEXT("SAUCE   %d"), Progression ? Progression->GetSauce() : 0), SauceGreen, 26, "Bold");
-	Row(TEXT("Earn it: books, slapped Refusers, chapters, the temple fountain. Spend it: the kitchen cauldron. Risk it: the Carousel of Fates."), Dim, 14);
+	Row(TEXT("Earn it: books, Refusers fought, chapters, the temple fountain. Spend it: the kitchen cauldron. Risk it: the Carousel of Fates."), Dim, 14);
 
 	Row(TEXT(""), Body);
 	Row(TEXT("POWERS"), Heading, 20, "Bold");
@@ -235,7 +235,8 @@ void UGameMenuWidget::BuildRecordsTab(TSharedRef<SVerticalBox> Box)
 	};
 
 	Section(NSLOCTEXT("Sibelius", "RecLife", "A LIFE IN NUMBERS"));
-	Row(TEXT("Refusers slapped"),   FString::FromInt(Stat(SibeliusStats::RefusersSlapped)), SauceGreen);
+	// The stat KEY stays RefusersSlapped — it is written into every save. Only the label changes.
+	Row(TEXT("Refusers fought"),   FString::FromInt(Stat(SibeliusStats::RefusersSlapped)), SauceGreen);
 	Row(TEXT("sauce earned, lifetime (the wallet is on STATUS)"),
 		FString::FromInt(Stat(SibeliusStats::SauceEarned)), SauceGreen);
 	Row(TEXT("books collected"),    FString::FromInt(Stat(SibeliusStats::BooksCollected)), Body);
@@ -274,7 +275,7 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 	const TArray<FControlRow> Rows = {
 		{ TEXT("W A S D / mouse"), TEXT("move / look"), true },
 		{ TEXT("E"), TEXT("interact — collect, doors, the cauldron"), true },
-		{ TEXT("F"), TEXT("slap a Refuser"), true },
+		{ TEXT("F"), TEXT("fight a Refuser"), true },
 		{ TEXT("V (hold)"), TEXT("Code Vision"), Owned(EPowerVerb::CodeVision) },
 		{ TEXT("R"), TEXT("Refactor what you're looking at"), Owned(EPowerVerb::Refactor) },
 		{ TEXT("C"), TEXT("Compile at a build site"), Owned(EPowerVerb::Compile) },

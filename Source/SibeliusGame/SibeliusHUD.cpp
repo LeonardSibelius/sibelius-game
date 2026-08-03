@@ -280,7 +280,7 @@ FString ASibeliusHUD::ComputeObjective() const
 		return FString();
 	}
 
-	// 0) A refuser wave overrides everything — teach the slap under pressure.
+	// 0) A refuser wave overrides everything — teach the fight under pressure.
 	if (const UHallAlarmSubsystem* Alarm = GI->GetSubsystem<UHallAlarmSubsystem>())
 	{
 		if (Alarm->IsAlarmTriggered())
@@ -289,7 +289,7 @@ FString ASibeliusHUD::ComputeObjective() const
 			{
 				if (Cast<ARefuserController>(It->GetController()))
 				{
-					return TEXT("Mrs. Hall's Refusers are loose — get close and SLAP them [F]");
+					return TEXT("Mrs. Hall's Refusers are loose — get close and FIGHT them [F]");
 				}
 			}
 		}
@@ -426,15 +426,16 @@ void ASibeliusHUD::DrawCrosshair()
 		return;
 	}
 
-	const float CX = Canvas->ClipX * 0.5f;
-	const float CY = Canvas->ClipY * 0.5f;
-	const float HalfThick = Thickness * 0.5f;
+	// One reticle for the whole game — see SibeliusReticle.h. Sizes below are
+	// 1080p-reference px; Draw() scales them by resolution and adds the outline.
+	SibeliusReticle::FStyle Style;
+	Style.ArmLength = ArmLength;
+	Style.Thickness = Thickness;
+	Style.CenterGap = CenterGap;
+	Style.DotRadius = DotRadius;
+	Style.Color     = Color;
 
-	// A "+" reticle with a small center gap, centered on the exact aim point.
-	DrawRect(Color, CX - CenterGap - ArmLength, CY - HalfThick, ArmLength, Thickness);
-	DrawRect(Color, CX + CenterGap,             CY - HalfThick, ArmLength, Thickness);
-	DrawRect(Color, CX - HalfThick, CY - CenterGap - ArmLength, Thickness, ArmLength);
-	DrawRect(Color, CX - HalfThick, CY + CenterGap,             Thickness, ArmLength);
+	SibeliusReticle::Draw(*this, *Canvas, Style);
 }
 
 void ASibeliusHUD::DrawDevOverlay()
@@ -545,7 +546,7 @@ void ASibeliusHUD::DrawDevOverlay()
 
 	// --- CONTROLS: every binding, for reference ---
 	Line(TEXT("CONTROLS"), Head);
-	Line(TEXT("  F slap    E interact    V vision"), White);
+	Line(TEXT("  F fight   E interact    V vision"), White);
 	Line(TEXT("  R refactor    C compile    G generate / ask"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
 	Line(TEXT("  M menu    J how to play    H hide/show overlay    Q quit (press twice)"), White);

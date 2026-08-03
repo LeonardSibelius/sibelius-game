@@ -13,6 +13,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
 #include "ProgressionTypes.h"
+#include "SibeliusReticle.h"
 #include "SibeliusHUD.generated.h"
 
 UCLASS()
@@ -35,18 +36,22 @@ public:
 	// Default ON (Walt likes seeing it).
 	static bool bOverlayVisible;
 
-	// Reticle look (tweakable on the HUD class / BP).
+	// Reticle look (tweakable on the HUD class / BP). Values are 1080p-reference pixels —
+	// SibeliusReticle::Draw scales them by screen height, so these hold at any resolution.
 	UPROPERTY(EditDefaultsOnly, Category = "Crosshair")
-	float ArmLength = 10.0f;   // length of each crosshair arm (px)
+	float ArmLength = SibeliusReticle::DefaultArmLength;   // length of each crosshair arm
 
 	UPROPERTY(EditDefaultsOnly, Category = "Crosshair")
-	float Thickness = 2.0f;    // arm thickness (px)
+	float Thickness = SibeliusReticle::DefaultThickness;   // arm thickness
 
 	UPROPERTY(EditDefaultsOnly, Category = "Crosshair")
-	float CenterGap = 3.0f;    // gap at the very center (px) — keeps the exact aim point clear
+	float CenterGap = SibeliusReticle::DefaultCenterGap;   // clear space around the exact aim point
 
 	UPROPERTY(EditDefaultsOnly, Category = "Crosshair")
-	FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 0.85f);
+	float DotRadius = SibeliusReticle::DefaultDotRadius;   // centre dot; set 0 for a plain "+"
+
+	UPROPERTY(EditDefaultsOnly, Category = "Crosshair")
+	FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 0.95f);
 
 private:
 	void DrawCrosshair();

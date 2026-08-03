@@ -5,6 +5,7 @@
 #include "PokerMachine.h"
 #include "CarouselRunSubsystem.h"
 #include "ProgressionSubsystem.h"   // FUN-4: sauce balance + stake lines
+#include "SibeliusReticle.h"        // the shared crosshair
 
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
@@ -59,17 +60,10 @@ void ACarouselHUD::DrawHUD()
 	UCarouselRunSubsystem* RunSub = GetRun();
 	if (!RunSub || !Canvas) { return; }
 
-	// Walt: the office reticle is ASibeliusHUD's; this room needs its own.
-	// Same "+" with a center gap (values mirror the office defaults).
-	{
-		const float CX = Canvas->ClipX * 0.5f, CY = Canvas->ClipY * 0.5f;
-		const float Arm = 10.0f, Thick = 2.0f, Gap = 3.0f;
-		const FLinearColor RetColor(1.0f, 1.0f, 1.0f, 0.85f);
-		DrawRect(RetColor, CX - Gap - Arm, CY - Thick * 0.5f, Arm, Thick);
-		DrawRect(RetColor, CX + Gap,       CY - Thick * 0.5f, Arm, Thick);
-		DrawRect(RetColor, CX - Thick * 0.5f, CY - Gap - Arm, Thick, Arm);
-		DrawRect(RetColor, CX - Thick * 0.5f, CY + Gap,       Thick, Arm);
-	}
+	// Walt: the office reticle is ASibeliusHUD's; this room needs its own draw call.
+	// It used to re-hard-code the office numbers here, which is how the three reticles
+	// drifted — now all three share SibeliusReticle::Draw and cannot diverge.
+	SibeliusReticle::Draw(*this, *Canvas);
 
 	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
 	const FLinearColor White(1, 1, 1), Gold(1.0f, 0.85f, 0.2f), Dim(0.7f, 0.7f, 0.7f), Green(0.4f, 1.0f, 0.4f);

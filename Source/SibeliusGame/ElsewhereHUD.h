@@ -11,6 +11,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "SibeliusReticle.h"
 #include "ElsewhereHUD.generated.h"
 
 UCLASS()
@@ -21,8 +22,10 @@ class SIBELIUSGAME_API AElsewhereHUD : public AHUD
 public:
 	virtual void DrawHUD() override;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") float ArmLength = 10.0f;
-	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") float Thickness = 2.0f;
-	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") float CenterGap = 3.0f;
-	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 0.85f);
+	// 1080p-reference px, scaled by screen height in SibeliusReticle::Draw.
+	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") float ArmLength = SibeliusReticle::DefaultArmLength;
+	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") float Thickness = SibeliusReticle::DefaultThickness;
+	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") float CenterGap = SibeliusReticle::DefaultCenterGap;
+	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") float DotRadius = SibeliusReticle::DefaultDotRadius;
+	UPROPERTY(EditDefaultsOnly, Category = "Crosshair") FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 0.95f);
 };

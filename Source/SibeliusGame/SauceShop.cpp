@@ -80,8 +80,11 @@ void FSauceShop::BuildOffers(const FProgressionState& State, TArray<FSauceOffer>
 	{
 		FSauceOffer Offer;
 		Offer.Key = SlapOfferKey;
-		Offer.Title = TEXT("Mighty Slap");
-		Offer.Desc = FString::Printf(TEXT("+50%% slap force, every session. (%d/%d bought)"),
+		// Walt (2026-08-03): F is "Fight" now, not "Slap". Title/Desc are player-facing and
+		// change; SlapOfferKey ("Slap.Mighty") is NOT touched — it is recorded in every save,
+		// so renaming it would wipe purchases players already paid for.
+		Offer.Title = TEXT("Fighting Strength");
+		Offer.Desc = FString::Printf(TEXT("+50%% knockback when you fight, every session. (%d/%d bought)"),
 			SlapBought, SlapMaxPurchases);
 		Offer.Cost = SlapCost;
 		Offer.MaxCount = SlapMaxPurchases;
