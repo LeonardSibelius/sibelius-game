@@ -11,8 +11,9 @@
 //   • THE ONE BONUS RULE: 3+ Earths anywhere = 6 free spins, all wins ×3
 //     (retrigger adds 8 more; Earths don't pay on lines)
 //
-// Par sheet (strips + pays) lives in SlotGameModel.cpp under the PAR SHEET
-// banner — tune there, nowhere else (SL1: one source of truth).
+// Par sheet (strip + pays + paylines) is FSlotParSheet — see SlotParSheet.h. The model
+// HOLDS one rather than reading globals, so a second cabinet can run different math and
+// the technician's panel can edit it at runtime (docs/PAR_SHEET_PANEL.md).
 
 #pragma once
 
@@ -20,6 +21,7 @@
 #include "UObject/Object.h"
 #include "Math/RandomStream.h"
 #include "SlotTypes.h"
+#include "SlotParSheet.h"
 #include "SlotGameModel.generated.h"
 
 UCLASS(BlueprintType)
@@ -43,11 +45,24 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Slot")
 	int32 GetFreeSpinsRemaining() const { return FreeSpinsRemaining; }
 
-	// Exposed for the smoke test + UI (paytable screen, line highlighting).
-	static int32 NumLines();
-	static const TArray<int8>& Line(int32 Index);          // 5 row-indices
-	static double PayFor(ESlotSymbol Symbol, int32 Count, double PerLineBet);
-	static const TArray<ESlotSymbol>& Strip(int32 Reel);
+	/**
+	 * The machine's math. Defaults to Celestial Fortune (the shipped par sheet).
+	 *
+	 * A rejected par sheet leaves the model on the one it already had — a machine with
+	 * no valid math would spin and pay nothing, which is worse than refusing the change.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Slot")
+	bool SetParSheet(const FSlotParSheet& InParSheet);
+
+	const FSlotParSheet& GetParSheet() const { return ParSheet; }
+
+	// Exposed for the smoke test + UI (paytable screen, line highlighting). These were
+	// static until 2026-08-05; they read the INSTANCE's par sheet now, because two
+	// cabinets may legitimately disagree about the answer.
+	int32 NumLines() const { return ParSheet.NumLines(); }
+	const TArray<int32>& Line(int32 Index) const { return ParSheet.Line(Index); }
+	double PayFor(ESlotSymbol Symbol, int32 Count, double PerLineBet) const { return ParSheet.PayFor(Symbol, Count, PerLineBet); }
+	const TArray<ESlotSymbol>& Strip(int32 /*Reel*/) const { return ParSheet.Strip; }
 
 	static constexpr int32 REELS = 5;
 	static constexpr int32 ROWS = 3;
@@ -57,6 +72,9 @@ public:
 
 private:
 	void EvaluateLines(const TArray<ESlotSymbol>& Grid, double PerLineBet, int32 WinMult, FSlotSpinResult& Out) const;
+
+	UPROPERTY()
+	FSlotParSheet ParSheet = FSlotParSheet::CelestialFortune();
 
 	FRandomStream Rng;
 	int32 FreeSpinsRemaining = 0;

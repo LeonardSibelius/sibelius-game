@@ -14,6 +14,8 @@
 
 #include "SlotSmokeTestCommandlet.h"
 #include "SlotGameModel.h"
+#include "SlotParSheet.h"
+#include "SlotParSheetMath.h"   // the closed form the technician's panel will show live
 #include "SlotTypes.h"
 #include "SlotScreenWidget.h"
 #include "Engine/Texture2D.h"
@@ -130,6 +132,143 @@ int32 USlotSmokeTestCommandlet::Main(const FString& /*Params*/)
 		R.Check(BonusOneIn >= 15.0 && BonusOneIn <= 200.0, FString::Printf(TEXT("Bonus 1-in-%.1f within [15, 200]"), BonusOneIn));
 		R.Check(MaxWinX <= 10000.0, FString::Printf(TEXT("Max win %.1fx <= 10000x exposure cap"), MaxWinX));
 		R.Warn(RTP >= 88.0 && RTP <= 102.0, FString::Printf(TEXT("RTP %.2f%% within DESIGN band [88, 102] (tune par sheet if WARN)"), RTP));
+
+		/* ---------- THE CLOSED FORM MUST AGREE WITH THE SIMULATION ----------
+		   The technician's panel shows RTP live, computed in closed form because a
+		   million spins cannot run per keystroke. If that formula and this simulation
+		   ever disagree, the panel is lying to the player in real time — in a feature
+		   whose entire purpose is to teach them what a par sheet is. So the two are
+		   checked against each other on the shipped par sheet AND on deliberately odd
+		   ones, where the wild-attribution rule is most likely to be got wrong.
+
+		   Tolerance is sampling noise, not slack: a million spins puts the simulated
+		   RTP within roughly a tenth of a point of truth for a machine this volatile. */
+		{
+			const FSlotParSheet Shipped = FSlotParSheet::CelestialFortune();
+			const FSlotParSheetReport Exact = SlotParSheetMath::Analyze(Shipped);
+
+			UE_LOG(LogSlotSmoke, Display, TEXT("  Closed form       : RTP %.3f %%  (base %.3f %%, +%.4f free spins/spin, trigger %.4f %%)"),
+				Exact.RtpPercent, Exact.BaseRtpPercent, Exact.FreeSpinsPerBaseSpin, Exact.TriggerPercent);
+
+			R.Check(Exact.bConverged, TEXT("Closed form converges on the shipped par sheet"));
+			R.Check(FMath::Abs(Exact.RtpPercent - RTP) <= 0.35,
+				FString::Printf(TEXT("Closed-form RTP %.3f%% agrees with %lld-spin sim %.3f%% (delta %.3f)"),
+					Exact.RtpPercent, SpinsTotal, RTP, Exact.RtpPercent - RTP));
+
+			// Trigger probability: the sim counts triggers across ALL spins, base and
+			// free alike, so compare against that same denominator.
+			const double SimTriggerPct = 100.0 * static_cast<double>(BonusTriggers) / static_cast<double>(SpinsTotal);
+			R.Check(FMath::Abs(Exact.TriggerPercent - SimTriggerPct) <= 0.10,
+				FString::Printf(TEXT("Closed-form trigger %.4f%% agrees with sim %.4f%%"), Exact.TriggerPercent, SimTriggerPct));
+
+			// Contributions must account for the base game, or the panel's per-symbol
+			// breakdown would not add up to the total it sits under.
+			double ContribSum = 0.0;
+			for (const FSlotSymbolContribution& C : Exact.Contributions) { ContribSum += C.BaseRtpPercent; }
+			R.Check(FMath::Abs(ContribSum - Exact.BaseRtpPercent) <= 0.001,
+				FString::Printf(TEXT("Per-symbol contributions sum to base RTP (%.4f vs %.4f)"), ContribSum, Exact.BaseRtpPercent));
+		}
+
+		/* ---------- the same check on VARIANT par sheets ----------
+		   The shipped sheet has exactly ONE wild in forty stops, which is the case least
+		   likely to expose a wild-attribution mistake. These variants make wilds common
+		   enough that getting the rule wrong shows up as a clear divergence. */
+		{
+			struct FVariant { const TCHAR* Name; int32 ExtraWilds; double JackpotPay; bool bStripEarths; };
+			static const FVariant Variants[] = {
+				{ TEXT("wild-heavy"),   3, 1000.0, false },
+				{ TEXT("wild-free"),   -1, 1000.0, false },
+				{ TEXT("big-jackpot"),  0, 4000.0, false },
+				// CONTROLS that isolate one half of the maths each:
+				//   no-bonus       : no Earths at all, so no free spins. Total RTP == base
+				//                    RTP, and any gap is purely the payline calculation.
+				//   no-bonus-nowild: the above AND no wilds. The simplest machine this
+				//                    model can express - if THIS disagrees, something very
+				//                    basic is wrong.
+				{ TEXT("no-bonus"),         0, 1000.0, true },
+				{ TEXT("no-bonus-nowild"), -1, 1000.0, true },
+			};
+
+			for (const FVariant& V : Variants)
+			{
+				FSlotParSheet P = FSlotParSheet::CelestialFortune();
+				P.Name = V.Name;
+
+				if (V.bStripEarths)
+				{
+					for (ESlotSymbol& S : P.Strip)
+					{
+						if (S == ESlotSymbol::Earth) { S = ESlotSymbol::Moon; }
+					}
+				}
+
+				// Convert Star stops to Wild (or the single Wild back to Star) so the
+				// strip length — and therefore every other symbol's odds — is untouched.
+				int32 ToChange = V.ExtraWilds;
+				for (int32 i = 0; i < P.Strip.Num() && ToChange != 0; ++i)
+				{
+					if (ToChange > 0 && P.Strip[i] == ESlotSymbol::Star) { P.Strip[i] = ESlotSymbol::Wild; --ToChange; }
+					else if (ToChange < 0 && P.Strip[i] == ESlotSymbol::Wild) { P.Strip[i] = ESlotSymbol::Star; ++ToChange; }
+				}
+				for (FSlotPayRow& Row : P.PayTable)
+				{
+					if (Row.Symbol == ESlotSymbol::Seven) { Row.Pay5 = V.JackpotPay; }
+				}
+
+				const FSlotParSheetReport Ex = SlotParSheetMath::Analyze(P);
+
+				// Simulate the variant directly rather than trusting the formula twice.
+				USlotGameModel* VM = NewObject<USlotGameModel>();
+				VM->SetParSheet(P);
+				VM->Init(4242);
+				const int32 VBet = VM->NumLines();
+
+				// 400k left the wild-heavy variant only 0.04 points inside tolerance —
+				// not a wrong answer, just a noisy measurement of a very volatile
+				// machine. Seeds are fixed so this is deterministic rather than flaky,
+				// but a margin that thin would trip on any future strip tweak. 2M spins
+				// costs about a third of a second and roughly halves the noise.
+				const int64 VSpins = 2000000;
+
+				// Split base-spin wins from free-spin wins so the two halves of the
+				// closed form can be checked separately. A gap in one and not the other
+				// says immediately which formula is wrong.
+				double VWinBase = 0.0, VWinFree = 0.0, VBetSum = 0.0;
+				int64 VBaseSpins = 0, VFreeSpins = 0;
+				for (int64 i = 0; i < VSpins; ++i)
+				{
+					const FSlotSpinResult Res = VM->Spin(VBet);
+					if (Res.bWasFreeSpin) { ++VFreeSpins; VWinFree += Res.TotalWin; }
+					else                  { ++VBaseSpins; VBetSum += VBet; VWinBase += Res.TotalWin; }
+				}
+				const double VRtp     = 100.0 * (VWinBase + VWinFree) / VBetSum;
+				const double VRtpBase = 100.0 * VWinBase / VBetSum;   // lines only
+				const double VFreeRatio = (VBaseSpins > 0) ? static_cast<double>(VFreeSpins) / static_cast<double>(VBaseSpins) : 0.0;
+
+				UE_LOG(LogSlotSmoke, Display,
+					TEXT("  Variant '%s'  wilds %d  RTP exact %.3f sim %.3f  |  BASE exact %.3f sim %.3f  |  free/spin exact %.4f sim %.4f"),
+					V.Name, P.CountOf(ESlotSymbol::Wild),
+					Ex.RtpPercent, VRtp, Ex.BaseRtpPercent, VRtpBase, Ex.FreeSpinsPerBaseSpin, VFreeRatio);
+
+				// The base-game formula on its own. On the no-bonus controls this is the
+				// entire machine, so it must be tight.
+				R.Check(FMath::Abs(Ex.BaseRtpPercent - VRtpBase) <= 0.40,
+					FString::Printf(TEXT("Variant '%s': BASE closed form %.3f%% agrees with sim %.3f%% (delta %.3f)"),
+						V.Name, Ex.BaseRtpPercent, VRtpBase, Ex.BaseRtpPercent - VRtpBase));
+
+				R.Check(FMath::Abs(Ex.RtpPercent - VRtp) <= 0.60,
+					FString::Printf(TEXT("Variant '%s': closed form %.3f%% agrees with sim %.3f%% (delta %.3f)"),
+						V.Name, Ex.RtpPercent, VRtp, Ex.RtpPercent - VRtp));
+
+				// 'wild-free' is the control: with no wilds on the strip there is no
+				// attribution question at all, so a divergence here would mean the
+				// ordinary run maths is wrong rather than the wild rule.
+				if (V.ExtraWilds < 0)
+				{
+					R.Check(P.CountOf(ESlotSymbol::Wild) == 0, TEXT("Control variant really has zero wilds"));
+				}
+			}
+		}
 	}
 
 	/* ---------- S2: presentation assets (SC4) ---------- */

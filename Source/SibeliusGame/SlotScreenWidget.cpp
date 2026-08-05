@@ -533,8 +533,10 @@ void USlotScreenWidget::TickReel(int32 Reel, FSlotReelAnim& R, float Dt)
 ESlotSymbol USlotScreenWidget::NextStripSymbol(int32 Reel, FSlotReelAnim& R)
 {
 	// Feed from the model's REAL strip — the blur the player squints at is the
-	// actual par sheet scrolling by.
-	const TArray<ESlotSymbol>& S = USlotGameModel::Strip(Reel);
+	// actual par sheet scrolling by. Read from the INSTANCE, so an edited par sheet
+	// shows its own symbols rather than the factory ones.
+	if (!Model) { return ESlotSymbol::Star; }
+	const TArray<ESlotSymbol>& S = Model->Strip(Reel);
 	if (S.Num() == 0) { return ESlotSymbol::Star; }
 	R.StripCursor = (R.StripCursor + 1) % S.Num();
 	return S[R.StripCursor];
@@ -615,12 +617,15 @@ void USlotScreenWidget::FinishReveal()
 	// reels, rows from the model's own line patterns) — plus the Earths on a
 	// bonus, so the scatter moment reads.
 	TSet<int32> WinCells;   // visible cells as reel*ROWS + row
-	for (const FSlotLineWin& W : PendingResult.LineWins)
+	if (Model)
 	{
-		const TArray<int8>& L = USlotGameModel::Line(W.LineIndex);
-		for (int32 Reel = 0; Reel < W.Count && Reel < L.Num(); ++Reel)
+		for (const FSlotLineWin& W : PendingResult.LineWins)
 		{
-			WinCells.Add(Reel * USlotGameModel::ROWS + L[Reel]);
+			const TArray<int32>& L = Model->Line(W.LineIndex);
+			for (int32 Reel = 0; Reel < W.Count && Reel < L.Num(); ++Reel)
+			{
+				WinCells.Add(Reel * USlotGameModel::ROWS + L[Reel]);
+			}
 		}
 	}
 	if (PendingResult.bBonusTriggered)
