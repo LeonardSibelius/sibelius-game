@@ -25,6 +25,7 @@
 // FUN-8: default OFF now that the player has real surfaces (Tab menu, sauce
 // counter, banners). H brings it back — it's Walt's debug view, not the UI.
 bool ASibeliusHUD::bOverlayVisible = false;
+double ASibeliusHUD::MemoirVisibleUntil = 0.0;
 
 // Dev overlay text scale (2.0 = double size for Walt's 4K monitor). Single knob —
 // scales both the glyph size and the line spacing. Bump to taste.
@@ -97,6 +98,9 @@ void ASibeliusHUD::HandlePowerUnlocked(EPowerVerb Verb)
 	// to read forty years' worth of one sentence.
 	MemoirText = MemoirLineForVerb(Verb);
 	MemoirUntil = GetWorld() ? GetWorld()->GetTimeSeconds() + 12.0 : 0.0;
+
+	// Tell the altar's orbiting cards to stand aside for the next twelve seconds.
+	MemoirVisibleUntil = MemoirUntil;
 }
 
 void ASibeliusHUD::ShowBanner(const FString& Text, float Seconds)
@@ -247,8 +251,13 @@ void ASibeliusHUD::DrawPlayerLayer()
 		float W = 0.0f, H = 0.0f;
 		GetTextSize(BannerText, W, H, nullptr, Scale);
 		const float Alpha = static_cast<float>(FMath::Clamp((BannerUntil - Now) / 0.75, 0.0, 1.0)); // quick fade at the end
-		DrawText(BannerText, FLinearColor(0.55f, 0.95f, 1.0f, Alpha),
-			(Canvas->ClipX - W) * 0.5f, Canvas->ClipY * 0.32f, nullptr, Scale);
+		const float X = (Canvas->ClipX - W) * 0.5f;
+		const float Y = Canvas->ClipY * 0.32f;
+		// Backing strip, same reason as the memoir below: these fire at the altar and
+		// at the slot machine, where the fate-glyph ring is turning bright gold behind
+		// them. Text alone loses that fight.
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.80f * Alpha), X - 18.0f, Y - 8.0f, W + 36.0f, H + 16.0f);
+		DrawText(BannerText, FLinearColor(0.55f, 0.95f, 1.0f, Alpha), X, Y, nullptr, Scale);
 	}
 
 	// The memoir line — Walt's message to a former employer, under the banner,
@@ -261,8 +270,13 @@ void ASibeliusHUD::DrawPlayerLayer()
 		const float Alpha = static_cast<float>(FMath::Clamp((MemoirUntil - Now) / 1.5, 0.0, 1.0));
 		const float X = (Canvas->ClipX - W) * 0.5f;
 		const float Y = Canvas->ClipY * 0.32f + 90.0f;
-		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.55f * Alpha), X - 14.0f, Y - 6.0f, W + 28.0f, H + 12.0f);
-		DrawText(MemoirText, FLinearColor(0.95f, 0.92f, 0.80f, Alpha), X, Y, nullptr, Scale);
+		// 0.55 was enough over stone and hopeless over the fate-glyph ring, whose gold
+		// symbols turn right behind this line at the machine. Walt: "my message to Bally
+		// is being stepped on by the rotating symbols." Raised to 0.88 with more padding
+		// — this is the one piece of writing in the game that is his own voice, and it
+		// has to be readable wherever it fires.
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.88f * Alpha), X - 22.0f, Y - 10.0f, W + 44.0f, H + 20.0f);
+		DrawText(MemoirText, FLinearColor(0.98f, 0.95f, 0.86f, Alpha), X, Y, nullptr, Scale);
 	}
 }
 

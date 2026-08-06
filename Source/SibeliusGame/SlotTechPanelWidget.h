@@ -52,6 +52,17 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnTechPanelClosed OnClosed;
 
+	/**
+	 * The tree is built HERE, not in NativeConstruct.
+	 *
+	 * Slate constructs the underlying widget from WidgetTree->RootWidget during
+	 * TakeWidget(), which happens at AddToViewport — BEFORE NativeConstruct runs. A tree
+	 * assembled in NativeConstruct is therefore assembled too late: the panel exists,
+	 * takes keyboard focus, and draws nothing at all. USlotScreenWidget does it this way
+	 * for the same reason.
+	 */
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
@@ -70,6 +81,21 @@ private:
 
 	FString ComposeReportText(const FSlotParSheetReport& Rep, const FSlotParSheet& Sheet) const;
 
+	/**
+	 * The numbers translated into what the player will actually experience.
+	 *
+	 * "RTP 95.703 %" means nothing to someone who has never been in a casino, and this
+	 * panel exists to teach. Every line here is derived from the live figures, so it
+	 * changes as the dials turn — the plain-English sentence IS the lesson, and the
+	 * percentage is just its evidence.
+	 */
+	FString ComposeFeelText(const FSlotParSheetReport& Rep) const;
+
+	/** H — the concepts, for a player who has never seen a slot machine's insides. */
+	FString ComposeHelpText() const;
+
+	bool bShowHelp = false;
+
 	UPROPERTY()
 	TObjectPtr<USlotGameModel> Model;
 
@@ -84,6 +110,14 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UBorder> Panel;
+
+	/**
+	 * The body scrolls. The help page is longer than any panel height I can guarantee
+	 * across resolutions, and shrinking the font until it fits just makes it unreadable
+	 * — the wrong trade in a screen whose whole job is explaining things.
+	 */
+	UPROPERTY()
+	TObjectPtr<class UScrollBox> BodyScroll;
 
 	/**
 	 * The untouched shipped machine. Every edit is composed from THIS plus the knobs,

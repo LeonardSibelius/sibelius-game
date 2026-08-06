@@ -767,9 +767,14 @@ void USlotScreenWidget::UpdateHud()
 	}
 	if (HintText)
 	{
+		// T is advertised HERE and nowhere else. World interaction prompts go through
+		// AddOnScreenDebugMessage, which is suppressed in Shipping — so a hint anywhere
+		// but inside the UI would be invisible to every actual player. It is deliberately
+		// absent during a trial: the shrine run is a timed test of nerve, not the moment
+		// to invite someone to go and rewrite the machine's odds.
 		HintText->SetText(FText::FromString(TrialTarget > 0
 			? FString::Printf(TEXT("REACH %lld CREDITS TO CLAIM THE POWER        SPACE — spin        Esc — retreat"), TrialTarget)
-			: FString(TEXT("SPACE — spin        Esc — leave"))));
+			: FString(TEXT("SPACE — spin        T — service panel        Esc — leave"))));
 	}
 }
 

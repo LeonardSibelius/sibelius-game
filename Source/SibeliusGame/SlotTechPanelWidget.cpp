@@ -8,6 +8,7 @@
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
@@ -17,7 +18,13 @@ namespace
 	const FLinearColor ColPanel   (0.02f, 0.03f, 0.05f, 0.94f);
 	const FLinearColor ColTitle   (1.00f, 0.85f, 0.20f, 1.0f);   // the cabinet's gold
 	const FLinearColor ColBody    (0.85f, 0.90f, 0.95f, 1.0f);
-	const FLinearColor ColFooter  (0.60f, 0.65f, 0.72f, 1.0f);
+
+	// The key line gets its OWN strip and near-white text. The report can grow taller
+	// than the panel — the help page especially — and when it does, the last row spills
+	// past the panel's background onto the cathedral behind it, where grey-on-stone is
+	// unreadable. An opaque strip keeps the controls legible however tall the body runs.
+	const FLinearColor ColFooter  (0.92f, 0.94f, 0.97f, 1.0f);
+	const FLinearColor ColFooterBg(0.16f, 0.18f, 0.22f, 1.0f);
 
 	FString SymbolName(ESlotSymbol S)
 	{
@@ -62,12 +69,17 @@ void USlotTechPanelWidget::Setup(USlotGameModel* InModel)
 	}
 }
 
+TSharedRef<SWidget> USlotTechPanelWidget::RebuildWidget()
+{
+	BuildTree();   // must happen before Slate takes the tree — see the header
+	return Super::RebuildWidget();
+}
+
 void USlotTechPanelWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	SetIsFocusable(true);   // required to receive keys in UIOnly, same as the screen
-	BuildTree();
-	Refresh();
+	Refresh();              // the tree already exists by now
 }
 
 void USlotTechPanelWidget::BuildTree()
@@ -88,7 +100,8 @@ void USlotTechPanelWidget::BuildTree()
 	{
 		// Stretch anchors with zero offsets — the robust layout the other screens use;
 		// a point anchor plus SetSize has produced zero-size boxes in this project.
-		CS->SetAnchors(FAnchors(0.16f, 0.06f, 0.84f, 0.94f));
+		// Stops at 0.88 to leave the footer its own band at the bottom.
+		CS->SetAnchors(FAnchors(0.14f, 0.03f, 0.86f, 0.88f));
 		CS->SetOffsets(FMargin(0.f));
 	}
 
@@ -109,12 +122,50 @@ void USlotTechPanelWidget::BuildTree()
 		return T;
 	};
 
-	TitleText  = MakeText(TEXT("TechTitle"),  ColTitle,  30);
-	BodyText   = MakeText(TEXT("TechBody"),   ColBody,   20);
-	FooterText = MakeText(TEXT("TechFooter"), ColFooter, 17);
+	TitleText = MakeText(TEXT("TechTitle"), ColTitle, 30);
 
-	FooterText->SetText(FText::FromString(
-		TEXT("[UP/DOWN] choose a dial     [LEFT/RIGHT] turn it     [R] revert to factory     [ESC] close")));
+	// The body lives in a ScrollBox that FILLS the remaining height, so a long page
+	// scrolls instead of running off the bottom of the panel.
+	BodyScroll = WidgetTree->ConstructWidget<UScrollBox>(UScrollBox::StaticClass(), TEXT("TechBodyScroll"));
+	if (UVerticalBoxSlot* VS = Box->AddChildToVerticalBox(BodyScroll))
+	{
+		VS->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+	}
+
+	BodyText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("TechBody"));
+	{
+		FSlateFontInfo F = BodyText->GetFont();
+		F.Size = 18;
+		BodyText->SetFont(F);
+		BodyText->SetColorAndOpacity(FSlateColor(ColBody));
+	}
+	BodyScroll->AddChild(BodyText);
+
+	// THE FOOTER IS ANCHORED TO THE CANVAS, NOT PACKED INTO THE VERTICAL BOX.
+	//
+	// Inside the box it was a sibling of the report, so a long body simply pushed it
+	// down — off the bottom of the screen on the help page. Anchored to its own band at
+	// the foot of the canvas it cannot be displaced by anything above it, however much
+	// the report grows.
+	UBorder* FooterBg = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("TechFooterBg"));
+	FooterBg->SetBrushColor(ColFooterBg);
+	FooterBg->SetPadding(FMargin(16.f, 9.f));
+	if (UCanvasPanelSlot* FS = Root->AddChildToCanvas(FooterBg))
+	{
+		FS->SetAnchors(FAnchors(0.14f, 0.895f, 0.86f, 0.955f));
+		FS->SetOffsets(FMargin(0.f));
+	}
+
+	FooterText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("TechFooter"));
+	{
+		FSlateFontInfo F = FooterText->GetFont();
+		F.Size = 17;
+		FooterText->SetFont(F);
+		FooterText->SetColorAndOpacity(FSlateColor(ColFooter));
+	}
+	FooterBg->SetContent(FooterText);
+
+	// Footer text itself is set by Refresh(), which knows if the help page is showing.
 }
 
 FSlotParSheet USlotTechPanelWidget::ComposeParSheet() const
@@ -196,11 +247,25 @@ void USlotTechPanelWidget::Refresh()
 
 	if (TitleText)
 	{
-		TitleText->SetText(FText::FromString(TEXT("SERVICE PANEL   —   CELESTIAL FORTUNE")));
+		TitleText->SetText(FText::FromString(bShowHelp
+			? TEXT("SERVICE PANEL   —   WHAT ALL THIS MEANS")
+			: TEXT("SERVICE PANEL   —   CELESTIAL FORTUNE")));
 	}
 	if (BodyText)
 	{
-		BodyText->SetText(FText::FromString(ComposeReportText(Rep, Sheet)));
+		// Both pages read at 18 now — the ScrollBox handles the overflow, so there is no
+		// reason to shrink the help text to the edge of legibility.
+		FSlateFontInfo F = BodyText->GetFont();
+		F.Size = 18;
+		BodyText->SetFont(F);
+
+		BodyText->SetText(FText::FromString(bShowHelp ? ComposeHelpText() : ComposeReportText(Rep, Sheet)));
+	}
+	if (FooterText)
+	{
+		FooterText->SetText(FText::FromString(bShowHelp
+			? TEXT("[UP/DOWN] scroll     [H] back to the machine     [ESC] close")
+			: TEXT("[UP/DOWN] choose a dial   [LEFT/RIGHT] turn it   [H] what this means   [R] revert   [ESC] close")));
 	}
 
 	// Push the edit to the machine immediately. Editing is free and reversible by
@@ -263,6 +328,10 @@ FString USlotTechPanelWidget::ComposeReportText(const FSlotParSheetReport& Rep, 
 	S += FString::Printf(TEXT("   Base game %.2f %%  +  free spins %.2f %%\n\n"),
 		Rep.BaseRtpPercent, Rep.RtpPercent - Rep.BaseRtpPercent);
 
+	// --- what that actually means at the machine ---
+	S += ComposeFeelText(Rep);
+	S += TEXT("\n");
+
 	// --- the anatomy: WHERE the return comes from ---
 	// This is the part that turns a dial into a lesson. A total tells the player what
 	// happened; this tells them why.
@@ -282,12 +351,139 @@ FString USlotTechPanelWidget::ComposeReportText(const FSlotParSheetReport& Rep, 
 	return S;
 }
 
+FString USlotTechPanelWidget::ComposeFeelText(const FSlotParSheetReport& Rep) const
+{
+	FString S;
+	S += TEXT("   WHAT THIS MACHINE WILL FEEL LIKE\n");
+
+	if (!Rep.bConverged)
+	{
+		S += TEXT("     It would never stop paying free spins. This is not a machine.\n");
+		return S;
+	}
+
+	// RTP, said the way a person would say it.
+	S += FString::Printf(
+		TEXT("     Bet 100 credits over a long evening and about %.0f come back.\n")
+		TEXT("     The machine keeps roughly %.0f of every 100.\n"),
+		Rep.RtpPercent, FMath::Max(0.0, Rep.HoldPercent));
+
+	// Hit frequency as a fraction people can picture.
+	if (Rep.HitFrequencyPercent > 0.0)
+	{
+		const double OneIn = 100.0 / Rep.HitFrequencyPercent;
+		S += FString::Printf(TEXT("     About 1 spin in %.1f pays something, however small.\n"), OneIn);
+	}
+
+	// Volatility is the one that decides whether a session is pleasant or brutal, and
+	// it is invisible in the RTP. Spell it out.
+	const FString Vol = Rep.VolatilityWord();
+	if (Vol == TEXT("LOW"))
+	{
+		S += TEXT("     Wins are frequent and small — your credits drift, they don't swing.\n");
+	}
+	else if (Vol == TEXT("MEDIUM"))
+	{
+		S += TEXT("     A steady mix: mostly small wins, with the occasional real one.\n");
+	}
+	else if (Vol == TEXT("HIGH"))
+	{
+		S += TEXT("     Long dry spells broken by big wins. It will test your nerve.\n");
+	}
+	else if (Vol == TEXT("WILD"))
+	{
+		S += TEXT("     Savage swings. Most sessions die quietly; a few pay enormously.\n");
+	}
+
+	if (Rep.TriggerPercent > 0.0)
+	{
+		S += FString::Printf(TEXT("     The free-spin round arrives about every %.0f spins.\n"),
+			100.0 / Rep.TriggerPercent);
+	}
+	else
+	{
+		S += TEXT("     There is no free-spin round at all on these settings.\n");
+	}
+
+	return S;
+}
+
+FString USlotTechPanelWidget::ComposeHelpText() const
+{
+	// Written for someone who has never been in a casino. No jargon that is not
+	// immediately defined, and every idea tied back to a dial on this panel.
+	return FString(
+		TEXT("   WHAT IS A PAR SHEET?\n")
+		TEXT("     A slot machine is really just a few dozen numbers: what is painted on\n")
+		TEXT("     the reels, and what each combination pays. That list is the par sheet.\n")
+		TEXT("     There is no other secret. The outcome is decided the instant you press\n")
+		TEXT("     spin; the reels turning is theatre.\n")
+		TEXT("\n")
+		TEXT("   RTP  —  return to player\n")
+		TEXT("     Of every 100 credits bet, how many go back to players over a very long\n")
+		TEXT("     run. It does NOT promise what happens tonight. HOLD is the same number\n")
+		TEXT("     from the casino's side: what the machine earns.\n")
+		TEXT("\n")
+		TEXT("   HIT FREQUENCY\n")
+		TEXT("     How often a spin pays ANYTHING, even a few credits. A machine can feel\n")
+		TEXT("     generous on a high hit frequency while still keeping your money.\n")
+		TEXT("\n")
+		TEXT("   VOLATILITY\n")
+		TEXT("     How rough the ride is. Two machines with the SAME RTP can feel nothing\n")
+		TEXT("     alike: one drips small wins, the other starves you then pays big. This\n")
+		TEXT("     is the difference the JACKPOT dial makes.\n")
+		TEXT("\n")
+		TEXT("   THE THREE DIALS\n")
+		TEXT("     PAYS      scales every payout at once. The clean one — RTP moves with\n")
+		TEXT("               it and almost nothing else does.\n")
+		TEXT("     WILDS     how many WILD symbols sit on the reel strip. A Wild stands in\n")
+		TEXT("               for any symbol. One stop in forty is worth more than you think.\n")
+		TEXT("     JACKPOT   what five Lucky 7s pay. Barely touches RTP; transforms feel.\n")
+		TEXT("\n")
+		TEXT("   WHY THE HOUSE HAS RULES\n")
+		TEXT("     Pay out too much and no casino will run your machine — it does not earn\n")
+		TEXT("     its floor space. Pay too little and no regulator will license it. Every\n")
+		TEXT("     real designer works inside that band, and so do you: outside it, this\n")
+		TEXT("     machine refuses to spin.\n")
+		TEXT("\n")
+		TEXT("   WHERE THE RETURN COMES FROM\n")
+		TEXT("     The list on the main page shows which symbols actually pay for the\n")
+		TEXT("     machine. Turn a dial and watch which lines move. That is the whole job.\n"));
+}
+
 FReply USlotTechPanelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
 	const FKey Key = InKeyEvent.GetKey();
 
+	if (Key == EKeys::H)
+	{
+		bShowHelp = !bShowHelp;
+		if (BodyScroll) { BodyScroll->SetScrollOffset(0.f); }   // always start at the top
+		Refresh();
+		return FReply::Handled();
+	}
+
+	// On the help page the arrows are free — no dials to drive — so they scroll. The
+	// mouse wheel works too, but a reader whose hands are on the keyboard should not
+	// have to reach for the mouse to see the last paragraph.
+	if (bShowHelp && BodyScroll && (Key == EKeys::Up || Key == EKeys::Down ||
+	                                Key == EKeys::PageUp || Key == EKeys::PageDown))
+	{
+		const float Step = (Key == EKeys::PageUp || Key == EKeys::PageDown) ? 320.f : 90.f;
+		const float Dir  = (Key == EKeys::Up || Key == EKeys::PageUp) ? -1.f : 1.f;
+		BodyScroll->SetScrollOffset(FMath::Max(0.f, BodyScroll->GetScrollOffset() + Step * Dir));
+		return FReply::Handled();
+	}
 	if (Key == EKeys::Escape || Key == EKeys::T)
 	{
+		// Esc from the help page returns to the dials rather than leaving outright —
+		// backing out one layer at a time is what every reader expects.
+		if (bShowHelp)
+		{
+			bShowHelp = false;
+			Refresh();
+			return FReply::Handled();
+		}
 		OnClosed.Broadcast();
 		return FReply::Handled();
 	}

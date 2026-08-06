@@ -36,6 +36,18 @@ public:
 	// Default ON (Walt likes seeing it).
 	static bool bOverlayVisible;
 
+	/**
+	 * World time until which the memoir line is on screen, or 0.
+	 *
+	 * AFateCarousel reads this to withdraw its orbiting cards while Walt's message to a
+	 * former employer is being read — the cards are set dressing and the memoir is the
+	 * one piece of writing in the game in his own voice, so the decoration gives way.
+	 *
+	 * Static for the same reason bOverlayVisible is: it spares an actor in the level a
+	 * HUD lookup every tick, and there is only ever one local HUD.
+	 */
+	static double MemoirVisibleUntil;
+
 	// Reticle look (tweakable on the HUD class / BP). Values are 1080p-reference pixels —
 	// SibeliusReticle::Draw scales them by screen height, so these hold at any resolution.
 	UPROPERTY(EditDefaultsOnly, Category = "Crosshair")

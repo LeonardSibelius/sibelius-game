@@ -64,8 +64,24 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Fate Carousel")
 	float CardYawOffset = 90.0f;
 
+	/**
+	 * Seconds the cards take to withdraw and return while the memoir line is on screen.
+	 *
+	 * The cards orbit in front of the cathedral's TextRenderActor sign, so Walt's message
+	 * to a former employer was being read through a spinning crown. The cards are set
+	 * dressing — the memoir is the one piece of writing in the game in his own voice — so
+	 * the decoration gives way for the twelve seconds it shows.
+	 *
+	 * Long enough to read as the relics deferring, short enough to clear the text fast.
+	 */
+	UPROPERTY(EditAnywhere, Category = "Fate Carousel", meta = (ClampMin = "0.05"))
+	float MemoirFadeSeconds = 0.5f;
+
 private:
 	void BuildCards();
+
+	/** 1 = fully present, 0 = withdrawn. Eased toward its target every tick. */
+	float CardPresence = 1.0f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Fate Carousel")
 	TObjectPtr<USceneComponent> Hub;

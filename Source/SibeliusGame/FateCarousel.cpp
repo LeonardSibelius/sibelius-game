@@ -2,6 +2,7 @@
 
 #include "FateCarousel.h"
 
+#include "SibeliusHUD.h"   // MemoirVisibleUntil — the cards stand aside for the memoir
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -99,6 +100,24 @@ void AFateCarousel::Tick(float DeltaSeconds)
 	// Ceremonial orbit...
 	AddActorWorldRotation(FRotator(0.0f, RotationDegPerSec * DeltaSeconds, 0.0f));
 
+	// STAND ASIDE FOR THE MEMOIR.
+	//
+	// These cards orbit between the player and the cathedral's sign, so Walt's message to
+	// a former employer was being read through a spinning crown. Set dressing yields to
+	// the one piece of writing in the game that is his own voice.
+	//
+	// Scale as well as glow: dimming alone would leave the geometry sitting in front of
+	// the text, which is the actual problem. At zero scale they occlude nothing.
+	{
+		const UWorld* World = GetWorld();
+		const double Now = World ? World->GetTimeSeconds() : 0.0;
+		const bool bMemoirShowing = (Now < ASibeliusHUD::MemoirVisibleUntil);
+
+		const float Target = bMemoirShowing ? 0.0f : 1.0f;
+		const float Step = DeltaSeconds / FMath::Max(MemoirFadeSeconds, 0.05f);
+		CardPresence = FMath::FInterpConstantTo(CardPresence, Target, 1.0f, Step);
+	}
+
 	// ...with a gentle per-card breath (phase-offset bob).
 	const float TwoPi = 2.0f * PI;
 	for (int32 i = 0; i < Cards.Num(); ++i)
@@ -110,6 +129,15 @@ void AFateCarousel::Tick(float DeltaSeconds)
 			Loc.Z = CardBaseZ.IsValidIndex(i) ? CardBaseZ[i] : 0.0f;
 			Loc.Z += BobAmplitude * FMath::Sin(TwoPi * RunningTime / FMath::Max(BobPeriodSeconds, 0.1f) + Phase);
 			Card->SetRelativeLocation(Loc);
+
+			// Smoothstep so the withdrawal eases at both ends rather than ramping.
+			const float Eased = FMath::SmoothStep(0.0f, 1.0f, CardPresence);
+			Card->SetRelativeScale3D(FVector(Eased));
+
+			if (UMaterialInstanceDynamic* MID = Cast<UMaterialInstanceDynamic>(Card->GetMaterial(0)))
+			{
+				MID->SetScalarParameterValue(TEXT("Glow"), CardGlow * Eased);
+			}
 		}
 	}
 }
