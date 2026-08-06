@@ -167,6 +167,56 @@ int32 USlotSmokeTestCommandlet::Main(const FString& /*Params*/)
 			for (const FSlotSymbolContribution& C : Exact.Contributions) { ContribSum += C.BaseRtpPercent; }
 			R.Check(FMath::Abs(ContribSum - Exact.BaseRtpPercent) <= 0.001,
 				FString::Printf(TEXT("Per-symbol contributions sum to base RTP (%.4f vs %.4f)"), ContribSum, Exact.BaseRtpPercent));
+
+			/* ---------- THE METERS MUST COUNT THE SAME GAME (docs/FLOOR_REPORT.md) ----
+			   The floor report shows the player a MEASURED return and asks them to compare
+			   it with par. That comparison is worthless if the meters count something
+			   subtly different from what the closed form solves — and the likeliest way to
+			   get it wrong is invisible: crediting free spins as wagered, or counting a
+			   retrigger twice. Both would leave the machine playing perfectly while the
+			   report quietly lied.
+
+			   The million-spin loop above already accumulated every total independently,
+			   so this costs nothing but the comparison. */
+			const FSlotMeters& Met = M->GetSessionMeters();
+
+			const bool bMetersAgreeWithLoop =
+				   Met.BaseSpins     == BaseDone
+				&& Met.FreeSpins     == FreeSpinsPlayed
+				&& Met.BonusTriggers == BonusTriggers
+				&& FMath::Abs(static_cast<double>(Met.CoinIn)  - TotalBetSum) < 1.0
+				&& FMath::Abs(static_cast<double>(Met.CoinOut) - TotalWinSum) < 1.0
+				&& FMath::Abs(static_cast<double>(Met.BiggestWin) - MaxWinX * TotalBet) < 1.0;
+
+			R.Check(bMetersAgreeWithLoop,
+				FString::Printf(TEXT("Meters match the independent tally (%lld/%lld spins, %lld in, %lld out)"),
+					Met.BaseSpins, Met.FreeSpins, Met.CoinIn, Met.CoinOut));
+
+			// The check that matters: what the meters MEASURE against what par PREDICTS.
+			// Same tolerance as the sim comparison above — this is the same measurement,
+			// reached by the code the player's page will actually read.
+			const double MeterRtp = Met.MeasuredRtpPercent();
+			R.Check(FMath::Abs(Exact.RtpPercent - MeterRtp) <= 0.35,
+				FString::Printf(TEXT("Meter RTP %.3f%% agrees with closed form %.3f%% (delta %.3f)"),
+					MeterRtp, Exact.RtpPercent, MeterRtp - Exact.RtpPercent));
+
+			/* Hit frequency is a PAID-spin statistic in both places, and that agreement is
+			   the load-bearing part: the meters and MeasureBySimulation must exclude free
+			   spins the same way, or the page's "paid anything" row would sit beside a par
+			   figure computed on a different denominator.
+
+			   200k spins rather than the 10k default: the standard error on a ~31% rate is
+			   0.46 points at 10k, which would force a tolerance so loose it could not catch
+			   a denominator mistake. At 200k it is ~0.10, so 0.50 is a real bar. */
+			FSlotParSheetReport Measured = Exact;
+			SlotParSheetMath::MeasureBySimulation(Shipped, Measured, 200000);
+			const double MeterHit = Met.MeasuredHitPercent();
+			R.Check(FMath::Abs(Measured.HitFrequencyPercent - MeterHit) <= 0.50,
+				FString::Printf(TEXT("Meter hit frequency %.2f%% agrees with simulation %.2f%% (delta %.2f)"),
+					MeterHit, Measured.HitFrequencyPercent, MeterHit - Measured.HitFrequencyPercent));
+
+			UE_LOG(LogSlotSmoke, Display, TEXT("  Meters            : RTP %.3f %%  hit %.2f %%  biggest %lld  bonus 1 in %.1f"),
+				MeterRtp, MeterHit, Met.BiggestWin, Met.MeasuredBonusOneIn());
 		}
 
 		/* ---------- the same check on VARIANT par sheets ----------

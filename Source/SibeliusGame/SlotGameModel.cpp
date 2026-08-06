@@ -21,6 +21,11 @@ bool USlotGameModel::SetParSheet(const FSlotParSheet& InParSheet)
 	}
 
 	ParSheet = InParSheet;
+
+	// Locked decision 3 (docs/FLOOR_REPORT.md): a par change takes a fresh baseline. Only
+	// on an ACCEPTED sheet — a rejected one leaves the machine untouched, so its meters
+	// must stay untouched too.
+	ResetSessionMeters();
 	return true;
 }
 
@@ -31,6 +36,7 @@ void USlotGameModel::Init(int32 Seed)
 	Rng.Initialize(Seed);
 	FreeSpinsRemaining = 0;
 	bInitialized = true;
+	ResetSessionMeters();
 }
 
 FSlotSpinResult USlotGameModel::Spin(int32 TotalBet)
@@ -75,6 +81,33 @@ FSlotSpinResult USlotGameModel::Spin(int32 TotalBet)
 		FreeSpinsRemaining += FREE_SPINS_AWARD;
 	}
 	Out.FreeSpinsRemaining = FreeSpinsRemaining;
+
+	/* ---------- THE METERS (docs/FLOOR_REPORT.md) ----------
+	   Counted here rather than in the screen because this is the only place that knows
+	   what the spin paid, and because the headless suite drives this function directly —
+	   so the meters are gated against the closed form rather than eyeballed.
+
+	   Rounding: pays are Mult * (TotalBet / 15), and every bet the game actually uses is a
+	   multiple of 15 (the screen bets 150, the suite bets 15), so TotalWin is integral and
+	   this rounds nothing. The round is here so an odd bet degrades to sub-credit noise
+	   instead of silently truncating every win. */
+	const int64 Won = FMath::RoundToInt64(Out.TotalWin);
+
+	if (Out.bWasFreeSpin)
+	{
+		++SessionMeters.FreeSpins;   // no CoinIn: a free spin wagers nothing
+	}
+	else
+	{
+		++SessionMeters.BaseSpins;
+		SessionMeters.CoinIn += TotalBet;
+		if (Won > 0) { ++SessionMeters.PayingSpins; }   // hit frequency is a PAID-spin statistic
+	}
+
+	SessionMeters.CoinOut += Won;
+	SessionMeters.BiggestWin = FMath::Max(SessionMeters.BiggestWin, Won);
+	if (Out.bBonusTriggered) { ++SessionMeters.BonusTriggers; }
+
 	return Out;
 }
 

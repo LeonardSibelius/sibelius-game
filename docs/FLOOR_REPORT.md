@@ -236,7 +236,32 @@ Tolerance should be derived from the same standard error the page displays, not 
 hand — the gate and the feature then rest on one formula, and a bad tolerance shows up as a
 bad player-facing band.
 
-Gate count moves from 27 to 29.
+**Built as three checks, not two — gate 27 → 30.** The third is an internal-consistency
+check (the meters against the million-spin loop's own independent tally) which turned out
+to be free: the loop already accumulates every total, so it costs one comparison. It
+catches the two mistakes most likely to be invisible — crediting a free spin as wagered,
+or counting a retrigger twice — either of which would leave the machine playing perfectly
+while the report quietly lied.
+
+---
+
+## ⚠️ Known issue for step 4: `Volatility` is not the number the band needs
+
+Found while implementing step 1. `SlotParSheetMath::MeasureBySimulation` skips free spins
+entirely — it `continue`s before accumulating, so **free-spin winnings are excluded from
+the variance**, not merely their (zero) stake. `FSlotParSheetReport::Volatility` is
+therefore the standard deviation of base-spin return *counting only base-spin payouts*.
+
+That is the right figure for the "feel" word the panel already shows. It is the **wrong**
+figure for the confidence band, and wrong in the dangerous direction: the bonus round is
+the single largest source of variance in the machine, so excluding it makes the band **too
+narrow** — the page would tell a player their perfectly ordinary session was unusual. That
+is exactly the failure this feature exists to prevent.
+
+**Fix at step 4: add a separate field** (`WageredVolatility`) measuring the SD of return
+per unit *wagered*, with each base spin credited with the free-spin winnings it went on to
+produce. A new field rather than a changed one, so the panel's existing volatility word —
+shipped in v0.8.9 — keeps its current meaning and nothing already on screen moves.
 
 ---
 

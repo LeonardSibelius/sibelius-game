@@ -56,6 +56,26 @@ public:
 
 	const FSlotParSheet& GetParSheet() const { return ParSheet; }
 
+	/**
+	 * THE SESSION METERS — docs/FLOOR_REPORT.md.
+	 *
+	 * The model counts because it is the only thing that knows what a spin actually paid,
+	 * and because MeasureBySimulation() already drives a real model: that makes the meters
+	 * self-testing against the closed form rather than merely eyeballed (SlotSmokeTest).
+	 *
+	 * The model holds SESSION meters only. Lifetime totals live in the save and are folded
+	 * in at display time, so nothing here needs to survive a level load.
+	 */
+	const FSlotMeters& GetSessionMeters() const { return SessionMeters; }
+
+	/**
+	 * Clear the session meters. Called by Init() and on an ACCEPTED par sheet change —
+	 * locked decision 3: turning a dial takes a fresh baseline, exactly as an attendant
+	 * would before and after a par change. There is deliberately no player-facing reset;
+	 * hard meters are interesting precisely because they cannot be cleared.
+	 */
+	void ResetSessionMeters() { SessionMeters.Reset(); }
+
 	// Exposed for the smoke test + UI (paytable screen, line highlighting). These were
 	// static until 2026-08-05; they read the INSTANCE's par sheet now, because two
 	// cabinets may legitimately disagree about the answer.
@@ -79,4 +99,7 @@ private:
 	FRandomStream Rng;
 	int32 FreeSpinsRemaining = 0;
 	bool bInitialized = false;
+
+	/** Counted in Spin(). Session scope — see GetSessionMeters(). */
+	FSlotMeters SessionMeters;
 };
