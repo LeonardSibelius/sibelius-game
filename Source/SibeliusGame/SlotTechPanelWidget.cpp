@@ -5,6 +5,8 @@
 #include "SlotGameModel.h"
 #include "ProgressionSubsystem.h"   // the saved dials live in the progression save
 
+#include "UObject/ConstructorHelpers.h"   // the mono font is a HARD reference so it cooks
+
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
@@ -50,6 +52,17 @@ namespace
 		FString Out = S;
 		while (Out.Len() < Width) { Out.AppendChar(' '); }
 		return Out;
+	}
+}
+
+USlotTechPanelWidget::USlotTechPanelWidget(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	// Hard reference so the cook follows it — see the BodyFont comment in the header.
+	static ConstructorHelpers::FObjectFinder<UObject> MonoFinder(TEXT("/Engine/EngineFonts/DroidSansMono.DroidSansMono"));
+	if (MonoFinder.Succeeded())
+	{
+		BodyFont = MonoFinder.Object;
 	}
 }
 
@@ -331,10 +344,21 @@ void USlotTechPanelWidget::Refresh()
 	}
 	if (BodyText)
 	{
-		// Every page reads at 18 — the ScrollBox handles overflow, so there is no reason
-		// to shrink text to the edge of legibility to make it fit.
+		/* MONOSPACE, so the columns actually line up — see BodyFont in the header.
+
+		   Size 17, not 18. The longest body line is 80 characters, and DroidSansMono
+		   advances about 0.6 em: 80 x 0.6 x 18 = 864px, against 853px of inner panel
+		   width at a 1280-wide viewport (the panel spans 0.14..0.86 less 34px padding
+		   each side). 18 would overflow on a small window; 17 lands at 816 and fits.
+		   The height barely changes, so nothing gets harder to read. */
 		FSlateFontInfo F = BodyText->GetFont();
-		F.Size = 18;
+		F.Size = 17;
+		if (BodyFont)
+		{
+			// NAME_None takes the asset's default typeface rather than guessing at a
+			// face name that may not exist in this font.
+			F = FSlateFontInfo(BodyFont, 17, NAME_None);
+		}
 		BodyText->SetFont(F);
 
 		FString Body;
@@ -420,10 +444,20 @@ FString USlotTechPanelWidget::ComposeMetersText(const FSlotParSheetReport& Par) 
 	// exists after MeasureBySimulation. Recomputing here would either duplicate that work
 	// or, worse, silently compare against an unmeasured -1.
 
-	auto Col = [](const FString& S) { return Pad(S, 18); };
-	auto Row = [&Col](const TCHAR* Label, const FString& A, const FString& B)
+	/* Figures are RIGHT-aligned so place values stack — thousands under thousands. That
+	   only became worth doing once the body font was monospace; padding to a character
+	   count aligns nothing in a proportional face. Labels stay left-aligned, as labels do.
+	   Total width 3 + 20 + 14 + 16 = 53 characters, comfortably inside the 80 the panel
+	   can show. */
+	auto RJust = [](const FString& In, int32 Width)
 	{
-		return FString::Printf(TEXT("   %s%s%s\n"), *Pad(Label, 22), *Col(A), *B);
+		FString Out;
+		while (Out.Len() + In.Len() < Width) { Out.AppendChar(' '); }
+		return Out + In;
+	};
+	auto Row = [&RJust](const TCHAR* Label, const FString& A, const FString& B)
+	{
+		return FString::Printf(TEXT("   %s%s%s\n"), *Pad(Label, 20), *RJust(A, 14), *RJust(B, 16));
 	};
 
 	FString S;
@@ -441,8 +475,8 @@ FString USlotTechPanelWidget::ComposeMetersText(const FSlotParSheetReport& Par) 
 		return S;
 	}
 
-	S += FString::Printf(TEXT("   %s%s%s\n"), *Pad(TEXT(""), 22), *Col(TEXT("SESSION")), TEXT("LIFETIME"));
-	S += FString::Printf(TEXT("   %s%s%s\n"), *Pad(TEXT(""), 22), *Col(TEXT("(soft)")), TEXT("(hard)"));
+	S += Row(TEXT(""), TEXT("SESSION"), TEXT("LIFETIME"));
+	S += Row(TEXT(""), TEXT("(soft)"),  TEXT("(hard)"));
 	S += TEXT("\n");
 
 	S += Row(TEXT("Spins"),      Grouped(Session.BaseSpins),  Grouped(Lifetime.BaseSpins));
@@ -450,7 +484,7 @@ FString USlotTechPanelWidget::ComposeMetersText(const FSlotParSheetReport& Par) 
 	S += Row(TEXT("Coin in"),    Grouped(Session.CoinIn),     Grouped(Lifetime.CoinIn));
 	S += Row(TEXT("Coin out"),   Grouped(Session.CoinOut),    Grouped(Lifetime.CoinOut));
 
-	S += TEXT("   --------------------------------------------------------------\n");
+	S += TEXT("   -------------------------------------------------\n");
 
 	// The comparison the page exists for. A measured figure only means something next to
 	// the par it is being judged against, so par is repeated on every line rather than

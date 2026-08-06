@@ -45,6 +45,8 @@ class SIBELIUSGAME_API USlotTechPanelWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	USlotTechPanelWidget(const FObjectInitializer& ObjectInitializer);
+
 	/** Point the panel at the machine it edits. Call before adding to the viewport. */
 	void Setup(USlotGameModel* InModel);
 
@@ -149,6 +151,23 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UBorder> Panel;
+
+	/**
+	 * DroidSansMono, for the body only.
+	 *
+	 * This panel is columns of figures, and the proportional default cannot align them:
+	 * padding to a CHARACTER count lines nothing up when characters have different widths
+	 * — "Spins" plus 17 spaces is not as wide as "Free spins" plus 12. The meters page
+	 * made that obvious; the dials and contribution tables had the same flaw all along.
+	 *
+	 * Resolved in the CONSTRUCTOR via FObjectFinder rather than loaded by path at runtime.
+	 * A soft path would work perfectly in PIE and then not stage into a packaged build —
+	 * the editor sees the whole disk, the cook only follows references. Same trap as
+	 * ParagonGideon's montage; see docs/VENDOR_PACKS.md. VERIFY IN Saved/Cooked BEFORE
+	 * SHIPPING: a missing font here degrades to the default, so it would fail quietly.
+	 */
+	UPROPERTY()
+	TObjectPtr<UObject> BodyFont;
 
 	/**
 	 * The body scrolls. The help page is longer than any panel height I can guarantee

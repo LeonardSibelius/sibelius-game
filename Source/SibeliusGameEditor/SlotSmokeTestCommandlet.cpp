@@ -352,6 +352,19 @@ int32 USlotSmokeTestCommandlet::Main(const FString& /*Params*/)
 			else { UE_LOG(LogSlotSmoke, Error, TEXT("  missing sprite: %s"), *Path); }
 		}
 		R.Check(Loaded == 9, FString::Printf(TEXT("S2: %d/9 symbol sprites resolve in /Game/SlotFactory/SymbolSprites"), Loaded));
+
+		/* The technician's panel body font (docs/FLOOR_REPORT.md step 3).
+		   The meters page is columns of figures and only aligns in a monospace face. The
+		   panel resolves this with a constructor FObjectFinder, and FObjectFinder FAILS
+		   SILENTLY — a wrong path leaves the text block on the proportional default, which
+		   still renders, still reads, and quietly misaligns every column. Nothing would
+		   log. So assert the path resolves rather than trusting it.
+
+		   This does NOT prove it stages into a package: the editor sees the whole disk.
+		   The hard reference is what should carry it through the cook; verify in
+		   Saved/Cooked before shipping. */
+		R.Check(LoadObject<UObject>(nullptr, TEXT("/Engine/EngineFonts/DroidSansMono.DroidSansMono")) != nullptr,
+			TEXT("S2: panel body font /Engine/EngineFonts/DroidSansMono resolves"));
 	}
 
 	if (R.Failures == 0)
