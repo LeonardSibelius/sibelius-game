@@ -3,6 +3,29 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.9.0 — The machine keeps its own books
+
+- **The slot machine now counts.** Press **T** at the machine, then **M**, and it shows
+  what it actually did — spins, coin in, coin out, biggest win — in two columns.
+  **SESSION** is this sitting; **LIFETIME** never resets. Those are the trade's real
+  names, soft meters and hard meters, and on a real cabinet the law is what stops anyone
+  clearing the second one.
+- **And it tells you whether the difference means anything.** Every measured figure sits
+  beside the par it is judged against, and underneath, the range of returns that count as
+  *normal* for the number of spins you have actually played. A losing session almost
+  always turns out to be inside it.
+- **Under fifty spins it refuses to answer.** Not a limitation — the point. At a few dozen
+  spins the honest range is so wide it tells you nothing, and knowing *that* is worth more
+  than a number would be. Pinning this machine down to within one percentage point takes a
+  few hundred thousand spins.
+- **A good run gets the same verdict as a bad one.** Nothing here will call a machine loose
+  or broken when it is neither.
+- **The help page explains all of it** — hard and soft meters, why free spins add to coin
+  out but never to coin in, and what a real casino floor does with these numbers when a
+  machine drifts.
+- **The panel's columns line up now.** The body reads in a monospace face, which fixes the
+  figures on every page, not only the new one.
+
 ## v0.8.9 — Open the machine and change its mind
 
 - **The slot machine has a service panel.** Press **E** to play it, then **T** to open the
