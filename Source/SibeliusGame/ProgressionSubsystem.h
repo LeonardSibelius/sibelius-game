@@ -70,6 +70,12 @@ public:
 	// directly so the catalog logic stays headless-testable).
 	const FProgressionState& GetStateForRead() const { return State; }
 
+	// --- The technician's par sheet (docs/PAR_SHEET_PANEL.md step 4) ---
+	// Saves immediately: the player has just done real design work, and losing it to a
+	// crash or a quit would sting far more than the write costs.
+	void SaveSlotDials(float PaysMultiplier, int32 WildCount, float JackpotPay, int32 BonusCount);
+	void ClearSlotDials();   // Revert to factory — forget the edit entirely
+
 	// Dev: wipe to a fresh state and delete the slot (exec'd from the character).
 	void ResetProgression();
 

@@ -114,6 +114,43 @@ void UProgressionSubsystem::BumpStat(FName Key, int32 Delta)
 	}
 }
 
+void UProgressionSubsystem::SaveSlotDials(float PaysMultiplier, int32 WildCount, float JackpotPay, int32 BonusCount)
+{
+	const bool bChanged =
+		   !FMath::IsNearlyEqual(State.SlotPaysMultiplier, PaysMultiplier)
+		|| State.SlotWildCount != WildCount
+		|| !FMath::IsNearlyEqual(State.SlotJackpotPay, JackpotPay)
+		|| State.SlotBonusCount != BonusCount;
+
+	State.SlotPaysMultiplier = PaysMultiplier;
+	State.SlotWildCount      = WildCount;
+	State.SlotJackpotPay     = JackpotPay;
+	State.SlotBonusCount     = BonusCount;
+
+	// Only write when something actually moved. A dial is nudged many times in a sitting
+	// and every press would otherwise be a disk write.
+	if (bChanged)
+	{
+		SaveNow();
+	}
+}
+
+void UProgressionSubsystem::ClearSlotDials()
+{
+	if (!State.HasEditedParSheet())
+	{
+		return;
+	}
+
+	// Back to the sentinels, meaning "never edited" — so the machine returns to whatever
+	// the CURRENT build ships, not to a remembered copy of an older factory sheet.
+	State.SlotPaysMultiplier = -1.0f;
+	State.SlotWildCount      = -1;
+	State.SlotJackpotPay     = -1.0f;
+	State.SlotBonusCount     = -1;
+	SaveNow();
+}
+
 void UProgressionSubsystem::RaiseStat(FName Key, int32 Value)
 {
 	const int32 Before = State.GetStat(Key);

@@ -10,6 +10,7 @@
 #include "Misc/DateTime.h"
 #include "Misc/Paths.h"
 #include "SibeliusProgressSubsystem.h"
+#include "SlotGameModel.h"
 #include "SlotScreenWidget.h"
 #include "SlotTechPanelWidget.h"
 #include "SlotWebScreenWidget.h"
@@ -105,6 +106,15 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 			// SC10: one seed per session; determinism stays the smoke test's business.
 			Screen->InitModel(static_cast<int32>(FDateTime::Now().GetTicks() & 0x7FFFFFFF));
 			bSeeded = true;
+
+			// The machine is the PLAYER'S machine from the moment they walk up — their
+			// saved dials applied to the current factory sheet. Doing this only when the
+			// panel opens would mean the first spins of every session ran the shipped
+			// par sheet while the panel claimed otherwise.
+			if (USlotGameModel* M = Screen->GetModel())
+			{
+				M->SetParSheet(USlotTechPanelWidget::ComposeSavedParSheet(this));
+			}
 		}
 		Screen->AddToViewport(60);
 		Mode.SetWidgetToFocus(Screen->TakeWidget());

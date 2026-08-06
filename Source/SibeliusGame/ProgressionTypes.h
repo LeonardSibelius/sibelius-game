@@ -98,6 +98,40 @@ struct SIBELIUSGAME_API FProgressionState
 	int32 GetStat(FName Key) const;          // 0 for unknown keys
 	void BumpStat(FName Key, int32 Delta = 1);   // Delta <= 0 or NAME_None ignored
 	void RaiseStat(FName Key, int32 Value);      // record semantics: only ever raises
+
+	/**
+	 * The player's par sheet, stored as the FOUR DIAL VALUES rather than as a par sheet.
+	 *
+	 * A saved FSlotParSheet would pin the strip, paytable and paylines of whatever build
+	 * wrote it. Retune the shipped machine in a later version and every returning player
+	 * would silently still be running the old one, with no way to tell. Dials re-apply to
+	 * the CURRENT factory sheet, so "more wilds, bigger jackpot" survives changes to the
+	 * machine underneath it.
+	 *
+	 * It is also four numbers instead of a hundred, and clamping four numbers on load is
+	 * trivial where validating a whole sheet is not.
+	 *
+	 * Negative sentinels mean "never edited — use the factory value", so old saves and
+	 * fresh ones both yield the shipped machine. Additive fields: old saves default-fill.
+	 */
+	UPROPERTY(SaveGame)
+	float SlotPaysMultiplier = -1.0f;
+
+	UPROPERTY(SaveGame)
+	int32 SlotWildCount = -1;
+
+	UPROPERTY(SaveGame)
+	float SlotJackpotPay = -1.0f;
+
+	UPROPERTY(SaveGame)
+	int32 SlotBonusCount = -1;
+
+	/** True once the player has actually turned a dial. */
+	bool HasEditedParSheet() const
+	{
+		return SlotPaysMultiplier > 0.0f || SlotWildCount >= 0
+			|| SlotJackpotPay > 0.0f || SlotBonusCount >= 0;
+	}
 };
 
 // Headless self-test (ProgressionSmokeTest). True when every assert passes.

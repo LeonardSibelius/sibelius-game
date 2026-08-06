@@ -3,6 +3,7 @@
 #include "SlotTechPanelWidget.h"
 
 #include "SlotGameModel.h"
+#include "ProgressionSubsystem.h"   // the saved dials live in the progression save
 
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
@@ -56,16 +57,105 @@ void USlotTechPanelWidget::Setup(USlotGameModel* InModel)
 {
 	Model = InModel;
 
-	// Snapshot the machine as it stands. Everything is composed from this.
-	Factory = Model ? Model->GetParSheet() : FSlotParSheet::CelestialFortune();
+	// FACTORY IS ALWAYS THE SHIPPED SHEET, never the model's current one. If it took the
+	// model's sheet, opening the panel on an already-edited machine would enshrine that
+	// edit as "factory" and REVERT would return to it instead of to the real default.
+	Factory = FSlotParSheet::CelestialFortune();
 
-	// Seed the knobs from the sheet so the panel opens showing the truth rather than
-	// its own defaults.
-	WildCount = Factory.CountOf(ESlotSymbol::Wild);
+	// Factory positions for the dials...
 	PaysMultiplier = 1.0;
+	WildCount  = Factory.CountOf(ESlotSymbol::Wild);
+	BonusCount = Factory.CountOf(ESlotSymbol::Earth);
 	for (const FSlotPayRow& Row : Factory.PayTable)
 	{
 		if (Row.Symbol == ESlotSymbol::Seven) { JackpotPay = Row.Pay5; }
+	}
+
+	// ...then whatever the player last left them at, CLAMPED. A save written before a
+	// range changed must be pulled into legal bounds, never trusted blindly.
+	if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+	{
+		const FProgressionState& S = Prog->GetStateForRead();
+		if (S.SlotPaysMultiplier > 0.0f) { PaysMultiplier = FMath::Clamp<double>(S.SlotPaysMultiplier, 0.70, 1.30); }
+		if (S.SlotWildCount     >= 0)    { WildCount      = FMath::Clamp(S.SlotWildCount, 0, 3); }
+		if (S.SlotJackpotPay    > 0.0f)  { JackpotPay     = FMath::Clamp<double>(S.SlotJackpotPay, 250.0, 4000.0); }
+		if (S.SlotBonusCount    >= 0)    { BonusCount     = FMath::Clamp(S.SlotBonusCount, 1, 4); }
+	}
+}
+
+FSlotParSheet USlotTechPanelWidget::ComposeFromDials(float PaysMultiplier, int32 WildCount,
+	float JackpotPay, int32 BonusCount)
+{
+	FSlotParSheet P = FSlotParSheet::CelestialFortune();
+
+	// WILDS — swap Star stops for Wild, or back. Star is the filler symbol, and swapping
+	// rather than inserting keeps the strip LENGTH fixed: change the length and every
+	// other symbol's odds move too, which would make the dial impossible to reason about.
+	int32 Have = P.CountOf(ESlotSymbol::Wild);
+	for (int32 i = 0; i < P.Strip.Num() && Have < WildCount; ++i)
+	{
+		if (P.Strip[i] == ESlotSymbol::Star) { P.Strip[i] = ESlotSymbol::Wild; ++Have; }
+	}
+	for (int32 i = 0; i < P.Strip.Num() && Have > WildCount; ++i)
+	{
+		if (P.Strip[i] == ESlotSymbol::Wild) { P.Strip[i] = ESlotSymbol::Star; --Have; }
+	}
+
+	// BONUS — the same trade against Moon, the other filler. Earth never pays on a line,
+	// so this dial moves the free-spin RHYTHM without touching what any symbol is worth.
+	int32 Earths = P.CountOf(ESlotSymbol::Earth);
+	for (int32 i = 0; i < P.Strip.Num() && Earths < BonusCount; ++i)
+	{
+		if (P.Strip[i] == ESlotSymbol::Moon) { P.Strip[i] = ESlotSymbol::Earth; ++Earths; }
+	}
+	for (int32 i = 0; i < P.Strip.Num() && Earths > BonusCount; ++i)
+	{
+		if (P.Strip[i] == ESlotSymbol::Earth) { P.Strip[i] = ESlotSymbol::Moon; --Earths; }
+	}
+
+	// PAYS — scale the whole paytable. RTP moves in proportion; volatility and hit
+	// frequency barely stir. The one clean cause-and-effect on the panel.
+	for (FSlotPayRow& Row : P.PayTable)
+	{
+		Row.Pay3 *= PaysMultiplier;
+		Row.Pay4 *= PaysMultiplier;
+		Row.Pay5 *= PaysMultiplier;
+	}
+
+	// JACKPOT — set LAST and NOT scaled, so the number on the dial is the number that
+	// pays. Scaling it too would mean the dial says 4000 and the machine pays 4800.
+	for (FSlotPayRow& Row : P.PayTable)
+	{
+		if (Row.Symbol == ESlotSymbol::Seven) { Row.Pay5 = JackpotPay; }
+	}
+
+	return P;
+}
+
+FSlotParSheet USlotTechPanelWidget::ComposeSavedParSheet(const UObject* WorldContext)
+{
+	const FSlotParSheet FactorySheet = FSlotParSheet::CelestialFortune();
+
+	const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(WorldContext);
+	if (!Prog || !Prog->GetStateForRead().HasEditedParSheet())
+	{
+		return FactorySheet;   // untouched — the shipped machine
+	}
+
+	const FProgressionState& S = Prog->GetStateForRead();
+	return ComposeFromDials(
+		(S.SlotPaysMultiplier > 0.0f) ? FMath::Clamp(S.SlotPaysMultiplier, 0.70f, 1.30f) : 1.0f,
+		(S.SlotWildCount     >= 0)    ? FMath::Clamp(S.SlotWildCount, 0, 3)              : FactorySheet.CountOf(ESlotSymbol::Wild),
+		(S.SlotJackpotPay    > 0.0f)  ? FMath::Clamp(S.SlotJackpotPay, 250.0f, 4000.0f)  : 1000.0f,
+		(S.SlotBonusCount    >= 0)    ? FMath::Clamp(S.SlotBonusCount, 1, 4)             : FactorySheet.CountOf(ESlotSymbol::Earth));
+}
+
+void USlotTechPanelWidget::PersistDials() const
+{
+	if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+	{
+		Prog->SaveSlotDials(static_cast<float>(PaysMultiplier), WildCount,
+			static_cast<float>(JackpotPay), BonusCount);
 	}
 }
 
@@ -170,39 +260,9 @@ void USlotTechPanelWidget::BuildTree()
 
 FSlotParSheet USlotTechPanelWidget::ComposeParSheet() const
 {
-	FSlotParSheet P = Factory;
+	FSlotParSheet P = ComposeFromDials(static_cast<float>(PaysMultiplier), WildCount,
+		static_cast<float>(JackpotPay), BonusCount);
 	P.Name = TEXT("Celestial Fortune (edited)");
-
-	// WILDS — convert Star stops to Wild, or back. Star is the filler symbol, and
-	// swapping rather than inserting keeps the strip LENGTH fixed: change the length and
-	// every other symbol's odds move too, which would make the knob impossible to reason
-	// about.
-	int32 Have = P.CountOf(ESlotSymbol::Wild);
-	for (int32 i = 0; i < P.Strip.Num() && Have < WildCount; ++i)
-	{
-		if (P.Strip[i] == ESlotSymbol::Star) { P.Strip[i] = ESlotSymbol::Wild; ++Have; }
-	}
-	for (int32 i = 0; i < P.Strip.Num() && Have > WildCount; ++i)
-	{
-		if (P.Strip[i] == ESlotSymbol::Wild) { P.Strip[i] = ESlotSymbol::Star; --Have; }
-	}
-
-	// PAYS x — scale the whole paytable. RTP moves in proportion; volatility and hit
-	// frequency barely stir. The one clean cause-and-effect on the panel.
-	for (FSlotPayRow& Row : P.PayTable)
-	{
-		Row.Pay3 *= PaysMultiplier;
-		Row.Pay4 *= PaysMultiplier;
-		Row.Pay5 *= PaysMultiplier;
-	}
-
-	// JACKPOT — set LAST and NOT scaled, so the number on the dial is the number that
-	// pays. Scaling it too would mean the dial says 4000 and the machine pays 4800.
-	for (FSlotPayRow& Row : P.PayTable)
-	{
-		if (Row.Symbol == ESlotSymbol::Seven) { Row.Pay5 = JackpotPay; }
-	}
-
 	return P;
 }
 
@@ -219,20 +279,33 @@ void USlotTechPanelWidget::AdjustSelected(int32 Direction)
 	case EKnob::Jackpot:
 		JackpotPay = FMath::Clamp(JackpotPay + 250.0 * Direction, 250.0, 4000.0);
 		break;
+	case EKnob::Bonus:
+		BonusCount = FMath::Clamp(BonusCount + Direction, 1, 4);
+		break;
 	default:
 		break;
 	}
+	PersistDials();
 	Refresh();
 }
 
 void USlotTechPanelWidget::RevertToFactory()
 {
 	PaysMultiplier = 1.0;
-	WildCount = Factory.CountOf(ESlotSymbol::Wild);
+	WildCount  = Factory.CountOf(ESlotSymbol::Wild);
+	BonusCount = Factory.CountOf(ESlotSymbol::Earth);
 	JackpotPay = 1000.0;
 	for (const FSlotPayRow& Row : Factory.PayTable)
 	{
 		if (Row.Symbol == ESlotSymbol::Seven) { JackpotPay = Row.Pay5; }
+	}
+
+	// Forget the edit entirely rather than saving the factory numbers back. The machine
+	// then follows whatever the CURRENT build ships, so a later retune reaches players
+	// who reverted instead of pinning them to today's values.
+	if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+	{
+		Prog->ClearSlotDials();
 	}
 	Refresh();
 }
@@ -290,6 +363,8 @@ FString USlotTechPanelWidget::ComposeReportText(const FSlotParSheetReport& Rep, 
 		Marker(EKnob::Wilds), WildCount, Sheet.NumStops());
 	S += FString::Printf(TEXT("%s  JACKPOT         %.0f          Lucky 7, five of a kind\n"),
 		Marker(EKnob::Jackpot), JackpotPay);
+	S += FString::Printf(TEXT("%s  BONUS           %d of %d stops    Earth — the free-spin round\n"),
+		Marker(EKnob::Bonus), BonusCount, Sheet.NumStops());
 
 	S += TEXT("\n");
 	S += TEXT("--------------------------------------------------------------\n");
@@ -467,6 +542,9 @@ FString USlotTechPanelWidget::ComposeHelpText() const
 		TEXT("     WILDS     how many WILD symbols sit on the reel strip. A Wild stands in\n")
 		TEXT("               for any symbol. One stop in forty is worth more than you think.\n")
 		TEXT("     JACKPOT   what five Lucky 7s pay. Barely touches RTP; transforms feel.\n")
+		TEXT("     BONUS     how many EARTH symbols are on the strip. Earth never pays on\n")
+		TEXT("               a line — three anywhere start the free spins. This dial sets\n")
+		TEXT("               the machine's RHYTHM: how often the good part arrives.\n")
 		TEXT("\n")
 		TEXT("   WHY THE HOUSE HAS RULES\n")
 		TEXT("     Pay out too much and no casino will run your machine — it does not earn\n")

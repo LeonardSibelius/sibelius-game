@@ -67,8 +67,24 @@ public:
 	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
 private:
-	/** Which knob the player is on. Order matches the doc: pure, entangled, feel. */
-	enum class EKnob : uint8 { Pays, Wilds, Jackpot, Count };
+	/** Which knob the player is on. Order matches the doc: pure, entangled, feel, rhythm. */
+	enum class EKnob : uint8 { Pays, Wilds, Jackpot, Bonus, Count };
+
+public:
+	/**
+	 * The player's machine: the CURRENT factory sheet with their saved dials applied.
+	 *
+	 * Static because the cabinet needs it too — the machine must already be the player's
+	 * when they walk up, not only after they open the panel. Returns the untouched
+	 * factory sheet when nothing has been edited.
+	 */
+	static FSlotParSheet ComposeSavedParSheet(const UObject* WorldContext);
+
+	/** Apply four dial values to a copy of the factory sheet. */
+	static FSlotParSheet ComposeFromDials(float PaysMultiplier, int32 WildCount,
+		float JackpotPay, int32 BonusCount);
+
+private:
 
 	void BuildTree();
 	void Refresh();
@@ -133,4 +149,8 @@ private:
 	double PaysMultiplier = 1.0;    // 0.70 .. 1.30
 	int32  WildCount      = 1;      // 0 .. 3
 	double JackpotPay     = 1000.0; // 250 .. 4000, the Seven's five-of-a-kind
+	int32  BonusCount     = 2;      // 1 .. 4 Earth stops — the free-spin rhythm
+
+	/** Write the current dials to the save. Called whenever one moves. */
+	void PersistDials() const;
 };
