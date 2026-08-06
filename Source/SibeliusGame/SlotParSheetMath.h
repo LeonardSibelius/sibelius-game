@@ -104,6 +104,43 @@ struct FSlotParSheetReport
 	double Volatility = -1.0;
 
 	/**
+	 * SIMULATED: standard deviation of return PER UNIT WAGERED. -1 if not measured.
+	 *
+	 * The difference from Volatility above is the free-spin round, and it matters.
+	 * Volatility measures base spins counting only their OWN payout — the bonus a spin
+	 * triggers is dropped, because free spins are skipped outright. That is the right
+	 * figure for the panel's "feel" word (how a single pull feels) but the wrong one for
+	 * a confidence band, and wrong in the dangerous direction: the bonus is the largest
+	 * single source of variance in the machine, so leaving it out makes the band TOO
+	 * NARROW, and a page built to say "your ordinary session is ordinary" would start
+	 * calling ordinary sessions unusual.
+	 *
+	 * Here each base spin is credited with the free-spin winnings it went on to produce,
+	 * so one sample is one CYCLE: the wagered spin plus everything it spawned. That is
+	 * the basis the industry's volatility index uses, and the one the standard error
+	 * SD/sqrt(N) is valid for.
+	 */
+	double WageredVolatility = -1.0;
+
+	/**
+	 * Half-width of the 95% band around RTP after N wagered spins, in percentage points.
+	 * Returns -1 when volatility has not been measured or N < 1.
+	 *
+	 * The whole floor report rests on this: two standard errors, where the standard
+	 * error of a mean of N samples is SD/sqrt(N).
+	 */
+	SIBELIUSGAME_API double ConfidenceHalfWidth(int64 WageredSpins) const;
+
+	/**
+	 * Roughly how many wagered spins to measure this machine to within Tolerance
+	 * PERCENTAGE POINTS at 95% confidence. 0 when volatility is unmeasured.
+	 *
+	 * Inverting the above: N = (2 * SD / t)^2. For a machine like Celestial Fortune this
+	 * lands near a million, which is the single most useful number on the page.
+	 */
+	SIBELIUSGAME_API double SpinsToMeasureWithin(double TolerancePoints) const;
+
+	/**
 	 * False when the free-spin series does not converge — i.e. free spins retrigger
 	 * often enough to award themselves faster than they are consumed, so expected
 	 * return is unbounded. A knob range should never permit it; if this is ever false,

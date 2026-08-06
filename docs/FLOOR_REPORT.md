@@ -129,9 +129,19 @@ pin the machine down to within a tolerance **t** (as a fraction, so 1% = 0.01) i
 N = (2 · Volatility / t)^2
 ```
 
-For a 15-line game with a 1000× top award, volatility lands around 5, which puts that
-figure near **a million spins for ±1%**. It is a shocking number, it is true, and it is the
-most valuable single line on the page.
+I guessed volatility near 5 when writing this, which would have put that figure near a
+million spins. **Measured, it is 3.119, and the answer is about 389,000 spins for ±1
+point.** Less shocking than the guess, still the most valuable single line on the page —
+at a spin every four seconds that is well over a fortnight of continuous play to learn one
+machine's return to within a point.
+
+**Minimum sample (added at step 4, not in the original spec).** Two standard errors is a
+*normal* approximation, and a slot's per-cycle return is violently skewed — mostly nothing,
+occasionally a bonus worth hundreds. Below **50 wagered spins** the page therefore quotes
+no band at all and says *"far too few to tell you anything"*. At 19 spins the arithmetic
+produces "0 % .. 234 %", which is both statistically meaningless and useless to read.
+Refusing to answer is the honest result and the sharper lesson: the interesting fact about
+a short session is not that it falls within range, it is that **no range exists yet**.
 
 **The verdict line** is then just a comparison — measured inside the band reads *"behaving
 as designed"*, outside reads *"this is unusual — but see how wide the band is at low spin
@@ -236,7 +246,13 @@ Tolerance should be derived from the same standard error the page displays, not 
 hand — the gate and the feature then rest on one formula, and a bad tolerance shows up as a
 bad player-facing band.
 
-**Built as three checks, not two — gate 27 → 30.** The third is an internal-consistency
+**Final gate count: 27 → 34.** Three at step 1 (below), one at step 3 for the monospace
+body font's path (`FObjectFinder` fails silently, so a wrong path would misalign every
+column with nothing in the log), and three at step 4 for the confidence maths:
+`WageredVolatility > Volatility`, the band narrowing as exactly 1/√N, and
+`SpinsToMeasureWithin` inverting `ConfidenceHalfWidth` to within 0.01 points.
+
+**Built as three checks at step 1, not two — 27 → 30.** The third is an internal-consistency
 check (the meters against the million-spin loop's own independent tally) which turned out
 to be free: the loop already accumulates every total, so it costs one comparison. It
 catches the two mistakes most likely to be invisible — crediting a free spin as wagered,
@@ -245,7 +261,7 @@ while the report quietly lied.
 
 ---
 
-## ⚠️ Known issue for step 4: `Volatility` is not the number the band needs
+## ✅ RESOLVED at step 4: `Volatility` was not the number the band needs
 
 Found while implementing step 1. `SlotParSheetMath::MeasureBySimulation` skips free spins
 entirely — it `continue`s before accumulating, so **free-spin winnings are excluded from
@@ -258,10 +274,25 @@ the single largest source of variance in the machine, so excluding it makes the 
 narrow** — the page would tell a player their perfectly ordinary session was unusual. That
 is exactly the failure this feature exists to prevent.
 
-**Fix at step 4: add a separate field** (`WageredVolatility`) measuring the SD of return
-per unit *wagered*, with each base spin credited with the free-spin winnings it went on to
+**Fixed as specced:** a separate field, `WageredVolatility`, measuring the SD of return per
+unit *wagered*, with each base spin credited with the free-spin winnings it went on to
 produce. A new field rather than a changed one, so the panel's existing volatility word —
-shipped in v0.8.9 — keeps its current meaning and nothing already on screen moves.
+shipped in v0.8.9 — keeps its meaning and nothing already on screen moved.
+
+**It was not a rounding-error concern.** Measured on the shipped sheet:
+
+| | |
+|---|---|
+| `Volatility` (per spin, bonus excluded) | **1.288** |
+| `WageredVolatility` (per cycle, bonus included) | **3.119** |
+
+The old figure was **2.4× too small**, so the band would have been 2.4× too narrow. On
+Walt's own 19-spin test session at 68.42% against a 90.91% par, the wrong number gives a
+range of 31.8%–150.0% and the right one gives 0%–234%. Not enough to flip that particular
+verdict, but the same error at a few hundred spins flips it easily — and always toward
+calling an ordinary session unusual, which is the one thing this page must never do.
+
+A gate check now asserts `WageredVolatility > Volatility` permanently.
 
 ---
 

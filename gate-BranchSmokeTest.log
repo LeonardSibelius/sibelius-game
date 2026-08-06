@@ -19,478 +19,478 @@ LogCsvProfiler: Display: Metadata set : llm="0"
 LogCsvProfiler: Display: Metadata set : systemresolution.resx="1280"
 LogCsvProfiler: Display: Metadata set : systemresolution.resy="720"
 LogAudio: Display: Audio Device Manager not initializing due to all audio being disabled. If this is not intentional, please check command line arguments for "-nosound".
+LogConfig: Display: Loading IOS ini files took 0.03 seconds
 LogConfig: Display: Loading Mac ini files took 0.03 seconds
 LogConfig: Display: Loading Android ini files took 0.03 seconds
-LogConfig: Display: Loading IOS ini files took 0.03 seconds
 LogConfig: Display: Loading VulkanPC ini files took 0.03 seconds
-LogConfig: Display: Loading TVOS ini files took 0.04 seconds
-LogConfig: Display: Loading Unix ini files took 0.04 seconds
 LogConfig: Display: Loading VisionOS ini files took 0.04 seconds
 LogConfig: Display: Loading Windows ini files took 0.04 seconds
+LogConfig: Display: Loading TVOS ini files took 0.04 seconds
+LogConfig: Display: Loading Unix ini files took 0.04 seconds
 LogConfig: Display: Loading Linux ini files took 0.04 seconds
 RenderDocPlugin: Display: RenderDoc plugin will not be loaded. Use '-AttachRenderDoc' on the cmd line or enable 'renderdoc.AutoAttach' in the plugin settings.
-[2026.08.06-06.11.32:214][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
-[2026.08.06-06.11.32:215][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
-[2026.08.06-06.11.32:489][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
-[2026.08.06-06.11.32:565][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
-[2026.08.06-06.11.32:565][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
-[2026.08.06-06.11.32:565][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
-[2026.08.06-06.11.32:565][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
-[2026.08.06-06.11.32:570][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
-[2026.08.06-06.11.32:570][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
-[2026.08.06-06.11.32:570][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
-[2026.08.06-06.11.32:570][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
-[2026.08.06-06.11.32:570][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
-[2026.08.06-06.11.32:570][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
-[2026.08.06-06.11.32:570][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
-[2026.08.06-06.11.32:570][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
-[2026.08.06-06.11.32:570][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
-[2026.08.06-06.11.32:570][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
-[2026.08.06-06.11.32:590][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
-[2026.08.06-06.11.32:601][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
-[2026.08.06-06.11.32:601][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
-[2026.08.06-06.11.32:612][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
-[2026.08.06-06.11.32:612][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
-[2026.08.06-06.11.32:612][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
-[2026.08.06-06.11.32:612][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
-[2026.08.06-06.11.32:623][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
-[2026.08.06-06.11.32:623][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
-[2026.08.06-06.11.32:623][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
-[2026.08.06-06.11.32:623][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
-[2026.08.06-06.11.32:639][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
-[2026.08.06-06.11.32:639][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
-[2026.08.06-06.11.32:650][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
-[2026.08.06-06.11.32:651][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
-[2026.08.06-06.11.32:651][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
-[2026.08.06-06.11.32:651][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
-[2026.08.06-06.11.32:651][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
-[2026.08.06-06.11.32:653][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
-[2026.08.06-06.11.32:689][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
-[2026.08.06-06.11.32:884][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
-[2026.08.06-06.11.32:885][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
-[2026.08.06-06.11.33:089][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
-[2026.08.06-06.11.33:291][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
-[2026.08.06-06.11.33:291][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
-[2026.08.06-06.11.33:291][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
-[2026.08.06-06.11.33:291][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 24004  --child-id Zen_24004_Startup'
-[2026.08.06-06.11.33:359][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
-[2026.08.06-06.11.33:360][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
-[2026.08.06-06.11.33:366][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.02ms. RandomReadSpeed=1183.71MBs, RandomWriteSpeed=246.30MBs. Assigned SpeedClass 'Local'
-[2026.08.06-06.11.33:367][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
-[2026.08.06-06.11.33:367][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
-[2026.08.06-06.11.33:367][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
-[2026.08.06-06.11.33:368][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
-[2026.08.06-06.11.33:368][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
-[2026.08.06-06.11.33:643][  0]LogEditorDomain: Display: EditorDomain is Disabled
-[2026.08.06-06.11.33:819][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
-[2026.08.06-06.11.33:819][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
-[2026.08.06-06.11.33:845][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
-[2026.08.06-06.11.33:847][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
-[2026.08.06-06.11.33:853][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:854][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
-[2026.08.06-06.11.33:854][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:854][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:854][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
-[2026.08.06-06.11.33:854][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:854][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:856][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:856][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:856][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:857][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
-[2026.08.06-06.11.33:857][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:858][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
-[2026.08.06-06.11.33:858][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:858][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
-[2026.08.06-06.11.33:858][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:858][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
-[2026.08.06-06.11.33:858][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.11.33:859][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
-[2026.08.06-06.11.33:859][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
-[2026.08.06-06.11.33:859][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
-[2026.08.06-06.11.33:871][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
-[2026.08.06-06.11.33:871][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
-[2026.08.06-06.11.33:871][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
-[2026.08.06-06.11.33:872][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
-[2026.08.06-06.11.33:989][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
-[2026.08.06-06.11.33:989][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
-[2026.08.06-06.11.33:989][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
-[2026.08.06-06.11.33:989][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
-[2026.08.06-06.11.34:044][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
-[2026.08.06-06.11.34:046][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.705 ms
-[2026.08.06-06.11.34:496][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
-[2026.08.06-06.11.34:497][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
-[2026.08.06-06.11.34:764][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
-[2026.08.06-06.11.36:224][  0]LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (Echo_Hair) ...
-[2026.08.06-06.11.36:374][  0]LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
-[2026.08.06-06.11.36:729][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.06-06.11.36:734][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.06-06.11.36:734][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.06-06.11.36:734][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.06-06.11.36:734][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.06-06.11.36:734][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.06-06.11.36:735][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.06-06.11.36:736][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.06-06.11.37:785][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
-[2026.08.06-06.11.37:785][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
-[2026.08.06-06.11.38:889][  0]LogAssetRegistry: Display: Asset registry cache read as 128.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
-[2026.08.06-06.11.38:890][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.117s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
-[2026.08.06-06.11.39:082][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
-[2026.08.06-06.11.39:125][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
-[2026.08.06-06.11.39:651][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
-[2026.08.06-06.11.39:699][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
-[2026.08.06-06.11.39:727][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 23.817 ms
-[2026.08.06-06.11.39:728][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
-[2026.08.06-06.11.39:748][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 20.536 ms (total: 44.354 ms)
-[2026.08.06-06.11.39:749][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
-[2026.08.06-06.11.39:749][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 1.837 ms (total: 46.191 ms)
-[2026.08.06-06.11.39:754][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
-[2026.08.06-06.11.39:754][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 193 us (total: 46.385 ms)
-[2026.08.06-06.11.39:754][  0]LogBranchSmoke: Display: === SIB-28 Branch smoke test (Phase 0): /Game/L_Office_v02 ===
-[2026.08.06-06.11.42:163][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.06-06.11.42:165][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.06-06.11.42:167][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.06-06.11.42:169][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.06-06.11.42:171][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.06-06.11.42:173][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.06-06.11.42:175][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.06-06.11.42:177][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.06-06.11.45:124][  0]LogAIApparition: Display: [Apparition] visuals built: 9 glyphs + core
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] Map loads (/Game/L_Office_v02)
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] UBranchSubsystem instantiates
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] Initial state is Main
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] Pickups not suspended in Main
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 4 object(s) + 0 ledger entr(ies).
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] EnterBranch() succeeds from Main
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] State is Branched after enter
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   (manifest: 4 object(s), 0 ledger entr(ies))
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] EnterBranch captured the declared set (>= 1 IBranchable from the level) [T1]
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] Pickups suspended while branched (product decision)
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] DiscardBranch() succeeds from Branched
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] State is Main after discard
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] Second DiscardBranch() is a guarded no-op
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] MergeBranch() rejected from Main (guard)
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 4 object(s) + 0 ledger entr(ies).
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] EnterBranch() again from Main
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] MergeBranch() succeeds from Branched
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] State is Main after merge
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] Second MergeBranch() is a guarded no-op (idempotency latch)
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display: --- Phase 1: declared-set round-trip ---
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: found a level URefactorableComponent to refactor
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: spawned a seeded UInventoryComponent
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: spawned an ABuildSite
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: spawned an AHatchLock
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: EnterBranch captures the declared set
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: ledger captured whole (Book + Key)
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: pickups suspended on enter
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: refactor mutated the Refactorable in-branch
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: Build() built the site in-branch (spent Books)
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: TryUnlock() unlocked the hatch in-branch (spent Key)
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: inventory ledger changed in-branch
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: pickups still suspended after in-branch edits
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:174][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: DiscardBranch resolves Branched -> Main
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: state Main after discard
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1: pickups released after discard
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: Refactorable restored exactly
-[2026.08.06-06.11.45:174][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: BuildSite restored to unbuilt
-[2026.08.06-06.11.45:189][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: HatchLock restored to locked
-[2026.08.06-06.11.45:189][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: inventory ledger restored exactly (20 Book / 3 Key)
-[2026.08.06-06.11.45:189][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:189][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:189][  0]LogBranchSmoke: Display:   [PASS] P1: re-enter to re-capture post-discard state
-[2026.08.06-06.11.45:189][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: full manifest byte-exact vs pre-branch capture (every entry)
-[2026.08.06-06.11.45:191][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:191][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:191][  0]LogBranchSmoke: Display:   [PASS] P1: discard the verification branch
-[2026.08.06-06.11.45:191][  0]LogBranchSmoke: Display:   [PASS] P1: second DiscardBranch is a no-op
-[2026.08.06-06.11.45:191][  0]LogBranchSmoke: Display:   [PASS] P1: MergeBranch latched — rejected outside Branched (can't half-fire)
-[2026.08.06-06.11.45:192][  0]LogBranchSmoke: Display: --- Phase 2: merge keeps live + idempotency ---
-[2026.08.06-06.11.45:192][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:192][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:192][  0]LogBranchSmoke: Display:   [PASS] P2: enter (degenerate, no edits)
-[2026.08.06-06.11.45:192][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:193][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
-[2026.08.06-06.11.45:193][  0]LogBranchSmoke: Display:   [PASS] P2: merge with zero in-branch edits succeeds
-[2026.08.06-06.11.45:193][  0]LogBranchSmoke: Display:   [PASS] P2: Main after degenerate merge
-[2026.08.06-06.11.45:193][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:193][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:194][  0]LogBranchSmoke: Display:   [PASS] P2: re-enter after degenerate merge
-[2026.08.06-06.11.45:194][  0]LogBranchSmoke: Display:   [PASS] P2: degenerate merge changed nothing
-[2026.08.06-06.11.45:194][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:194][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:194][  0]LogBranchSmoke: Display:   [PASS] P2: discard the degenerate check branch
-[2026.08.06-06.11.45:195][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:195][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:195][  0]LogBranchSmoke: Display:   [PASS] P2: enter the merge round
-[2026.08.06-06.11.45:195][  0]LogBranchSmoke: Display:   [PASS] P2: in-branch verbs applied (build + unlock)
-[2026.08.06-06.11.45:195][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:195][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
-[2026.08.06-06.11.45:196][  0]LogBranchSmoke: Display:   [PASS] P2: MergeBranch keeps live + advances baseline
-[2026.08.06-06.11.45:196][  0]LogBranchSmoke: Display:   [PASS] P2: Main after merge
-[2026.08.06-06.11.45:196][  0]LogBranchSmoke: Display:   [PASS] P2: pickups resumed after merge
-[2026.08.06-06.11.45:196][  0]LogBranchSmoke: Display:   [PASS] P2 merged: Refactorable stays refactored
-[2026.08.06-06.11.45:196][  0]LogBranchSmoke: Display:   [PASS] P2 merged: site stays built
-[2026.08.06-06.11.45:197][  0]LogBranchSmoke: Display:   [PASS] P2 merged: hatch stays unlocked
-[2026.08.06-06.11.45:197][  0]LogBranchSmoke: Display:   [PASS] P2 merged: ledger keeps spent values
-[2026.08.06-06.11.45:197][  0]LogBranchSmoke: Display:   [PASS] P2: second MergeBranch is a no-op
-[2026.08.06-06.11.45:197][  0]LogBranchSmoke: Display:   [PASS] P2: Discard after Merge is a no-op (can't revert a merged branch)
-[2026.08.06-06.11.45:197][  0]LogBranchSmoke: Display:   [PASS] P2: merged state intact after the no-op resolves
-[2026.08.06-06.11.45:198][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:198][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:198][  0]LogBranchSmoke: Display:   [PASS] P2: re-enter off the merged baseline
-[2026.08.06-06.11.45:198][  0]LogBranchSmoke: Display:   [PASS] P2: re-capture == merged ledger (baseline advanced, not original)
-[2026.08.06-06.11.45:198][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:199][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:199][  0]LogBranchSmoke: Display:   [PASS] P2: discard the post-merge branch
-[2026.08.06-06.11.45:199][  0]LogBranchSmoke: Display:   [PASS] P2: discard restores to the MERGED baseline ledger, not the original
-[2026.08.06-06.11.45:199][  0]LogBranchSmoke: Display:   [PASS] P2: discard restores Refactorable to the merged baseline
-[2026.08.06-06.11.45:199][  0]LogBranchSmoke: Display:   [PASS] P2: merged build/unlock survive the post-merge discard
-[2026.08.06-06.11.45:200][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:200][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:200][  0]LogBranchSmoke: Display:   [PASS] P2: enter once more
-[2026.08.06-06.11.45:200][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:200][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
-[2026.08.06-06.11.45:200][  0]LogBranchSmoke: Display:   [PASS] P2: clean up the final branch via merge
-[2026.08.06-06.11.45:201][  0]LogBranchSmoke: Display: --- Phase 3: nesting + signaling ---
-[2026.08.06-06.11.45:201][  0]LogBranchSmoke: Display:   [PASS] P3: depth 0 at Main
-[2026.08.06-06.11.45:201][  0]LogBranchSmoke: Display:   [PASS] P3: branch signal OFF at Main (no desaturate/HUD)
-[2026.08.06-06.11.45:201][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:201][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:202][  0]LogBranchSmoke: Display:   [PASS] P3: enter outer (depth 1)
-[2026.08.06-06.11.45:202][  0]LogBranchSmoke: Display:   [PASS] P3: depth 1, signal fired (1)
-[2026.08.06-06.11.45:202][  0]LogBranchSmoke: Display:   [PASS] P3: branch signal ON while branched
-[2026.08.06-06.11.45:202][  0]LogSibeliusGame: Display: [Branch] Entered: depth 2, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:202][  0]LogBranchSmoke: Display:   [PASS] P3: enter nested (depth 2) — nesting allowed
-[2026.08.06-06.11.45:203][  0]LogBranchSmoke: Display:   [PASS] P3: depth 2, signal fired (2)
-[2026.08.06-06.11.45:203][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 1.
-[2026.08.06-06.11.45:203][  0]LogBranchSmoke: Display:   [PASS] P3: discard nested
-[2026.08.06-06.11.45:203][  0]LogBranchSmoke: Display:   [PASS] P3: back to depth 1, signal (1)
-[2026.08.06-06.11.45:203][  0]LogBranchSmoke: Display:   [PASS] P3: signal still ON at depth 1
-[2026.08.06-06.11.45:203][  0]LogBranchSmoke: Display:   [PASS] P3: nested discard restored to the OUTER branch exactly (no leak in)
-[2026.08.06-06.11.45:204][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:204][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:204][  0]LogBranchSmoke: Display:   [PASS] P3: discard outer
-[2026.08.06-06.11.45:204][  0]LogBranchSmoke: Display:   [PASS] P3: depth 0, signal fired (0)
-[2026.08.06-06.11.45:205][  0]LogBranchSmoke: Display:   [PASS] P3: branch signal OFF back at Main
-[2026.08.06-06.11.45:205][  0]LogBranchSmoke: Display:   [PASS] P3: pickups released at depth 0
-[2026.08.06-06.11.45:205][  0]LogBranchSmoke: Display:   [PASS] P3: outer discard restored to Main exactly (no leak out)
-[2026.08.06-06.11.45:205][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:205][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:206][  0]LogBranchSmoke: Display:   [PASS] P3: re-enter after full unwind
-[2026.08.06-06.11.45:206][  0]LogBranchSmoke: Display:   [PASS] P3: re-entered branch starts clean from Main (no residue)
-[2026.08.06-06.11.45:206][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:206][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:206][  0]LogBranchSmoke: Display:   [PASS] P3: discard the clean re-enter
-[2026.08.06-06.11.45:207][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:207][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:207][  0]LogBranchSmoke: Display:   [PASS] P3: enter outer again (depth 1)
-[2026.08.06-06.11.45:207][  0]LogSibeliusGame: Display: [Branch] Entered: depth 2, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:207][  0]LogBranchSmoke: Display:   [PASS] P3: enter nested again (depth 2)
-[2026.08.06-06.11.45:208][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 1.
-[2026.08.06-06.11.45:208][  0]LogBranchSmoke: Display:   [PASS] P3: merge nested -> folds into the outer branch
-[2026.08.06-06.11.45:208][  0]LogBranchSmoke: Display:   [PASS] P3: depth 1 after nested merge (still inside outer)
-[2026.08.06-06.11.45:208][  0]LogBranchSmoke: Display:   [PASS] P3: nested merge KEEPS its live in the outer branch
-[2026.08.06-06.11.45:209][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:209][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:209][  0]LogBranchSmoke: Display:   [PASS] P3: discard outer (drops the nested-merged changes too)
-[2026.08.06-06.11.45:209][  0]LogBranchSmoke: Display:   [PASS] P3: depth 0
-[2026.08.06-06.11.45:209][  0]LogBranchSmoke: Display:   [PASS] P3: outer discard wins — nested-merged changes dropped to the Main baseline
-[2026.08.06-06.11.45:210][  0]LogBranchSmoke: Display: --- Phase 4: deploy boundary guard ---
-[2026.08.06-06.11.45:210][  0]LogBranchSmoke: Display:   [PASS] P4: at Main before the deploy checks
-[2026.08.06-06.11.45:210][  0]LogBranchSmoke: Display:   [PASS] P4: CanDeploy() true at Main
-[2026.08.06-06.11.45:210][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:210][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 3 object + 2 resource delta(s).
-[2026.08.06-06.11.45:210][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy allowed at depth 0 (Main)
-[2026.08.06-06.11.45:211][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:211][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:211][  0]LogBranchSmoke: Display:   [PASS] P4: enter a branch (depth 1)
-[2026.08.06-06.11.45:211][  0]LogBranchSmoke: Display:   [PASS] P4: CanDeploy() false while branched
-[2026.08.06-06.11.45:211][  0]LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 1) — merge or discard first.
-[2026.08.06-06.11.45:212][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy refused at depth 1 (uncommitted branch)
-[2026.08.06-06.11.45:212][  0]LogSibeliusGame: Display: [Branch] Entered: depth 2, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:212][  0]LogBranchSmoke: Display:   [PASS] P4: nest (depth 2)
-[2026.08.06-06.11.45:212][  0]LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 2) — merge or discard first.
-[2026.08.06-06.11.45:212][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy refused at depth 2
-[2026.08.06-06.11.45:213][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 1.
-[2026.08.06-06.11.45:213][  0]LogBranchSmoke: Display:   [PASS] P4: discard nested -> depth 1
-[2026.08.06-06.11.45:213][  0]LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 1) — merge or discard first.
-[2026.08.06-06.11.45:213][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy still refused at depth 1
-[2026.08.06-06.11.45:213][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:214][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
-[2026.08.06-06.11.45:214][  0]LogBranchSmoke: Display:   [PASS] P4: merge outer -> back to Main
-[2026.08.06-06.11.45:214][  0]LogBranchSmoke: Display:   [PASS] P4: at Main after fully resolving
-[2026.08.06-06.11.45:214][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:214][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 3 object + 2 resource delta(s).
-[2026.08.06-06.11.45:215][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy allowed again once Main (merge/discard precedes deploy)
-[2026.08.06-06.11.45:215][  0]LogBranchSmoke: Display: --- Phase 0 (Ch5): GUID identity seam ---
-[2026.08.06-06.11.45:215][  0]LogBranchSmoke: Display:   [PASS] C5-P0: registry indexes >= 3 IBranchables (Refactorable + BuildSite + HatchLock)
-[2026.08.06-06.11.45:215][  0]LogBranchSmoke: Display:   [PASS] C5-P0: no GUID collisions on first registration
-[2026.08.06-06.11.45:216][  0]LogBranchSmoke: Display:   [PASS] C5-P0: every registered IBranchable has a VALID GUID
-[2026.08.06-06.11.45:216][  0]LogBranchSmoke: Display:   [PASS] C5-P0: BuildSite/HatchLock/Refactorable each carry a valid persisted GUID
-[2026.08.06-06.11.45:216][  0]LogBranchSmoke: Display:   [PASS] C5-P0: distinct objects have distinct GUIDs
-[2026.08.06-06.11.45:216][  0]LogBranchSmoke: Display:   [PASS] C5-P0: GetOrCreateBranchId is assign-once (stable, never regenerated)
-[2026.08.06-06.11.45:216][  0]LogBranchSmoke: Display:   [PASS] C5-P0: no GUID collisions on re-register
-[2026.08.06-06.11.45:217][  0]LogBranchSmoke: Display:   [PASS] C5-P0: re-register yields the same registry size
-[2026.08.06-06.11.45:217][  0]LogBranchSmoke: Display:   [PASS] C5-P0: after clear+rebuild every GUID resolves to the SAME object (identity, not index)
-[2026.08.06-06.11.45:217][  0]LogBranchSmoke: Display:   [PASS] C5-P0: re-register did NOT regenerate the object's GUID
-[2026.08.06-06.11.45:217][  0]LogBranchSmoke: Display:   [PASS] C5-P0: inventory entries carry valid, distinct GUIDs
-[2026.08.06-06.11.45:218][  0]LogBranchSmoke: Display:   [PASS] C5-P0: inventory entry GUID is assign-once (stable)
-[2026.08.06-06.11.45:218][  0]LogBranchSmoke: Display: --- Phase 1 (Ch5): SaveGame write ---
-[2026.08.06-06.11.45:218][  0]LogBranchSmoke: Display:   [PASS] C5-P1: sandbox slot empty before deploy
-[2026.08.06-06.11.45:218][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:218][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 2 object + 1 resource delta(s).
-[2026.08.06-06.11.45:219][  0]LogBranchSmoke: Display:   [PASS] C5-P1: RequestDeploy allowed at Main
-[2026.08.06-06.11.45:219][  0]LogBranchSmoke: Display:   [PASS] C5-P1: deploy wrote a save to the slot
-[2026.08.06-06.11.45:219][  0]LogBranchSmoke: Display:   [PASS] C5-P1: written save loads back as USibeliusSaveGame
-[2026.08.06-06.11.45:219][  0]LogBranchSmoke: Display:   [PASS] C5-P1: written save's SaveVersion is stamped (== CurrentSaveVersion)
-[2026.08.06-06.11.45:220][  0]LogBranchSmoke: Display:   [PASS] C5-P1: GUID-keyed delta written for the refactored Refactorable
-[2026.08.06-06.11.45:220][  0]LogBranchSmoke: Display:   [PASS] C5-P1: GUID-keyed delta written for the built BuildSite
-[2026.08.06-06.11.45:220][  0]LogBranchSmoke: Display:   [PASS] C5-P1: NO delta for the unchanged (default-locked) HatchLock
-[2026.08.06-06.11.45:220][  0]LogBranchSmoke: Display:   [PASS] C5-P1: resource delta written for the non-zero Book ledger entry
-[2026.08.06-06.11.45:220][  0]LogBranchSmoke: Display:   [PASS] C5-P1: NO resource delta for the zero-count Key entry
-[2026.08.06-06.11.45:221][  0]LogBranchSmoke: Display:   [PASS] C5-P1: cleared the slot before the D4 check
-[2026.08.06-06.11.45:221][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
-[2026.08.06-06.11.45:221][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
-[2026.08.06-06.11.45:221][  0]LogBranchSmoke: Display:   [PASS] C5-P1: enter a branch for the D4 check
-[2026.08.06-06.11.45:222][  0]LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 1) — merge or discard first.
-[2026.08.06-06.11.45:222][  0]LogBranchSmoke: Display:   [PASS] C5-P1: RequestDeploy refused while branched (guard)
-[2026.08.06-06.11.45:222][  0]LogBranchSmoke: Display:   [PASS] C5-P1: branched deploy wrote NOTHING to the slot (D4)
-[2026.08.06-06.11.45:222][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
-[2026.08.06-06.11.45:223][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
-[2026.08.06-06.11.45:223][  0]LogBranchSmoke: Display:   [PASS] C5-P1: discard the D4 branch
-[2026.08.06-06.11.45:223][  0]LogBranchSmoke: Display:   [PASS] C5-P1: sandbox slot cleaned up after the test
-[2026.08.06-06.11.45:223][  0]LogBranchSmoke: Display: --- Phase 2 (Ch5): load + re-apply ---
-[2026.08.06-06.11.45:223][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:223][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 2 object + 1 resource delta(s).
-[2026.08.06-06.11.45:224][  0]LogBranchSmoke: Display:   [PASS] C5-P2: deploy the known edit at Main
-[2026.08.06-06.11.45:224][  0]LogBranchSmoke: Display:   [PASS] C5-P2: deploy wrote the slot
-[2026.08.06-06.11.45:224][  0]LogBranchSmoke: Display:   [PASS] C5-P2: live branchables reset to default before apply
-[2026.08.06-06.11.45:224][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
-[2026.08.06-06.11.45:224][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
-[2026.08.06-06.11.45:225][  0]LogBranchSmoke: Display:   [PASS] C5-P2: ApplyDeployedSave loads + re-applies the slot
-[2026.08.06-06.11.45:225][  0]LogBranchSmoke: Display:   [PASS] C5-P2: Refactorable restored byte-exact from the save
-[2026.08.06-06.11.45:225][  0]LogBranchSmoke: Display:   [PASS] C5-P2: BuildSite restored byte-exact from the save
-[2026.08.06-06.11.45:225][  0]LogBranchSmoke: Display:   [PASS] C5-P2: Book ledger restored from the save
-[2026.08.06-06.11.45:226][  0]LogBranchSmoke: Display:   [PASS] C5-P2: applied the forced object delta(s) + exactly 1 resource delta
-[2026.08.06-06.11.45:226][  0]LogBranchSmoke: Display:   [PASS] C5-P2: unchanged HatchLock stays default (no delta in the save)
-[2026.08.06-06.11.45:226][  0]LogBranchSmoke: Display:   [PASS] C5-P2: zero-Key stays default (no delta in the save)
-[2026.08.06-06.11.45:226][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
-[2026.08.06-06.11.45:226][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
-[2026.08.06-06.11.45:227][  0]LogBranchSmoke: Display:   [PASS] C5-P2: second ApplyDeployedSave succeeds
-[2026.08.06-06.11.45:227][  0]LogBranchSmoke: Display:   [PASS] C5-P2: re-applying the same save is a no-op (idempotent)
-[2026.08.06-06.11.45:227][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:227][  0]LogBranchSmoke: Display:   [PASS] C5-P2: wrote an orphan-bearing save
-[2026.08.06-06.11.45:228][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
-[2026.08.06-06.11.45:228][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 1 object + 0 resource delta(s), re-spawned 0 generated, 1 orphan(s) skipped.
-[2026.08.06-06.11.45:228][  0]LogBranchSmoke: Display:   [PASS] C5-P2: apply skips the orphan and continues
-[2026.08.06-06.11.45:228][  0]LogBranchSmoke: Display:   [PASS] C5-P2: the real delta still applied despite the orphan
-[2026.08.06-06.11.45:228][  0]LogBranchSmoke: Display:   [PASS] C5-P2: exactly one orphan GUID was skipped
-[2026.08.06-06.11.45:229][  0]LogBranchSmoke: Display:   [PASS] C5-P2: only the one resolvable delta was applied
-[2026.08.06-06.11.45:229][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:229][  0]LogBranchSmoke: Display:   [PASS] C5-P2: wrote a newer-version save
-[2026.08.06-06.11.45:231][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' is from a newer build (v4 > v3) — refusing (world stays default).
-[2026.08.06-06.11.45:232][  0]LogBranchSmoke: Display:   [PASS] C5-P2: newer-version save is skipped (returns false)
-[2026.08.06-06.11.45:232][  0]LogBranchSmoke: Display:   [PASS] C5-P2: skipped future save did NOT mutate the world
-[2026.08.06-06.11.45:232][  0]LogBranchSmoke: Display:   [PASS] C5-P2: sandbox slots cleaned up after the test
-[2026.08.06-06.11.45:232][  0]LogBranchSmoke: Display: --- Phase 3 (Ch5): versioning + fail-safe ---
-[2026.08.06-06.11.45:232][  0]LogBranchSmoke: Display:   [PASS] C5-P3: a v1 save migrates to current
-[2026.08.06-06.11.45:232][  0]LogBranchSmoke: Display:   [PASS] C5-P3: migrated save is stamped at CurrentSaveVersion (v2)
-[2026.08.06-06.11.45:234][  0]LogBranchSmoke: Display:   [PASS] C5-P3: v1->v2 migrator ran (FormatNote marker set)
-[2026.08.06-06.11.45:234][  0]LogBranchSmoke: Display:   [PASS] C5-P3: a current-version save migrates as a no-op
-[2026.08.06-06.11.45:234][  0]LogBranchSmoke: Display:   [PASS] C5-P3: a newer-than-current save can't be migrated (no downgrade)
-[2026.08.06-06.11.45:234][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:234][  0]LogBranchSmoke: Display:   [PASS] C5-P3: wrote a v1 save to the primary slot
-[2026.08.06-06.11.45:241][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
-[2026.08.06-06.11.45:241][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
-[2026.08.06-06.11.45:242][  0]LogBranchSmoke: Display:   [PASS] C5-P3: ApplyDeployedSave loads + migrates + applies the v1 save
-[2026.08.06-06.11.45:242][  0]LogBranchSmoke: Display:   [PASS] C5-P3: applied from the primary slot
-[2026.08.06-06.11.45:242][  0]LogBranchSmoke: Display:   [PASS] C5-P3: migrated v1 save applied byte-exact
-[2026.08.06-06.11.45:242][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:243][  0]LogBranchSmoke: Display:   [PASS] C5-P3: wrote a newer-version save to the primary
-[2026.08.06-06.11.45:249][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' is from a newer build (v4 > v3) — refusing (world stays default).
-[2026.08.06-06.11.45:249][  0]LogBranchSmoke: Display:   [PASS] C5-P3: newer-version save refused (returns false)
-[2026.08.06-06.11.45:249][  0]LogBranchSmoke: Display:   [PASS] C5-P3: refusal applied nothing (no fallback to an older backup)
-[2026.08.06-06.11.45:250][  0]LogBranchSmoke: Display:   [PASS] C5-P3: newer-version refusal did NOT mutate the world
-[2026.08.06-06.11.45:250][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
-[2026.08.06-06.11.45:250][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 2 object + 1 resource delta(s).
-[2026.08.06-06.11.45:251][  0]LogBranchSmoke: Display:   [PASS] C5-P3: deploy a known-good state to the primary
-[2026.08.06-06.11.45:258][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
-[2026.08.06-06.11.45:259][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
-[2026.08.06-06.11.45:259][  0]LogBranchSmoke: Display:   [PASS] C5-P3: apply promotes the good primary to the last-good backup
-[2026.08.06-06.11.45:259][  0]LogBranchSmoke: Display:   [PASS] C5-P3: last-good backup now exists
-[2026.08.06-06.11.45:260][  0]LogBranchSmoke: Display:   [PASS] C5-P3: corrupted the primary slot (garbage bytes on disk)
-[2026.08.06-06.11.45:261][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' unreadable/corrupt — falling back to last-good backup 'SmokeDeploySlot_Temp_Backup'.
-[2026.08.06-06.11.45:262][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from backup (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
-[2026.08.06-06.11.45:262][  0]LogBranchSmoke: Display:   [PASS] C5-P3: corrupt primary falls back to backup and applies
-[2026.08.06-06.11.45:262][  0]LogBranchSmoke: Display:   [PASS] C5-P3: the fallback sourced from the backup slot
-[2026.08.06-06.11.45:262][  0]LogBranchSmoke: Display:   [PASS] C5-P3: backup applied byte-exact after primary corruption
-[2026.08.06-06.11.45:263][  0]LogBranchSmoke: Display:   [PASS] C5-P3: corrupted the primary again (garbage bytes on disk)
-[2026.08.06-06.11.45:263][  0]LogBranchSmoke: Display:   [PASS] C5-P3: removed the backup (both unusable)
-[2026.08.06-06.11.45:264][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' unreadable/corrupt — falling back to last-good backup 'SmokeDeploySlot_Temp_Backup'.
-[2026.08.06-06.11.45:264][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: no usable save (primary + backup both unavailable) — world stays authored default.
-[2026.08.06-06.11.45:264][  0]LogBranchSmoke: Display:   [PASS] C5-P3: with no usable save, apply fails safe (returns false)
-[2026.08.06-06.11.45:264][  0]LogBranchSmoke: Display:   [PASS] C5-P3: nothing applied on the fail-safe path
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display:   [PASS] C5-P3: world stays at authored default (no partial apply)
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display:   [PASS] C5-P3: sandbox slots cleaned up after the test
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display: --- SIB-38: GUID baking (assign-once + duplication) ---
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display:   [PASS] SIB-38: BuildSite carries a valid BranchId after ensure
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display:   [PASS] SIB-38: a set BranchId is never regenerated (assign-once across a simulated reload)
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display:   [PASS] SIB-38: duplicated BuildSite gets a distinct, valid id (no shared id)
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display:   [PASS] SIB-38: duplicated HatchLock gets a distinct, valid id
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display:   [PASS] SIB-38: duplicated RefactorableComponent gets a distinct, valid id
-[2026.08.06-06.11.45:265][  0]LogBranchSmoke: Display: === BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phases 0-3 green — GUID seam + deploy write/load/migrate/fail-safe). ===
-[2026.08.06-06.11.45:265][  0]LogInit: Display: 
-[2026.08.06-06.11.45:265][  0]LogInit: Display: Warning/Error Summary (Unique only)
-[2026.08.06-06.11.45:265][  0]LogInit: Display: -----------------------------------
-[2026.08.06-06.11.45:265][  0]LogInit: Display: LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
-[2026.08.06-06.11.45:266][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.06-06.11.45:266][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.06-06.11.45:267][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.06-06.11.45:268][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.06-06.11.45:268][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.06-06.11.45:269][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.06-06.11.45:269][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.06-06.11.45:270][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.06-06.11.45:270][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
-[2026.08.06-06.11.45:271][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.06-06.11.45:271][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.06-06.11.45:272][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.06-06.11.45:272][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.06-06.11.45:273][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.06-06.11.45:273][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.06-06.11.45:275][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.06-06.11.45:275][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.06-06.11.45:276][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 1) — merge or discard first.
-[2026.08.06-06.11.45:276][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 2) — merge or discard first.
-[2026.08.06-06.11.45:277][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' is from a newer build (v4 > v3) — refusing (world stays default).
-[2026.08.06-06.11.45:277][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' unreadable/corrupt — falling back to last-good backup 'SmokeDeploySlot_Temp_Backup'.
-[2026.08.06-06.11.45:277][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: no usable save (primary + backup both unavailable) — world stays authored default.
-[2026.08.06-06.11.45:278][  0]LogInit: Display: 
-[2026.08.06-06.11.45:278][  0]LogInit: Display: Success - 0 error(s), 27 warning(s)
-[2026.08.06-06.11.45:278][  0]LogInit: Display: 
+[2026.08.06-06.26.06:316][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+[2026.08.06-06.26.06:316][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
+[2026.08.06-06.26.06:547][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
+[2026.08.06-06.26.06:621][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
+[2026.08.06-06.26.06:621][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
+[2026.08.06-06.26.06:621][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
+[2026.08.06-06.26.06:621][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
+[2026.08.06-06.26.06:625][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
+[2026.08.06-06.26.06:625][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
+[2026.08.06-06.26.06:625][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
+[2026.08.06-06.26.06:625][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
+[2026.08.06-06.26.06:625][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
+[2026.08.06-06.26.06:625][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
+[2026.08.06-06.26.06:625][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
+[2026.08.06-06.26.06:625][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
+[2026.08.06-06.26.06:626][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
+[2026.08.06-06.26.06:626][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
+[2026.08.06-06.26.06:646][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
+[2026.08.06-06.26.06:656][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
+[2026.08.06-06.26.06:656][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
+[2026.08.06-06.26.06:667][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
+[2026.08.06-06.26.06:667][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
+[2026.08.06-06.26.06:667][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
+[2026.08.06-06.26.06:667][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
+[2026.08.06-06.26.06:676][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
+[2026.08.06-06.26.06:676][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
+[2026.08.06-06.26.06:676][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
+[2026.08.06-06.26.06:676][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
+[2026.08.06-06.26.06:685][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
+[2026.08.06-06.26.06:685][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
+[2026.08.06-06.26.06:695][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
+[2026.08.06-06.26.06:695][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
+[2026.08.06-06.26.06:695][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
+[2026.08.06-06.26.06:695][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
+[2026.08.06-06.26.06:695][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
+[2026.08.06-06.26.06:697][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+[2026.08.06-06.26.06:731][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
+[2026.08.06-06.26.06:915][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
+[2026.08.06-06.26.06:915][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.08.06-06.26.07:222][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.08.06-06.26.07:534][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.08.06-06.26.07:535][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.08.06-06.26.07:535][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
+[2026.08.06-06.26.07:537][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 11048  --child-id Zen_11048_Startup'
+[2026.08.06-06.26.07:607][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
+[2026.08.06-06.26.07:608][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
+[2026.08.06-06.26.07:613][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.02ms. RandomReadSpeed=1129.50MBs, RandomWriteSpeed=243.39MBs. Assigned SpeedClass 'Local'
+[2026.08.06-06.26.07:615][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
+[2026.08.06-06.26.07:615][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
+[2026.08.06-06.26.07:615][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
+[2026.08.06-06.26.07:616][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
+[2026.08.06-06.26.07:616][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.08.06-06.26.07:894][  0]LogEditorDomain: Display: EditorDomain is Disabled
+[2026.08.06-06.26.08:068][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
+[2026.08.06-06.26.08:068][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
+[2026.08.06-06.26.08:094][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
+[2026.08.06-06.26.08:096][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+[2026.08.06-06.26.08:103][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:103][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
+[2026.08.06-06.26.08:103][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:103][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:104][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
+[2026.08.06-06.26.08:104][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:104][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:105][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:105][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:105][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:106][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
+[2026.08.06-06.26.08:106][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:107][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
+[2026.08.06-06.26.08:107][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:107][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
+[2026.08.06-06.26.08:107][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:107][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
+[2026.08.06-06.26.08:107][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.26.08:108][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
+[2026.08.06-06.26.08:108][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
+[2026.08.06-06.26.08:108][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
+[2026.08.06-06.26.08:118][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
+[2026.08.06-06.26.08:118][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
+[2026.08.06-06.26.08:118][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
+[2026.08.06-06.26.08:118][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
+[2026.08.06-06.26.08:228][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
+[2026.08.06-06.26.08:228][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.08.06-06.26.08:228][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
+[2026.08.06-06.26.08:228][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
+[2026.08.06-06.26.08:280][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
+[2026.08.06-06.26.08:281][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.540 ms
+[2026.08.06-06.26.08:978][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
+[2026.08.06-06.26.08:979][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
+[2026.08.06-06.26.09:170][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
+[2026.08.06-06.26.10:628][  0]LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (Echo_Hair) ...
+[2026.08.06-06.26.10:792][  0]LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
+[2026.08.06-06.26.11:151][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.06-06.26.11:151][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.06-06.26.11:151][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.06-06.26.11:151][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.06-06.26.11:151][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.06-06.26.11:151][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.06-06.26.11:152][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.06-06.26.11:152][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.06-06.26.12:260][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.08.06-06.26.12:260][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.08.06-06.26.13:322][  0]LogAssetRegistry: Display: Asset registry cache read as 128.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
+[2026.08.06-06.26.13:323][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.122s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
+[2026.08.06-06.26.13:520][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+[2026.08.06-06.26.13:562][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
+[2026.08.06-06.26.14:084][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.08.06-06.26.14:136][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
+[2026.08.06-06.26.14:156][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 20.232 ms
+[2026.08.06-06.26.14:158][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
+[2026.08.06-06.26.14:162][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 5.639 ms (total: 25.871 ms)
+[2026.08.06-06.26.14:163][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
+[2026.08.06-06.26.14:193][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 31.196 ms (total: 57.068 ms)
+[2026.08.06-06.26.14:194][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
+[2026.08.06-06.26.14:194][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 390 us (total: 57.459 ms)
+[2026.08.06-06.26.14:194][  0]LogBranchSmoke: Display: === SIB-28 Branch smoke test (Phase 0): /Game/L_Office_v02 ===
+[2026.08.06-06.26.16:767][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.06-06.26.16:768][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.06-06.26.16:768][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.06-06.26.16:769][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.06-06.26.16:770][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.06-06.26.16:772][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.06-06.26.16:774][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.06-06.26.16:776][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.06-06.26.19:682][  0]LogAIApparition: Display: [Apparition] visuals built: 9 glyphs + core
+[2026.08.06-06.26.19:736][  0]LogBranchSmoke: Display:   [PASS] Map loads (/Game/L_Office_v02)
+[2026.08.06-06.26.19:736][  0]LogBranchSmoke: Display:   [PASS] UBranchSubsystem instantiates
+[2026.08.06-06.26.19:736][  0]LogBranchSmoke: Display:   [PASS] Initial state is Main
+[2026.08.06-06.26.19:737][  0]LogBranchSmoke: Display:   [PASS] Pickups not suspended in Main
+[2026.08.06-06.26.19:737][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:737][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 4 object(s) + 0 ledger entr(ies).
+[2026.08.06-06.26.19:737][  0]LogBranchSmoke: Display:   [PASS] EnterBranch() succeeds from Main
+[2026.08.06-06.26.19:737][  0]LogBranchSmoke: Display:   [PASS] State is Branched after enter
+[2026.08.06-06.26.19:738][  0]LogBranchSmoke: Display:   (manifest: 4 object(s), 0 ledger entr(ies))
+[2026.08.06-06.26.19:738][  0]LogBranchSmoke: Display:   [PASS] EnterBranch captured the declared set (>= 1 IBranchable from the level) [T1]
+[2026.08.06-06.26.19:738][  0]LogBranchSmoke: Display:   [PASS] Pickups suspended while branched (product decision)
+[2026.08.06-06.26.19:738][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:738][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:738][  0]LogBranchSmoke: Display:   [PASS] DiscardBranch() succeeds from Branched
+[2026.08.06-06.26.19:738][  0]LogBranchSmoke: Display:   [PASS] State is Main after discard
+[2026.08.06-06.26.19:738][  0]LogBranchSmoke: Display:   [PASS] Second DiscardBranch() is a guarded no-op
+[2026.08.06-06.26.19:739][  0]LogBranchSmoke: Display:   [PASS] MergeBranch() rejected from Main (guard)
+[2026.08.06-06.26.19:739][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:739][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 4 object(s) + 0 ledger entr(ies).
+[2026.08.06-06.26.19:739][  0]LogBranchSmoke: Display:   [PASS] EnterBranch() again from Main
+[2026.08.06-06.26.19:739][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:739][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
+[2026.08.06-06.26.19:740][  0]LogBranchSmoke: Display:   [PASS] MergeBranch() succeeds from Branched
+[2026.08.06-06.26.19:740][  0]LogBranchSmoke: Display:   [PASS] State is Main after merge
+[2026.08.06-06.26.19:740][  0]LogBranchSmoke: Display:   [PASS] Second MergeBranch() is a guarded no-op (idempotency latch)
+[2026.08.06-06.26.19:740][  0]LogBranchSmoke: Display: --- Phase 1: declared-set round-trip ---
+[2026.08.06-06.26.19:740][  0]LogBranchSmoke: Display:   [PASS] P1: found a level URefactorableComponent to refactor
+[2026.08.06-06.26.19:740][  0]LogBranchSmoke: Display:   [PASS] P1: spawned a seeded UInventoryComponent
+[2026.08.06-06.26.19:741][  0]LogBranchSmoke: Display:   [PASS] P1: spawned an ABuildSite
+[2026.08.06-06.26.19:741][  0]LogBranchSmoke: Display:   [PASS] P1: spawned an AHatchLock
+[2026.08.06-06.26.19:741][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:741][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:741][  0]LogBranchSmoke: Display:   [PASS] P1: EnterBranch captures the declared set
+[2026.08.06-06.26.19:742][  0]LogBranchSmoke: Display:   [PASS] P1: ledger captured whole (Book + Key)
+[2026.08.06-06.26.19:742][  0]LogBranchSmoke: Display:   [PASS] P1: pickups suspended on enter
+[2026.08.06-06.26.19:742][  0]LogBranchSmoke: Display:   [PASS] P1: refactor mutated the Refactorable in-branch
+[2026.08.06-06.26.19:742][  0]LogBranchSmoke: Display:   [PASS] P1: Build() built the site in-branch (spent Books)
+[2026.08.06-06.26.19:742][  0]LogBranchSmoke: Display:   [PASS] P1: TryUnlock() unlocked the hatch in-branch (spent Key)
+[2026.08.06-06.26.19:742][  0]LogBranchSmoke: Display:   [PASS] P1: inventory ledger changed in-branch
+[2026.08.06-06.26.19:743][  0]LogBranchSmoke: Display:   [PASS] P1: pickups still suspended after in-branch edits
+[2026.08.06-06.26.19:743][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:743][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:743][  0]LogBranchSmoke: Display:   [PASS] P1: DiscardBranch resolves Branched -> Main
+[2026.08.06-06.26.19:743][  0]LogBranchSmoke: Display:   [PASS] P1: state Main after discard
+[2026.08.06-06.26.19:743][  0]LogBranchSmoke: Display:   [PASS] P1: pickups released after discard
+[2026.08.06-06.26.19:743][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: Refactorable restored exactly
+[2026.08.06-06.26.19:744][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: BuildSite restored to unbuilt
+[2026.08.06-06.26.19:744][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: HatchLock restored to locked
+[2026.08.06-06.26.19:744][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: inventory ledger restored exactly (20 Book / 3 Key)
+[2026.08.06-06.26.19:744][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:744][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:744][  0]LogBranchSmoke: Display:   [PASS] P1: re-enter to re-capture post-discard state
+[2026.08.06-06.26.19:745][  0]LogBranchSmoke: Display:   [PASS] P1 round-trip: full manifest byte-exact vs pre-branch capture (every entry)
+[2026.08.06-06.26.19:745][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:745][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:745][  0]LogBranchSmoke: Display:   [PASS] P1: discard the verification branch
+[2026.08.06-06.26.19:745][  0]LogBranchSmoke: Display:   [PASS] P1: second DiscardBranch is a no-op
+[2026.08.06-06.26.19:746][  0]LogBranchSmoke: Display:   [PASS] P1: MergeBranch latched — rejected outside Branched (can't half-fire)
+[2026.08.06-06.26.19:746][  0]LogBranchSmoke: Display: --- Phase 2: merge keeps live + idempotency ---
+[2026.08.06-06.26.19:746][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:746][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:746][  0]LogBranchSmoke: Display:   [PASS] P2: enter (degenerate, no edits)
+[2026.08.06-06.26.19:747][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:747][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
+[2026.08.06-06.26.19:747][  0]LogBranchSmoke: Display:   [PASS] P2: merge with zero in-branch edits succeeds
+[2026.08.06-06.26.19:747][  0]LogBranchSmoke: Display:   [PASS] P2: Main after degenerate merge
+[2026.08.06-06.26.19:747][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:747][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:748][  0]LogBranchSmoke: Display:   [PASS] P2: re-enter after degenerate merge
+[2026.08.06-06.26.19:748][  0]LogBranchSmoke: Display:   [PASS] P2: degenerate merge changed nothing
+[2026.08.06-06.26.19:748][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:748][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:748][  0]LogBranchSmoke: Display:   [PASS] P2: discard the degenerate check branch
+[2026.08.06-06.26.19:748][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:749][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:749][  0]LogBranchSmoke: Display:   [PASS] P2: enter the merge round
+[2026.08.06-06.26.19:749][  0]LogBranchSmoke: Display:   [PASS] P2: in-branch verbs applied (build + unlock)
+[2026.08.06-06.26.19:749][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:749][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
+[2026.08.06-06.26.19:749][  0]LogBranchSmoke: Display:   [PASS] P2: MergeBranch keeps live + advances baseline
+[2026.08.06-06.26.19:750][  0]LogBranchSmoke: Display:   [PASS] P2: Main after merge
+[2026.08.06-06.26.19:750][  0]LogBranchSmoke: Display:   [PASS] P2: pickups resumed after merge
+[2026.08.06-06.26.19:750][  0]LogBranchSmoke: Display:   [PASS] P2 merged: Refactorable stays refactored
+[2026.08.06-06.26.19:750][  0]LogBranchSmoke: Display:   [PASS] P2 merged: site stays built
+[2026.08.06-06.26.19:750][  0]LogBranchSmoke: Display:   [PASS] P2 merged: hatch stays unlocked
+[2026.08.06-06.26.19:751][  0]LogBranchSmoke: Display:   [PASS] P2 merged: ledger keeps spent values
+[2026.08.06-06.26.19:751][  0]LogBranchSmoke: Display:   [PASS] P2: second MergeBranch is a no-op
+[2026.08.06-06.26.19:751][  0]LogBranchSmoke: Display:   [PASS] P2: Discard after Merge is a no-op (can't revert a merged branch)
+[2026.08.06-06.26.19:751][  0]LogBranchSmoke: Display:   [PASS] P2: merged state intact after the no-op resolves
+[2026.08.06-06.26.19:751][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:751][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:752][  0]LogBranchSmoke: Display:   [PASS] P2: re-enter off the merged baseline
+[2026.08.06-06.26.19:752][  0]LogBranchSmoke: Display:   [PASS] P2: re-capture == merged ledger (baseline advanced, not original)
+[2026.08.06-06.26.19:752][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:752][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:752][  0]LogBranchSmoke: Display:   [PASS] P2: discard the post-merge branch
+[2026.08.06-06.26.19:752][  0]LogBranchSmoke: Display:   [PASS] P2: discard restores to the MERGED baseline ledger, not the original
+[2026.08.06-06.26.19:753][  0]LogBranchSmoke: Display:   [PASS] P2: discard restores Refactorable to the merged baseline
+[2026.08.06-06.26.19:753][  0]LogBranchSmoke: Display:   [PASS] P2: merged build/unlock survive the post-merge discard
+[2026.08.06-06.26.19:753][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:753][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:754][  0]LogBranchSmoke: Display:   [PASS] P2: enter once more
+[2026.08.06-06.26.19:754][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:754][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
+[2026.08.06-06.26.19:754][  0]LogBranchSmoke: Display:   [PASS] P2: clean up the final branch via merge
+[2026.08.06-06.26.19:754][  0]LogBranchSmoke: Display: --- Phase 3: nesting + signaling ---
+[2026.08.06-06.26.19:754][  0]LogBranchSmoke: Display:   [PASS] P3: depth 0 at Main
+[2026.08.06-06.26.19:754][  0]LogBranchSmoke: Display:   [PASS] P3: branch signal OFF at Main (no desaturate/HUD)
+[2026.08.06-06.26.19:755][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:755][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:755][  0]LogBranchSmoke: Display:   [PASS] P3: enter outer (depth 1)
+[2026.08.06-06.26.19:755][  0]LogBranchSmoke: Display:   [PASS] P3: depth 1, signal fired (1)
+[2026.08.06-06.26.19:755][  0]LogBranchSmoke: Display:   [PASS] P3: branch signal ON while branched
+[2026.08.06-06.26.19:755][  0]LogSibeliusGame: Display: [Branch] Entered: depth 2, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:756][  0]LogBranchSmoke: Display:   [PASS] P3: enter nested (depth 2) — nesting allowed
+[2026.08.06-06.26.19:756][  0]LogBranchSmoke: Display:   [PASS] P3: depth 2, signal fired (2)
+[2026.08.06-06.26.19:756][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 1.
+[2026.08.06-06.26.19:756][  0]LogBranchSmoke: Display:   [PASS] P3: discard nested
+[2026.08.06-06.26.19:756][  0]LogBranchSmoke: Display:   [PASS] P3: back to depth 1, signal (1)
+[2026.08.06-06.26.19:757][  0]LogBranchSmoke: Display:   [PASS] P3: signal still ON at depth 1
+[2026.08.06-06.26.19:757][  0]LogBranchSmoke: Display:   [PASS] P3: nested discard restored to the OUTER branch exactly (no leak in)
+[2026.08.06-06.26.19:757][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:757][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:757][  0]LogBranchSmoke: Display:   [PASS] P3: discard outer
+[2026.08.06-06.26.19:757][  0]LogBranchSmoke: Display:   [PASS] P3: depth 0, signal fired (0)
+[2026.08.06-06.26.19:758][  0]LogBranchSmoke: Display:   [PASS] P3: branch signal OFF back at Main
+[2026.08.06-06.26.19:758][  0]LogBranchSmoke: Display:   [PASS] P3: pickups released at depth 0
+[2026.08.06-06.26.19:758][  0]LogBranchSmoke: Display:   [PASS] P3: outer discard restored to Main exactly (no leak out)
+[2026.08.06-06.26.19:758][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:758][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:758][  0]LogBranchSmoke: Display:   [PASS] P3: re-enter after full unwind
+[2026.08.06-06.26.19:759][  0]LogBranchSmoke: Display:   [PASS] P3: re-entered branch starts clean from Main (no residue)
+[2026.08.06-06.26.19:759][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:759][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:759][  0]LogBranchSmoke: Display:   [PASS] P3: discard the clean re-enter
+[2026.08.06-06.26.19:759][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:759][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:760][  0]LogBranchSmoke: Display:   [PASS] P3: enter outer again (depth 1)
+[2026.08.06-06.26.19:760][  0]LogSibeliusGame: Display: [Branch] Entered: depth 2, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:760][  0]LogBranchSmoke: Display:   [PASS] P3: enter nested again (depth 2)
+[2026.08.06-06.26.19:760][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 1.
+[2026.08.06-06.26.19:760][  0]LogBranchSmoke: Display:   [PASS] P3: merge nested -> folds into the outer branch
+[2026.08.06-06.26.19:761][  0]LogBranchSmoke: Display:   [PASS] P3: depth 1 after nested merge (still inside outer)
+[2026.08.06-06.26.19:761][  0]LogBranchSmoke: Display:   [PASS] P3: nested merge KEEPS its live in the outer branch
+[2026.08.06-06.26.19:761][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:761][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:761][  0]LogBranchSmoke: Display:   [PASS] P3: discard outer (drops the nested-merged changes too)
+[2026.08.06-06.26.19:761][  0]LogBranchSmoke: Display:   [PASS] P3: depth 0
+[2026.08.06-06.26.19:762][  0]LogBranchSmoke: Display:   [PASS] P3: outer discard wins — nested-merged changes dropped to the Main baseline
+[2026.08.06-06.26.19:762][  0]LogBranchSmoke: Display: --- Phase 4: deploy boundary guard ---
+[2026.08.06-06.26.19:762][  0]LogBranchSmoke: Display:   [PASS] P4: at Main before the deploy checks
+[2026.08.06-06.26.19:762][  0]LogBranchSmoke: Display:   [PASS] P4: CanDeploy() true at Main
+[2026.08.06-06.26.19:762][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:763][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 3 object + 2 resource delta(s).
+[2026.08.06-06.26.19:763][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy allowed at depth 0 (Main)
+[2026.08.06-06.26.19:763][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:763][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:764][  0]LogBranchSmoke: Display:   [PASS] P4: enter a branch (depth 1)
+[2026.08.06-06.26.19:764][  0]LogBranchSmoke: Display:   [PASS] P4: CanDeploy() false while branched
+[2026.08.06-06.26.19:764][  0]LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 1) — merge or discard first.
+[2026.08.06-06.26.19:764][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy refused at depth 1 (uncommitted branch)
+[2026.08.06-06.26.19:764][  0]LogSibeliusGame: Display: [Branch] Entered: depth 2, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:765][  0]LogBranchSmoke: Display:   [PASS] P4: nest (depth 2)
+[2026.08.06-06.26.19:765][  0]LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 2) — merge or discard first.
+[2026.08.06-06.26.19:765][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy refused at depth 2
+[2026.08.06-06.26.19:765][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 1.
+[2026.08.06-06.26.19:765][  0]LogBranchSmoke: Display:   [PASS] P4: discard nested -> depth 1
+[2026.08.06-06.26.19:765][  0]LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 1) — merge or discard first.
+[2026.08.06-06.26.19:766][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy still refused at depth 1
+[2026.08.06-06.26.19:766][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:766][  0]LogSibeliusGame: Display: [Branch] Merged: live kept, depth 0.
+[2026.08.06-06.26.19:766][  0]LogBranchSmoke: Display:   [PASS] P4: merge outer -> back to Main
+[2026.08.06-06.26.19:766][  0]LogBranchSmoke: Display:   [PASS] P4: at Main after fully resolving
+[2026.08.06-06.26.19:766][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:767][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 3 object + 2 resource delta(s).
+[2026.08.06-06.26.19:767][  0]LogBranchSmoke: Display:   [PASS] P4: Deploy allowed again once Main (merge/discard precedes deploy)
+[2026.08.06-06.26.19:767][  0]LogBranchSmoke: Display: --- Phase 0 (Ch5): GUID identity seam ---
+[2026.08.06-06.26.19:767][  0]LogBranchSmoke: Display:   [PASS] C5-P0: registry indexes >= 3 IBranchables (Refactorable + BuildSite + HatchLock)
+[2026.08.06-06.26.19:768][  0]LogBranchSmoke: Display:   [PASS] C5-P0: no GUID collisions on first registration
+[2026.08.06-06.26.19:768][  0]LogBranchSmoke: Display:   [PASS] C5-P0: every registered IBranchable has a VALID GUID
+[2026.08.06-06.26.19:768][  0]LogBranchSmoke: Display:   [PASS] C5-P0: BuildSite/HatchLock/Refactorable each carry a valid persisted GUID
+[2026.08.06-06.26.19:768][  0]LogBranchSmoke: Display:   [PASS] C5-P0: distinct objects have distinct GUIDs
+[2026.08.06-06.26.19:768][  0]LogBranchSmoke: Display:   [PASS] C5-P0: GetOrCreateBranchId is assign-once (stable, never regenerated)
+[2026.08.06-06.26.19:769][  0]LogBranchSmoke: Display:   [PASS] C5-P0: no GUID collisions on re-register
+[2026.08.06-06.26.19:769][  0]LogBranchSmoke: Display:   [PASS] C5-P0: re-register yields the same registry size
+[2026.08.06-06.26.19:769][  0]LogBranchSmoke: Display:   [PASS] C5-P0: after clear+rebuild every GUID resolves to the SAME object (identity, not index)
+[2026.08.06-06.26.19:769][  0]LogBranchSmoke: Display:   [PASS] C5-P0: re-register did NOT regenerate the object's GUID
+[2026.08.06-06.26.19:770][  0]LogBranchSmoke: Display:   [PASS] C5-P0: inventory entries carry valid, distinct GUIDs
+[2026.08.06-06.26.19:770][  0]LogBranchSmoke: Display:   [PASS] C5-P0: inventory entry GUID is assign-once (stable)
+[2026.08.06-06.26.19:770][  0]LogBranchSmoke: Display: --- Phase 1 (Ch5): SaveGame write ---
+[2026.08.06-06.26.19:770][  0]LogBranchSmoke: Display:   [PASS] C5-P1: sandbox slot empty before deploy
+[2026.08.06-06.26.19:770][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:770][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 2 object + 1 resource delta(s).
+[2026.08.06-06.26.19:771][  0]LogBranchSmoke: Display:   [PASS] C5-P1: RequestDeploy allowed at Main
+[2026.08.06-06.26.19:771][  0]LogBranchSmoke: Display:   [PASS] C5-P1: deploy wrote a save to the slot
+[2026.08.06-06.26.19:771][  0]LogBranchSmoke: Display:   [PASS] C5-P1: written save loads back as USibeliusSaveGame
+[2026.08.06-06.26.19:771][  0]LogBranchSmoke: Display:   [PASS] C5-P1: written save's SaveVersion is stamped (== CurrentSaveVersion)
+[2026.08.06-06.26.19:771][  0]LogBranchSmoke: Display:   [PASS] C5-P1: GUID-keyed delta written for the refactored Refactorable
+[2026.08.06-06.26.19:772][  0]LogBranchSmoke: Display:   [PASS] C5-P1: GUID-keyed delta written for the built BuildSite
+[2026.08.06-06.26.19:772][  0]LogBranchSmoke: Display:   [PASS] C5-P1: NO delta for the unchanged (default-locked) HatchLock
+[2026.08.06-06.26.19:772][  0]LogBranchSmoke: Display:   [PASS] C5-P1: resource delta written for the non-zero Book ledger entry
+[2026.08.06-06.26.19:772][  0]LogBranchSmoke: Display:   [PASS] C5-P1: NO resource delta for the zero-count Key entry
+[2026.08.06-06.26.19:773][  0]LogBranchSmoke: Display:   [PASS] C5-P1: cleared the slot before the D4 check
+[2026.08.06-06.26.19:773][  0]LogSibeliusGame: Display: [Branch] Pickups suspended.
+[2026.08.06-06.26.19:773][  0]LogSibeliusGame: Display: [Branch] Entered: depth 1, captured 6 object(s) + 2 ledger entr(ies).
+[2026.08.06-06.26.19:773][  0]LogBranchSmoke: Display:   [PASS] C5-P1: enter a branch for the D4 check
+[2026.08.06-06.26.19:773][  0]LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 1) — merge or discard first.
+[2026.08.06-06.26.19:774][  0]LogBranchSmoke: Display:   [PASS] C5-P1: RequestDeploy refused while branched (guard)
+[2026.08.06-06.26.19:774][  0]LogBranchSmoke: Display:   [PASS] C5-P1: branched deploy wrote NOTHING to the slot (D4)
+[2026.08.06-06.26.19:774][  0]LogSibeliusGame: Display: [Branch] Pickups resumed.
+[2026.08.06-06.26.19:774][  0]LogSibeliusGame: Display: [Branch] Discarded: restored to depth 0.
+[2026.08.06-06.26.19:774][  0]LogBranchSmoke: Display:   [PASS] C5-P1: discard the D4 branch
+[2026.08.06-06.26.19:774][  0]LogBranchSmoke: Display:   [PASS] C5-P1: sandbox slot cleaned up after the test
+[2026.08.06-06.26.19:775][  0]LogBranchSmoke: Display: --- Phase 2 (Ch5): load + re-apply ---
+[2026.08.06-06.26.19:775][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:775][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 2 object + 1 resource delta(s).
+[2026.08.06-06.26.19:775][  0]LogBranchSmoke: Display:   [PASS] C5-P2: deploy the known edit at Main
+[2026.08.06-06.26.19:775][  0]LogBranchSmoke: Display:   [PASS] C5-P2: deploy wrote the slot
+[2026.08.06-06.26.19:776][  0]LogBranchSmoke: Display:   [PASS] C5-P2: live branchables reset to default before apply
+[2026.08.06-06.26.19:776][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
+[2026.08.06-06.26.19:776][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
+[2026.08.06-06.26.19:776][  0]LogBranchSmoke: Display:   [PASS] C5-P2: ApplyDeployedSave loads + re-applies the slot
+[2026.08.06-06.26.19:776][  0]LogBranchSmoke: Display:   [PASS] C5-P2: Refactorable restored byte-exact from the save
+[2026.08.06-06.26.19:777][  0]LogBranchSmoke: Display:   [PASS] C5-P2: BuildSite restored byte-exact from the save
+[2026.08.06-06.26.19:777][  0]LogBranchSmoke: Display:   [PASS] C5-P2: Book ledger restored from the save
+[2026.08.06-06.26.19:777][  0]LogBranchSmoke: Display:   [PASS] C5-P2: applied the forced object delta(s) + exactly 1 resource delta
+[2026.08.06-06.26.19:777][  0]LogBranchSmoke: Display:   [PASS] C5-P2: unchanged HatchLock stays default (no delta in the save)
+[2026.08.06-06.26.19:778][  0]LogBranchSmoke: Display:   [PASS] C5-P2: zero-Key stays default (no delta in the save)
+[2026.08.06-06.26.19:778][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
+[2026.08.06-06.26.19:778][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
+[2026.08.06-06.26.19:778][  0]LogBranchSmoke: Display:   [PASS] C5-P2: second ApplyDeployedSave succeeds
+[2026.08.06-06.26.19:778][  0]LogBranchSmoke: Display:   [PASS] C5-P2: re-applying the same save is a no-op (idempotent)
+[2026.08.06-06.26.19:779][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:779][  0]LogBranchSmoke: Display:   [PASS] C5-P2: wrote an orphan-bearing save
+[2026.08.06-06.26.19:779][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
+[2026.08.06-06.26.19:779][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 1 object + 0 resource delta(s), re-spawned 0 generated, 1 orphan(s) skipped.
+[2026.08.06-06.26.19:780][  0]LogBranchSmoke: Display:   [PASS] C5-P2: apply skips the orphan and continues
+[2026.08.06-06.26.19:780][  0]LogBranchSmoke: Display:   [PASS] C5-P2: the real delta still applied despite the orphan
+[2026.08.06-06.26.19:780][  0]LogBranchSmoke: Display:   [PASS] C5-P2: exactly one orphan GUID was skipped
+[2026.08.06-06.26.19:780][  0]LogBranchSmoke: Display:   [PASS] C5-P2: only the one resolvable delta was applied
+[2026.08.06-06.26.19:780][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:781][  0]LogBranchSmoke: Display:   [PASS] C5-P2: wrote a newer-version save
+[2026.08.06-06.26.19:781][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' is from a newer build (v4 > v3) — refusing (world stays default).
+[2026.08.06-06.26.19:781][  0]LogBranchSmoke: Display:   [PASS] C5-P2: newer-version save is skipped (returns false)
+[2026.08.06-06.26.19:781][  0]LogBranchSmoke: Display:   [PASS] C5-P2: skipped future save did NOT mutate the world
+[2026.08.06-06.26.19:782][  0]LogBranchSmoke: Display:   [PASS] C5-P2: sandbox slots cleaned up after the test
+[2026.08.06-06.26.19:782][  0]LogBranchSmoke: Display: --- Phase 3 (Ch5): versioning + fail-safe ---
+[2026.08.06-06.26.19:782][  0]LogBranchSmoke: Display:   [PASS] C5-P3: a v1 save migrates to current
+[2026.08.06-06.26.19:782][  0]LogBranchSmoke: Display:   [PASS] C5-P3: migrated save is stamped at CurrentSaveVersion (v2)
+[2026.08.06-06.26.19:782][  0]LogBranchSmoke: Display:   [PASS] C5-P3: v1->v2 migrator ran (FormatNote marker set)
+[2026.08.06-06.26.19:783][  0]LogBranchSmoke: Display:   [PASS] C5-P3: a current-version save migrates as a no-op
+[2026.08.06-06.26.19:783][  0]LogBranchSmoke: Display:   [PASS] C5-P3: a newer-than-current save can't be migrated (no downgrade)
+[2026.08.06-06.26.19:783][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:783][  0]LogBranchSmoke: Display:   [PASS] C5-P3: wrote a v1 save to the primary slot
+[2026.08.06-06.26.19:788][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
+[2026.08.06-06.26.19:789][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
+[2026.08.06-06.26.19:789][  0]LogBranchSmoke: Display:   [PASS] C5-P3: ApplyDeployedSave loads + migrates + applies the v1 save
+[2026.08.06-06.26.19:789][  0]LogBranchSmoke: Display:   [PASS] C5-P3: applied from the primary slot
+[2026.08.06-06.26.19:789][  0]LogBranchSmoke: Display:   [PASS] C5-P3: migrated v1 save applied byte-exact
+[2026.08.06-06.26.19:790][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:790][  0]LogBranchSmoke: Display:   [PASS] C5-P3: wrote a newer-version save to the primary
+[2026.08.06-06.26.19:796][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' is from a newer build (v4 > v3) — refusing (world stays default).
+[2026.08.06-06.26.19:796][  0]LogBranchSmoke: Display:   [PASS] C5-P3: newer-version save refused (returns false)
+[2026.08.06-06.26.19:796][  0]LogBranchSmoke: Display:   [PASS] C5-P3: refusal applied nothing (no fallback to an older backup)
+[2026.08.06-06.26.19:796][  0]LogBranchSmoke: Display:   [PASS] C5-P3: newer-version refusal did NOT mutate the world
+[2026.08.06-06.26.19:797][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp': OK.
+[2026.08.06-06.26.19:797][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'SmokeDeploySlot_Temp' (v3) — 2 object + 1 resource delta(s).
+[2026.08.06-06.26.19:797][  0]LogBranchSmoke: Display:   [PASS] C5-P3: deploy a known-good state to the primary
+[2026.08.06-06.26.19:802][  0]LogSibeliusGame: Display: [Save] Commit to slot 'SmokeDeploySlot_Temp_Backup': OK.
+[2026.08.06-06.26.19:803][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
+[2026.08.06-06.26.19:803][  0]LogBranchSmoke: Display:   [PASS] C5-P3: apply promotes the good primary to the last-good backup
+[2026.08.06-06.26.19:803][  0]LogBranchSmoke: Display:   [PASS] C5-P3: last-good backup now exists
+[2026.08.06-06.26.19:804][  0]LogBranchSmoke: Display:   [PASS] C5-P3: corrupted the primary slot (garbage bytes on disk)
+[2026.08.06-06.26.19:804][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' unreadable/corrupt — falling back to last-good backup 'SmokeDeploySlot_Temp_Backup'.
+[2026.08.06-06.26.19:804][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from backup (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
+[2026.08.06-06.26.19:804][  0]LogBranchSmoke: Display:   [PASS] C5-P3: corrupt primary falls back to backup and applies
+[2026.08.06-06.26.19:805][  0]LogBranchSmoke: Display:   [PASS] C5-P3: the fallback sourced from the backup slot
+[2026.08.06-06.26.19:805][  0]LogBranchSmoke: Display:   [PASS] C5-P3: backup applied byte-exact after primary corruption
+[2026.08.06-06.26.19:805][  0]LogBranchSmoke: Display:   [PASS] C5-P3: corrupted the primary again (garbage bytes on disk)
+[2026.08.06-06.26.19:805][  0]LogBranchSmoke: Display:   [PASS] C5-P3: removed the backup (both unusable)
+[2026.08.06-06.26.19:810][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' unreadable/corrupt — falling back to last-good backup 'SmokeDeploySlot_Temp_Backup'.
+[2026.08.06-06.26.19:811][  0]LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: no usable save (primary + backup both unavailable) — world stays authored default.
+[2026.08.06-06.26.19:811][  0]LogBranchSmoke: Display:   [PASS] C5-P3: with no usable save, apply fails safe (returns false)
+[2026.08.06-06.26.19:811][  0]LogBranchSmoke: Display:   [PASS] C5-P3: nothing applied on the fail-safe path
+[2026.08.06-06.26.19:812][  0]LogBranchSmoke: Display:   [PASS] C5-P3: world stays at authored default (no partial apply)
+[2026.08.06-06.26.19:812][  0]LogBranchSmoke: Display:   [PASS] C5-P3: sandbox slots cleaned up after the test
+[2026.08.06-06.26.19:812][  0]LogBranchSmoke: Display: --- SIB-38: GUID baking (assign-once + duplication) ---
+[2026.08.06-06.26.19:812][  0]LogBranchSmoke: Display:   [PASS] SIB-38: BuildSite carries a valid BranchId after ensure
+[2026.08.06-06.26.19:812][  0]LogBranchSmoke: Display:   [PASS] SIB-38: a set BranchId is never regenerated (assign-once across a simulated reload)
+[2026.08.06-06.26.19:813][  0]LogBranchSmoke: Display:   [PASS] SIB-38: duplicated BuildSite gets a distinct, valid id (no shared id)
+[2026.08.06-06.26.19:813][  0]LogBranchSmoke: Display:   [PASS] SIB-38: duplicated HatchLock gets a distinct, valid id
+[2026.08.06-06.26.19:813][  0]LogBranchSmoke: Display:   [PASS] SIB-38: duplicated RefactorableComponent gets a distinct, valid id
+[2026.08.06-06.26.19:813][  0]LogBranchSmoke: Display: === BRANCH SMOKE TEST PASSED (Ch4 Phases 0-4 + Ch5 Phases 0-3 green — GUID seam + deploy write/load/migrate/fail-safe). ===
+[2026.08.06-06.26.19:814][  0]LogInit: Display: 
+[2026.08.06-06.26.19:814][  0]LogInit: Display: Warning/Error Summary (Unique only)
+[2026.08.06-06.26.19:814][  0]LogInit: Display: -----------------------------------
+[2026.08.06-06.26.19:814][  0]LogInit: Display: LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
+[2026.08.06-06.26.19:815][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.06-06.26.19:815][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.06-06.26.19:816][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.06-06.26.19:816][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.06-06.26.19:816][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.06-06.26.19:817][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.06-06.26.19:817][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.06-06.26.19:818][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.06-06.26.19:818][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.08.06-06.26.19:819][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.06-06.26.19:819][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.06-06.26.19:820][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.06-06.26.19:820][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.06-06.26.19:821][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.06-06.26.19:821][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.06-06.26.19:822][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.06-06.26.19:823][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.06-06.26.19:823][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 1) — merge or discard first.
+[2026.08.06-06.26.19:824][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] Deploy refused: a branch is open (depth 2) — merge or discard first.
+[2026.08.06-06.26.19:824][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' is from a newer build (v4 > v3) — refusing (world stays default).
+[2026.08.06-06.26.19:824][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: primary 'SmokeDeploySlot_Temp' unreadable/corrupt — falling back to last-good backup 'SmokeDeploySlot_Temp_Backup'.
+[2026.08.06-06.26.19:825][  0]LogInit: Display: LogSibeliusGame: Warning: [Branch] ApplyDeployedSave: no usable save (primary + backup both unavailable) — world stays authored default.
+[2026.08.06-06.26.19:825][  0]LogInit: Display: 
+[2026.08.06-06.26.19:825][  0]LogInit: Display: Success - 0 error(s), 27 warning(s)
+[2026.08.06-06.26.19:825][  0]LogInit: Display: 
 
-Execution of commandlet took:  5.56 seconds
-[2026.08.06-06.11.45:278][  0]LogCrowdFollowing: Warning: Unable to find RecastNavMesh instance while trying to create UCrowdManager instance
-[2026.08.06-06.11.46:013][  0]LogShaderCompilers: Display: Shaders left to compile 0
+Execution of commandlet took:  5.68 seconds
+[2026.08.06-06.26.19:826][  0]LogCrowdFollowing: Warning: Unable to find RecastNavMesh instance while trying to create UCrowdManager instance
+[2026.08.06-06.26.20:533][  0]LogShaderCompilers: Display: Shaders left to compile 0
 Script history saved: 2 entries
 Script history saved: 2 entries

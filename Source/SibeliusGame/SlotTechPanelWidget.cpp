@@ -524,6 +524,115 @@ FString USlotTechPanelWidget::ComposeMetersText(const FSlotParSheetReport& Par) 
 		S += FString::Printf(TEXT("   You have seen the bonus 1 in %.0f spins.\n"), Lifetime.MeasuredBonusOneIn());
 	}
 
+	/* ---------------- HOW MUCH OF THIS IS LUCK? ----------------
+	   Everything above is bookkeeping. This is the part that matters, and the part a
+	   player cannot work out for themselves.
+
+	   LOCKED DECISION 4: the band is stated BEFORE the verdict, and it is COMPUTED and
+	   SHOWN rather than asserted. Said the other way round it reads as the machine making
+	   excuses for the player's losses; band first, the number does the arguing and the
+	   sentence only reports where they landed.
+
+	   And a hot session gets exactly the same treatment as a cold one. If the page only
+	   reached for the confidence band when the player was losing, it would be spin, and
+	   the lesson would die. */
+	if (Par.WageredVolatility > 0.0)
+	{
+		/* Below this many wagered spins, quote no band at all.
+		   Two standard errors is a NORMAL approximation, and a slot's per-cycle return is
+		   violently skewed — mostly nothing, occasionally a bonus worth hundreds. At 19
+		   spins the arithmetic yields "0 % .. 234 %", which is both statistically
+		   meaningless and useless to read. Saying "far too few spins to tell" is the
+		   honest answer AND the sharper lesson: the interesting fact about a short session
+		   is not that it is within range, it is that no range exists yet. */
+		static constexpr int64 MinSpinsForBand = 50;
+
+		const double SessHalf = Par.ConfidenceHalfWidth(Session.BaseSpins);
+		const double LifeHalf = Par.ConfidenceHalfWidth(Lifetime.BaseSpins);
+
+		// A machine cannot return less than nothing, so the low edge clamps at zero
+		// rather than printing a negative percentage nobody can act on.
+		auto BandText = [&](double Half)
+		{
+			const double Lo = FMath::Max(0.0, Par.RtpPercent - Half);
+			const double Hi = Par.RtpPercent + Half;
+			return FString::Printf(TEXT("%.1f %% .. %.1f %%"), Lo, Hi);
+		};
+		auto Inside = [&](double Measured, double Half)
+		{
+			return Measured >= 0.0 && Half >= 0.0 && FMath::Abs(Measured - Par.RtpPercent) <= Half;
+		};
+
+		// A column only gets a verdict once it has enough spins for the band to mean
+		// something — see MinSpinsForBand below.
+		const bool bSessJudged = Session.BaseSpins  >= MinSpinsForBand;
+		const bool bLifeJudged = Lifetime.BaseSpins >= MinSpinsForBand;
+
+		const bool bSessIn = Inside(Session.MeasuredRtpPercent(),  SessHalf);
+		const bool bLifeIn = Inside(Lifetime.MeasuredRtpPercent(), LifeHalf);
+
+		S += TEXT("\n   HOW MUCH OF THIS IS LUCK?\n\n");
+		S += TEXT("   A machine this volatile needs a great many spins before its\n");
+		S += TEXT("   measured return means anything. Normal range, and where you are:\n\n");
+
+		auto LuckRow = [&RJust](const TCHAR* Label, int64 N, const FString& Band,
+			const FString& You, bool bHasPlay, bool bIn)
+		{
+			if (!bHasPlay)
+			{
+				return FString::Printf(TEXT("   %s%s\n"), *Pad(Label, 12), TEXT("no spins yet"));
+			}
+			if (N < MinSpinsForBand)
+			{
+				return FString::Printf(TEXT("   %s%s spins   %s\n"),
+					*Pad(Label, 12), *RJust(USlotTechPanelWidget::Grouped(N), 8),
+					TEXT("far too few to tell you anything"));
+			}
+			return FString::Printf(TEXT("   %s%s spins   %s   you %s  %s\n"),
+				*Pad(Label, 12), *RJust(USlotTechPanelWidget::Grouped(N), 8), *Pad(Band, 20),
+				*RJust(You, 9), bIn ? TEXT("inside") : TEXT("OUTSIDE"));
+		};
+
+		S += LuckRow(TEXT("Session"), Session.BaseSpins, BandText(SessHalf),
+			FString::Printf(TEXT("%.2f %%"), Session.MeasuredRtpPercent()), Session.HasPlay(), bSessIn);
+		S += LuckRow(TEXT("Lifetime"), Lifetime.BaseSpins, BandText(LifeHalf),
+			FString::Printf(TEXT("%.2f %%"), Lifetime.MeasuredRtpPercent()), Lifetime.HasPlay(), bLifeIn);
+
+		S += TEXT("\n");
+
+		// The verdict. Never "the machine is broken" — at these sample sizes it is almost
+		// never the machine, and saying so would teach the opposite of the truth.
+		const bool bAnyOut = (bSessJudged && !bSessIn) || (bLifeJudged && !bLifeIn);
+		if (!bSessJudged && !bLifeJudged)
+		{
+			S += FString::Printf(TEXT("   Neither column has the %lld spins it would take to say anything\n"
+			                          "   at all. That IS the lesson: a short session carries almost no\n"
+			                          "   information about a machine. Keep playing and watch the range\n"
+			                          "   above tighten.\n"), MinSpinsForBand);
+		}
+		else if (!bAnyOut)
+		{
+			S += TEXT("   Inside the range. This machine is behaving exactly as designed:\n");
+			S += TEXT("   a bad run is not a broken machine, and a good run is not a\n");
+			S += TEXT("   loose one. Both are what the same maths looks like up close.\n");
+		}
+		else
+		{
+			S += TEXT("   Outside the range — which happens to about 1 reading in 20 by\n");
+			S += TEXT("   chance alone, so unusual is not the same as wrong. If the\n");
+			S += TEXT("   LIFETIME column stays outside over many thousands of spins,\n");
+			S += TEXT("   that is when a floor would start asking questions.\n");
+		}
+
+		const double Needed = Par.SpinsToMeasureWithin(1.0);
+		if (Needed > 0.0)
+		{
+			S += FString::Printf(TEXT("\n   To pin this machine down to within 1 point, you would need\n"
+			                          "   about %s spins. That is why a session can never tell you.\n"),
+				*Grouped(static_cast<int64>(Needed)));
+		}
+	}
+
 	if (bEditedPar)
 	{
 		// Locked decision 3. The lifetime meters can span several different machines, and

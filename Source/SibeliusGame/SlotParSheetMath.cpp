@@ -289,16 +289,43 @@ void SlotParSheetMath::MeasureBySimulation(const FSlotParSheet& ParSheet, FSlotP
 	double Sum = 0.0;
 	double SumSq = 0.0;
 
+	/* A CYCLE is one wagered spin plus every free spin it went on to produce. Volatility
+	   per unit WAGERED is the standard deviation over cycles, not over spins — see
+	   FSlotParSheetReport::WageredVolatility for why the difference is load-bearing. */
+	double CycleWin = 0.0;
+	bool bCycleOpen = false;
+	double WSum = 0.0, WSumSq = 0.0;
+	int32 WCount = 0;
+
+	auto CloseCycle = [&]()
+	{
+		if (!bCycleOpen)
+		{
+			return;
+		}
+		const double R = CycleWin / static_cast<double>(Bet);
+		WSum   += R;
+		WSumSq += R * R;
+		++WCount;
+		bCycleOpen = false;
+	};
+
 	for (int32 i = 0; i < Spins; ++i)
 	{
 		const FSlotSpinResult Res = Model->Spin(Bet);
 
 		// Free spins are not player-initiated, so they are not "spins that paid" from
-		// the player's point of view — counting them would inflate hit frequency.
+		// the player's point of view — counting them would inflate hit frequency. Their
+		// winnings still belong to the cycle that bought them.
 		if (Res.bWasFreeSpin)
 		{
+			CycleWin += Res.TotalWin;
 			continue;
 		}
+
+		CloseCycle();
+		CycleWin = Res.TotalWin;
+		bCycleOpen = true;
 
 		++Counted;
 		if (Res.TotalWin > 0.0)
@@ -311,6 +338,11 @@ void SlotParSheetMath::MeasureBySimulation(const FSlotParSheet& ParSheet, FSlotP
 		SumSq += Ret * Ret;
 	}
 
+	// The final cycle may be truncated — a bonus triggered on the last spin never gets
+	// played out. One cycle in several thousand, so the bias is far below the precision
+	// anything downstream claims.
+	CloseCycle();
+
 	if (Counted > 0)
 	{
 		Report.HitFrequencyPercent = 100.0 * static_cast<double>(Paying) / static_cast<double>(Counted);
@@ -319,4 +351,34 @@ void SlotParSheetMath::MeasureBySimulation(const FSlotParSheet& ParSheet, FSlotP
 		const double Var  = FMath::Max(0.0, SumSq / static_cast<double>(Counted) - Mean * Mean);
 		Report.Volatility = FMath::Sqrt(Var);
 	}
+	if (WCount > 0)
+	{
+		const double WMean = WSum / static_cast<double>(WCount);
+		const double WVar  = FMath::Max(0.0, WSumSq / static_cast<double>(WCount) - WMean * WMean);
+		Report.WageredVolatility = FMath::Sqrt(WVar);
+	}
+}
+
+double FSlotParSheetReport::ConfidenceHalfWidth(int64 WageredSpins) const
+{
+	if (WageredVolatility < 0.0 || WageredSpins < 1)
+	{
+		return -1.0;
+	}
+
+	// Two standard errors ~ 95%. x100 because volatility is in units of bet and the band
+	// is quoted in percentage points, alongside an RTP that is already a percentage.
+	return 100.0 * 2.0 * WageredVolatility / FMath::Sqrt(static_cast<double>(WageredSpins));
+}
+
+double FSlotParSheetReport::SpinsToMeasureWithin(double TolerancePoints) const
+{
+	if (WageredVolatility <= 0.0 || TolerancePoints <= 0.0)
+	{
+		return 0.0;
+	}
+
+	// Invert ConfidenceHalfWidth: t = 200*SD/sqrt(N)  =>  N = (200*SD/t)^2.
+	const double N = (200.0 * WageredVolatility) / TolerancePoints;
+	return N * N;
 }

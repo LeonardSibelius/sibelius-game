@@ -217,6 +217,43 @@ int32 USlotSmokeTestCommandlet::Main(const FString& /*Params*/)
 
 			UE_LOG(LogSlotSmoke, Display, TEXT("  Meters            : RTP %.3f %%  hit %.2f %%  biggest %lld  bonus 1 in %.1f"),
 				MeterRtp, MeterHit, Met.BiggestWin, Met.MeasuredBonusOneIn());
+
+			/* ---------- THE CONFIDENCE BAND (docs/FLOOR_REPORT.md step 4) ----------
+			   The floor report tells the player which measured returns count as normal.
+			   Too WIDE and it excuses a genuinely broken machine; too NARROW and it calls
+			   an ordinary session unusual — which is the failure that matters here,
+			   because the page exists to say the opposite. */
+
+			// The fix that motivated step 4. Volatility skips free spins entirely, so it
+			// misses the bonus round — the largest single source of variance in the
+			// machine. WageredVolatility credits each wagered spin with what its bonus
+			// paid, so it MUST come out larger. If this ever inverts, the band is being
+			// computed from the wrong number and every verdict on the page is too
+			// confident.
+			R.Check(Measured.WageredVolatility > Measured.Volatility,
+				FString::Printf(TEXT("Wagered volatility %.3f exceeds per-spin %.3f (the bonus round's variance is counted)"),
+					Measured.WageredVolatility, Measured.Volatility));
+
+			// The band must shrink as 1/sqrt(N): four times the spins, half the width.
+			// This is the property the whole lesson rests on, and it is exact — no
+			// sampling noise, because it is arithmetic on a fixed volatility.
+			const double Half1k = Measured.ConfidenceHalfWidth(1000);
+			const double Half4k = Measured.ConfidenceHalfWidth(4000);
+			R.Check(Half1k > 0.0 && FMath::Abs(Half4k - Half1k * 0.5) < 0.0001,
+				FString::Printf(TEXT("Band narrows as 1/sqrt(N): %.3f pts at 1k, %.3f at 4k (half)"), Half1k, Half4k));
+
+			// And the inverse must agree with the forward calculation: feeding the
+			// spins-to-1-point figure back in has to yield a 1-point band.
+			const double NeededFor1 = Measured.SpinsToMeasureWithin(1.0);
+			const double BandAtNeeded = Measured.ConfidenceHalfWidth(static_cast<int64>(NeededFor1));
+			R.Check(NeededFor1 > 0.0 && FMath::Abs(BandAtNeeded - 1.0) < 0.01,
+				FString::Printf(TEXT("SpinsToMeasureWithin inverts the band: %s spins -> %.4f pts"),
+					*FString::Printf(TEXT("%.0f"), NeededFor1), BandAtNeeded));
+
+			UE_LOG(LogSlotSmoke, Display,
+				TEXT("  Confidence        : wagered vol %.3f (per-spin %.3f)  |  after 300 spins +/- %.1f pts  |  1 pt needs %.0f spins"),
+				Measured.WageredVolatility, Measured.Volatility,
+				Measured.ConfidenceHalfWidth(300), NeededFor1);
 		}
 
 		/* ---------- the same check on VARIANT par sheets ----------
