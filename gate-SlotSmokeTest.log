@@ -19,213 +19,213 @@ LogCsvProfiler: Display: Metadata set : llm="0"
 LogCsvProfiler: Display: Metadata set : systemresolution.resx="1280"
 LogCsvProfiler: Display: Metadata set : systemresolution.resy="720"
 LogAudio: Display: Audio Device Manager not initializing due to all audio being disabled. If this is not intentional, please check command line arguments for "-nosound".
-LogConfig: Display: Loading IOS ini files took 0.03 seconds
 LogConfig: Display: Loading VulkanPC ini files took 0.03 seconds
-LogConfig: Display: Loading Android ini files took 0.03 seconds
 LogConfig: Display: Loading Mac ini files took 0.03 seconds
-LogConfig: Display: Loading Unix ini files took 0.04 seconds
+LogConfig: Display: Loading IOS ini files took 0.03 seconds
+LogConfig: Display: Loading Android ini files took 0.03 seconds
 LogConfig: Display: Loading TVOS ini files took 0.04 seconds
 LogConfig: Display: Loading Windows ini files took 0.04 seconds
+LogConfig: Display: Loading Unix ini files took 0.04 seconds
 LogConfig: Display: Loading VisionOS ini files took 0.04 seconds
 LogConfig: Display: Loading Linux ini files took 0.04 seconds
 RenderDocPlugin: Display: RenderDoc plugin will not be loaded. Use '-AttachRenderDoc' on the cmd line or enable 'renderdoc.AutoAttach' in the plugin settings.
-[2026.08.06-06.27.42:366][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
-[2026.08.06-06.27.42:367][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
-[2026.08.06-06.27.42:617][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
-[2026.08.06-06.27.42:692][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
-[2026.08.06-06.27.42:692][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
-[2026.08.06-06.27.42:692][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
-[2026.08.06-06.27.42:692][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
-[2026.08.06-06.27.42:697][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
-[2026.08.06-06.27.42:697][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
-[2026.08.06-06.27.42:697][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
-[2026.08.06-06.27.42:697][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
-[2026.08.06-06.27.42:697][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
-[2026.08.06-06.27.42:697][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
-[2026.08.06-06.27.42:697][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
-[2026.08.06-06.27.42:697][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
-[2026.08.06-06.27.42:697][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
-[2026.08.06-06.27.42:698][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
-[2026.08.06-06.27.42:718][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
-[2026.08.06-06.27.42:728][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
-[2026.08.06-06.27.42:728][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
-[2026.08.06-06.27.42:738][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
-[2026.08.06-06.27.42:738][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
-[2026.08.06-06.27.42:738][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
-[2026.08.06-06.27.42:738][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
-[2026.08.06-06.27.42:747][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
-[2026.08.06-06.27.42:747][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
-[2026.08.06-06.27.42:747][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
-[2026.08.06-06.27.42:747][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
-[2026.08.06-06.27.42:756][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
-[2026.08.06-06.27.42:756][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
-[2026.08.06-06.27.42:766][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
-[2026.08.06-06.27.42:766][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
-[2026.08.06-06.27.42:766][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
-[2026.08.06-06.27.42:766][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
-[2026.08.06-06.27.42:766][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
-[2026.08.06-06.27.42:768][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
-[2026.08.06-06.27.42:801][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
-[2026.08.06-06.27.42:992][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
-[2026.08.06-06.27.42:993][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
-[2026.08.06-06.27.43:301][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
-[2026.08.06-06.27.43:611][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
-[2026.08.06-06.27.43:611][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
-[2026.08.06-06.27.43:611][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
-[2026.08.06-06.27.43:612][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 27024  --child-id Zen_27024_Startup'
-[2026.08.06-06.27.43:680][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
-[2026.08.06-06.27.43:680][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
-[2026.08.06-06.27.43:686][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.01ms. RandomReadSpeed=1250.59MBs, RandomWriteSpeed=235.10MBs. Assigned SpeedClass 'Local'
-[2026.08.06-06.27.43:688][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
-[2026.08.06-06.27.43:688][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
-[2026.08.06-06.27.43:688][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
-[2026.08.06-06.27.43:689][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
-[2026.08.06-06.27.43:689][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
-[2026.08.06-06.27.43:967][  0]LogEditorDomain: Display: EditorDomain is Disabled
-[2026.08.06-06.27.44:146][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
-[2026.08.06-06.27.44:146][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
-[2026.08.06-06.27.44:173][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
-[2026.08.06-06.27.44:175][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
-[2026.08.06-06.27.44:183][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:183][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
-[2026.08.06-06.27.44:183][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:183][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:184][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
-[2026.08.06-06.27.44:184][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:184][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:185][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:186][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:186][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:187][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
-[2026.08.06-06.27.44:187][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:187][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
-[2026.08.06-06.27.44:187][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:187][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
-[2026.08.06-06.27.44:187][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:188][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
-[2026.08.06-06.27.44:188][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.27.44:188][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
-[2026.08.06-06.27.44:188][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
-[2026.08.06-06.27.44:188][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
-[2026.08.06-06.27.44:199][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
-[2026.08.06-06.27.44:199][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
-[2026.08.06-06.27.44:199][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
-[2026.08.06-06.27.44:199][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
-[2026.08.06-06.27.44:316][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
-[2026.08.06-06.27.44:316][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
-[2026.08.06-06.27.44:316][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
-[2026.08.06-06.27.44:316][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
-[2026.08.06-06.27.44:371][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
-[2026.08.06-06.27.44:373][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.632 ms
-[2026.08.06-06.27.44:922][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
-[2026.08.06-06.27.45:153][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
-[2026.08.06-06.27.45:155][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
-[2026.08.06-06.27.46:610][  0]LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (Echo_Hair) ...
-[2026.08.06-06.27.46:743][  0]LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
-[2026.08.06-06.27.47:092][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.06-06.27.47:092][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.06-06.27.47:094][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.06-06.27.47:094][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.06-06.27.47:094][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.06-06.27.47:094][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.06-06.27.47:094][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.06-06.27.47:094][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.06-06.27.48:575][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
-[2026.08.06-06.27.48:575][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
-[2026.08.06-06.27.49:292][  0]LogAssetRegistry: Display: Asset registry cache read as 128.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
-[2026.08.06-06.27.49:293][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.120s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
-[2026.08.06-06.27.49:491][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
-[2026.08.06-06.27.49:532][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
-[2026.08.06-06.27.50:068][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
-[2026.08.06-06.27.50:121][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
-[2026.08.06-06.27.50:142][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 21.463 ms
-[2026.08.06-06.27.50:143][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
-[2026.08.06-06.27.50:148][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 5.190 ms (total: 26.653 ms)
-[2026.08.06-06.27.50:149][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
-[2026.08.06-06.27.50:176][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 27.263 ms (total: 53.917 ms)
-[2026.08.06-06.27.50:178][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
-[2026.08.06-06.27.50:179][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 207 us (total: 54.125 ms)
-[2026.08.06-06.27.50:180][  0]LogSlotSmoke: Display: === SIB-34 S1 slot model smoke test (the regulator's suite) ===
-[2026.08.06-06.27.50:180][  0]LogSlotSmoke: Display:   [PASS] Determinism: same seed => identical 1000-spin sequence
-[2026.08.06-06.27.50:181][  0]LogSlotSmoke: Display:   [PASS] Sanity: different seed => different sequence
-[2026.08.06-06.27.51:311][  0]LogSlotSmoke: Display:   ---------------- PAR SHEET REPORT ----------------
-[2026.08.06-06.27.51:312][  0]LogSlotSmoke: Display:   Base spins        : 1000000   (+190158 free spins, 1190158 total)
-[2026.08.06-06.27.51:313][  0]LogSlotSmoke: Display:   RTP               : 95.567 %
-[2026.08.06-06.27.51:313][  0]LogSlotSmoke: Display:   Hit frequency     : 45.34 % of all spins
-[2026.08.06-06.27.51:314][  0]LogSlotSmoke: Display:   Bonus trigger     : 1 in 31.6 base spins (31693 triggers)
-[2026.08.06-06.27.51:314][  0]LogSlotSmoke: Display:   Max single-spin   : 204.0x total bet
-[2026.08.06-06.27.51:315][  0]LogSlotSmoke: Display:   Sim speed         : 1.13s for 1190158 spins
-[2026.08.06-06.27.51:315][  0]LogSlotSmoke: Display:   --------------------------------------------------
-[2026.08.06-06.27.51:315][  0]LogSlotSmoke: Display:   [PASS] All wins finite and non-negative
-[2026.08.06-06.27.51:316][  0]LogSlotSmoke: Display:   [PASS] Grid always 5x3 valid symbols
-[2026.08.06-06.27.51:316][  0]LogSlotSmoke: Display:   [PASS] RTP 95.57% within catastrophic band [75, 115]
-[2026.08.06-06.27.51:317][  0]LogSlotSmoke: Display:   [PASS] Hit frequency 45.34% within [10, 50]
-[2026.08.06-06.27.51:318][  0]LogSlotSmoke: Display:   [PASS] Bonus 1-in-31.6 within [15, 200]
-[2026.08.06-06.27.51:318][  0]LogSlotSmoke: Display:   [PASS] Max win 204.0x <= 10000x exposure cap
-[2026.08.06-06.27.51:318][  0]LogSlotSmoke: Display:   [PASS] RTP 95.57% within DESIGN band [88, 102] (tune par sheet if WARN)
-[2026.08.06-06.27.51:318][  0]LogSlotSmoke: Display:   Closed form       : RTP 95.703 %  (base 60.956 %, +0.1900 free spins/spin, trigger 2.6612 %)
-[2026.08.06-06.27.51:318][  0]LogSlotSmoke: Display:   [PASS] Closed form converges on the shipped par sheet
-[2026.08.06-06.27.51:319][  0]LogSlotSmoke: Display:   [PASS] Closed-form RTP 95.703% agrees with 1190158-spin sim 95.567% (delta 0.136)
-[2026.08.06-06.27.51:319][  0]LogSlotSmoke: Display:   [PASS] Closed-form trigger 2.6612% agrees with sim 2.6629%
-[2026.08.06-06.27.51:319][  0]LogSlotSmoke: Display:   [PASS] Per-symbol contributions sum to base RTP (60.9564 vs 60.9564)
-[2026.08.06-06.27.51:319][  0]LogSlotSmoke: Display:   [PASS] Meters match the independent tally (1000000/190158 spins, 150000000 in, 143351150 out)
-[2026.08.06-06.27.51:319][  0]LogSlotSmoke: Display:   [PASS] Meter RTP 95.567% agrees with closed form 95.703% (delta -0.136)
-[2026.08.06-06.27.51:502][  0]LogSlotSmoke: Display:   [PASS] Meter hit frequency 45.35% agrees with simulation 45.34% (delta 0.01)
-[2026.08.06-06.27.51:503][  0]LogSlotSmoke: Display:   Meters            : RTP 95.567 %  hit 45.35 %  biggest 30600  bonus 1 in 37.6
-[2026.08.06-06.27.51:504][  0]LogSlotSmoke: Display:   [PASS] Wagered volatility 3.119 exceeds per-spin 1.288 (the bonus round's variance is counted)
-[2026.08.06-06.27.51:504][  0]LogSlotSmoke: Display:   [PASS] Band narrows as 1/sqrt(N): 19.725 pts at 1k, 9.862 at 4k (half)
-[2026.08.06-06.27.51:505][  0]LogSlotSmoke: Display:   [PASS] SpinsToMeasureWithin inverts the band: 389065 spins -> 1.0000 pts
-[2026.08.06-06.27.51:505][  0]LogSlotSmoke: Display:   Confidence        : wagered vol 3.119 (per-spin 1.288)  |  after 300 spins +/- 36.0 pts  |  1 pt needs 389065 spins
-[2026.08.06-06.27.53:531][  0]LogSlotSmoke: Display:   Variant 'wild-heavy'  wilds 4  RTP exact 314.791 sim 315.542  |  BASE exact 200.500 sim 200.424  |  free/spin exact 0.1900 sim 0.1905
-[2026.08.06-06.27.53:532][  0]LogSlotSmoke: Display:   [PASS] Variant 'wild-heavy': BASE closed form 200.500% agrees with sim 200.424% (delta 0.076)
-[2026.08.06-06.27.53:532][  0]LogSlotSmoke: Display:   [PASS] Variant 'wild-heavy': closed form 314.791% agrees with sim 315.542% (delta -0.751, tol 0.944)
-[2026.08.06-06.27.55:390][  0]LogSlotSmoke: Display:   Variant 'wild-free'  wilds 0  RTP exact 63.300 sim 63.615  |  BASE exact 40.317 sim 40.346  |  free/spin exact 0.1900 sim 0.1905
-[2026.08.06-06.27.55:390][  0]LogSlotSmoke: Display:   [PASS] Variant 'wild-free': BASE closed form 40.317% agrees with sim 40.346% (delta -0.028)
-[2026.08.06-06.27.55:391][  0]LogSlotSmoke: Display:   [PASS] Variant 'wild-free': closed form 63.300% agrees with sim 63.615% (delta -0.315, tol 0.800)
-[2026.08.06-06.27.55:391][  0]LogSlotSmoke: Display:   [PASS] Control variant really has zero wilds
-[2026.08.06-06.27.57:281][  0]LogSlotSmoke: Display:   Variant 'big-jackpot'  wilds 1  RTP exact 95.851 sim 96.448  |  BASE exact 61.050 sim 61.137  |  free/spin exact 0.1900 sim 0.1905
-[2026.08.06-06.27.57:282][  0]LogSlotSmoke: Display:   [PASS] Variant 'big-jackpot': BASE closed form 61.050% agrees with sim 61.137% (delta -0.087)
-[2026.08.06-06.27.57:283][  0]LogSlotSmoke: Display:   [PASS] Variant 'big-jackpot': closed form 95.851% agrees with sim 96.448% (delta -0.597, tol 0.800)
-[2026.08.06-06.27.59:168][  0]LogSlotSmoke: Display:   Variant 'no-bonus'  wilds 1  RTP exact 71.304 sim 71.489  |  BASE exact 71.304 sim 71.489  |  free/spin exact 0.0000 sim 0.0000
-[2026.08.06-06.27.59:169][  0]LogSlotSmoke: Display:   [PASS] Variant 'no-bonus': BASE closed form 71.304% agrees with sim 71.489% (delta -0.185)
-[2026.08.06-06.27.59:169][  0]LogSlotSmoke: Display:   [PASS] Variant 'no-bonus': closed form 71.304% agrees with sim 71.489% (delta -0.185, tol 0.800)
-[2026.08.06-06.28.01:029][  0]LogSlotSmoke: Display:   Variant 'no-bonus-nowild'  wilds 0  RTP exact 48.078 sim 48.138  |  BASE exact 48.078 sim 48.138  |  free/spin exact 0.0000 sim 0.0000
-[2026.08.06-06.28.01:030][  0]LogSlotSmoke: Display:   [PASS] Variant 'no-bonus-nowild': BASE closed form 48.078% agrees with sim 48.138% (delta -0.061)
-[2026.08.06-06.28.01:030][  0]LogSlotSmoke: Display:   [PASS] Variant 'no-bonus-nowild': closed form 48.078% agrees with sim 48.138% (delta -0.061, tol 0.800)
-[2026.08.06-06.28.01:030][  0]LogSlotSmoke: Display:   [PASS] Control variant really has zero wilds
-[2026.08.06-06.28.01:030][  0]LogSlotSmoke: Display:   [PASS] S2: USlotScreenWidget class resolves
-[2026.08.06-06.28.01:032][  0]LogSlotSmoke: Display:   [PASS] S2: 9/9 symbol sprites resolve in /Game/SlotFactory/SymbolSprites
-[2026.08.06-06.28.01:033][  0]LogSlotSmoke: Display:   [PASS] S2: panel body font /Engine/EngineFonts/DroidSansMono resolves
-[2026.08.06-06.28.01:033][  0]LogSlotSmoke: Display: === SLOT SMOKE TEST PASSED (S1 math + S2 assets green). ===
-[2026.08.06-06.28.01:033][  0]LogInit: Display: 
-[2026.08.06-06.28.01:033][  0]LogInit: Display: Warning/Error Summary (Unique only)
-[2026.08.06-06.28.01:033][  0]LogInit: Display: -----------------------------------
-[2026.08.06-06.28.01:033][  0]LogInit: Display: LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
-[2026.08.06-06.28.01:034][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.06-06.28.01:035][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.06-06.28.01:035][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.06-06.28.01:035][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.06-06.28.01:035][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.06-06.28.01:035][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.06-06.28.01:035][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.06-06.28.01:038][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.06-06.28.01:038][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
-[2026.08.06-06.28.01:038][  0]LogInit: Display: 
-[2026.08.06-06.28.01:038][  0]LogInit: Display: Success - 0 error(s), 10 warning(s)
-[2026.08.06-06.28.01:039][  0]LogInit: Display: 
+[2026.08.06-06.49.10:368][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+[2026.08.06-06.49.10:369][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
+[2026.08.06-06.49.10:617][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
+[2026.08.06-06.49.10:695][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
+[2026.08.06-06.49.10:695][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
+[2026.08.06-06.49.10:695][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
+[2026.08.06-06.49.10:695][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
+[2026.08.06-06.49.10:699][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
+[2026.08.06-06.49.10:699][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
+[2026.08.06-06.49.10:699][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
+[2026.08.06-06.49.10:699][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
+[2026.08.06-06.49.10:699][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
+[2026.08.06-06.49.10:699][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
+[2026.08.06-06.49.10:699][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
+[2026.08.06-06.49.10:699][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
+[2026.08.06-06.49.10:699][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
+[2026.08.06-06.49.10:700][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
+[2026.08.06-06.49.10:719][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
+[2026.08.06-06.49.10:719][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
+[2026.08.06-06.49.10:719][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
+[2026.08.06-06.49.10:719][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
+[2026.08.06-06.49.10:719][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
+[2026.08.06-06.49.10:719][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
+[2026.08.06-06.49.10:720][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
+[2026.08.06-06.49.10:720][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
+[2026.08.06-06.49.10:720][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
+[2026.08.06-06.49.10:720][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
+[2026.08.06-06.49.10:720][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
+[2026.08.06-06.49.10:720][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
+[2026.08.06-06.49.10:730][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
+[2026.08.06-06.49.10:730][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
+[2026.08.06-06.49.10:740][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
+[2026.08.06-06.49.10:740][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
+[2026.08.06-06.49.10:740][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
+[2026.08.06-06.49.10:740][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
+[2026.08.06-06.49.10:750][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
+[2026.08.06-06.49.10:750][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
+[2026.08.06-06.49.10:750][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
+[2026.08.06-06.49.10:750][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
+[2026.08.06-06.49.10:760][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
+[2026.08.06-06.49.10:760][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
+[2026.08.06-06.49.10:770][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
+[2026.08.06-06.49.10:770][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
+[2026.08.06-06.49.10:770][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
+[2026.08.06-06.49.10:770][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
+[2026.08.06-06.49.10:770][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
+[2026.08.06-06.49.10:772][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+[2026.08.06-06.49.10:806][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
+[2026.08.06-06.49.10:999][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
+[2026.08.06-06.49.11:000][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.08.06-06.49.11:206][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.08.06-06.49.11:511][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.08.06-06.49.11:511][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.08.06-06.49.11:511][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
+[2026.08.06-06.49.11:512][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 28124  --child-id Zen_28124_Startup'
+[2026.08.06-06.49.11:597][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
+[2026.08.06-06.49.11:598][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
+[2026.08.06-06.49.11:603][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.02ms. RandomReadSpeed=1167.22MBs, RandomWriteSpeed=233.34MBs. Assigned SpeedClass 'Local'
+[2026.08.06-06.49.11:605][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
+[2026.08.06-06.49.11:605][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
+[2026.08.06-06.49.11:605][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
+[2026.08.06-06.49.11:606][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
+[2026.08.06-06.49.11:606][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.08.06-06.49.11:891][  0]LogEditorDomain: Display: EditorDomain is Disabled
+[2026.08.06-06.49.12:073][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
+[2026.08.06-06.49.12:073][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
+[2026.08.06-06.49.12:099][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
+[2026.08.06-06.49.12:101][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+[2026.08.06-06.49.12:108][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:108][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
+[2026.08.06-06.49.12:108][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:109][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:109][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
+[2026.08.06-06.49.12:109][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:109][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:111][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:111][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:111][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:112][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
+[2026.08.06-06.49.12:112][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:112][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
+[2026.08.06-06.49.12:112][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:113][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
+[2026.08.06-06.49.12:113][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:113][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
+[2026.08.06-06.49.12:113][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.49.12:113][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
+[2026.08.06-06.49.12:113][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
+[2026.08.06-06.49.12:113][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
+[2026.08.06-06.49.12:124][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
+[2026.08.06-06.49.12:125][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
+[2026.08.06-06.49.12:125][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
+[2026.08.06-06.49.12:125][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
+[2026.08.06-06.49.12:240][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
+[2026.08.06-06.49.12:241][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.08.06-06.49.12:241][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
+[2026.08.06-06.49.12:241][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
+[2026.08.06-06.49.12:293][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
+[2026.08.06-06.49.12:294][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.593 ms
+[2026.08.06-06.49.12:812][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
+[2026.08.06-06.49.12:813][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
+[2026.08.06-06.49.12:891][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
+[2026.08.06-06.49.13:684][  0]LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (Echo_Hair) ...
+[2026.08.06-06.49.13:776][  0]LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
+[2026.08.06-06.49.13:946][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.06-06.49.13:947][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.06-06.49.13:947][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.06-06.49.13:947][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.06-06.49.13:947][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.06-06.49.13:947][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.06-06.49.13:947][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.06-06.49.13:947][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.06-06.49.14:584][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.08.06-06.49.14:584][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.08.06-06.49.15:204][  0]LogAssetRegistry: Display: Asset registry cache read as 128.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
+[2026.08.06-06.49.15:205][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.071s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
+[2026.08.06-06.49.15:318][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+[2026.08.06-06.49.15:342][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
+[2026.08.06-06.49.15:740][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.08.06-06.49.15:772][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
+[2026.08.06-06.49.15:786][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 13.962 ms
+[2026.08.06-06.49.15:786][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
+[2026.08.06-06.49.15:787][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 1.114 ms (total: 15.077 ms)
+[2026.08.06-06.49.15:787][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
+[2026.08.06-06.49.15:805][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 18.067 ms (total: 33.144 ms)
+[2026.08.06-06.49.15:805][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
+[2026.08.06-06.49.15:805][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 142 us (total: 33.287 ms)
+[2026.08.06-06.49.15:806][  0]LogSlotSmoke: Display: === SIB-34 S1 slot model smoke test (the regulator's suite) ===
+[2026.08.06-06.49.15:807][  0]LogSlotSmoke: Display:   [PASS] Determinism: same seed => identical 1000-spin sequence
+[2026.08.06-06.49.15:808][  0]LogSlotSmoke: Display:   [PASS] Sanity: different seed => different sequence
+[2026.08.06-06.49.16:562][  0]LogSlotSmoke: Display:   ---------------- PAR SHEET REPORT ----------------
+[2026.08.06-06.49.16:562][  0]LogSlotSmoke: Display:   Base spins        : 1000000   (+190158 free spins, 1190158 total)
+[2026.08.06-06.49.16:562][  0]LogSlotSmoke: Display:   RTP               : 95.567 %
+[2026.08.06-06.49.16:562][  0]LogSlotSmoke: Display:   Hit frequency     : 45.34 % of all spins
+[2026.08.06-06.49.16:562][  0]LogSlotSmoke: Display:   Bonus trigger     : 1 in 31.6 base spins (31693 triggers)
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   Max single-spin   : 204.0x total bet
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   Sim speed         : 0.75s for 1190158 spins
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   --------------------------------------------------
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   [PASS] All wins finite and non-negative
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   [PASS] Grid always 5x3 valid symbols
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   [PASS] RTP 95.57% within catastrophic band [75, 115]
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   [PASS] Hit frequency 45.34% within [10, 50]
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   [PASS] Bonus 1-in-31.6 within [15, 200]
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   [PASS] Max win 204.0x <= 10000x exposure cap
+[2026.08.06-06.49.16:563][  0]LogSlotSmoke: Display:   [PASS] RTP 95.57% within DESIGN band [88, 102] (tune par sheet if WARN)
+[2026.08.06-06.49.16:564][  0]LogSlotSmoke: Display:   Closed form       : RTP 95.703 %  (base 60.956 %, +0.1900 free spins/spin, trigger 2.6612 %)
+[2026.08.06-06.49.16:564][  0]LogSlotSmoke: Display:   [PASS] Closed form converges on the shipped par sheet
+[2026.08.06-06.49.16:564][  0]LogSlotSmoke: Display:   [PASS] Closed-form RTP 95.703% agrees with 1190158-spin sim 95.567% (delta 0.136)
+[2026.08.06-06.49.16:564][  0]LogSlotSmoke: Display:   [PASS] Closed-form trigger 2.6612% agrees with sim 2.6629%
+[2026.08.06-06.49.16:564][  0]LogSlotSmoke: Display:   [PASS] Per-symbol contributions sum to base RTP (60.9564 vs 60.9564)
+[2026.08.06-06.49.16:564][  0]LogSlotSmoke: Display:   [PASS] Meters match the independent tally (1000000/190158 spins, 150000000 in, 143351150 out)
+[2026.08.06-06.49.16:564][  0]LogSlotSmoke: Display:   [PASS] Meter RTP 95.567% agrees with closed form 95.703% (delta -0.136)
+[2026.08.06-06.49.16:690][  0]LogSlotSmoke: Display:   [PASS] Meter hit frequency 45.35% agrees with simulation 45.34% (delta 0.01)
+[2026.08.06-06.49.16:691][  0]LogSlotSmoke: Display:   Meters            : RTP 95.567 %  hit 45.35 %  biggest 30600  bonus 1 in 37.6
+[2026.08.06-06.49.16:691][  0]LogSlotSmoke: Display:   [PASS] Wagered volatility 3.119 exceeds per-spin 1.288 (the bonus round's variance is counted)
+[2026.08.06-06.49.16:691][  0]LogSlotSmoke: Display:   [PASS] Band narrows as 1/sqrt(N): 19.725 pts at 1k, 9.862 at 4k (half)
+[2026.08.06-06.49.16:691][  0]LogSlotSmoke: Display:   [PASS] SpinsToMeasureWithin inverts the band: 389065 spins -> 1.0000 pts
+[2026.08.06-06.49.16:691][  0]LogSlotSmoke: Display:   Confidence        : wagered vol 3.119 (per-spin 1.288)  |  after 300 spins +/- 36.0 pts  |  1 pt needs 389065 spins
+[2026.08.06-06.49.18:065][  0]LogSlotSmoke: Display:   Variant 'wild-heavy'  wilds 4  RTP exact 314.791 sim 315.542  |  BASE exact 200.500 sim 200.424  |  free/spin exact 0.1900 sim 0.1905
+[2026.08.06-06.49.18:065][  0]LogSlotSmoke: Display:   [PASS] Variant 'wild-heavy': BASE closed form 200.500% agrees with sim 200.424% (delta 0.076)
+[2026.08.06-06.49.18:066][  0]LogSlotSmoke: Display:   [PASS] Variant 'wild-heavy': closed form 314.791% agrees with sim 315.542% (delta -0.751, tol 0.944)
+[2026.08.06-06.49.19:320][  0]LogSlotSmoke: Display:   Variant 'wild-free'  wilds 0  RTP exact 63.300 sim 63.615  |  BASE exact 40.317 sim 40.346  |  free/spin exact 0.1900 sim 0.1905
+[2026.08.06-06.49.19:320][  0]LogSlotSmoke: Display:   [PASS] Variant 'wild-free': BASE closed form 40.317% agrees with sim 40.346% (delta -0.028)
+[2026.08.06-06.49.19:320][  0]LogSlotSmoke: Display:   [PASS] Variant 'wild-free': closed form 63.300% agrees with sim 63.615% (delta -0.315, tol 0.800)
+[2026.08.06-06.49.19:320][  0]LogSlotSmoke: Display:   [PASS] Control variant really has zero wilds
+[2026.08.06-06.49.20:596][  0]LogSlotSmoke: Display:   Variant 'big-jackpot'  wilds 1  RTP exact 95.851 sim 96.448  |  BASE exact 61.050 sim 61.137  |  free/spin exact 0.1900 sim 0.1905
+[2026.08.06-06.49.20:596][  0]LogSlotSmoke: Display:   [PASS] Variant 'big-jackpot': BASE closed form 61.050% agrees with sim 61.137% (delta -0.087)
+[2026.08.06-06.49.20:596][  0]LogSlotSmoke: Display:   [PASS] Variant 'big-jackpot': closed form 95.851% agrees with sim 96.448% (delta -0.597, tol 0.800)
+[2026.08.06-06.49.21:917][  0]LogSlotSmoke: Display:   Variant 'no-bonus'  wilds 1  RTP exact 71.304 sim 71.489  |  BASE exact 71.304 sim 71.489  |  free/spin exact 0.0000 sim 0.0000
+[2026.08.06-06.49.21:917][  0]LogSlotSmoke: Display:   [PASS] Variant 'no-bonus': BASE closed form 71.304% agrees with sim 71.489% (delta -0.185)
+[2026.08.06-06.49.21:917][  0]LogSlotSmoke: Display:   [PASS] Variant 'no-bonus': closed form 71.304% agrees with sim 71.489% (delta -0.185, tol 0.800)
+[2026.08.06-06.49.23:178][  0]LogSlotSmoke: Display:   Variant 'no-bonus-nowild'  wilds 0  RTP exact 48.078 sim 48.138  |  BASE exact 48.078 sim 48.138  |  free/spin exact 0.0000 sim 0.0000
+[2026.08.06-06.49.23:179][  0]LogSlotSmoke: Display:   [PASS] Variant 'no-bonus-nowild': BASE closed form 48.078% agrees with sim 48.138% (delta -0.061)
+[2026.08.06-06.49.23:179][  0]LogSlotSmoke: Display:   [PASS] Variant 'no-bonus-nowild': closed form 48.078% agrees with sim 48.138% (delta -0.061, tol 0.800)
+[2026.08.06-06.49.23:179][  0]LogSlotSmoke: Display:   [PASS] Control variant really has zero wilds
+[2026.08.06-06.49.23:179][  0]LogSlotSmoke: Display:   [PASS] S2: USlotScreenWidget class resolves
+[2026.08.06-06.49.23:180][  0]LogSlotSmoke: Display:   [PASS] S2: 9/9 symbol sprites resolve in /Game/SlotFactory/SymbolSprites
+[2026.08.06-06.49.23:181][  0]LogSlotSmoke: Display:   [PASS] S2: panel body font /Engine/EngineFonts/DroidSansMono resolves
+[2026.08.06-06.49.23:181][  0]LogSlotSmoke: Display: === SLOT SMOKE TEST PASSED (S1 math + S2 assets green). ===
+[2026.08.06-06.49.23:181][  0]LogInit: Display: 
+[2026.08.06-06.49.23:181][  0]LogInit: Display: Warning/Error Summary (Unique only)
+[2026.08.06-06.49.23:181][  0]LogInit: Display: -----------------------------------
+[2026.08.06-06.49.23:181][  0]LogInit: Display: LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
+[2026.08.06-06.49.23:181][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.06-06.49.23:181][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.06-06.49.23:181][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.06-06.49.23:182][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.06-06.49.23:182][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.06-06.49.23:182][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.06-06.49.23:182][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.06-06.49.23:183][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.06-06.49.23:183][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.08.06-06.49.23:183][  0]LogInit: Display: 
+[2026.08.06-06.49.23:183][  0]LogInit: Display: Success - 0 error(s), 10 warning(s)
+[2026.08.06-06.49.23:183][  0]LogInit: Display: 
 
-Execution of commandlet took:  10.91 seconds
-[2026.08.06-06.28.01:683][  0]LogShaderCompilers: Display: Shaders left to compile 0
+Execution of commandlet took:  7.41 seconds
+[2026.08.06-06.49.23:694][  0]LogShaderCompilers: Display: Shaders left to compile 0
 Script history saved: 2 entries
 Script history saved: 2 entries

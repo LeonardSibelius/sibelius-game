@@ -19,178 +19,178 @@ LogCsvProfiler: Display: Metadata set : llm="0"
 LogCsvProfiler: Display: Metadata set : systemresolution.resx="1280"
 LogCsvProfiler: Display: Metadata set : systemresolution.resy="720"
 LogAudio: Display: Audio Device Manager not initializing due to all audio being disabled. If this is not intentional, please check command line arguments for "-nosound".
-LogConfig: Display: Loading IOS ini files took 0.04 seconds
-LogConfig: Display: Loading Mac ini files took 0.04 seconds
-LogConfig: Display: Loading VulkanPC ini files took 0.04 seconds
-LogConfig: Display: Loading Android ini files took 0.04 seconds
-LogConfig: Display: Loading TVOS ini files took 0.04 seconds
+LogConfig: Display: Loading Mac ini files took 0.03 seconds
+LogConfig: Display: Loading VulkanPC ini files took 0.03 seconds
+LogConfig: Display: Loading Android ini files took 0.03 seconds
+LogConfig: Display: Loading IOS ini files took 0.03 seconds
+LogConfig: Display: Loading Unix ini files took 0.04 seconds
 LogConfig: Display: Loading Windows ini files took 0.04 seconds
-LogConfig: Display: Loading VisionOS ini files took 0.05 seconds
-LogConfig: Display: Loading Unix ini files took 0.05 seconds
-LogConfig: Display: Loading Linux ini files took 0.05 seconds
+LogConfig: Display: Loading TVOS ini files took 0.04 seconds
+LogConfig: Display: Loading VisionOS ini files took 0.04 seconds
+LogConfig: Display: Loading Linux ini files took 0.04 seconds
 RenderDocPlugin: Display: RenderDoc plugin will not be loaded. Use '-AttachRenderDoc' on the cmd line or enable 'renderdoc.AutoAttach' in the plugin settings.
-[2026.08.06-06.26.57:399][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
-[2026.08.06-06.26.57:400][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
-[2026.08.06-06.26.57:656][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
-[2026.08.06-06.26.57:729][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
-[2026.08.06-06.26.57:729][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
-[2026.08.06-06.26.57:729][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
-[2026.08.06-06.26.57:729][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
-[2026.08.06-06.26.57:733][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
-[2026.08.06-06.26.57:733][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
-[2026.08.06-06.26.57:733][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
-[2026.08.06-06.26.57:733][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
-[2026.08.06-06.26.57:733][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
-[2026.08.06-06.26.57:733][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
-[2026.08.06-06.26.57:733][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
-[2026.08.06-06.26.57:733][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
-[2026.08.06-06.26.57:733][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
-[2026.08.06-06.26.57:734][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
-[2026.08.06-06.26.57:754][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
-[2026.08.06-06.26.57:765][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
-[2026.08.06-06.26.57:765][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
-[2026.08.06-06.26.57:775][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
-[2026.08.06-06.26.57:775][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
-[2026.08.06-06.26.57:775][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
-[2026.08.06-06.26.57:775][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
-[2026.08.06-06.26.57:785][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
-[2026.08.06-06.26.57:785][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
-[2026.08.06-06.26.57:785][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
-[2026.08.06-06.26.57:785][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
-[2026.08.06-06.26.57:794][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
-[2026.08.06-06.26.57:794][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
-[2026.08.06-06.26.57:804][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
-[2026.08.06-06.26.57:804][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
-[2026.08.06-06.26.57:804][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
-[2026.08.06-06.26.57:804][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
-[2026.08.06-06.26.57:804][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
-[2026.08.06-06.26.57:807][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
-[2026.08.06-06.26.57:842][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
-[2026.08.06-06.26.58:030][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
-[2026.08.06-06.26.58:031][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
-[2026.08.06-06.26.58:237][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
-[2026.08.06-06.26.58:544][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
-[2026.08.06-06.26.58:545][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
-[2026.08.06-06.26.58:545][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
-[2026.08.06-06.26.58:546][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 25480  --child-id Zen_25480_Startup'
-[2026.08.06-06.26.58:638][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
-[2026.08.06-06.26.58:639][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
-[2026.08.06-06.26.58:647][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.02ms. RandomReadSpeed=1115.40MBs, RandomWriteSpeed=135.32MBs. Assigned SpeedClass 'Local'
-[2026.08.06-06.26.58:649][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
-[2026.08.06-06.26.58:649][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
-[2026.08.06-06.26.58:649][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
-[2026.08.06-06.26.58:650][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
-[2026.08.06-06.26.58:650][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
-[2026.08.06-06.26.58:933][  0]LogEditorDomain: Display: EditorDomain is Disabled
-[2026.08.06-06.26.59:113][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
-[2026.08.06-06.26.59:113][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
-[2026.08.06-06.26.59:139][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
-[2026.08.06-06.26.59:142][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
-[2026.08.06-06.26.59:150][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:150][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
-[2026.08.06-06.26.59:150][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:150][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:151][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
-[2026.08.06-06.26.59:151][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:151][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:152][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:152][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:153][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:154][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
-[2026.08.06-06.26.59:154][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:154][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
-[2026.08.06-06.26.59:154][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:154][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
-[2026.08.06-06.26.59:154][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:155][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
-[2026.08.06-06.26.59:155][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.06-06.26.59:155][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
-[2026.08.06-06.26.59:155][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
-[2026.08.06-06.26.59:155][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
-[2026.08.06-06.26.59:166][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
-[2026.08.06-06.26.59:166][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
-[2026.08.06-06.26.59:166][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
-[2026.08.06-06.26.59:166][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
-[2026.08.06-06.26.59:283][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
-[2026.08.06-06.26.59:284][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
-[2026.08.06-06.26.59:284][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
-[2026.08.06-06.26.59:284][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
-[2026.08.06-06.26.59:337][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
-[2026.08.06-06.26.59:338][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.573 ms
-[2026.08.06-06.26.59:987][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
-[2026.08.06-06.27.00:088][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
-[2026.08.06-06.27.00:096][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
-[2026.08.06-06.27.01:631][  0]LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (Echo_Hair) ...
-[2026.08.06-06.27.01:772][  0]LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
-[2026.08.06-06.27.02:133][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.06-06.27.02:133][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.06-06.27.02:133][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.06-06.27.02:133][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.06-06.27.02:133][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.06-06.27.02:134][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.06-06.27.02:134][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.06-06.27.02:134][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.06-06.27.03:649][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
-[2026.08.06-06.27.03:649][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
-[2026.08.06-06.27.04:306][  0]LogAssetRegistry: Display: Asset registry cache read as 128.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
-[2026.08.06-06.27.04:307][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.118s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
-[2026.08.06-06.27.04:502][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
-[2026.08.06-06.27.04:551][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
-[2026.08.06-06.27.05:083][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
-[2026.08.06-06.27.05:136][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
-[2026.08.06-06.27.05:138][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 363 us
-[2026.08.06-06.27.05:138][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
-[2026.08.06-06.27.05:159][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 22.346 ms (total: 22.710 ms)
-[2026.08.06-06.27.05:160][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
-[2026.08.06-06.27.05:182][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 22.696 ms (total: 45.406 ms)
-[2026.08.06-06.27.05:183][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
-[2026.08.06-06.27.05:184][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 2.172 ms (total: 47.579 ms)
-[2026.08.06-06.27.05:184][  0]LogCarouselSmoke: Display: === SIB-46 Carousel smoke test ===
-[2026.08.06-06.27.05:185][  0]LogCarousel: Display: [Carousel] symbols: loaded DT_CarouselSymbols (12 rows)
-[2026.08.06-06.27.05:185][  0]LogCarouselSmoke: Display:   [PASS] slice has >= 12 symbols (got 12)
-[2026.08.06-06.27.05:186][  0]LogCarouselSmoke: Display:   [PASS] one reel strip per reel
-[2026.08.06-06.27.05:187][  0]LogCarouselSmoke: Display:   [PASS] build has paylines (got 5)
-[2026.08.06-06.27.05:188][  0]LogCarouselSmoke: Display:   [PASS] spin fills the full grid
-[2026.08.06-06.27.05:188][  0]LogCarouselSmoke: Display:   [PASS] spin payout is non-negative (integer chips)
-[2026.08.06-06.27.05:189][  0]LogCarouselSmoke: Display:   [PASS] cascade depth never exceeds MaxCascadeDepth=8 (max seen 8) — no infinite chain
-[2026.08.06-06.27.05:191][  0]LogCarouselSmoke: Display:   [PASS] Cascade charm actually triggered re-spins (phase 6 exercised, then capped)
-[2026.08.06-06.27.05:192][  0]LogCarousel: Display: [Carousel] symbols: loaded DT_CarouselSymbols (12 rows)
-[2026.08.06-06.27.05:204][  0]LogCarousel: Display: [Carousel] symbols: loaded DT_CarouselSymbols (12 rows)
-[2026.08.06-06.27.05:221][  0]LogCarouselSmoke: Display:   [PASS] RunSim is deterministic for a fixed seed (identical totals + per-round clears)
-[2026.08.06-06.27.05:221][  0]LogCarouselSmoke: Display:   [PASS] known build clears round 1 at seed 7 (1121/2000 runs)
-[2026.08.06-06.27.05:221][  0]LogCarouselSmoke: Display:   [PASS] hit frequency in [45, 55]% (got 50.3%)
-[2026.08.06-06.27.05:221][  0]LogCarouselSmoke: Display:   [PASS] round-1 clear in [50, 60]% (got 56.0%)
-[2026.08.06-06.27.05:221][  0]LogCarouselSmoke: Display:   seed 7 (2000 runs): hit=50.3%  round1=56.0%  EV=105.92/spin
-[2026.08.06-06.27.05:221][  0]LogCarouselSmoke: Display: === CAROUSEL SMOKE TEST PASSED (SIB-46 — pipeline + determinism + tuned band green). ===
-[2026.08.06-06.27.05:222][  0]LogInit: Display: 
-[2026.08.06-06.27.05:222][  0]LogInit: Display: Warning/Error Summary (Unique only)
-[2026.08.06-06.27.05:222][  0]LogInit: Display: -----------------------------------
-[2026.08.06-06.27.05:222][  0]LogInit: Display: LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
-[2026.08.06-06.27.05:222][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.06-06.27.05:222][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.06-06.27.05:223][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.06-06.27.05:225][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.06-06.27.05:226][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.06-06.27.05:229][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.06-06.27.05:231][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.06-06.27.05:232][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.06-06.27.05:233][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
-[2026.08.06-06.27.05:234][  0]LogInit: Display: 
-[2026.08.06-06.27.05:234][  0]LogInit: Display: Success - 0 error(s), 10 warning(s)
-[2026.08.06-06.27.05:235][  0]LogInit: Display: 
+[2026.08.06-06.48.39:028][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+[2026.08.06-06.48.39:029][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
+[2026.08.06-06.48.39:276][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
+[2026.08.06-06.48.39:352][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
+[2026.08.06-06.48.39:352][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
+[2026.08.06-06.48.39:352][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
+[2026.08.06-06.48.39:352][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
+[2026.08.06-06.48.39:357][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
+[2026.08.06-06.48.39:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
+[2026.08.06-06.48.39:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
+[2026.08.06-06.48.39:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
+[2026.08.06-06.48.39:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
+[2026.08.06-06.48.39:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
+[2026.08.06-06.48.39:357][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
+[2026.08.06-06.48.39:357][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
+[2026.08.06-06.48.39:357][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
+[2026.08.06-06.48.39:357][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
+[2026.08.06-06.48.39:378][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
+[2026.08.06-06.48.39:388][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
+[2026.08.06-06.48.39:388][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
+[2026.08.06-06.48.39:398][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
+[2026.08.06-06.48.39:398][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
+[2026.08.06-06.48.39:398][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
+[2026.08.06-06.48.39:398][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
+[2026.08.06-06.48.39:408][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
+[2026.08.06-06.48.39:409][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
+[2026.08.06-06.48.39:409][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
+[2026.08.06-06.48.39:409][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
+[2026.08.06-06.48.39:418][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
+[2026.08.06-06.48.39:418][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
+[2026.08.06-06.48.39:429][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
+[2026.08.06-06.48.39:429][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
+[2026.08.06-06.48.39:429][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
+[2026.08.06-06.48.39:429][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
+[2026.08.06-06.48.39:429][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
+[2026.08.06-06.48.39:431][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+[2026.08.06-06.48.39:465][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
+[2026.08.06-06.48.39:657][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
+[2026.08.06-06.48.39:658][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.08.06-06.48.39:864][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.08.06-06.48.40:069][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.08.06-06.48.40:069][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.08.06-06.48.40:069][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
+[2026.08.06-06.48.40:069][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 31440  --child-id Zen_31440_Startup'
+[2026.08.06-06.48.40:134][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
+[2026.08.06-06.48.40:135][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
+[2026.08.06-06.48.40:140][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.02ms. RandomReadSpeed=1139.74MBs, RandomWriteSpeed=241.06MBs. Assigned SpeedClass 'Local'
+[2026.08.06-06.48.40:142][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
+[2026.08.06-06.48.40:142][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
+[2026.08.06-06.48.40:142][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
+[2026.08.06-06.48.40:143][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
+[2026.08.06-06.48.40:143][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.08.06-06.48.40:427][  0]LogEditorDomain: Display: EditorDomain is Disabled
+[2026.08.06-06.48.40:604][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
+[2026.08.06-06.48.40:604][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
+[2026.08.06-06.48.40:630][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
+[2026.08.06-06.48.40:633][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+[2026.08.06-06.48.40:640][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:640][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
+[2026.08.06-06.48.40:640][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:640][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:640][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
+[2026.08.06-06.48.40:640][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:641][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:642][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:642][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:643][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:643][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
+[2026.08.06-06.48.40:643][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:644][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
+[2026.08.06-06.48.40:644][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:644][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
+[2026.08.06-06.48.40:644][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:644][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
+[2026.08.06-06.48.40:644][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.06-06.48.40:645][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
+[2026.08.06-06.48.40:645][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
+[2026.08.06-06.48.40:645][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
+[2026.08.06-06.48.40:656][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
+[2026.08.06-06.48.40:656][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
+[2026.08.06-06.48.40:656][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
+[2026.08.06-06.48.40:656][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
+[2026.08.06-06.48.40:774][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
+[2026.08.06-06.48.40:774][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.08.06-06.48.40:774][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
+[2026.08.06-06.48.40:774][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
+[2026.08.06-06.48.40:826][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
+[2026.08.06-06.48.40:828][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.577 ms
+[2026.08.06-06.48.41:400][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
+[2026.08.06-06.48.41:401][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
+[2026.08.06-06.48.41:454][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
+[2026.08.06-06.48.42:254][  0]LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (Echo_Hair) ...
+[2026.08.06-06.48.42:336][  0]LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
+[2026.08.06-06.48.42:504][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.06-06.48.42:504][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.06-06.48.42:504][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.06-06.48.42:504][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.06-06.48.42:504][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.06-06.48.42:505][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.06-06.48.42:505][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.06-06.48.42:505][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.06-06.48.42:962][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.08.06-06.48.42:962][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.08.06-06.48.43:749][  0]LogAssetRegistry: Display: Asset registry cache read as 128.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
+[2026.08.06-06.48.43:749][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.072s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
+[2026.08.06-06.48.43:860][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+[2026.08.06-06.48.43:886][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
+[2026.08.06-06.48.44:266][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.08.06-06.48.44:295][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
+[2026.08.06-06.48.44:307][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 12.238 ms
+[2026.08.06-06.48.44:308][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
+[2026.08.06-06.48.44:308][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 112 us (total: 12.350 ms)
+[2026.08.06-06.48.44:308][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
+[2026.08.06-06.48.44:320][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 12.354 ms (total: 24.705 ms)
+[2026.08.06-06.48.44:320][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
+[2026.08.06-06.48.44:321][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 1.292 ms (total: 25.998 ms)
+[2026.08.06-06.48.44:322][  0]LogCarouselSmoke: Display: === SIB-46 Carousel smoke test ===
+[2026.08.06-06.48.44:322][  0]LogCarousel: Display: [Carousel] symbols: loaded DT_CarouselSymbols (12 rows)
+[2026.08.06-06.48.44:322][  0]LogCarouselSmoke: Display:   [PASS] slice has >= 12 symbols (got 12)
+[2026.08.06-06.48.44:322][  0]LogCarouselSmoke: Display:   [PASS] one reel strip per reel
+[2026.08.06-06.48.44:322][  0]LogCarouselSmoke: Display:   [PASS] build has paylines (got 5)
+[2026.08.06-06.48.44:322][  0]LogCarouselSmoke: Display:   [PASS] spin fills the full grid
+[2026.08.06-06.48.44:322][  0]LogCarouselSmoke: Display:   [PASS] spin payout is non-negative (integer chips)
+[2026.08.06-06.48.44:324][  0]LogCarouselSmoke: Display:   [PASS] cascade depth never exceeds MaxCascadeDepth=8 (max seen 8) — no infinite chain
+[2026.08.06-06.48.44:324][  0]LogCarouselSmoke: Display:   [PASS] Cascade charm actually triggered re-spins (phase 6 exercised, then capped)
+[2026.08.06-06.48.44:324][  0]LogCarousel: Display: [Carousel] symbols: loaded DT_CarouselSymbols (12 rows)
+[2026.08.06-06.48.44:333][  0]LogCarousel: Display: [Carousel] symbols: loaded DT_CarouselSymbols (12 rows)
+[2026.08.06-06.48.44:342][  0]LogCarouselSmoke: Display:   [PASS] RunSim is deterministic for a fixed seed (identical totals + per-round clears)
+[2026.08.06-06.48.44:342][  0]LogCarouselSmoke: Display:   [PASS] known build clears round 1 at seed 7 (1121/2000 runs)
+[2026.08.06-06.48.44:342][  0]LogCarouselSmoke: Display:   [PASS] hit frequency in [45, 55]% (got 50.3%)
+[2026.08.06-06.48.44:342][  0]LogCarouselSmoke: Display:   [PASS] round-1 clear in [50, 60]% (got 56.0%)
+[2026.08.06-06.48.44:342][  0]LogCarouselSmoke: Display:   seed 7 (2000 runs): hit=50.3%  round1=56.0%  EV=105.92/spin
+[2026.08.06-06.48.44:342][  0]LogCarouselSmoke: Display: === CAROUSEL SMOKE TEST PASSED (SIB-46 — pipeline + determinism + tuned band green). ===
+[2026.08.06-06.48.44:342][  0]LogInit: Display: 
+[2026.08.06-06.48.44:342][  0]LogInit: Display: Warning/Error Summary (Unique only)
+[2026.08.06-06.48.44:342][  0]LogInit: Display: -----------------------------------
+[2026.08.06-06.48.44:342][  0]LogInit: Display: LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
+[2026.08.06-06.48.44:343][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.06-06.48.44:343][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.06-06.48.44:343][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.06-06.48.44:343][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.06-06.48.44:343][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.06-06.48.44:344][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.06-06.48.44:344][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.06-06.48.44:344][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.06-06.48.44:344][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.08.06-06.48.44:344][  0]LogInit: Display: 
+[2026.08.06-06.48.44:344][  0]LogInit: Display: Success - 0 error(s), 10 warning(s)
+[2026.08.06-06.48.44:344][  0]LogInit: Display: 
 
-Execution of commandlet took:  0.09 seconds
-[2026.08.06-06.27.05:863][  0]LogShaderCompilers: Display: Shaders left to compile 0
+Execution of commandlet took:  0.05 seconds
+[2026.08.06-06.48.44:835][  0]LogShaderCompilers: Display: Shaders left to compile 0
 Script history saved: 2 entries
 Script history saved: 2 entries
