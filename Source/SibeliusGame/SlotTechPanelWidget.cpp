@@ -304,17 +304,45 @@ FString USlotTechPanelWidget::ComposeReportText(const FSlotParSheetReport& Rep, 
 	{
 		S += TEXT("   UNLICENSED — free spins never stop. This is not a machine.\n");
 	}
-	else if (Rep.RtpPercent > SlotLicence::MaxRtpPercent)
-	{
-		S += FString::Printf(TEXT("   UNLICENSED — pays %.2f%%, above the %.0f%% ceiling.\n")
-		                     TEXT("   The house won't take it: it doesn't earn.\n"),
-			Rep.RtpPercent, SlotLicence::MaxRtpPercent);
-	}
 	else
 	{
-		S += FString::Printf(TEXT("   UNLICENSED — pays %.2f%%, below the %.0f%% floor.\n")
-		                     TEXT("   No jurisdiction licenses it.\n"),
-			Rep.RtpPercent, SlotLicence::MinRtpPercent);
+		const bool bTooGenerous = Rep.RtpPercent > SlotLicence::MaxRtpPercent;
+		const double Limit = bTooGenerous ? SlotLicence::MaxRtpPercent : SlotLicence::MinRtpPercent;
+
+		S += bTooGenerous
+			? FString::Printf(TEXT("   UNLICENSED — pays %.2f%%, above the %.0f%% ceiling.\n")
+			                  TEXT("   The house won't take it: it doesn't earn.\n"),
+				Rep.RtpPercent, Limit)
+			: FString::Printf(TEXT("   UNLICENSED — pays %.2f%%, below the %.0f%% floor.\n")
+			                  TEXT("   No jurisdiction licenses it.\n"),
+				Rep.RtpPercent, Limit);
+
+		// TELL THEM THE MOVE, not just the verdict.
+		//
+		// PAYS scales the whole paytable, so RTP moves in proportion to it — which makes
+		// the multiplier that lands exactly on the limit a straight ratio. Naming it is
+		// the difference between a rule and a teacher: "wrong" becomes "here is the fix,
+		// and here is why that dial is the one that fixes it."
+		//
+		// Only offered when the answer is inside the dial's range. Suggesting x0.4 when
+		// the dial stops at 0.70 would be worse than saying nothing.
+		if (Rep.RtpPercent > 0.0)
+		{
+			const double Needed = PaysMultiplier * (Limit / Rep.RtpPercent);
+			if (Needed >= 0.70 && Needed <= 1.30)
+			{
+				S += FString::Printf(TEXT("   PAYS x %.2f would bring it inside.\n"), Needed);
+			}
+			else if (bTooGenerous)
+			{
+				// Beyond what PAYS alone can claw back — the wilds are usually the culprit.
+				S += TEXT("   Too far for the PAYS dial alone — try fewer WILDS as well.\n");
+			}
+			else
+			{
+				S += TEXT("   Too far for the PAYS dial alone — try more WILDS as well.\n");
+			}
+		}
 	}
 
 	S += TEXT("--------------------------------------------------------------\n\n");
