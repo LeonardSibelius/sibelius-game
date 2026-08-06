@@ -115,6 +115,28 @@ struct FSlotParSheetReport
 	FString VolatilityWord() const;
 };
 
+/**
+ * THE HOUSE RULES (locked, docs/PAR_SHEET_PANEL.md).
+ *
+ * Floor is regulatory — below it no jurisdiction licenses the machine. Ceiling is
+ * COMMERCIAL — the house will not run a machine that does not earn. An unlicensed
+ * machine refuses to spin: the refusal lands on the machine, not the player, so nobody
+ * has winnings taken away after watching the reels land.
+ *
+ * The shipped sheet returns 95.57%, comfortably inside but not lazily so — the default
+ * machine is already a real design decision near the commercial edge.
+ */
+namespace SlotLicence
+{
+	constexpr double MinRtpPercent = 85.0;
+	constexpr double MaxRtpPercent = 96.0;
+
+	inline bool IsLicensed(double RtpPercent)
+	{
+		return RtpPercent >= MinRtpPercent && RtpPercent <= MaxRtpPercent;
+	}
+}
+
 namespace SlotParSheetMath
 {
 	/** Exact RTP, contributions and trigger probability. No simulation, microseconds. */

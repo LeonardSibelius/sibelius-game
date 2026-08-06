@@ -47,8 +47,19 @@ public:
 
 	// Path A: open the REAL Celestial Fortune (Chromium) instead of the native
 	// S2 screen. The native screen stays as the dependency-free fallback.
+	//
+	// DEFAULT FLIPPED TO FALSE (Walt, 2026-08-05). The technician's panel edits the C++
+	// par sheet, which drives the NATIVE screen only — the web build's maths lives
+	// inside a minified JS bundle that cannot be edited from C++, gate-tested, or shown
+	// in a live report. With the web screen on, the cathedral machine and the machine
+	// the panel edits were two different machines.
+	//
+	// The placed cabinet in L_Cathedral does not override this, so it follows the class
+	// default. The native screen is not a stub: it carries the 2026-07-17 facelift
+	// (spinning reels, win presentation, procedural sound) and its 9 symbol sprites are
+	// asserted by SlotSmokeTest.
 	UPROPERTY(EditAnywhere, Category = "Slot Cabinet")
-	bool bUseWebScreen = true;
+	bool bUseWebScreen = false;
 
 	// SW6/SIB-42: dev-machine FALLBACK only. At runtime ResolveWebGameURL()
 	// prefers the staged copy at Content/WebGame/index.html (packaged as a
@@ -63,6 +74,16 @@ public:
 private:
 	void OpenScreen(APlayerController* PC);
 	void CloseScreen();   // SC1: the one place input mode is restored
+
+	/** T at the screen — the technician's panel, layered over the machine. */
+	void OpenTechPanel();
+
+	// UFUNCTION because the panel's OnClosed is a dynamic multicast delegate.
+	UFUNCTION()
+	void CloseTechPanel();
+
+	UPROPERTY()
+	TObjectPtr<class USlotTechPanelWidget> TechPanel;
 
 	UPROPERTY()
 	TObjectPtr<USlotScreenWidget> Screen;

@@ -45,6 +45,9 @@ class USlotGameModel;
 DECLARE_DELEGATE(FOnSlotScreenClosed);
 DECLARE_DELEGATE(FOnSlotTrialWon);
 
+/** T at the machine — the cabinet opens the technician's panel over this screen. */
+DECLARE_DELEGATE(FOnSlotTechPanelRequested);
+
 // Per-reel spin animation state (pure presentation — not reflected).
 enum class EReelSpinState : uint8 { Idle, Spinning, Stopping, Bounce, Stopped };
 
@@ -78,6 +81,12 @@ public:
 
 	// Fired on Esc — the cabinet restores input mode (SC1's one close path).
 	FOnSlotScreenClosed OnClosed;
+
+	// Fired on T. The cabinet owns the technician's panel and the input handoff.
+	FOnSlotTechPanelRequested OnTechPanelRequested;
+
+	/** The machine's brain — the technician's panel edits this one's par sheet. */
+	USlotGameModel* GetModel() const { return Model; }
 
 	// Fired once when a trial target is reached (the shrine claims through this).
 	FOnSlotTrialWon OnTrialWon;

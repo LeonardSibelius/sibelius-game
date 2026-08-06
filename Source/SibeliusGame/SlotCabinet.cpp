@@ -11,6 +11,7 @@
 #include "Misc/Paths.h"
 #include "SibeliusProgressSubsystem.h"
 #include "SlotScreenWidget.h"
+#include "SlotTechPanelWidget.h"
 #include "SlotWebScreenWidget.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSlotCabinet, Log, All);
@@ -97,6 +98,7 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 				return;
 			}
 			Screen->OnClosed.BindUObject(this, &ASlotCabinet::CloseScreen);
+			Screen->OnTechPanelRequested.BindUObject(this, &ASlotCabinet::OpenTechPanel);
 		}
 		if (!bSeeded)
 		{
@@ -142,9 +144,52 @@ FString ASlotCabinet::ResolveWebGameURL() const
 	return WebGameURL;
 }
 
+void ASlotCabinet::OpenTechPanel()
+{
+	APlayerController* PC = ScreenPC.Get();
+	if (!PC || !Screen || TechPanel)
+	{
+		return;
+	}
+
+	TechPanel = CreateWidget<USlotTechPanelWidget>(PC, USlotTechPanelWidget::StaticClass());
+	if (!TechPanel)
+	{
+		UE_LOG(LogSlotCabinet, Error, TEXT("[SlotCabinet] failed to create the technician's panel."));
+		return;
+	}
+
+	TechPanel->Setup(Screen->GetModel());
+	TechPanel->OnClosed.AddDynamic(this, &ASlotCabinet::CloseTechPanel);
+
+	// Layered ABOVE the screen (60), so the machine stays visible behind the report —
+	// the player should see what they are editing.
+	TechPanel->AddToViewport(70);
+	TechPanel->SetKeyboardFocus();
+
+	UE_LOG(LogSlotCabinet, Display, TEXT("[SlotCabinet] technician's panel open."));
+}
+
+void ASlotCabinet::CloseTechPanel()
+{
+	if (TechPanel)
+	{
+		TechPanel->RemoveFromParent();
+		TechPanel = nullptr;
+	}
+
+	// Focus back to the machine, or the player would be left with a screen that
+	// ignores the spacebar.
+	if (Screen)
+	{
+		Screen->SetKeyboardFocus();
+	}
+}
+
 void ASlotCabinet::CloseScreen()
 {
 	// SC1: the ONE close path — restore the game's input no matter how we got here.
+	CloseTechPanel();   // the panel must never outlive the machine it edits
 	if (Screen) { Screen->RemoveFromParent(); }
 	if (WebScreen) { WebScreen->RemoveFromParent(); }
 	if (APlayerController* PC = ScreenPC.Get())

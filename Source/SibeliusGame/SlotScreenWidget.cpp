@@ -24,6 +24,7 @@
 #include "Styling/CoreStyle.h"
 #include "InputCoreTypes.h"
 #include "SlotGameModel.h"
+#include "SlotParSheetMath.h"   // the licence check that refuses an unlicensed spin
 
 DEFINE_LOG_CATEGORY_STATIC(LogSlotScreen, Log, All);
 
@@ -376,6 +377,11 @@ FReply USlotScreenWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
 		OnClosed.ExecuteIfBound();   // SC1: the ONE close path (cabinet restores input)
 		return FReply::Handled();
 	}
+	if (Key == EKeys::T)
+	{
+		OnTechPanelRequested.ExecuteIfBound();   // the attendant's menu
+		return FReply::Handled();
+	}
 	if (Key == EKeys::SpaceBar || Key == EKeys::Enter)
 	{
 		if (bRevealing)
@@ -384,6 +390,21 @@ FReply USlotScreenWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
 		}
 		else
 		{
+			// THE HOUSE RULE. An unlicensed par sheet refuses to spin — the reels never
+			// move, so there are no winnings to confiscate afterwards. The refusal is
+			// about the MACHINE, not the player: you built something the floor will not
+			// accept, and the fix is the panel this message points at.
+			if (Model)
+			{
+				const FSlotParSheetReport Rep = SlotParSheetMath::Analyze(Model->GetParSheet());
+				if (!Rep.bConverged || !SlotLicence::IsLicensed(Rep.RtpPercent))
+				{
+					ShowBanner(FString::Printf(
+						TEXT("UNLICENSED at %.2f%% — the house won't take it.  [T] service panel"),
+						Rep.bConverged ? Rep.RtpPercent : 0.0));
+					return FReply::Handled();
+				}
+			}
 			TrySpin();
 		}
 		return FReply::Handled();
