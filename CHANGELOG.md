@@ -3,6 +3,21 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.9.1 — The game finally talks to you
+
+- **Interaction prompts are visible.** Every door, machine, bowl, curio, cabinet and
+  dancer has always had something to say when you looked at it. None of it has ever
+  reached a downloaded copy of this game — the text was drawn by a debug facility the
+  engine strips out of release builds. It draws on the HUD now.
+- **So is everything else you were meant to read.** Sauce pickups and totals, chapter
+  completions, the Carousel's payout and its refusal, the alarm when the Refusers come,
+  why a branched door will not let you through, the Cabinet of Curiosities score,
+  Test-Drive and Generate feedback.
+- **"Press Q again to quit" now appears.** Until this build the first press did nothing
+  visible and the second closed the game.
+- Messages stack up to three, fade on their own, and repeat presses refresh a line in
+  place instead of printing it three times.
+
 ## v0.9.0 — The machine keeps its own books
 
 - **The slot machine now counts.** Press **T** at the machine, then **M**, and it shows
