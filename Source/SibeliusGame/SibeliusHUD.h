@@ -74,6 +74,20 @@ private:
 	// under the normal GameMode, independent of AElsewhereGameMode/AElsewhereHUD.
 	void DrawBackToOfficeHint();
 
+	/**
+	 * "[E] play the machine", shown when the player is near a slot cabinet.
+	 *
+	 * With the fate carousel gone from the apse the cabinet reads as a bare marble
+	 * block. The IInteractable prompt would normally announce it, but prompts go through
+	 * AddOnScreenDebugMessage, which is suppressed in Shipping — so without this every
+	 * actual player walks past a plinth.
+	 */
+	void DrawMachineHint();
+
+	/** How close (cm) the player must be for the machine hint to appear. */
+	UPROPERTY(EditDefaultsOnly, Category = "HUD", meta = (ClampMin = "0"))
+	float MachineHintRange = 600.0f;
+
 	// --- FUN-7: player-facing layer ---
 	void DrawPlayerLayer();
 

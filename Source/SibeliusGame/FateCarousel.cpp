@@ -131,8 +131,12 @@ void AFateCarousel::Tick(float DeltaSeconds)
 			Card->SetRelativeLocation(Loc);
 
 			// Smoothstep so the withdrawal eases at both ends rather than ramping.
+			// MULTIPLY the authored scale, never replace it: BuildCards sets
+			// CardSize/100, and overwriting that silently resized every card to 1.0
+			// whenever this ran.
 			const float Eased = FMath::SmoothStep(0.0f, 1.0f, CardPresence);
-			Card->SetRelativeScale3D(FVector(Eased));
+			const float BaseScale = CardSize / 100.0f;
+			Card->SetRelativeScale3D(FVector(BaseScale * Eased));
 
 			if (UMaterialInstanceDynamic* MID = Cast<UMaterialInstanceDynamic>(Card->GetMaterial(0)))
 			{

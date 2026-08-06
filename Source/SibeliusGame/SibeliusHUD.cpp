@@ -4,6 +4,7 @@
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"                   // GetSmallFont
 #include "EngineUtils.h"                      // TActorIterator
+#include "SlotCabinet.h"                      // the machine hint finds the nearest cabinet
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 
@@ -115,6 +116,7 @@ void ASibeliusHUD::DrawHUD()
 
 	DrawCrosshair();
 	DrawBackToOfficeHint();   // independent of the dev overlay toggle — a player affordance
+	DrawMachineHint();        // "[E] play the machine" — the plinth needs to say it does something
 	DrawPlayerLayer();        // FUN-7: sauce count + ceremony banner, always on
 	DrawObjective();          // APPEAL-2: the one guided goal, top-center
 	DrawBranchLayer();        // Test-Drive marker + discoverability hint (Shipping-safe)
@@ -431,6 +433,72 @@ void ASibeliusHUD::DrawBackToOfficeHint()
 	const float HintX = (Canvas->ClipX - HintW) * 0.5f;
 	const float HintY = Canvas->ClipY - HintH - 48.0f;   // a hand above the bottom edge
 	DrawText(Hint, FLinearColor(1.0f, 1.0f, 1.0f, 0.9f), HintX, HintY, nullptr, OverlayTextScale);
+}
+
+void ASibeliusHUD::DrawMachineHint()
+{
+	if (!Canvas)
+	{
+		return;
+	}
+
+	const APawn* PlayerPawn = GetOwningPawn();
+	UWorld* World = GetWorld();
+	if (!PlayerPawn || !World)
+	{
+		return;
+	}
+
+	// Nearest cabinet within reach. The cathedral holds one machine, so this is a
+	// handful of comparisons — not worth caching, and a cache would go stale when the
+	// finale rearranges the apse.
+	const FVector Here = PlayerPawn->GetActorLocation();
+	const float RangeSq = MachineHintRange * MachineHintRange;
+
+	const ASlotCabinet* Nearest = nullptr;
+	float BestSq = RangeSq;
+	for (TActorIterator<ASlotCabinet> It(World); It; ++It)
+	{
+		const ASlotCabinet* Cab = *It;
+		if (!Cab || Cab->IsScreenOpen())
+		{
+			continue;   // already playing — the screen has its own controls line
+		}
+		const float DSq = FVector::DistSquared(Here, Cab->GetActorLocation());
+		if (DSq < BestSq)
+		{
+			BestSq = DSq;
+			Nearest = Cab;
+		}
+	}
+
+	if (!Nearest)
+	{
+		return;
+	}
+
+	// WHY THIS EXISTS. With the fate carousel removed from the apse the cabinet reads as
+	// a bare marble block, and a player has no reason to think it does anything. The
+	// IInteractable prompt would normally say so — but prompts go through
+	// AddOnScreenDebugMessage, which is SUPPRESSED in Shipping, so every actual player
+	// would walk past a plinth. Drawn on the HUD canvas it survives packaging.
+	const FString Hint = TEXT("[E]  PLAY THE MACHINE");
+	const float Scale = OverlayTextScale * 2.1f;
+	float W = 0.0f, H = 0.0f;
+	GetTextSize(Hint, W, H, nullptr, Scale);
+
+	const float X = (Canvas->ClipX - W) * 0.5f;
+	const float Y = Canvas->ClipY * 0.66f;   // below the reticle, clear of the memoir band
+
+	// FULL brightness at any distance inside the range.
+	//
+	// This first faded with distance, which had it exactly backwards: the hint was
+	// faintest when the player was furthest away, and that is precisely when they have
+	// not yet worked out the plinth does anything. Its whole job is to be noticed from
+	// across the apse. Once you are close enough to read the cabinet, you no longer need
+	// telling.
+	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.82f), X - 26.0f, Y - 12.0f, W + 52.0f, H + 24.0f);
+	DrawText(Hint, FLinearColor(1.0f, 0.86f, 0.25f, 1.0f), X, Y, nullptr, Scale);
 }
 
 void ASibeliusHUD::DrawCrosshair()
