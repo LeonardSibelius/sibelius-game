@@ -112,89 +112,122 @@ FSlotParSheetReport SlotParSheetMath::Analyze(const FSlotParSheet& ParSheet)
 		return R;
 	}
 
-	const double PWild  = SymbolProbability(ParSheet, ESlotSymbol::Wild);
-	const double PEarth = SymbolProbability(ParSheet, ESlotSymbol::Earth);
-
 	// --- Base game: expected multiplier of ONE line (== base-game RTP; see header) ----
+	//
+	// EXACT BY ENUMERATION. A line is five i.i.d. draws from the strip's alphabet, which
+	// holds at most nine distinct symbols — so there are at most 9^5 = 59,049 possible
+	// lines. Walking every one and weighting by its probability is exact, costs well
+	// under a millisecond, and is provably right because it applies THE SAME best-reading
+	// rule the model applies.
+	//
+	// This replaced a closed-form derivation. Once a line pays its BEST reading rather
+	// than its first, the algebra needs the joint distribution over every candidate
+	// symbol's run length simultaneously — derivable, but exactly the kind of subtle
+	// reasoning that produces a formula which looks right and quietly misprices the
+	// machine. Enumeration cannot drift from the rule because it evaluates the rule.
 	double BaseRtp = 0.0;
 
-	// Runs with a real base symbol. A run of exactly k means: the first k reels all lie
-	// in {Wild, b} and at least one of them IS b (otherwise the base never gets set and
-	// it is a Wild run instead); and, when k < REELS, reel k lies outside {Wild, b},
-	// which is what makes the run stop. Earth is outside {Wild, b}, so scatters
-	// terminating a run are already accounted for.
-	for (const FSlotPayRow& Row : ParSheet.PayTable)
+	// The alphabet actually present on this strip, with each symbol's probability.
+	TArray<ESlotSymbol> Alphabet;
+	TArray<double> AlphabetProb;
 	{
-		const ESlotSymbol B = Row.Symbol;
-		if (B == ESlotSymbol::Wild || B == ESlotSymbol::Earth || B == ESlotSymbol::None)
+		TSet<ESlotSymbol> Seen;
+		for (const ESlotSymbol S : ParSheet.Strip)
 		{
-			continue;   // Wild handled separately below; Earth never pays on lines
-		}
-
-		const double PB   = SymbolProbability(ParSheet, B);
-		const double PAny = PWild + PB;           // "extends a run based on B"
-		if (PAny <= 0.0)
-		{
-			continue;
-		}
-
-		FSlotSymbolContribution C;
-		C.Symbol     = B;
-		C.StripCount = ParSheet.CountOf(B);
-
-		for (int32 k = 3; k <= Reels; ++k)
-		{
-			// P(first k reels all in {W,B}, with at least one B)
-			const double PPrefix = FMath::Pow(PAny, k) - FMath::Pow(PWild, k);
-			if (PPrefix <= 0.0)
+			if (!Seen.Contains(S))
 			{
-				continue;
+				Seen.Add(S);
+				Alphabet.Add(S);
+				AlphabetProb.Add(SymbolProbability(ParSheet, S));
 			}
-
-			// Shorter runs must be terminated; a full-length run needs no terminator.
-			const double PStops = (k < Reels) ? (1.0 - PAny) : 1.0;
-			const double Prob   = PPrefix * PStops;
-
-			// PayFor with a per-line bet of 1 yields the raw multiplier.
-			const double Mult = ParSheet.PayFor(B, k, 1.0);
-
-			C.BaseRtpPercent  += Prob * Mult * 100.0;
-			C.LineHitPercent  += (Mult > 0.0) ? Prob * 100.0 : 0.0;
-			BaseRtp           += Prob * Mult;
-		}
-
-		if (C.BaseRtpPercent > 0.0 || C.StripCount > 0)
-		{
-			R.Contributions.Add(C);
 		}
 	}
 
-	// Wild's OWN run. This only happens when the run ends with no base ever established:
-	// either every reel is Wild, or leading Wilds are stopped by an EARTH. A leading
-	// Wild run stopped by an ordinary symbol adopts that symbol instead — which is
-	// precisely the asymmetry described in the header.
+	// Candidate symbols a line can be read as: everything in the paytable except Earth.
+	TArray<ESlotSymbol> Candidates;
+	for (const FSlotPayRow& Row : ParSheet.PayTable)
 	{
-		FSlotSymbolContribution C;
-		C.Symbol     = ESlotSymbol::Wild;
-		C.StripCount = ParSheet.CountOf(ESlotSymbol::Wild);
-
-		for (int32 k = 3; k <= Reels; ++k)
+		if (Row.Symbol != ESlotSymbol::None && Row.Symbol != ESlotSymbol::Earth)
 		{
-			const double Prob = (k < Reels)
-				? FMath::Pow(PWild, k) * PEarth      // k Wilds then an Earth
-				: FMath::Pow(PWild, k);              // all reels Wild
-
-			const double Mult = ParSheet.PayFor(ESlotSymbol::Wild, k, 1.0);
-
-			C.BaseRtpPercent += Prob * Mult * 100.0;
-			C.LineHitPercent += (Mult > 0.0) ? Prob * 100.0 : 0.0;
-			BaseRtp          += Prob * Mult;
+			Candidates.AddUnique(Row.Symbol);
 		}
+	}
 
-		R.Contributions.Add(C);
+	TMap<ESlotSymbol, double> RtpBySymbol;
+	TMap<ESlotSymbol, double> HitBySymbol;
+
+	const int32 N = Alphabet.Num();
+	if (N > 0)
+	{
+		TArray<int32> Idx;
+		Idx.Init(0, Reels);
+
+		for (;;)
+		{
+			// Probability of this exact line, and its symbols.
+			double Prob = 1.0;
+			ESlotSymbol Lineup[8];
+			for (int32 r = 0; r < Reels; ++r)
+			{
+				Prob *= AlphabetProb[Idx[r]];
+				Lineup[r] = Alphabet[Idx[r]];
+			}
+
+			if (Prob > 0.0)
+			{
+				// The best reading — identical rule to USlotGameModel::EvaluateLines.
+				ESlotSymbol BestSym = ESlotSymbol::None;
+				double BestMult = 0.0;
+				for (const ESlotSymbol Cand : Candidates)
+				{
+					int32 Count = 0;
+					for (int32 r = 0; r < Reels; ++r)
+					{
+						if (Lineup[r] == Cand || Lineup[r] == ESlotSymbol::Wild) { ++Count; }
+						else { break; }
+					}
+					const double Mult = ParSheet.PayFor(Cand, Count, 1.0);
+					if (Mult > BestMult)
+					{
+						BestMult = Mult;
+						BestSym = Cand;
+					}
+				}
+
+				if (BestMult > 0.0)
+				{
+					BaseRtp += Prob * BestMult;
+					RtpBySymbol.FindOrAdd(BestSym) += Prob * BestMult;
+					HitBySymbol.FindOrAdd(BestSym) += Prob;
+				}
+			}
+
+			// Odometer over the reels.
+			int32 Carry = Reels - 1;
+			while (Carry >= 0 && ++Idx[Carry] >= N)
+			{
+				Idx[Carry] = 0;
+				--Carry;
+			}
+			if (Carry < 0)
+			{
+				break;
+			}
+		}
 	}
 
 	R.BaseRtpPercent = BaseRtp * 100.0;
+
+	// Per-symbol anatomy, credited to whichever symbol the line actually paid as.
+	for (const ESlotSymbol Cand : Candidates)
+	{
+		FSlotSymbolContribution C;
+		C.Symbol         = Cand;
+		C.StripCount     = ParSheet.CountOf(Cand);
+		C.BaseRtpPercent = RtpBySymbol.FindRef(Cand) * 100.0;
+		C.LineHitPercent = HitBySymbol.FindRef(Cand) * 100.0;
+		R.Contributions.Add(C);
+	}
 
 	// --- The free-spin round ---------------------------------------------------------
 	// Every spin, base or free, triggers with the same probability q and awards A free

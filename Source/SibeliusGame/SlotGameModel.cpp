@@ -89,31 +89,52 @@ void USlotGameModel::EvaluateLines(const TArray<ESlotSymbol>& Grid, double PerLi
 			continue;   // malformed line; IsStructurallyValid should have caught it
 		}
 
-		ESlotSymbol Base = ESlotSymbol::None;
-		int32 Count = 0;
-		for (int32 r = 0; r < REELS; ++r)
+		// THE LINE PAYS ITS BEST READING (Walt, 2026-08-05).
+		//
+		// Wild substitutes for everything, so one line can be read several ways and the
+		// machine must pay whichever is worth most. The previous rule fixed the base
+		// symbol at the first non-wild reel and never looked back, which UNDERPAID: on
+		// W W W * *, three Wilds are worth 100 but it paid five Stars for 30. Real
+		// machines pay the best reading; so does this one now.
+		//
+		// Each candidate symbol's run is the leading reels showing that symbol or a
+		// Wild. Earth matches nothing and is absent from the paytable, so it still
+		// breaks every run — scatters never pay on lines.
+		ESlotSymbol BestSymbol = ESlotSymbol::None;
+		int32 BestCount = 0;
+		double BestPay = 0.0;
+
+		for (const FSlotPayRow& Row : ParSheet.PayTable)
 		{
-			const ESlotSymbol S = Grid[r * 3 + L[r]];
-			if (S == ESlotSymbol::Earth) break;             // Earths break lines (bonus only)
-			if (S == ESlotSymbol::Wild) { ++Count; continue; } // wild extends any run
-			if (Base == ESlotSymbol::None) { Base = S; ++Count; }
-			else if (S == Base) { ++Count; }
-			else break;
-		}
-		if (Base == ESlotSymbol::None && Count > 0)
-		{
-			Base = ESlotSymbol::Wild;                        // pure-wild line pays as Wild
-		}
-		if (Count >= 3 && Base != ESlotSymbol::None)
-		{
-			const double Pay = PayFor(Base, Count, PerLineBet) * WinMult;
-			if (Pay > 0.0)
+			const ESlotSymbol Candidate = Row.Symbol;
+			if (Candidate == ESlotSymbol::None || Candidate == ESlotSymbol::Earth)
 			{
-				FSlotLineWin W;
-				W.LineIndex = li; W.Symbol = Base; W.Count = Count; W.Pay = Pay;
-				Out.LineWins.Add(W);
-				Total += Pay;
+				continue;
 			}
+
+			int32 Count = 0;
+			for (int32 r = 0; r < REELS; ++r)
+			{
+				const ESlotSymbol S = Grid[r * 3 + L[r]];
+				if (S == Candidate || S == ESlotSymbol::Wild) { ++Count; }
+				else { break; }
+			}
+
+			const double Pay = PayFor(Candidate, Count, PerLineBet) * WinMult;
+			if (Pay > BestPay)
+			{
+				BestPay = Pay;
+				BestSymbol = Candidate;
+				BestCount = Count;
+			}
+		}
+
+		if (BestPay > 0.0)
+		{
+			FSlotLineWin W;
+			W.LineIndex = li; W.Symbol = BestSymbol; W.Count = BestCount; W.Pay = BestPay;
+			Out.LineWins.Add(W);
+			Total += BestPay;
 		}
 	}
 	Out.TotalWin = Total;

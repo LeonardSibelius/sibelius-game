@@ -22,33 +22,28 @@
 // because TotalWin sums 15 lines each betting TotalBet/15.
 //
 // ---------------------------------------------------------------------------
-// THE WILD RULE — MODELLED FROM THE CODE, NOT FROM SLOT ORTHODOXY
+// THE WILD RULE — AND WHY THE BASE GAME IS ENUMERATED, NOT SOLVED
 //
-// This is the trap flagged in the design doc. USlotGameModel::EvaluateLines walks the
-// line left to right:
+// A line pays its BEST reading. Wild substitutes for everything, so one line can be
+// read as several different symbols and the machine pays whichever is worth most —
+// each candidate's run being the leading reels showing that symbol or a Wild. Earth
+// matches nothing and is not in the paytable, so it breaks every run.
 //
-//     Earth            -> break (scatters never pay on lines)
-//     Wild             -> extend the run, whatever the base is
-//     first non-wild   -> becomes the base symbol
-//     matches base     -> extend
-//     anything else    -> break
-//     ...and if the run ended with NO base ever set, it pays as Wild.
+// (Until 2026-08-05 the model fixed the base symbol at the first non-wild reel and
+// never looked back, which UNDERPAID: W W W * * paid five Stars for 30 when three
+// Wilds were worth 100. Walt's call to fix it; RTP rose accordingly.)
 //
-// Two consequences the maths must honour, both easy to get wrong:
+// That best-of rule is what makes a neat closed form treacherous. Solving it needs the
+// joint distribution over every candidate symbol's run length at once — derivable, but
+// precisely the sort of subtle reasoning that yields a formula which looks right and
+// quietly misprices the machine. In a feature built to TEACH what a par sheet is, a
+// plausible-but-wrong number is the worst possible failure.
 //
-//   1. A base symbol is established by the FIRST non-wild reel, and the run then
-//      continues only on that symbol or Wild. The code never asks whether a shorter
-//      all-Wild reading would have paid MORE. (It sometimes would: WWW** currently pays
-//      five Stars rather than three Wilds. See the note in the .cpp — that is a
-//      pre-existing behaviour, deliberately preserved here.)
-//
-//   2. "Base = Wild" therefore happens ONLY when the run ends before any non-wild reel:
-//      all five reels Wild, or leading Wilds terminated by an EARTH. A leading Wild run
-//      broken by a normal symbol does not pay as Wild — it adopts that symbol.
-//
-// The point of this file is to tell the player the truth about the machine they are
-// editing. If it modelled idealised slot maths instead of this code, it would lie.
-// SlotSmokeTest asserts the closed form and the million-spin simulation agree.
+// So the base game is computed by EXACT ENUMERATION instead. A line is five i.i.d.
+// draws from the strip's alphabet, which holds at most nine distinct symbols: at most
+// 9^5 = 59,049 lines, each weighted by its probability. Well under a millisecond, and
+// it cannot drift from the rule because it evaluates the rule — the same loop the model
+// runs. SlotSmokeTest still asserts it against a million-spin simulation.
 //
 // ---------------------------------------------------------------------------
 // WHAT IS EXACT AND WHAT IS SIMULATED
