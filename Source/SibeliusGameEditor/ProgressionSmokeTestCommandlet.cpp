@@ -111,6 +111,23 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		Written->State.RecordPurchase(TEXT("Budget.Generate"));
 		Written->State.RecordPurchase(TEXT("Budget.Generate"));
 
+		/* The lifetime hard meters (docs/FLOOR_REPORT.md step 2). FSlotMeters is a NESTED
+		   USTRUCT inside the saved state, so SaveGame serialization has to recurse into it
+		   for its members to persist at all. That is the entire persistence claim of this
+		   step, and its failure would be quiet in the worst way — meters that count
+		   perfectly all session and read zero after a restart. Prove it, do not assume it.
+
+		   CoinIn is deliberately above INT32_MAX: the fields are int64 precisely so a long
+		   life on the machine cannot wrap, and a silent narrowing anywhere in the pipe
+		   would show up here rather than in a player's save a year from now. */
+		Written->State.SlotLifetimeMeters.BaseSpins     = 1234;
+		Written->State.SlotLifetimeMeters.FreeSpins     = 234;
+		Written->State.SlotLifetimeMeters.CoinIn        = 5000000000LL;   // > INT32_MAX
+		Written->State.SlotLifetimeMeters.CoinOut       = 4778350000LL;
+		Written->State.SlotLifetimeMeters.PayingSpins   = 383;
+		Written->State.SlotLifetimeMeters.BonusTriggers = 39;
+		Written->State.SlotLifetimeMeters.BiggestWin    = 30600;
+
 		R.Check(FSibeliusSaveIO::Commit(Written, SandboxSlot), TEXT("commit to sandbox slot"));
 
 		UProgressionSaveGame* Loaded = Cast<UProgressionSaveGame>(FSibeliusSaveIO::Load(SandboxSlot));
@@ -126,6 +143,16 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 			R.Check(Loaded->State.HasClaimed(TEXT("Smoke.GrantA")), TEXT("round-trip: claimed grant survives"));
 			R.Check(!Loaded->State.Claim(TEXT("Smoke.GrantB")), TEXT("round-trip: re-claim still refused"));
 			R.Check(Loaded->State.GetPurchaseCount(TEXT("Budget.Generate")) == 2, TEXT("round-trip: purchase counts survive"));
+
+			const FSlotMeters& LM = Loaded->State.SlotLifetimeMeters;
+			R.Check(LM.BaseSpins == 1234 && LM.FreeSpins == 234 && LM.PayingSpins == 383
+				&& LM.BonusTriggers == 39 && LM.BiggestWin == 30600,
+				TEXT("round-trip: lifetime meter counts survive (nested USTRUCT recurses)"));
+			R.Check(LM.CoinIn == 5000000000LL && LM.CoinOut == 4778350000LL,
+				FString::Printf(TEXT("round-trip: int64 coin in/out survive above INT32_MAX (%lld / %lld)"),
+					LM.CoinIn, LM.CoinOut));
+			R.Check(FMath::Abs(LM.MeasuredRtpPercent() - 95.567) < 0.001,
+				FString::Printf(TEXT("round-trip: measured RTP reads %.3f%% from the loaded meters"), LM.MeasuredRtpPercent()));
 		}
 
 		R.Check(FSibeliusSaveIO::Delete(SandboxSlot), TEXT("sandbox slot cleanup"));

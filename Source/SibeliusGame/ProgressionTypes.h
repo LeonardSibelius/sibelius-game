@@ -11,6 +11,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SlotTypes.h"   // FSlotMeters — the lifetime hard meters live in the save
 #include "ProgressionTypes.generated.h"
 
 // The six earnable power verbs, one per chapter. Code Vision is the starter
@@ -132,6 +133,24 @@ struct SIBELIUSGAME_API FProgressionState
 		return SlotPaysMultiplier > 0.0f || SlotWildCount >= 0
 			|| SlotJackpotPay > 0.0f || SlotBonusCount >= 0;
 	}
+
+	/**
+	 * THE HARD METERS — lifetime play on the cathedral machine (docs/FLOOR_REPORT.md).
+	 *
+	 * Locked decision 2: nothing clears these, ever. There is no player-facing reset,
+	 * because a lifetime meter you can zero is not a lifetime meter — on a real cabinet
+	 * that property is a regulatory requirement, and here it is what makes the number
+	 * mean anything.
+	 *
+	 * Additive field: old saves default-fill to all zeroes, which reads correctly as
+	 * "never played". Zero is the right initial value, so unlike the dials above these
+	 * need no negative sentinel.
+	 *
+	 * NOTE these can span more than one par sheet — see HasEditedParSheet(), which the
+	 * meters page uses to footnote exactly that.
+	 */
+	UPROPERTY(SaveGame)
+	FSlotMeters SlotLifetimeMeters;
 };
 
 // Headless self-test (ProgressionSmokeTest). True when every assert passes.

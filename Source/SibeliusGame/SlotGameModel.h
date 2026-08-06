@@ -74,7 +74,17 @@ public:
 	 * would before and after a par change. There is deliberately no player-facing reset;
 	 * hard meters are interesting precisely because they cannot be cleared.
 	 */
-	void ResetSessionMeters() { SessionMeters.Reset(); }
+	void ResetSessionMeters() { SessionMeters.Reset(); CommittedMeters.Reset(); }
+
+	/**
+	 * Hand back everything played since the last call, and mark it handed over.
+	 *
+	 * The lifetime record is written at end points (leaving the machine, changing par),
+	 * not per spin — a disk write per pull would be absurd. Banking a DELTA rather than
+	 * the whole session means those end points can fire as often as they like without
+	 * double-counting, and the session meters keep running for the display.
+	 */
+	FSlotMeters TakePendingMeters();
 
 	// Exposed for the smoke test + UI (paytable screen, line highlighting). These were
 	// static until 2026-08-05; they read the INSTANCE's par sheet now, because two
@@ -102,4 +112,7 @@ private:
 
 	/** Counted in Spin(). Session scope — see GetSessionMeters(). */
 	FSlotMeters SessionMeters;
+
+	/** Snapshot of SessionMeters as of the last TakePendingMeters(). */
+	FSlotMeters CommittedMeters;
 };

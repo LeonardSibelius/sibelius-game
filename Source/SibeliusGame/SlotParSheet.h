@@ -108,6 +108,18 @@ struct SIBELIUSGAME_API FSlotParSheet
 	 */
 	bool IsStructurallyValid(FString* OutReason = nullptr) const;
 
+	/**
+	 * Do these two sheets describe the SAME MACHINE? Strip, paytable and paylines only —
+	 * the display Name is deliberately ignored.
+	 *
+	 * Exists because "the par sheet changed" is what rebaselines the meters, and the panel
+	 * calls SetParSheet on every Refresh() — on open, on the H toggle, on any repaint —
+	 * usually with identical maths under a different name ("Celestial Fortune" from the
+	 * cabinet, "Celestial Fortune (edited)" from the panel). Comparing whole structs, or
+	 * names, would clear the player's session meters just for opening the panel.
+	 */
+	bool EqualsMath(const FSlotParSheet& Other) const;
+
 	/** Strip codes: * Star, m Moon, g Galaxy, t Saturn, r Mars, c Crown, 7 Seven, W Wild, E Earth. */
 	static ESlotSymbol CharToSymbol(TCHAR C);
 	static TCHAR SymbolToChar(ESlotSymbol S);

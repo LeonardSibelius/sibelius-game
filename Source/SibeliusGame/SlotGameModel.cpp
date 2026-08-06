@@ -20,13 +20,35 @@ bool USlotGameModel::SetParSheet(const FSlotParSheet& InParSheet)
 		return false;
 	}
 
-	ParSheet = InParSheet;
+	/* Locked decision 3 (docs/FLOOR_REPORT.md): a par change takes a fresh baseline.
+	   Two guards, both load-bearing:
 
-	// Locked decision 3 (docs/FLOOR_REPORT.md): a par change takes a fresh baseline. Only
-	// on an ACCEPTED sheet — a rejected one leaves the machine untouched, so its meters
-	// must stay untouched too.
-	ResetSessionMeters();
+	     - only on an ACCEPTED sheet. A rejected one leaves the machine untouched, so its
+	       meters must stay untouched too.
+	     - only when the MATHS actually moved. The panel calls this on every Refresh() —
+	       opening it, toggling H, any repaint — almost always with the same machine under
+	       a different display name. Resetting on those would clear the player's session
+	       meters as a side effect of reading them, which is the one thing this page must
+	       never do.
+
+	   Whatever was played on the OLD sheet must reach the lifetime record before this
+	   point; the caller banks TakePendingMeters() first. The model stays pure and knows
+	   nothing about the save. */
+	const bool bMathChanged = !ParSheet.EqualsMath(InParSheet);
+
+	ParSheet = InParSheet;
+	if (bMathChanged)
+	{
+		ResetSessionMeters();
+	}
 	return true;
+}
+
+FSlotMeters USlotGameModel::TakePendingMeters()
+{
+	const FSlotMeters Pending = SessionMeters.Delta(CommittedMeters);
+	CommittedMeters = SessionMeters;
+	return Pending;
 }
 
 /* ---------------- model ---------------- */

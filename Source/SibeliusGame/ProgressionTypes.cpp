@@ -1,6 +1,7 @@
 // ProgressionTypes.cpp — pure progression model (FUN-1). See header.
 
 #include "ProgressionTypes.h"
+#include "SlotParSheet.h"   // the self-test covers EqualsMath — see the meters block below
 
 namespace
 {
@@ -197,6 +198,69 @@ bool RunProgressionSelfTest(FString& OutError)
 	if (S.GetStat(TEXT("Test.Best")) != 7)     { OutError = TEXT("RaiseStat must keep the max"); return false; }
 	S.RaiseStat(TEXT("Test.Best"), 9);
 	if (S.GetStat(TEXT("Test.Best")) != 9)     { OutError = TEXT("RaiseStat must accept a new record"); return false; }
+
+	/* The floor report's meters (docs/FLOOR_REPORT.md step 2).
+	   Delta/Add is what keeps the lifetime record honest across repeated commits, and the
+	   failure mode is silent — a machine that plays perfectly while the report drifts. */
+	{
+		if (S.SlotLifetimeMeters.TotalSpins() != 0) { OutError = TEXT("fresh state must have zero lifetime meters"); return false; }
+		if (S.SlotLifetimeMeters.MeasuredRtpPercent() >= 0.0) { OutError = TEXT("unplayed meters must report RTP -1, not 0"); return false; }
+
+		FSlotMeters Session;
+		Session.BaseSpins = 100; Session.FreeSpins = 19; Session.CoinIn = 15000;
+		Session.CoinOut = 14000; Session.PayingSpins = 45; Session.BonusTriggers = 3;
+		Session.BiggestWin = 900;
+
+		// First commit: a delta from nothing is the whole session.
+		FSlotMeters Committed;                                  // nothing banked yet
+		S.SlotLifetimeMeters.Add(Session.Delta(Committed));
+		Committed = Session;
+		if (S.SlotLifetimeMeters.BaseSpins != 100)  { OutError = TEXT("first commit must bank the whole session"); return false; }
+		if (S.SlotLifetimeMeters.CoinIn != 15000)   { OutError = TEXT("first commit must bank coin in"); return false; }
+
+		// Committing again with NO further play must be a no-op. This is the double-count
+		// guard: the cabinet commits on every close, and most closes follow no play.
+		S.SlotLifetimeMeters.Add(Session.Delta(Committed));
+		if (S.SlotLifetimeMeters.BaseSpins != 100)  { OutError = TEXT("re-committing an unchanged session must not double-count"); return false; }
+		if (S.SlotLifetimeMeters.CoinOut != 14000)  { OutError = TEXT("re-commit must not double-count coin out"); return false; }
+
+		// More play, then a second commit: only the new part lands.
+		Session.BaseSpins = 150; Session.CoinIn = 22500; Session.CoinOut = 21000;
+		Session.BiggestWin = 600;                               // LOWER than the record
+		S.SlotLifetimeMeters.Add(Session.Delta(Committed));
+		if (S.SlotLifetimeMeters.BaseSpins != 150)  { OutError = TEXT("second commit must bank only the delta"); return false; }
+		if (S.SlotLifetimeMeters.CoinIn != 22500)   { OutError = TEXT("second commit coin in must be the running total"); return false; }
+		if (S.SlotLifetimeMeters.BiggestWin != 900) { OutError = TEXT("BiggestWin is a maximum and must never fall"); return false; }
+
+		// Measured figures, on the totals above.
+		if (!FMath::IsNearlyEqual(S.SlotLifetimeMeters.MeasuredRtpPercent(), 100.0 * 21000.0 / 22500.0, 0.001))
+		{
+			OutError = TEXT("MeasuredRtpPercent must be CoinOut/CoinIn"); return false;
+		}
+		if (!FMath::IsNearlyEqual(S.SlotLifetimeMeters.MeasuredHitPercent(), 100.0 * 45.0 / 150.0, 0.001))
+		{
+			OutError = TEXT("MeasuredHitPercent must divide by BASE spins"); return false;
+		}
+	}
+
+	/* A par change must not be triggered by a repaint (EqualsMath ignores the name).
+	   If this regresses, opening the panel silently clears the player's session meters. */
+	{
+		FSlotParSheet A = FSlotParSheet::CelestialFortune();
+		FSlotParSheet B = FSlotParSheet::CelestialFortune();
+		B.Name = TEXT("Celestial Fortune (edited)");
+		if (!A.EqualsMath(B)) { OutError = TEXT("EqualsMath must ignore the display name"); return false; }
+
+		B.Strip[0] = (B.Strip[0] == ESlotSymbol::Wild) ? ESlotSymbol::Star : ESlotSymbol::Wild;
+		if (A.EqualsMath(B)) { OutError = TEXT("EqualsMath must notice a strip change"); return false; }
+
+		FSlotParSheet C = FSlotParSheet::CelestialFortune();
+		for (FSlotPayRow& Row : C.PayTable)
+		{
+			if (Row.Symbol == ESlotSymbol::Seven) { Row.Pay5 = 4000.0; }
+		}
+		if (A.EqualsMath(C)) { OutError = TEXT("EqualsMath must notice a paytable change"); return false; }
+	}
 
 	// UnlockAll covers all six.
 	S.UnlockAll();

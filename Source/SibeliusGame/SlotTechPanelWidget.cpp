@@ -346,6 +346,18 @@ void USlotTechPanelWidget::Refresh()
 	// a confirmation step.
 	if (Model)
 	{
+		// A real par change rebaselines the session meters (locked decision 3), so the
+		// play that happened on the OLD sheet has to reach the lifetime record BEFORE the
+		// swap or it would simply vanish. Refresh() runs on every repaint, so this is
+		// gated on the maths actually moving — the same test SetParSheet uses.
+		if (!Model->GetParSheet().EqualsMath(Sheet))
+		{
+			if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+			{
+				Prog->CommitSlotMeters(Model->TakePendingMeters());
+			}
+		}
+
 		Model->SetParSheet(Sheet);
 	}
 }

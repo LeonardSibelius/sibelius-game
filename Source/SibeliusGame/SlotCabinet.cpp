@@ -9,6 +9,7 @@
 #include "GameFramework/Pawn.h"
 #include "Misc/DateTime.h"
 #include "Misc/Paths.h"
+#include "ProgressionSubsystem.h"   // lifetime hard meters — NOT SibeliusProgressSubsystem
 #include "SibeliusProgressSubsystem.h"
 #include "SlotGameModel.h"
 #include "SlotScreenWidget.h"
@@ -200,6 +201,22 @@ void ASlotCabinet::CloseScreen()
 {
 	// SC1: the ONE close path — restore the game's input no matter how we got here.
 	CloseTechPanel();   // the panel must never outlive the machine it edits
+
+	/* Bank the session into the lifetime hard meters (docs/FLOOR_REPORT.md step 2).
+	   Here PRECISELY BECAUSE this is the one close path: however the player leaves —
+	   Esc, the close button, walking away — the play is recorded exactly once.
+	   It is a delta, so calling it on every close is safe; an empty one writes nothing. */
+	if (Screen)
+	{
+		if (USlotGameModel* M = Screen->GetModel())
+		{
+			if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+			{
+				Prog->CommitSlotMeters(M->TakePendingMeters());
+			}
+		}
+	}
+
 	if (Screen) { Screen->RemoveFromParent(); }
 	if (WebScreen) { WebScreen->RemoveFromParent(); }
 	if (APlayerController* PC = ScreenPC.Get())

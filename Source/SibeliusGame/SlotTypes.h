@@ -130,6 +130,26 @@ struct FSlotMeters
 		return (BonusTriggers > 0) ? (static_cast<double>(TotalSpins()) / static_cast<double>(BonusTriggers)) : 0.0;
 	}
 
+	/**
+	 * What has accumulated since the snapshot `Since` was taken.
+	 *
+	 * BiggestWin passes straight through rather than subtracting: it is a maximum, not a
+	 * running total, and Add() folds it with FMath::Max. That makes committing a delta
+	 * idempotent for the record even if the same delta were somehow banked twice.
+	 */
+	FSlotMeters Delta(const FSlotMeters& Since) const
+	{
+		FSlotMeters D;
+		D.BaseSpins     = BaseSpins     - Since.BaseSpins;
+		D.FreeSpins     = FreeSpins     - Since.FreeSpins;
+		D.CoinIn        = CoinIn        - Since.CoinIn;
+		D.CoinOut       = CoinOut       - Since.CoinOut;
+		D.PayingSpins   = PayingSpins   - Since.PayingSpins;
+		D.BonusTriggers = BonusTriggers - Since.BonusTriggers;
+		D.BiggestWin    = BiggestWin;
+		return D;
+	}
+
 	/** Fold another set in — used to add the live session onto the saved lifetime. */
 	void Add(const FSlotMeters& O)
 	{

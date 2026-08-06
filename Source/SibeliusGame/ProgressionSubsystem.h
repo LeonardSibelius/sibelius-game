@@ -76,6 +76,18 @@ public:
 	void SaveSlotDials(float PaysMultiplier, int32 WildCount, float JackpotPay, int32 BonusCount);
 	void ClearSlotDials();   // Revert to factory — forget the edit entirely
 
+	// --- The floor report's hard meters (docs/FLOOR_REPORT.md step 2) ---
+	/**
+	 * Fold a stretch of play into the lifetime meters.
+	 *
+	 * Takes a DELTA — USlotGameModel::TakePendingMeters() — so every end point (leaving
+	 * the machine, changing par) can call it without double-counting. An empty delta
+	 * writes nothing: walking up to a machine and away again is no reason to touch disk.
+	 *
+	 * There is deliberately no matching clear. Locked decision 2: hard meters are hard.
+	 */
+	void CommitSlotMeters(const FSlotMeters& Delta);
+
 	// Dev: wipe to a fresh state and delete the slot (exec'd from the character).
 	void ResetProgression();
 

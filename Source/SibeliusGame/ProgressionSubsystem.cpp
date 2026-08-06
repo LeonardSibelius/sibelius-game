@@ -151,6 +151,21 @@ void UProgressionSubsystem::ClearSlotDials()
 	SaveNow();
 }
 
+void UProgressionSubsystem::CommitSlotMeters(const FSlotMeters& Delta)
+{
+	// Nothing played since the last commit — do not write. The cabinet calls this on every
+	// close, and most closes follow a look at the machine rather than a session on it.
+	if (Delta.TotalSpins() <= 0)
+	{
+		return;
+	}
+
+	// Note there is no clear path here, and no sentinel: the lifetime meters only ever
+	// grow. Locked decision 2 (docs/FLOOR_REPORT.md).
+	State.SlotLifetimeMeters.Add(Delta);
+	SaveNow();
+}
+
 void UProgressionSubsystem::RaiseStat(FName Key, int32 Value)
 {
 	const int32 Before = State.GetStat(Key);

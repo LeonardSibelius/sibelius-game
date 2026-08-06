@@ -170,6 +170,31 @@ int32 FSlotParSheet::CountOf(ESlotSymbol Symbol) const
 	return N;
 }
 
+bool FSlotParSheet::EqualsMath(const FSlotParSheet& Other) const
+{
+	if (Strip != Other.Strip)                      { return false; }
+	if (Paylines.Num() != Other.Paylines.Num())    { return false; }
+	if (PayTable.Num() != Other.PayTable.Num())    { return false; }
+
+	for (int32 i = 0; i < Paylines.Num(); ++i)
+	{
+		if (Paylines[i].Rows != Other.Paylines[i].Rows) { return false; }
+	}
+	for (int32 i = 0; i < PayTable.Num(); ++i)
+	{
+		const FSlotPayRow& A = PayTable[i];
+		const FSlotPayRow& B = Other.PayTable[i];
+		if (A.Symbol != B.Symbol
+			|| !FMath::IsNearlyEqual(A.Pay3, B.Pay3)
+			|| !FMath::IsNearlyEqual(A.Pay4, B.Pay4)
+			|| !FMath::IsNearlyEqual(A.Pay5, B.Pay5))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 bool FSlotParSheet::IsStructurallyValid(FString* OutReason) const
 {
 	auto Fail = [OutReason](const FString& Why)
