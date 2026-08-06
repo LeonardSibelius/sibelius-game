@@ -3,6 +3,26 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.8.9 — Open the machine and change its mind
+
+- **The slot machine has a service panel.** Press **E** to play it, then **T** to open the
+  technician's panel — four dials that rewrite the machine's mathematics while you watch.
+  Turn one and the return, the hit rate, the volatility and the bonus rhythm all move
+  together, live.
+- **It explains itself.** Every number is repeated in plain English — *"bet 100 credits
+  over a long evening and about 96 come back"*, *"wins are frequent and small, your
+  credits drift"* — and **H** opens a page on what a par sheet, RTP, hit frequency and
+  volatility actually are. Written for someone who has never been in a casino.
+- **The house has rules.** Build something too generous and no casino will run it; too
+  mean and no regulator will license it. Outside the band the machine simply refuses to
+  spin — and tells you which dial to turn, and how far, to bring it back.
+- **Your machine is still yours tomorrow.** The dials are saved.
+- **A real payout bug, fixed.** A line with wilds paid the first combination it found
+  rather than the best one — three Wilds were worth 100 but paid out as five Stars for 30.
+  Machines pay their best reading now. The house edge shifted accordingly.
+- **The cathedral apse is clear.** The orbiting symbol cards were moved out of the way of
+  the message on the wall, and the plinth now says what it is.
+
 ## v0.8.8 — The dancers are AI Agents
 
 - **Talk to a dancer.** Walk up to any of them and press **E**: *"Hi. I am AI Agent
