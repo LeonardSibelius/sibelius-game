@@ -320,25 +320,42 @@ void USlotTechPanelWidget::Refresh()
 
 	if (TitleText)
 	{
-		TitleText->SetText(FText::FromString(bShowHelp
-			? TEXT("SERVICE PANEL   —   WHAT ALL THIS MEANS")
-			: TEXT("SERVICE PANEL   —   CELESTIAL FORTUNE")));
+		const TCHAR* Heading = TEXT("SERVICE PANEL   —   CELESTIAL FORTUNE");
+		switch (Page)
+		{
+		case EPage::Help:   Heading = TEXT("SERVICE PANEL   —   WHAT ALL THIS MEANS"); break;
+		case EPage::Meters: Heading = TEXT("SERVICE PANEL   —   METERS"); break;
+		default: break;
+		}
+		TitleText->SetText(FText::FromString(Heading));
 	}
 	if (BodyText)
 	{
-		// Both pages read at 18 now — the ScrollBox handles the overflow, so there is no
-		// reason to shrink the help text to the edge of legibility.
+		// Every page reads at 18 — the ScrollBox handles overflow, so there is no reason
+		// to shrink text to the edge of legibility to make it fit.
 		FSlateFontInfo F = BodyText->GetFont();
 		F.Size = 18;
 		BodyText->SetFont(F);
 
-		BodyText->SetText(FText::FromString(bShowHelp ? ComposeHelpText() : ComposeReportText(Rep, Sheet)));
+		FString Body;
+		switch (Page)
+		{
+		case EPage::Help:   Body = ComposeHelpText(); break;
+		case EPage::Meters: Body = ComposeMetersText(Rep); break;
+		default:            Body = ComposeReportText(Rep, Sheet); break;
+		}
+		BodyText->SetText(FText::FromString(Body));
 	}
 	if (FooterText)
 	{
-		FooterText->SetText(FText::FromString(bShowHelp
-			? TEXT("[UP/DOWN] scroll     [H] back to the machine     [ESC] close")
-			: TEXT("[UP/DOWN] choose a dial   [LEFT/RIGHT] turn it   [H] what this means   [R] revert   [ESC] close")));
+		const TCHAR* Keys = TEXT("[UP/DOWN] choose a dial   [LEFT/RIGHT] turn it   [H] what this means   [M] meters   [R] revert   [ESC] close");
+		switch (Page)
+		{
+		case EPage::Help:   Keys = TEXT("[UP/DOWN] scroll     [M] meters     [H] back to the machine     [ESC] close"); break;
+		case EPage::Meters: Keys = TEXT("[UP/DOWN] scroll     [H] what this means     [M] back to the machine     [ESC] close"); break;
+		default: break;
+		}
+		FooterText->SetText(FText::FromString(Keys));
 	}
 
 	// Push the edit to the machine immediately. Editing is free and reversible by
@@ -360,6 +377,130 @@ void USlotTechPanelWidget::Refresh()
 
 		Model->SetParSheet(Sheet);
 	}
+}
+
+FString USlotTechPanelWidget::Grouped(int64 Value)
+{
+	const bool bNeg = Value < 0;
+	FString Digits = FString::Printf(TEXT("%lld"), bNeg ? -Value : Value);
+
+	for (int32 i = Digits.Len() - 3; i > 0; i -= 3)
+	{
+		Digits.InsertAt(i, TEXT(","));
+	}
+	return bNeg ? (TEXT("-") + Digits) : Digits;
+}
+
+FString USlotTechPanelWidget::ComposeMetersText(const FSlotParSheetReport& Par) const
+{
+	/* THE FLOOR REPORT (docs/FLOOR_REPORT.md step 3).
+	   Two columns in the real vocabulary: SOFT meters (this session, what an attendant
+	   reads on a service call) and HARD meters (lifetime, the regulator's number, which
+	   nothing can clear). The words are part of the lesson.
+
+	   The lifetime column is SAVED + PENDING, not saved + session: the saved record
+	   already contains anything committed mid-visit, so adding the whole session would
+	   count that stretch twice. */
+	const FSlotMeters Session = Model ? Model->GetSessionMeters() : FSlotMeters();
+
+	FSlotMeters Lifetime;
+	bool bEditedPar = false;
+	if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+	{
+		Lifetime   = Prog->GetStateForRead().SlotLifetimeMeters;
+		bEditedPar = Prog->GetStateForRead().HasEditedParSheet();
+	}
+	if (Model)
+	{
+		Lifetime.Add(Model->GetPendingMeters());
+	}
+
+	// Par arrives from Refresh() already analysed AND simulated — the measured hit
+	// frequency in it is what the "paid anything" row is judged against, and it only
+	// exists after MeasureBySimulation. Recomputing here would either duplicate that work
+	// or, worse, silently compare against an unmeasured -1.
+
+	auto Col = [](const FString& S) { return Pad(S, 18); };
+	auto Row = [&Col](const TCHAR* Label, const FString& A, const FString& B)
+	{
+		return FString::Printf(TEXT("   %s%s%s\n"), *Pad(Label, 22), *Col(A), *B);
+	};
+
+	FString S;
+
+	if (!Session.HasPlay() && !Lifetime.HasPlay())
+	{
+		// Nothing to report, and saying so plainly beats a table of dashes. This is the
+		// state a brand-new player meets, so it also has to explain what the page is for.
+		S += TEXT("\n   This machine has not been played yet.\n\n");
+		S += TEXT("   Every other page here is theory — what the machine SHOULD do.\n");
+		S += TEXT("   This one counts what it actually did, and puts the two side\n");
+		S += TEXT("   by side. Close the panel, pull the handle a few dozen times,\n");
+		S += TEXT("   and come back.\n\n");
+		S += FString::Printf(TEXT("   Par for the machine as it stands: %.3f %% return.\n"), Par.RtpPercent);
+		return S;
+	}
+
+	S += FString::Printf(TEXT("   %s%s%s\n"), *Pad(TEXT(""), 22), *Col(TEXT("SESSION")), TEXT("LIFETIME"));
+	S += FString::Printf(TEXT("   %s%s%s\n"), *Pad(TEXT(""), 22), *Col(TEXT("(soft)")), TEXT("(hard)"));
+	S += TEXT("\n");
+
+	S += Row(TEXT("Spins"),      Grouped(Session.BaseSpins),  Grouped(Lifetime.BaseSpins));
+	S += Row(TEXT("Free spins"), Grouped(Session.FreeSpins),  Grouped(Lifetime.FreeSpins));
+	S += Row(TEXT("Coin in"),    Grouped(Session.CoinIn),     Grouped(Lifetime.CoinIn));
+	S += Row(TEXT("Coin out"),   Grouped(Session.CoinOut),    Grouped(Lifetime.CoinOut));
+
+	S += TEXT("   --------------------------------------------------------------\n");
+
+	// The comparison the page exists for. A measured figure only means something next to
+	// the par it is being judged against, so par is repeated on every line rather than
+	// left for the player to remember from another page.
+	auto Pct = [](double V) { return (V < 0.0) ? FString(TEXT("--")) : FString::Printf(TEXT("%.2f %%"), V); };
+	auto Delta = [](double Measured, double Theory)
+	{
+		return (Measured < 0.0) ? FString(TEXT("--"))
+			: FString::Printf(TEXT("%+.2f pts"), Measured - Theory);
+	};
+
+	S += Row(TEXT("Measured return"), Pct(Session.MeasuredRtpPercent()), Pct(Lifetime.MeasuredRtpPercent()));
+	S += Row(TEXT("Theoretical (par)"), Pct(Par.RtpPercent), Pct(Par.RtpPercent));
+	S += Row(TEXT("Difference"),
+		Delta(Session.MeasuredRtpPercent(), Par.RtpPercent),
+		Delta(Lifetime.MeasuredRtpPercent(), Par.RtpPercent));
+
+	S += TEXT("\n");
+
+	S += Row(TEXT("Paid anything"), Pct(Session.MeasuredHitPercent()), Pct(Lifetime.MeasuredHitPercent()));
+	S += Row(TEXT("Bonus triggers"), Grouped(Session.BonusTriggers), Grouped(Lifetime.BonusTriggers));
+	S += Row(TEXT("Biggest win"),   Grouped(Session.BiggestWin),     Grouped(Lifetime.BiggestWin));
+
+	S += TEXT("\n");
+
+	// Bonus rate is quoted per ALL spins, base and free alike, because that is what the
+	// closed form's trigger probability measures — a retrigger during the bonus is just
+	// as much a trigger. Quoting it per base spin here would sit beside a par figure on
+	// a different denominator and disagree by a third.
+	if (Par.TriggerPercent > 0.0)
+	{
+		S += FString::Printf(TEXT("   Par says: %.2f %% return, %.0f %% of spins pay, bonus 1 in %.0f.\n"),
+			Par.RtpPercent, Par.HitFrequencyPercent, 100.0 / Par.TriggerPercent);
+	}
+	if (Lifetime.BonusTriggers > 0)
+	{
+		S += FString::Printf(TEXT("   You have seen the bonus 1 in %.0f spins.\n"), Lifetime.MeasuredBonusOneIn());
+	}
+
+	if (bEditedPar)
+	{
+		// Locked decision 3. The lifetime meters can span several different machines, and
+		// a real floor takes a reading before and after any par change for exactly this
+		// reason. One footnote teaches why that procedure exists.
+		S += TEXT("\n   NOTE: you have changed this machine's par sheet. The lifetime\n");
+		S += TEXT("   column spans more than one machine — compare it with care.\n");
+		S += TEXT("   The session column was cleared when you last turned a dial.\n");
+	}
+
+	return S;
 }
 
 FString USlotTechPanelWidget::ComposeReportText(const FSlotParSheetReport& Rep, const FSlotParSheet& Sheet) const
@@ -573,19 +714,23 @@ FReply USlotTechPanelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const 
 {
 	const FKey Key = InKeyEvent.GetKey();
 
-	if (Key == EKeys::H)
+	// H and M each toggle their own page against the dials, so either key always both
+	// opens and closes its page — and pressing one while the other is open switches
+	// straight across rather than making the player back out first.
+	if (Key == EKeys::H || Key == EKeys::M)
 	{
-		bShowHelp = !bShowHelp;
+		const EPage Target = (Key == EKeys::H) ? EPage::Help : EPage::Meters;
+		Page = (Page == Target) ? EPage::Dials : Target;
 		if (BodyScroll) { BodyScroll->SetScrollOffset(0.f); }   // always start at the top
 		Refresh();
 		return FReply::Handled();
 	}
 
-	// On the help page the arrows are free — no dials to drive — so they scroll. The
+	// On a reading page the arrows are free — no dials to drive — so they scroll. The
 	// mouse wheel works too, but a reader whose hands are on the keyboard should not
 	// have to reach for the mouse to see the last paragraph.
-	if (bShowHelp && BodyScroll && (Key == EKeys::Up || Key == EKeys::Down ||
-	                                Key == EKeys::PageUp || Key == EKeys::PageDown))
+	if (IsReadingPage() && BodyScroll && (Key == EKeys::Up || Key == EKeys::Down ||
+	                                      Key == EKeys::PageUp || Key == EKeys::PageDown))
 	{
 		const float Step = (Key == EKeys::PageUp || Key == EKeys::PageDown) ? 320.f : 90.f;
 		const float Dir  = (Key == EKeys::Up || Key == EKeys::PageUp) ? -1.f : 1.f;
@@ -594,17 +739,28 @@ FReply USlotTechPanelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const 
 	}
 	if (Key == EKeys::Escape || Key == EKeys::T)
 	{
-		// Esc from the help page returns to the dials rather than leaving outright —
+		// Esc from a reading page returns to the dials rather than leaving outright —
 		// backing out one layer at a time is what every reader expects.
-		if (bShowHelp)
+		if (IsReadingPage())
 		{
-			bShowHelp = false;
+			Page = EPage::Dials;
 			Refresh();
 			return FReply::Handled();
 		}
 		OnClosed.Broadcast();
 		return FReply::Handled();
 	}
+	/* The dials belong to the dials page only.
+	   On the METERS page this matters: turning a dial rebaselines the session meters
+	   (locked decision 3), so an unguarded LEFT would wipe the very numbers the player is
+	   reading, with the page open in front of them. The help page had the same hole —
+	   W/S/LEFT/RIGHT/R all reached the dials behind it — which was merely invisible
+	   rather than harmful, and is closed here too. */
+	if (IsReadingPage())
+	{
+		return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+	}
+
 	if (Key == EKeys::Up || Key == EKeys::W)
 	{
 		Selected = static_cast<EKnob>((static_cast<uint8>(Selected) + static_cast<uint8>(EKnob::Count) - 1) % static_cast<uint8>(EKnob::Count));

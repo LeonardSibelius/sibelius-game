@@ -110,7 +110,30 @@ private:
 	/** H — the concepts, for a player who has never seen a slot machine's insides. */
 	FString ComposeHelpText() const;
 
-	bool bShowHelp = false;
+	/**
+	 * M — THE FLOOR REPORT (docs/FLOOR_REPORT.md). What the machine actually did, beside
+	 * what par says it should: soft (session) and hard (lifetime) meters side by side.
+	 *
+	 * Every other page on this panel is theory. This is the only one that has counted
+	 * anything, and the comparison between the two is the lesson.
+	 */
+	FString ComposeMetersText(const FSlotParSheetReport& Par) const;
+
+	/** Thousands separators. A member, not a file-scope helper: this file's helpers live
+	 *  in an anonymous namespace, and generic names there collide across a unity build. */
+	static FString Grouped(int64 Value);
+
+	/**
+	 * Which page the body is showing. An enum rather than a pair of bools so "help AND
+	 * meters at once" is not representable — with three pages that state would otherwise
+	 * exist and would have to be handled everywhere.
+	 */
+	enum class EPage : uint8 { Dials, Help, Meters };
+
+	EPage Page = EPage::Dials;
+
+	/** Both read-only pages scroll and neither drives a dial. */
+	bool IsReadingPage() const { return Page != EPage::Dials; }
 
 	UPROPERTY()
 	TObjectPtr<USlotGameModel> Model;

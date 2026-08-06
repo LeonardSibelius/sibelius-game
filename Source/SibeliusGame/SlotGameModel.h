@@ -86,6 +86,15 @@ public:
 	 */
 	FSlotMeters TakePendingMeters();
 
+	/**
+	 * Peek at what TakePendingMeters() would hand back, without marking it handed over.
+	 *
+	 * The meters page adds this to the SAVED lifetime figure to show a live total: the
+	 * saved record already contains everything committed, so adding the whole session
+	 * instead would double-count anything banked mid-visit.
+	 */
+	FSlotMeters GetPendingMeters() const { return SessionMeters.Delta(CommittedMeters); }
+
 	// Exposed for the smoke test + UI (paytable screen, line highlighting). These were
 	// static until 2026-08-05; they read the INSTANCE's par sheet now, because two
 	// cabinets may legitimately disagree about the answer.
