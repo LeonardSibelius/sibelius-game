@@ -3,6 +3,7 @@
 // SIB-25 — Ch1 Code Vision hidden door. See header.
 
 #include "HiddenDoor.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 
 #include "BranchSubsystem.h"
 #include "CathedralDoor.h"          // SIB-44: reuse the static travel guard
@@ -224,11 +225,8 @@ void AHiddenDoor::Interact_Implementation(AActor* Interactor)
 	UBranchSubsystem* Branch = World ? World->GetSubsystem<UBranchSubsystem>() : nullptr;
 	if (!ACathedralDoor::IsTravelAllowed(Branch))
 	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Red,
-				TEXT("Merge or discard your branches before leaving this world"));
-		}
+		ASibeliusHUD::Toast(this, TEXT("Merge or discard your branches before leaving this world"),
+			2.5f, SibeliusToast::Bad);
 		return;
 	}
 

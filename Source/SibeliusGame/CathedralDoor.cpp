@@ -1,4 +1,5 @@
 #include "CathedralDoor.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "BranchSubsystem.h"
 #include "GenerateComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -69,11 +70,8 @@ void ACathedralDoor::Interact_Implementation(AActor* Interactor)
 	{
 		// D1. Refusal must be legible to the player, not just the log (the
 		// RequestDeploy lesson).
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Red,
-				TEXT("Merge or discard your branches before ascending"));
-		}
+		ASibeliusHUD::Toast(this, TEXT("Merge or discard your branches before ascending"),
+			2.5f, SibeliusToast::Bad);
 		UE_LOG(LogTemp, Display, TEXT("[CathedralDoor] travel refused: branched"));
 		return;
 	}

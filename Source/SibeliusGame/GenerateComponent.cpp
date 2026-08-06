@@ -1,6 +1,7 @@
 // GenerateComponent.cpp — SIB-30 Ch6 P1. Resolve a typed request -> spawn / refuse.
 
 #include "GenerateComponent.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "GenerateMatcher.h"
 #include "GenerateCatalog.h"
 #include "MrsHallLines.h"           // P2: refusal lines + DC blocklist (data-driven)
@@ -237,10 +238,10 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 
 void UGenerateComponent::Toast(const FString& Msg, const FColor& Color) const
 {
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.5f, Color, Msg);
-	}
+	// Was AddOnScreenDebugMessage — compiled out of Shipping, so none of Generate's
+	// feedback ever reached a player. FromSRGBColor is the inverse of the conversion
+	// Canvas applies on the way back out, so the colour on screen is unchanged.
+	ASibeliusHUD::Toast(this, Msg, 3.5f, FLinearColor::FromSRGBColor(Color));
 }
 
 void UGenerateComponent::ShowMrsHall(const FString& Line)

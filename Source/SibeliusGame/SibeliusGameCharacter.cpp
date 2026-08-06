@@ -273,10 +273,11 @@ void ASibeliusGameCharacter::RequestQuit()
 		return;
 	}
 	LastQuitPressTime = Now;
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(0xACE0F2, 2.0f, FColor::Yellow, TEXT("Press Q again to quit"));
-	}
+
+	// Unlike the New Game and power-refusal messages below, this one had NO HUD path at
+	// all — so in a shipped build Q did nothing visible the first time, and quit the game
+	// the second. The confirmation the double-press relies on was never on screen.
+	ASibeliusHUD::Toast(this, TEXT("Press Q again to quit"), 2.0f, SibeliusToast::Prize);
 }
 
 void ASibeliusGameCharacter::RequestNewGame()

@@ -11,6 +11,9 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "SibeliusHUD.h"   // the prompt draws on the HUD canvas so it survives packaging
 
 UInteractorComponent::UInteractorComponent()
 {
@@ -102,12 +105,22 @@ void UInteractorComponent::UpdateFocus()
 
 	FocusedActor = Target;
 
-	// Stable key so the prompt refreshes in place each tick instead of stacking.
-	constexpr uint64 InteractPromptKey = 0xACE0F1;
+	/* THE prompt. Every IInteractable in the game arrives here, which is why this one line
+	   mattered more than the other seventeen put together.
 
-	if (GEngine && !Prompt.IsEmpty())
+	   It used to be AddOnScreenDebugMessage, which Shipping COMPILES OUT — so no player
+	   who ever downloaded this game has seen an interaction prompt. Perfect in PIE, gone
+	   in the build, nothing in any log. The HUD channel draws on the canvas and survives
+	   packaging; it self-expires on a short lease, so this still needs no "stop showing"
+	   path, exactly as the 0.15s debug message did not. */
+	if (!Prompt.IsEmpty())
 	{
-		GEngine->AddOnScreenDebugMessage(InteractPromptKey, 0.15f, FColor::White, Prompt.ToString());
+		const APawn* Pawn = Cast<APawn>(GetOwner());
+		const APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+		if (ASibeliusHUD* Hud = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+		{
+			Hud->ShowInteractPrompt(Prompt.ToString());
+		}
 	}
 }
 

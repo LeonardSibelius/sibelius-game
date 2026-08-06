@@ -122,6 +122,8 @@ void ASibeliusHUD::DrawHUD()
 	DrawBranchLayer();        // Test-Drive marker + discoverability hint (Shipping-safe)
 	DrawPresenceLine();       // The Presence's subtitle channel
 	DrawWorldName();          // APPEAL extra: which world am I in
+	DrawInteractPrompt();     // "[E] ..." — was a screen debug message, invisible in Shipping
+	DrawToasts();             // pickups, refusals, chapter ends — likewise
 
 	if (bOverlayVisible)
 	{
@@ -133,6 +135,119 @@ void ASibeliusHUD::ShowPresenceLine(const FString& Text, float Seconds)
 {
 	PresenceText = Text;
 	PresenceUntil = GetWorld() ? GetWorld()->GetTimeSeconds() + Seconds : 0.0;
+}
+
+/* ================= SHIPPING-SAFE PLAYER MESSAGING =================
+   See the header for why this exists. Short version: every prompt and pickup line in the
+   game went through AddOnScreenDebugMessage, which Shipping compiles out — so no player
+   has ever seen one, and nothing logged the fact. */
+
+void ASibeliusHUD::ShowInteractPrompt(const FString& Text)
+{
+	const UWorld* World = GetWorld();
+	InteractPromptText  = Text;
+
+	// A short lease, re-taken every tick while the interactor holds a target. Letting it
+	// lapse on its own means no caller ever has to remember to clear it — the same
+	// self-expiring contract the old 0.15s debug message had, which is why the interactor
+	// needed no "stop showing" path and still does not.
+	InteractPromptUntil = World ? World->GetTimeSeconds() + 0.25 : 0.0;
+}
+
+void ASibeliusHUD::ShowToast(const FString& Text, float Seconds, const FLinearColor& InColor)
+{
+	if (Text.IsEmpty())
+	{
+		return;
+	}
+
+	const UWorld* World = GetWorld();
+	const double Now = World ? World->GetTimeSeconds() : 0.0;
+
+	// Re-posting the same line refreshes it in place rather than stacking a duplicate.
+	// Several call sites fire on a repeatable action (bumping a locked door), and three
+	// identical lines stacked up would read as a bug.
+	for (FHudToast& T : Toasts)
+	{
+		if (T.Text == Text)
+		{
+			T.Until = Now + Seconds;
+			T.Color = InColor;
+			return;
+		}
+	}
+
+	if (Toasts.Num() >= MaxToasts)
+	{
+		Toasts.RemoveAt(0);   // oldest goes; the newest message is the one being read
+	}
+	Toasts.Add({ Text, Now + Seconds, InColor });
+}
+
+void ASibeliusHUD::Toast(const UObject* WorldContext, const FString& Text, float Seconds,
+	const FLinearColor& InColor)
+{
+	const UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::ReturnNull) : nullptr;
+	const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+
+	if (ASibeliusHUD* Hud = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+	{
+		Hud->ShowToast(Text, Seconds, InColor);
+		return;
+	}
+
+	// No Sibelius HUD — the Elsewhere runs its own HUD class, and commandlets have none
+	// at all. Fall back rather than swallow, so a message is never silently lost in a
+	// development build the way it used to be in a shipped one.
+#if !UE_BUILD_SHIPPING
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, Seconds, InColor.ToFColor(true), Text);
+	}
+#endif
+}
+
+void ASibeliusHUD::DrawInteractPrompt()
+{
+	if (!Canvas || InteractPromptText.IsEmpty()) { return; }
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (Now >= InteractPromptUntil) { return; }
+
+	const float Scale = OverlayTextScale * 1.6f;
+	float W = 0.f, H = 0.f;
+	GetTextSize(InteractPromptText, W, H, nullptr, Scale);
+
+	// Just under the reticle and ABOVE the machine hint's band (0.66), so when both are
+	// up near the cabinet they read as two lines rather than one overlapping smear.
+	const float X = (Canvas->ClipX - W) * 0.5f;
+	const float Y = Canvas->ClipY * 0.60f;
+
+	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f), X - 20.f, Y - 9.f, W + 40.f, H + 18.f);
+	DrawText(InteractPromptText, FLinearColor(1.0f, 1.0f, 1.0f, 0.97f), X, Y, nullptr, Scale);
+}
+
+void ASibeliusHUD::DrawToasts()
+{
+	if (!Canvas || Toasts.Num() == 0) { return; }
+
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	Toasts.RemoveAll([Now](const FHudToast& T) { return Now >= T.Until; });
+
+	const float Scale = OverlayTextScale * 1.5f;
+	float Y = Canvas->ClipY * 0.76f;   // between the machine hint (0.66) and the memoir (0.88)
+
+	for (const FHudToast& T : Toasts)
+	{
+		const float Alpha = static_cast<float>(FMath::Clamp(T.Until - Now, 0.0, 1.0));
+		float W = 0.f, H = 0.f;
+		GetTextSize(T.Text, W, H, nullptr, Scale);
+
+		const float X = (Canvas->ClipX - W) * 0.5f;
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.70f * Alpha), X - 20.f, Y - 8.f, W + 40.f, H + 16.f);
+		DrawText(T.Text, FLinearColor(T.Color.R, T.Color.G, T.Color.B, Alpha), X, Y, nullptr, Scale);
+
+		Y += H + 22.0f;
+	}
 }
 
 void ASibeliusHUD::DrawPresenceLine()

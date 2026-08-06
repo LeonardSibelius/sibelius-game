@@ -2,6 +2,7 @@
 
 #include "HallAlarmSubsystem.h"
 #include "SibeliusGame.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 
 #include "Camera/PlayerCameraManager.h"
 #include "Engine/Engine.h"
@@ -209,10 +210,7 @@ void ARefuserSpawner::PlayAlarmFeedback()
 		}
 	}
 
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Red, TEXT("ALERT - REFUSAL PROTOCOL ENGAGED"));
-	}
+	ASibeliusHUD::Toast(this, TEXT("ALERT - REFUSAL PROTOCOL ENGAGED"), 4.0f, SibeliusToast::Bad);
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Spawner] ALERT - REFUSAL PROTOCOL ENGAGED"));
 }

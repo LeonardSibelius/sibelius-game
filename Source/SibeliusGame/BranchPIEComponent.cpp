@@ -1,6 +1,7 @@
 // BranchPIEComponent.cpp — SIB-36 PIE consumers of UBranchSubsystem.
 
 #include "BranchPIEComponent.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "BranchSubsystem.h"
 #include "BookPickup.h"
 #include "RefuserController.h"
@@ -263,10 +264,10 @@ void UBranchPIEComponent::FreezeRefusers(bool bFreeze)
 
 void UBranchPIEComponent::Toast(const FString& Msg, const FColor& Color) const
 {
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.5f, Color, Msg);
-	}
+	// Was AddOnScreenDebugMessage — compiled out of Shipping, so Test-Drive's branch and
+	// merge feedback was invisible to players. The BRANCH x N marker already moved to the
+	// HUD for this reason; this is the rest of the same fix.
+	ASibeliusHUD::Toast(this, Msg, 2.5f, FLinearColor::FromSRGBColor(Color));
 }
 
 void UBranchPIEComponent::Debug_Enter()

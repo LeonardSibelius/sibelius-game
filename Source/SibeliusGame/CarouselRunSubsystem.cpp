@@ -3,6 +3,7 @@
 // FUN-4: staked entry + sauce settlement on run end.
 
 #include "CarouselRunSubsystem.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "ProgressionSubsystem.h"
 #include "Engine/Engine.h"
 
@@ -75,13 +76,11 @@ void UCarouselRunSubsystem::SettleStake(bool bWon)
 	{
 		Progression->GrantSauce(Payout);
 	}
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 8.0f, bWon ? FColor::Green : FColor::Silver,
-			bWon
-				? FString::Printf(TEXT("THE CAROUSEL PAYS  +%d SAUCE  (total %d)"), Payout, Progression->GetSauce())
-				: FString::Printf(TEXT("The Carousel keeps its stake.  Consolation +%d sauce (total %d)"), Payout, Progression->GetSauce()));
-	}
+	ASibeliusHUD::Toast(this,
+		bWon
+			? FString::Printf(TEXT("THE CAROUSEL PAYS  +%d SAUCE  (total %d)"), Payout, Progression->GetSauce())
+			: FString::Printf(TEXT("The Carousel keeps its stake.  Consolation +%d sauce (total %d)"), Payout, Progression->GetSauce()),
+		8.0f, bWon ? SibeliusToast::Good : SibeliusToast::Info);
 }
 
 bool UCarouselRunSubsystem::Spin()

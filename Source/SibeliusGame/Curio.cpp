@@ -1,6 +1,7 @@
 // Curio.cpp — see header.
 
 #include "Curio.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "CurioCollectionSubsystem.h"
 #include "ElsewhereSubsystem.h"
 #include "ProgressionSubsystem.h"   // FUN-5: curios pay Sauce
@@ -169,11 +170,9 @@ bool ACurio::Collect(UObject* WorldContext)
 	{
 		Progression->GrantSauce(SauceOnCollect);
 		Progression->BumpStat(SibeliusStats::CuriosCollected);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
-				FString::Printf(TEXT("+%d SAUCE  (total %d)"), SauceOnCollect, Progression->GetSauce()));
-		}
+		ASibeliusHUD::Toast(this,
+			FString::Printf(TEXT("+%d SAUCE  (total %d)"), SauceOnCollect, Progression->GetSauce()),
+			5.0f, SibeliusToast::Good);
 	}
 
 	Destroy();

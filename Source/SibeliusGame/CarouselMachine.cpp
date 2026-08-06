@@ -1,6 +1,7 @@
 // CarouselMachine.cpp — SIB-46 grey-box cabinet. See header.
 
 #include "CarouselMachine.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "CarouselRunSubsystem.h"
 #include "TravelTransitionSubsystem.h"   // FUN-4: O returns to the office
 
@@ -150,11 +151,12 @@ void ACarouselMachine::OnNewRun()
 	// progression subsystem exists). Refusal is loud so the player knows why.
 	if (UCarouselRunSubsystem* R = GetRun())
 	{
-		if (!R->StartStakedRun(FMath::Rand()) && GEngine)
+		if (!R->StartStakedRun(FMath::Rand()))
 		{
-			GEngine->AddOnScreenDebugMessage(0xCA80, 4.0f, FColor::Orange,
+			ASibeliusHUD::Toast(this,
 				FString::Printf(TEXT("The Carousel demands %d SAUCE. Earn more first."),
-					UCarouselRunSubsystem::EntryStake));
+					UCarouselRunSubsystem::EntryStake),
+				4.0f, SibeliusToast::Warn);
 		}
 	}
 }

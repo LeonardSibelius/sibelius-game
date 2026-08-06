@@ -1,6 +1,7 @@
 // CompileEndSubsystem.cpp
 
 #include "CompileEndSubsystem.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 
 #include "EngineUtils.h"            // TActorIterator
 #include "GameFramework/Actor.h"
@@ -66,12 +67,10 @@ void UCompileEndSubsystem::HandleEndTriggerOverlap(AActor* /*OverlappedActor*/, 
 		{
 			Progression->GrantSauce(ChapterReward);
 			Progression->BumpStat(SibeliusStats::ChaptersCompleted);
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 6.0f, FColor::Emerald,
-					FString::Printf(TEXT("CHAPTER COMPLETE  +%d SAUCE  (total %d)"),
-						ChapterReward, Progression->GetSauce()));
-			}
+			ASibeliusHUD::Toast(this,
+				FString::Printf(TEXT("CHAPTER COMPLETE  +%d SAUCE  (total %d)"),
+					ChapterReward, Progression->GetSauce()),
+				6.0f, SibeliusToast::Good);
 		}
 	}
 

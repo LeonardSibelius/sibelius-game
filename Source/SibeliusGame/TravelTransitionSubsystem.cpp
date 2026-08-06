@@ -1,6 +1,7 @@
 // TravelTransitionSubsystem.cpp — see header.
 
 #include "TravelTransitionSubsystem.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "STravelShimmerScreen.h"
 #include "SibeliusGame.h"                // LogSibeliusGame
 
@@ -182,11 +183,9 @@ bool UTravelTransitionSubsystem::OnWatchdog(float /*DeltaTime*/)
 		}
 		RemoveCover();
 
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red,
-				FString::Printf(TEXT("Travel to %s failed to load — please try again."), *PendingLevelName.ToString()));
-		}
+		ASibeliusHUD::Toast(this,
+			FString::Printf(TEXT("Travel to %s failed to load — please try again."), *PendingLevelName.ToString()),
+			10.0f, SibeliusToast::Bad);
 	}
 	return false;   // one-shot
 }

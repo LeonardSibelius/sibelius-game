@@ -1,6 +1,7 @@
 // SauceBowl.cpp — the temple's sauce fountain. See header.
 
 #include "SauceBowl.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "ProgressionSubsystem.h"
 #include "HallAlarmSubsystem.h"   // filling the bowl rings the alarm
 #include "Engine/GameInstance.h"
@@ -155,12 +156,10 @@ bool ASauceBowl::TryClaim(APawn* Claimer)
 	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 	{
 		Progression->GrantSauce(SaucePerBowl);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Emerald,
-				FString::Printf(TEXT("SAUCE COMPILED  +%d  (total %d)"),
-					SaucePerBowl, Progression->GetSauce()));
-		}
+		ASibeliusHUD::Toast(this,
+			FString::Printf(TEXT("SAUCE COMPILED  +%d  (total %d)"),
+				SaucePerBowl, Progression->GetSauce()),
+			5.0f, SibeliusToast::Good);
 	}
 	return true;
 }

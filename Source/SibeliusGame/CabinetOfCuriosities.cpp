@@ -1,6 +1,7 @@
 // CabinetOfCuriosities.cpp — see header.
 
 #include "CabinetOfCuriosities.h"
+#include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "CurioCollectionSubsystem.h"
 #include "ElsewhereSubsystem.h"
 
@@ -126,11 +127,9 @@ FCabinetState ACabinetOfCuriosities::RefreshFrom(const TArray<FName>& AllCurioId
 void ACabinetOfCuriosities::Interact_Implementation(AActor* /*Interactor*/)
 {
 	const FCabinetState S = Refresh();
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Yellow,
-			FString::Printf(TEXT("Cabinet of Curiosities: %d / %d found  —  score %d"), S.Filled, S.Total, S.Score));
-	}
+	ASibeliusHUD::Toast(this,
+		FString::Printf(TEXT("Cabinet of Curiosities: %d / %d found  —  score %d"), S.Filled, S.Total, S.Score),
+		4.0f, SibeliusToast::Prize);
 }
 
 FText ACabinetOfCuriosities::GetInteractionPrompt_Implementation() const

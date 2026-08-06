@@ -16,6 +16,21 @@
 #include "SibeliusReticle.h"
 #include "SibeliusHUD.generated.h"
 
+/**
+ * Toast colours by MEANING, not by hue, so the palette can be retuned in one place.
+ *
+ * `inline` because these are used from a dozen translation units and UE packs several
+ * .cpp files into one unity blob — the lesson from SND_SR in ProceduralPcm.h.
+ */
+namespace SibeliusToast
+{
+	inline const FLinearColor Good (0.25f, 1.00f, 0.45f, 1.0f);   // sauce gained, chapter done
+	inline const FLinearColor Prize(1.00f, 0.90f, 0.30f, 1.0f);   // a find worth noting
+	inline const FLinearColor Warn (1.00f, 0.65f, 0.25f, 1.0f);   // refused, can't afford
+	inline const FLinearColor Bad  (1.00f, 0.35f, 0.30f, 1.0f);   // blocked, failed, alarm
+	inline const FLinearColor Info (0.80f, 0.86f, 0.92f, 1.0f);   // neutral statement
+}
+
 UCLASS()
 class SIBELIUSGAME_API ASibeliusHUD : public AHUD
 {
@@ -113,6 +128,59 @@ private:
 
 public:
 	void ShowPresenceLine(const FString& Text, float Seconds);
+
+	/* ---------------- SHIPPING-SAFE PLAYER MESSAGING ----------------
+	   GEngine->AddOnScreenDebugMessage is COMPILED OUT of Shipping builds. Every world
+	   interaction prompt and nearly every piece of feedback in the game went through it,
+	   which means players have never seen any of them — the doors that explain why they
+	   are locked, the sauce pickups, the chapter-end lines, "press N again to ERASE ALL
+	   PROGRESS". It all worked perfectly in PIE and vanished in the shipped build, with
+	   nothing in any log to say so.
+
+	   These two channels draw on the HUD canvas, which survives packaging. */
+
+	/**
+	 * The world interaction prompt — "[E] play the machine". ONE line, expected to be
+	 * re-posted every tick by UInteractorComponent while a target is focused; it fades on
+	 * its own shortly after the posting stops, so nothing has to clear it.
+	 */
+	void ShowInteractPrompt(const FString& Text);
+
+	/** A transient message. Up to MaxToasts stack; the oldest expires first. */
+	void ShowToast(const FString& Text, float Seconds = 4.0f,
+		const FLinearColor& InColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+
+	/**
+	 * Post a toast to the local HUD from anywhere, without each call site repeating the
+	 * lookup. Safe with a null or non-Sibelius HUD.
+	 *
+	 * Prefer this over AddOnScreenDebugMessage for ANYTHING a player is meant to read.
+	 * Screen debug messages remain correct for developer output — they SHOULD disappear
+	 * in a shipped build.
+	 */
+	static void Toast(const UObject* WorldContext, const FString& Text, float Seconds = 4.0f,
+		const FLinearColor& InColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+
+private:
+	void DrawInteractPrompt();
+	void DrawToasts();
+
+	FString InteractPromptText;
+	double InteractPromptUntil = 0.0;
+
+	struct FHudToast
+	{
+		FString Text;
+		double Until = 0.0;
+		FLinearColor Color = FLinearColor::White;
+	};
+
+	/** Three at once is plenty; beyond that they collide with the memoir band below. */
+	static constexpr int32 MaxToasts = 3;
+
+	TArray<FHudToast> Toasts;
+
+public:
 
 private:
 	FString PresenceText;
