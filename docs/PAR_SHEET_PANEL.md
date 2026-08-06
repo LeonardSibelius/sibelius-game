@@ -244,6 +244,26 @@ you like while trying another. Surface the offer when the player has an unkept c
 that is the moment it is genuinely the right tool, and that is when a mechanic actually
 gets learned.
 
+### 🔒 SUPERSEDED (Walt, 2026-08-05, after step 4): the branch offer is DROPPED
+
+*"drop the branch offer"*
+
+Building persistence made the branch offer incoherent, and the two locked decisions turned
+out to contradict each other:
+
+- Persistence saves the moment a dial moves. So **there is no unkept change** — the
+  trigger the offer was specified to fire on cannot occur.
+- "Keep a variant while trying another" needs a SECOND saved par sheet. The persistence
+  decision explicitly rejected that as inventory management.
+
+Rejected fixes: a second slot (reopens the inventory question this feature exists to
+avoid), and making saving explicit (recreates the unkept change, but costs the thing that
+just made a player's work survive the night — the whole point of step 4).
+
+So the par sheet panel does **not** integrate with Test-Drive. The branch is still looking
+for a job; this was not it. Do not "finish" this later without reopening the tension above
+— the missing integration is a decision, not an oversight.
+
 ---
 
 ## Persistence
@@ -290,9 +310,10 @@ the three knob ranges here**, against real numbers rather than guesses.
 (including per-symbol contribution and HOLD %), the licence lamp, REVERT TO FACTORY, and
 the spin gate that enforces UNLICENSED.
 
-**4 — Persistence, branch offer, and BONUS.** The saved par sheet, the branch prompt when
-a change is unkept, and the Earth-count knob with its free-spin math — the fiddliest
-piece, deliberately last.
+**4 — Persistence and BONUS.** ✅ DONE (`eb0e67e9`). The saved par sheet — stored as the
+four DIAL VALUES, not as a sheet, so a later retune of the shipped machine still reaches
+returning players — and the Earth-count dial. The branch prompt was dropped; see the
+SUPERSEDED block above.
 
 Stop after any step and the game is still shippable. Steps 1 and 2 have no player-visible
 effect at all, which makes them safe to land whenever.
