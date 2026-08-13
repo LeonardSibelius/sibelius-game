@@ -2,7 +2,8 @@
 //
 // THE DANCING GIRLS ARE AI AGENTS (Walt, 2026-08-03).
 //
-//   E on a dancer -> she introduces herself:
+//   E on a dancer -> she introduces herself AND pauses the dance (or plays
+//        GreetingAnim if one is assigned), then resumes the same dance:
 //        "Hi. I am AI Agent Kaia. Wanna Fight? (I don't really fight, I just dance)"
 //   F on a dancer -> she switches to a different Morro dance, at random.
 //
@@ -74,9 +75,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
 	TArray<TObjectPtr<UAnimSequence>> Dances;
 
-	/** How long her greeting stays on screen (seconds). */
+	/** How long her greeting stays on screen (seconds). Also how long a paused dance holds. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.5"))
 	float GreetingSeconds = 6.0f;
+
+	/**
+	 * One-shot she plays on E instead of freezing. The CDO hard-refs
+	 * Anim_Celebration_2_Manny_MH (Morro Gestures, UE4 → Manny → MetaHuman).
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	TObjectPtr<UAnimSequence> GreetingAnim;
 
 	/**
 	 * Minimum time between dance changes. F repeats EVERY FRAME while held, so without
@@ -86,7 +94,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0"))
 	float ShuffleCooldown = 0.4f;
 
-	/** E — she introduces herself on the HUD's subtitle channel. */
+	/** E — she introduces herself on the HUD's subtitle channel, and pauses (or waves). */
 	UFUNCTION(BlueprintCallable, Category="Dancer")
 	void Greet();
 
@@ -117,14 +125,39 @@ public:
 	static bool IsKnownDance(const UAnimSequence* Anim);
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
 	/** The skeletal mesh actually playing the dance (a MetaHuman's "Body"). */
 	USkeletalMeshComponent* FindDanceMesh() const;
+
+	/** Pause the dance, or play GreetingAnim once. ResumeAfterGreeting puts her back. */
+	void BeginGreetingMotion();
+	void ResumeAfterGreeting();
+
+	/** CDO can be stale after a hot-reload; load the bow if the pointer is still empty. */
+	void EnsureGreetingAnim();
+
+	/**
+	 * Drop the greeting pose. bResumeDance = true puts the saved dance back;
+	 * false is for ShuffleDance, which is about to play something else.
+	 */
+	void CancelGreeting(bool bResumeDance);
 
 	/** Index into Dances of what she is playing, so a shuffle never repeats it. */
 	int32 CurrentDanceIndex = INDEX_NONE;
 
 	/** World time of the last accepted shuffle. Starts far in the past so the first press always lands. */
 	double LastShuffleTime = -1000.0;
+
+	/** True while she is paused or waving — extra E refreshes the line, F cancels. */
+	bool bGreeting = false;
+
+	/** The dance she was on when E was pressed, so resume is the same move. */
+	TObjectPtr<UAnimSequence> SavedDance;
+
+	/** Playback time inside SavedDance. Pause keeps this; a wave replaces it then we seek back. */
+	float SavedDanceTime = 0.0f;
+
+	FTimerHandle GreetingTimer;
 };

@@ -1,0 +1,29 @@
+# Package the v0.9.2 SHIPPING Win64 RELEASE build (butler -> itch).
+#
+# Content of 0.9.2: dancers greet on E with Celebration 2 (Morro Gestures,
+# retargeted UE4 -> Manny -> MetaHuman), then resume the same dance.
+#
+# Cook note: Anim_Celebration_2_Manny_MH is gitignored (vendor mocap). It
+# reaches the pak only via FObjectFinder on UDancerAgentComponent. Confirm
+# the local file exists before cooking:
+#   Content/Characters/Retargeting/Anim_Celebration_2_Manny_MH.uasset
+#
+# After EXITCODE=0:
+#   & "C:\Users\wpark\butler\butler.exe" push `
+#     "C:\Users\wpark\builds\sibelius-v0.9.2\Windows" `
+#     leonardsibelius/leonard-sibelius:windows --userversion 0.9.2
+$uat = "C:\Program Files\Epic Games\UE_5.7\Engine\Build\BatchFiles\RunUAT.bat"
+$log = "C:\Users\wpark\projects\sibelius-game\pkg-v092.log"
+if (Test-Path $log) { Remove-Item $log -Force }
+$uatArgs = @(
+  "BuildCookRun",
+  "-nop4","-utf8output","-nocompileeditor","-skipbuildeditor","-cook",
+  "-project=C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject",
+  "-target=SibeliusGame",
+  "-platform=Win64","-installed","-SkipCookingErrorSummary","-clientarchitecture=x64",
+  "-stage","-archive","-package","-build","-pak","-iostore","-compressed","-prereqs",
+  "-archivedirectory=C:\Users\wpark\builds\sibelius-v0.9.2",
+  "-clientconfig=Shipping"
+)
+& $uat @uatArgs *> $log
+Write-Output "EXITCODE=$LASTEXITCODE"

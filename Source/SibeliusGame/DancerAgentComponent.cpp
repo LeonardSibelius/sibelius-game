@@ -7,11 +7,13 @@
 #include "DancerAgentSubsystem.h"          // the aim-assist registry
 
 #include "Animation/AnimSequence.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
 namespace
@@ -109,11 +111,51 @@ UDancerAgentComponent::UDancerAgentComponent()
 			Dances.Add(Finder.Object);
 		}
 	}
+
+	// Greeting — same cook rule as the dances. The _MH file is gitignored.
+	// Not static: a static finder caches the FIRST result, which was a miss
+	// the session the file did not exist yet.
+	ConstructorHelpers::FObjectFinder<UAnimSequence> GreetFinder(
+		TEXT("/Game/Characters/Retargeting/Anim_Celebration_2_Manny_MH.Anim_Celebration_2_Manny_MH"));
+	if (GreetFinder.Succeeded())
+	{
+		GreetingAnim = GreetFinder.Object;
+	}
+}
+
+void UDancerAgentComponent::EnsureGreetingAnim()
+{
+	if (GreetingAnim)
+	{
+		return;
+	}
+
+	// Load AFTER CDO property-copy. ConstructorHelpers can miss a newly saved
+	// asset; LoadObject sees the Content Browser.
+	static const TCHAR* const GreetPaths[] = {
+		TEXT("/Game/Characters/Retargeting/Anim_Celebration_2_Manny_MH.Anim_Celebration_2_Manny_MH"),
+		TEXT("/Game/Characters/Retargeting/Anim_Bow_MH.Anim_Bow_MH"),
+	};
+	for (const TCHAR* Path : GreetPaths)
+	{
+		GreetingAnim = LoadObject<UAnimSequence>(nullptr, Path);
+		if (GreetingAnim)
+		{
+			UE_LOG(LogSibeliusGame, Display,
+				TEXT("[Dancer] greeting loaded from %s"), Path);
+			return;
+		}
+	}
+
+	UE_LOG(LogSibeliusGame, Warning,
+		TEXT("[Dancer] greeting anim missing — will pause instead"));
 }
 
 void UDancerAgentComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	EnsureGreetingAnim();
 
 	if (AgentName.IsEmpty())
 	{
@@ -138,6 +180,12 @@ void UDancerAgentComponent::BeginPlay()
 			Sub->RegisterDancer(this);
 		}
 	}
+}
+
+void UDancerAgentComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	CancelGreeting(/*bResumeDance=*/false);
+	Super::EndPlay(EndPlayReason);
 }
 
 bool UDancerAgentComponent::IsKnownDance(const UAnimSequence* Anim)
@@ -241,14 +289,126 @@ void UDancerAgentComponent::Greet()
 		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
 		{
 			HUD->ShowPresenceLine(Line, GreetingSeconds);
-			return;
+		}
+		else
+		{
+			// The Elsewhere and the Carousel run their own HUD classes, which have no
+			// subtitle channel. Rather than say nothing, log it — and this is why the
+			// office/temple/cathedral, where the dancers actually live, all use ASibeliusHUD.
+			UE_LOG(LogSibeliusGame, Display,
+				TEXT("[Dancer] %s greeted, but this level's HUD has no subtitle channel"), *AgentName);
 		}
 	}
 
-	// The Elsewhere and the Carousel run their own HUD classes, which have no subtitle
-	// channel. Rather than say nothing, log it — and this is why the office/temple/
-	// cathedral, where the dancers actually live, all use ASibeliusHUD.
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s greeted, but this level's HUD has no subtitle channel"), *AgentName);
+	BeginGreetingMotion();
+}
+
+void UDancerAgentComponent::BeginGreetingMotion()
+{
+	USkeletalMeshComponent* Mesh = FindDanceMesh();
+	if (!Mesh)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	// Already mid-greeting: keep the pose (or the wave), just hold a bit longer.
+	// Restarting a wave mid-swing looks like a glitch.
+	if (bGreeting)
+	{
+		World->GetTimerManager().SetTimer(
+			GreetingTimer, this, &UDancerAgentComponent::ResumeAfterGreeting,
+			GreetingSeconds, /*bLoop=*/false);
+		return;
+	}
+
+	SavedDance = Cast<UAnimSequence>(Mesh->AnimationData.AnimToPlay);
+	SavedDanceTime = Mesh->GetPosition();
+	bGreeting = true;
+
+	float HoldSeconds = GreetingSeconds;
+
+	EnsureGreetingAnim();
+
+	if (GreetingAnim)
+	{
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		Mesh->PlayAnimation(GreetingAnim, /*bLooping=*/false);
+		HoldSeconds = FMath::Max(GreetingAnim->GetPlayLength(), 0.5f);
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s greets with %s (%.2fs)"),
+			*AgentName, *GreetingAnim->GetName(), HoldSeconds);
+	}
+	else if (UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance())
+	{
+		// No wave in the project — freeze the dance pose while she talks.
+		Node->SetPlaying(false);
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s paused dance to greet"), *AgentName);
+	}
+	else
+	{
+		Mesh->bPauseAnims = true;
+	}
+
+	World->GetTimerManager().SetTimer(
+		GreetingTimer, this, &UDancerAgentComponent::ResumeAfterGreeting,
+		HoldSeconds, /*bLoop=*/false);
+}
+
+void UDancerAgentComponent::ResumeAfterGreeting()
+{
+	CancelGreeting(/*bResumeDance=*/true);
+}
+
+void UDancerAgentComponent::CancelGreeting(bool bResumeDance)
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(GreetingTimer);
+	}
+
+	const bool bWasGreeting = bGreeting;
+	bGreeting = false;
+
+	USkeletalMeshComponent* Mesh = FindDanceMesh();
+	if (!Mesh)
+	{
+		SavedDance = nullptr;
+		SavedDanceTime = 0.0f;
+		return;
+	}
+
+	Mesh->bPauseAnims = false;
+
+	if (!bWasGreeting)
+	{
+		return;
+	}
+
+	if (!bResumeDance)
+	{
+		SavedDance = nullptr;
+		SavedDanceTime = 0.0f;
+		return;
+	}
+
+	if (SavedDance)
+	{
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		Mesh->PlayAnimation(SavedDance, /*bLooping=*/true);
+		Mesh->SetPosition(SavedDanceTime, /*bFireNotifies=*/false);
+	}
+	else if (UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance())
+	{
+		Node->SetPlaying(true);
+	}
+
+	SavedDance = nullptr;
+	SavedDanceTime = 0.0f;
 }
 
 bool UDancerAgentComponent::ShuffleDance()
@@ -260,6 +420,10 @@ bool UDancerAgentComponent::ShuffleDance()
 			*AgentName, Dances.Num());
 		return false;
 	}
+
+	// F mid-greeting must not leave her frozen, and must not resume the old dance
+	// on top of the shuffle we are about to play.
+	CancelGreeting(/*bResumeDance=*/false);
 
 	// One press, one dance. F repeats every frame while held: Walt's log shows a single
 	// brief press producing thirteen changes across consecutive frames 389-401, which

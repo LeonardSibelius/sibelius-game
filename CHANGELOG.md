@@ -3,6 +3,13 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.9.2 — She celebrates when you say hello
+
+- **Talk to a dancer and she greets you.** Press **E** and she stops dancing,
+  plays a short celebration, then picks the same dance back up. The line is
+  unchanged: *"Hi. I am AI Agent … Wanna Fight?"*
+- **F mid-greeting** still changes her dance (and unfreezes her).
+
 ## v0.9.1 — The game finally talks to you
 
 - **Interaction prompts are visible.** Every door, machine, bowl, curio, cabinet and
