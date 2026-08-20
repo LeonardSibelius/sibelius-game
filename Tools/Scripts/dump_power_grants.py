@@ -48,14 +48,23 @@ for a in eas.get_all_level_actors():
 
     if cls == "PowerGrant":
         rec = {"label": label, "loc": loc_of(a)}
-        for prop, key in (("power", "power"),
-                          ("b_grants_power", "grants_power"),
-                          ("b_slot_trial", "slot_trial"),
-                          ("b_show_beacon", "show_beacon")):
-            try:
-                rec[key] = str(a.get_editor_property(prop))
-            except Exception:
-                rec[key] = "?"
+        # Unreal's Python bindings STRIP the leading 'b' from boolean UPROPERTYs and
+        # snake_case the rest: bGrantsPower -> grants_power. Asking for "b_grants_power"
+        # throws, the field comes back "?", and anything derived from it is silently
+        # wrong -- which is exactly what happened to CAN_STILL_AMBUSH on the first run.
+        # Try both spellings and record which one answered.
+        for cpp_name, key in (("power", "power"),
+                              ("bGrantsPower", "grants_power"),
+                              ("bSlotTrial", "slot_trial"),
+                              ("bShowBeacon", "show_beacon")):
+            snake = key if cpp_name.startswith("b") else cpp_name
+            rec[key] = "?"
+            for candidate in (snake, cpp_name):
+                try:
+                    rec[key] = str(a.get_editor_property(candidate))
+                    break
+                except Exception:
+                    continue
         try:
             g = a.get_editor_property("granted_by_agent")
             rec["granted_by_agent"] = g.get_actor_label() if g else None
@@ -78,9 +87,12 @@ for g in grants:
         key=lambda r: r["dist"],
     )
     g["nearest_dancers"] = near[:3]
-    # A grant that still has a live trigger and no agent is one that can still ambush.
-    g["CAN_STILL_AMBUSH"] = (g.get("granted_by_agent") in (None, "None")
-                             and g.get("grants_power", "").lower().endswith("true"))
+    # A grant with no agent still has a live overlap trigger, so it can still take the
+    # screen off a player who merely walks past it. Keyed on granted_by_agent ALONE:
+    # the first version also required grants_power == True, which was unreadable and
+    # made the flag read false for every shrine in the level, including the four that
+    # could very much still ambush.
+    g["CAN_STILL_AMBUSH"] = g.get("granted_by_agent") in (None, "None")
 
 payload = {
     "player_starts": starts,
@@ -90,4 +102,20 @@ payload = {
             "meets on the way out of the living room is at the top.",
 }
 
-print(json.dumps(payload, indent=2))
+text = json.dumps(payload, indent=2)
+
+# WRITE TO A FILE, do not rely on print().
+#
+# print() from the editor's Cmd box lands in the OUTPUT LOG panel, which is not open by
+# default -- Walt ran this and saw nothing at all, which looked like the script failing
+# when it had actually worked. A file can be read afterwards by anyone, including me,
+# and it survives closing the editor.
+out_path = unreal.Paths.project_saved_dir() + "power_grants.json"
+try:
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(text)
+    unreal.log("[dump_power_grants] wrote " + out_path)
+except Exception as e:
+    unreal.log_error("[dump_power_grants] could not write %s: %s" % (out_path, e))
+
+print(text)
