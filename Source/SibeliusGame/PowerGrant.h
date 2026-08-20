@@ -35,6 +35,44 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Power Grant")
 	EPowerVerb Power = EPowerVerb::Refactor;
 
+	/**
+	 * GIVEN BY AN AI AGENT INSTEAD OF A FLOATING SPHERE.
+	 *
+	 * Point this at a dancer and she becomes the way this power is obtained: the pole and
+	 * its glow are hidden, the overlap trigger is switched off, and pressing E on her opens
+	 * the trial. Leave it unset and the shrine behaves exactly as it always has.
+	 *
+	 * Walt, 2026-08-19: "Can the dancing girls be the ones that give you powers when you
+	 * approach them? They are supposed to be AI agents after all."
+	 *
+	 * It is the right answer for more than the looks. The powers ARE AI assistance made
+	 * literal (docs/NARRATIVE.md), Mrs. Hall's whole position is that a senior developer
+	 * should not need a machine's help, and the dancers already introduce themselves as
+	 * "AI Agent <name>". Taking a forbidden capability from an AI agent IS the story. An
+	 * unlabelled sphere on a pole says nothing, and ambushes the player on a staircase.
+	 *
+	 * The reference lives HERE rather than on the dancer because UDancerAgentComponent is
+	 * attached at runtime by a scan (see DancerAgentSubsystem.h) — it does not exist in the
+	 * level, so it cannot carry an editor-set property. This actor is placed, so it can.
+	 */
+	UPROPERTY(EditAnywhere, Category = "Power Grant")
+	TObjectPtr<AActor> GrantedByAgent;
+
+	/** Open the trial from outside — the agent's E press. Safe to call when spent. */
+	void RequestTrial(class APlayerController* PC);
+
+private:
+	/** Hand this power's interface to GrantedByAgent, and stand the pole down. Retries:
+	 *  the dancer's component is attached by a runtime scan and may not exist yet. */
+	void BindToAgent();
+
+	FString GetActorLabelSafe() const;   // labels are editor-only; logs still need a name
+
+	FTimerHandle AgentBindTimer;
+	int32 AgentBindAttempts = 0;
+
+public:
+
 	// False = a sauce-only reward marker (chapter-end bonus, hidden stash).
 	UPROPERTY(EditAnywhere, Category = "Power Grant")
 	bool bGrantsPower = true;

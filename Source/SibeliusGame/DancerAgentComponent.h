@@ -46,6 +46,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "ProgressionTypes.h"   // EPowerVerb — she can be the way a power is obtained
 #include "DancerAgentComponent.generated.h"
 
 class UAnimSequence;
@@ -99,6 +100,19 @@ public:
 	void Greet();
 
 	/**
+	 * This agent hands over a power (docs/SPINE.md). Called by APowerGrant::BindToAgent —
+	 * the grant keeps the trial, the stake, the claim and the Refuser alarm; she is only
+	 * the way it is asked for.
+	 *
+	 * The link is set on the GRANT, not here, because this component is attached at
+	 * runtime by DancerAgentSubsystem's scan and never exists in the level to be edited.
+	 */
+	void SetPowerGrant(class APowerGrant* InGrant, EPowerVerb InVerb);
+
+	/** True while she still has an unclaimed power to give. */
+	bool HasPowerToGive() const;
+
+	/**
 	 * F — switch to a random DIFFERENT dance. Returns false if she has fewer than two
 	 * dances or no body to play them on, which is the caller's cue to fall through to
 	 * the normal fight.
@@ -128,6 +142,13 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
+	/** The power she hands over, if any — set by APowerGrant::BindToAgent, never in the
+	 *  editor (this component is attached at runtime by a scan). */
+	UPROPERTY()
+	TObjectPtr<class APowerGrant> PowerGrant;
+
+	EPowerVerb PowerVerb = EPowerVerb::Refactor;
+
 	/** The skeletal mesh actually playing the dance (a MetaHuman's "Body"). */
 	USkeletalMeshComponent* FindDanceMesh() const;
 

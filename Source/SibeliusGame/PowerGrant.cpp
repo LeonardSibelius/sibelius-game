@@ -4,6 +4,9 @@
 #include "ProgressionSubsystem.h"
 #include "SlotScreenWidget.h"
 #include "HallAlarmSubsystem.h"   // the trial rings the alarm (temple-pour pattern)
+#include "DancerAgentComponent.h" // SPINE: an AI agent can be the way in
+#include "SibeliusGame.h"         // LogSibeliusGame
+#include "TimerManager.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
 #include "Engine/GameInstance.h"
@@ -101,6 +104,11 @@ void APowerGrant::BeginPlay()
 	}
 
 	Trigger->OnComponentBeginOverlap.AddDynamic(this, &APowerGrant::OnTriggerOverlap);
+
+	// LAST, deliberately: BindToAgent hides the beacon and stands the trigger down, and
+	// the beacon's visibility is set from bShowBeacon a few lines above. Called any
+	// earlier and this actor turns its own pole back on.
+	BindToAgent();
 }
 
 void APowerGrant::Tick(float DeltaSeconds)
@@ -148,6 +156,72 @@ void APowerGrant::OnTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 	}
 
 	ClaimNow();
+}
+
+void APowerGrant::BindToAgent()
+{
+	/* When an AI agent hands this power over, the pole stops being the interface: it hides
+	   itself and switches its trigger off, so the player can never be ambushed by walking
+	   past. Everything else about the shrine — the trial, the stake, the claim key, the
+	   Refuser alarm, the sauce — is unchanged and still lives here. Only the way it is
+	   ASKED FOR moves to the dancer. */
+	if (!GrantedByAgent)
+	{
+		return;
+	}
+
+	UDancerAgentComponent* Agent = GrantedByAgent->FindComponentByClass<UDancerAgentComponent>();
+	if (!Agent)
+	{
+		/* The component is attached at runtime by DancerAgentSubsystem's scan, which may
+		   not have reached her yet. Retry rather than fail silently — a missed bind leaves
+		   an invisible, un-triggerable shrine and a power that cannot be obtained at all,
+		   with nothing in the log to say why. */
+		if (++AgentBindAttempts <= 20)
+		{
+			GetWorldTimerManager().SetTimer(AgentBindTimer, this, &APowerGrant::BindToAgent, 0.5f, false);
+		}
+		else
+		{
+			UE_LOG(LogSibeliusGame, Error,
+				TEXT("[PowerGrant] %s: '%s' never grew a UDancerAgentComponent — %s is UNREACHABLE."),
+				*GetActorLabelSafe(), *GrantedByAgent->GetName(), *PowerVerbDisplayName(Power));
+		}
+		return;
+	}
+
+	Agent->SetPowerGrant(this, Power);
+
+	// The pole is now decoration for a job someone else does. Hide it and stand down.
+	if (Mesh)       { Mesh->SetVisibility(false); }
+	if (BeaconMesh) { BeaconMesh->SetVisibility(false); }
+	if (Glow)       { Glow->SetVisibility(false); }
+	if (Trigger)
+	{
+		Trigger->SetGenerateOverlapEvents(false);
+		Trigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[PowerGrant] %s is now given by %s"),
+		*PowerVerbDisplayName(Power), *GrantedByAgent->GetName());
+}
+
+FString APowerGrant::GetActorLabelSafe() const
+{
+#if WITH_EDITOR
+	return GetActorNameOrLabel();
+#else
+	return GetName();
+#endif
+}
+
+void APowerGrant::RequestTrial(APlayerController* PC)
+{
+	if (bConsumed || bTrialOpen || !PC)
+	{
+		return;
+	}
+	OpenTrial(PC);
 }
 
 void APowerGrant::OpenTrial(APlayerController* PC)

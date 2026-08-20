@@ -5,6 +5,7 @@
 #include "SibeliusHUD.h"
 #include "SibeliusGame.h"                  // LogSibeliusGame
 #include "DancerAgentSubsystem.h"          // the aim-assist registry
+#include "PowerGrant.h"                    // SPINE: she hands the power over
 
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
@@ -262,15 +263,58 @@ FVector UDancerAgentComponent::GetAimPoint() const
 	return Owner ? Owner->GetActorLocation() : FVector::ZeroVector;
 }
 
+void UDancerAgentComponent::SetPowerGrant(APowerGrant* InGrant, EPowerVerb InVerb)
+{
+	PowerGrant = InGrant;
+	PowerVerb = InVerb;
+}
+
+bool UDancerAgentComponent::HasPowerToGive() const
+{
+	// The grant destroys itself on BeginPlay when its key is already claimed, so a live
+	// pointer IS an unclaimed power. Nothing else to ask.
+	return PowerGrant != nullptr;
+}
+
 FText UDancerAgentComponent::GetPrompt() const
 {
+	const TCHAR* Who = AgentName.IsEmpty() ? TEXT("her") : *AgentName;
+
+	/* SAY WHAT THE KEY WILL DO. Pressing E here opens a staked slot machine and rings the
+	   Refuser alarm — that is a commitment, and the player is entitled to know before
+	   they press it rather than after. The old floating shrine asked nobody and fired on
+	   contact, which is how Walt met one on a staircase. */
+	if (HasPowerToGive())
+	{
+		return FText::FromString(FString::Printf(
+			TEXT("[E] ask %s for %s     [F] change her dance"),
+			Who, *PowerVerbDisplayName(PowerVerb)));
+	}
+
 	return FText::FromString(FString::Printf(
-		TEXT("[E] talk to %s     [F] change her dance"),
-		AgentName.IsEmpty() ? TEXT("her") : *AgentName));
+		TEXT("[E] talk to %s     [F] change her dance"), Who));
 }
 
 void UDancerAgentComponent::Greet()
 {
+	/* SHE HANDS THE POWER OVER (docs/SPINE.md).
+
+	   Mrs. Hall's position is that a senior developer should not need a machine's help.
+	   The dancers introduce themselves as AI agents. So taking a forbidden capability from
+	   one of them is not a reskin of the floating shrine — it is the premise of the game
+	   happening in front of the player.
+
+	   She still greets: the celebration plays underneath, and the trial opens over it. */
+	if (HasPowerToGive())
+	{
+		const AActor* Owner = GetOwner();
+		const UWorld* W = Owner ? Owner->GetWorld() : nullptr;
+		if (APlayerController* PC = W ? W->GetFirstPlayerController() : nullptr)
+		{
+			PowerGrant->RequestTrial(PC);
+		}
+	}
+
 	const UWorld* World = GetWorld();
 	if (!World)
 	{
