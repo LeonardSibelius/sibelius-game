@@ -121,6 +121,87 @@ someone waiting. Every room afterwards has a reason to be entered.
 
 ### Move 2 — Let her speak from Chapter 1, not Chapter 6
 
+> 🔒 **RATIFIED (Walt, 2026-08-19): "yes, mrs hall should speak from chapter 1."**
+> Design below is locked; implementation is the next thing built.
+
+#### What already works and moves unchanged
+
+`UMrsHallMessageWidget` is better than it needed to be and is fully reusable: a styled
+office memo, **never takes focus**, `HitTestInvisible`, ZOrder 50, auto-dismissing after
+six seconds, with a toast fallback when there is no player controller so headless runs
+stay green and silent. None of that changes.
+
+The problem is only that its *lifecycle* — widget ownership, the dismiss timer, the clip
+playback — lives inside `UGenerateComponent`, so nothing else can speak as her.
+
+#### The channel
+
+Extract to **`UMrsHallSubsystem : UWorldSubsystem`**, matching the project's habit of
+putting shared systems in subsystems.
+
+```
+void Say(FName Reason);                            // pick a line from the CSV, show, speak
+void SayLine(const FString& Line, FString Audio);  // authored one-off (the opening ticket)
+```
+
+World scope, not GameInstance: it owns a viewport widget and a world timer, and a
+GameInstance subsystem would outlive a level load and leak the widget. The rotating
+selection counter resetting per level is fine — the smoke-test discipline requires *no
+RNG*, not persistence.
+
+`UGenerateComponent` then calls `Say("NoMatch")` and keeps behaving exactly as it does.
+
+#### When she speaks — the beat is FIRST USE, not the grant
+
+> 🔒 **She reacts to the ACT, not the acquisition.** You claim Code Vision at the shrine;
+> that moment is yours — the banner and your memoir line to a former employer. Later, the
+> first time you actually hold **V** and look through a wall, the memo arrives. She found
+> out.
+>
+> **Rejected: speaking at the power grant.** Three messages would land at once — banner,
+> memoir line, and her memo — which is the "one channel, two speakers" collision already
+> recorded in `SibeliusHUD.h` when the cauldron stomped the Presence's greeting. Delaying
+> her past the memoir's 12 seconds would fix the overlap and lose the drama; reacting to
+> first use fixes both, because it happens somewhere else entirely.
+
+Implementation is one line per power, at each activation site:
+
+```cpp
+if (Progression->ClaimOneTimeGrant(TEXT("Hall.FirstUse.CodeVision")))
+{
+    MrsHall->Say(TEXT("Power.CodeVision"));
+}
+```
+
+`ClaimOneTimeGrant` already exists, is already saved, and already returns true exactly
+once ever — so she catches you once per power, per save, with no new state.
+
+#### What she says — escalation is the point
+
+One `Reason` per power so the arc is authored rather than shuffled. She gets worse as he
+gets stronger, and **every line uses "Programmer"** — that is where the name denial
+belongs, at a story beat.
+
+| Reason | Beat | Register |
+|---|---|---|
+| `Ticket` | opening, Move 1 | the job, the legacy system, no AI |
+| `Power.CodeVision` | first V | dismissive — *he is imagining things* |
+| `Power.Refactor` | first R | irritated |
+| `Power.Compile` | first C | suspicious — where did the parts come from |
+| `Power.TestDrive` | first branch | warning |
+| `Power.Deploy` | first deploy | threatening — this is her authority |
+| `Power.Generate` | Ch6 | the existing refusals; her strongest, already written |
+| `Final` | Synthesis | she loses |
+
+Adding these is **CSV rows**, not code. Voice clips follow: the system is silent when a
+clip is missing, so the text ships first and Walt's ElevenLabs pass lands after.
+
+#### Gate
+
+`GenerateSmokeTest` gains a check that **every `Reason` the code asks for has at least one
+row in the table.** A missing Reason makes her silently say nothing — no error, no log,
+exactly the failure class that hid the interaction prompts for eight releases.
+
 This is the highest-leverage change in the project, and it is mostly wiring already owned.
 
 `MrsHallLines` is a **CSV-backed DataTable** with deterministic selection by a rotating
@@ -219,10 +300,10 @@ meters, a confidence band — is the evidence standing right there.
    — probability made legible, and Walt's own history. The other two are less clearly
    load-bearing, and poker just became part of the opening. Keep both, fold one into the
    spine, or cut one?
-2. **Should "Programmer" move off the refusals?** He is already called it — but only when
-   the Generate catalog misses. Proposal is that she also uses it at every power grant, so
-   the name is denied at story beats rather than only at content misses. Keep it on both,
-   or move it?
+2. ✅ **RATIFIED — Mrs. Hall speaks from Chapter 1.** Design locked in Move 2; she reacts
+   to first USE of each power, and every new line uses "Programmer", which puts the name
+   denial on story beats instead of only on catalog misses. The existing refusal lines
+   keep theirs too.
 2b. **Is the six-object catalog her inventory, or a gap to fill?** See Move 3.5. Framing it
    as hers costs nothing and turns the weakest-feeling system into the premise made
    mechanical. Filling it instead is an arms race against arbitrary text input.
