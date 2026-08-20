@@ -480,10 +480,16 @@ FString ASibeliusHUD::ComputeObjective() const
 		return TEXT("Vision [V] shows hidden doors. Poker is through the glass behind you.");
 	}
 
-	// 4) After poker: a shrine, if they don't have Compile. Not an upstairs invite.
+	/* 4) After poker: where the powers come from. Not an upstairs invite.
+
+	   "Walk into a glowing shrine when you find one" described the old floating spheres,
+	   and told the player to do the exact thing that was ambushing them. The powers come
+	   from the AI agents now (docs/SPINE.md): you ASK, and asking is a choice. It also
+	   stops the game using a word — shrine — that it never says anywhere else and that
+	   belongs to a cathedral rather than a home office. */
 	if (Keys == 0 && !Progression->IsUnlocked(EPowerVerb::Compile))
 	{
-		return TEXT("Walk into a glowing shrine when you find one");
+		return TEXT("The AI agents can give you powers. Find one and press [E].");
 	}
 
 	// 5) Compile earned, no key: they find the build site upstairs themselves.

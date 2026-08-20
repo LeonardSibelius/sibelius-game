@@ -58,6 +58,22 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Power Grant")
 	TObjectPtr<AActor> GrantedByAgent;
 
+	/**
+	 * How far above or below this shrine a player may be and still trip it.
+	 *
+	 * A 110cm trigger on a shrine standing a metre off the ground reaches through the floor
+	 * beneath it. The library's COMPILE shrine sits at Z=420 with the staircase running
+	 * underneath: a player climbing at Z=213 has a capsule reaching ~309, against a trigger
+	 * whose underside is at 310, and the library's reward opened on the stairs — rooms
+	 * before it was meant to be met, and looking for all the world like the wrong shrine
+	 * had been placed there.
+	 *
+	 * 140 comfortably separates "standing in front of it" (a few units of difference) from
+	 * "on the storey below" (200+).
+	 */
+	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "0"))
+	float SameFloorTolerance = 140.0f;
+
 	/** Open the trial from outside — the agent's E press. Safe to call when spent. */
 	void RequestTrial(class APlayerController* PC);
 

@@ -144,6 +144,28 @@ void APowerGrant::OnTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		return;
 	}
 
+	/* YOU HAVE TO BE ON THE SAME FLOOR.
+
+	   A 110cm trigger on a shrine standing a metre off the ground reaches DOWN through the
+	   floor it stands on. PowerGrant_Compile sits in the library at Z=420; the staircase
+	   passes underneath it, and a player climbing at Z=213 has a capsule whose top reaches
+	   about 309 — against a trigger whose underside is at 310. It clipped, and the library's
+	   reward opened on the stairs, several rooms before the player was ever meant to meet
+	   it. That is the machine Walt kept hitting: not the one nearest his spawn, and not a
+	   binding failure. A sphere poking through a ceiling.
+
+	   Cheaper and more honest than shrinking every trigger by hand: a shrine belongs to the
+	   floor it stands on. On the same storey the pawn's centre sits within a few units of
+	   the shrine's; a storey below it is 200-odd out. */
+	const float FloorGap = FMath::Abs(Pawn->GetActorLocation().Z - GetActorLocation().Z);
+	if (FloorGap > SameFloorTolerance)
+	{
+		UE_LOG(LogSibeliusGame, Verbose,
+			TEXT("[PowerGrant] %s ignored an overlap from %.0f units below/above — not this floor."),
+			*GetActorLabelSafe(), FloorGap);
+		return;
+	}
+
 	// Walt's trial: a POWER must be won at the machine, not collected like
 	// loose change. Sauce-only markers keep the instant walk-in grant.
 	if (bSlotTrial && bGrantsPower)
@@ -240,6 +262,24 @@ void APowerGrant::RequestTrial(APlayerController* PC)
 
 void APowerGrant::OpenTrial(APlayerController* PC)
 {
+	/* SAY WHICH SHRINE THIS IS, AND WHERE.
+
+	   Walt has now met a trial on the staircase four times, and three separate inferences
+	   about which grant it was have been wrong — Refactor by chapter order, then Deploy by
+	   distance to the PlayerStart, then a bind-timing race. Guessing from level geometry
+	   has cost more than the bug. This makes the game name the culprit: label, verb, its
+	   own location, the player's location, and whether an agent was supposed to have
+	   retired it. One line in the log ends the argument. */
+	const FVector Here = GetActorLocation();
+	const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+	const FVector PlayerAt = Pawn ? Pawn->GetActorLocation() : FVector::ZeroVector;
+	UE_LOG(LogSibeliusGame, Warning,
+		TEXT("[PowerGrant] TRIAL OPENED by '%s' (%s) at (%.0f, %.0f, %.0f); player at "
+		     "(%.0f, %.0f, %.0f); GrantedByAgent=%s"),
+		*GetActorLabelSafe(), *PowerVerbDisplayName(Power),
+		Here.X, Here.Y, Here.Z, PlayerAt.X, PlayerAt.Y, PlayerAt.Z,
+		GrantedByAgent ? *GrantedByAgent->GetName() : TEXT("NONE"));
+
 	// Fresh widget per entry = fresh stake per entry, no state to reset.
 	TrialWidget = CreateWidget<USlotScreenWidget>(PC, USlotScreenWidget::StaticClass());
 	if (!TrialWidget)
