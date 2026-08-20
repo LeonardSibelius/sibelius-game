@@ -32,6 +32,7 @@
 #include "CompileTypes.h"           // EResourceType
 
 #include "Engine/World.h"
+#include "Engine/DataTable.h"   // SPINE: assert the story table ASSET exists, not just the CSV
 #include "EngineUtils.h"
 #include "GameFramework/Actor.h"
 #include "UObject/Package.h"        // GetTransientPackage
@@ -344,6 +345,24 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 	   log — the same quiet failure class that hid every interaction prompt for eight
 	   releases. */
 	{
+		/* THE ASSET MUST EXIST, not just the CSV.
+
+		   LoadTableAssetOrCsv tries the DataTable asset first and falls back to the
+		   committed CSV -- and that fallback is #if WITH_EDITOR. A packaged build has no
+		   fallback, and no .csv reaches the package either (there is not one in the whole
+		   v0.9.1 build). The other three tables ship because each has a companion
+		   .uasset; MrsHallStory.csv was authored without one.
+
+		   Without this check the gate would stay green off the CSV while the shipped game
+		   lost Mrs. Hall entirely -- no ticket, no reaction to Vision, no last word. She
+		   would be perfect in PIE and mute for every player, which is precisely how this
+		   project has hidden its worst bugs before.
+
+		   Re-import with Tools/Scripts/import_mrshall_story.py whenever the CSV changes:
+		   editing the CSV alone updates the EDITOR and not the packaged game. */
+		R.Check(LoadObject<UDataTable>(nullptr, TEXT("/Game/Data/MrsHallStory.MrsHallStory")) != nullptr,
+			TEXT("SPINE: /Game/Data/MrsHallStory DataTable ASSET exists (the CSV is editor-only)"));
+
 		TMap<FName, TArray<FMrsHallLine>> Story;
 		FString StoryErr;
 		const bool bStory = LoadMrsHallStoryLines(Story, StoryErr);
