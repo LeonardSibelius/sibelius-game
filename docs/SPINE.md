@@ -83,10 +83,23 @@ And from `NARRATIVE.md`: he *"starts the game as a nameless, aging programmer"* 
 > Your employer refuses to call you anything but "Programmer." Every power you take is
 > something she forbade. At the end you build the machine you were never allowed to build,
 > and you take the name.
->
-> This is already the design. It is written in two documents and one header comment. The
-> game never once dramatizes it — the player is never called "Programmer," never denied a
-> name, and never given one.
+
+**Correction (Walt, 2026-08-19).** An earlier draft of this document claimed the game
+never dramatizes this. That was wrong, and the error mattered: **it already does.** Nine
+lines ship in `Content/Data/MrsHallLines.csv`, spoken in an ElevenLabs voice —
+
+> *"You. Programmer. We don't keep that here."*
+> *"That's enough of that. What am I paying you for, Programmer, if you lean on it all day?"*
+
+The device works. It is **wired to the wrong trigger.**
+
+Every one of those nine lines is a **refusal reason**: `NoMatch`, `Ambiguous`,
+`OverBudget`, `Unsafe`. So the only time the player is denied his name is when the
+**Generate catalog missed** — a content limitation, not a story beat. He typed "a pine
+tree," the game did not have one, and his boss called him Programmer for it.
+
+The name should be denied when he **takes a power she forbade**, which is a story event,
+and it currently never is.
 
 Everything below is in service of that single line.
 
@@ -147,6 +160,38 @@ which is not staged into a packaged build.
 
 **Cost:** a saved array of earned message ids, a journal rewrite, a finale sequence.
 
+### Move 3.5 — Make the catalog's poverty deliberate
+
+Walt, 2026-08-19: *"The 'G' key puts junk into the scene."*
+
+He is right, and the numbers say why. `Content/Data/GenerateCatalog.csv` holds **six
+objects**: a tree, a plant, a lamp, a crate, a chair, a key.
+
+Chapter 6 is the climactic power. `NARRATIVE.md` says Generate is *"ask for what you need
+in plain language and have it appear"* — the most AI-like power of all, and the one Mrs.
+Hall fights hardest because it is the deepest threat to the small controllable box she
+keeps him in.
+
+In play, it spawns a potted plant. Ask for anything outside those six and you are refused
+— which, given the space of things a person might type, is most of the time.
+
+**Do not fix this by growing the catalog.** That is an arms race against an infinite input
+with a finite mesh library, and it can only ever be lost.
+
+> 🔒 **PROPOSED: the refusal IS the content.** Six objects is not a limitation to hide —
+> it is *her inventory*. She says it in the shipped line already: **"We don't keep that
+> here."** *"That's not in our inventory. This is a workplace, not a wish."*
+>
+> The meagreness becomes characterization. The player asks the world for what he needs and
+> is told, again and again, that his employer does not stock it. That is the whole premise
+> of the game expressed as a mechanic — and it costs nothing, because it is what already
+> happens. It only needs to be **framed as intended rather than as a miss.**
+>
+> Which sets up the ending: at the Synthesis, the catalog stops being hers.
+
+This reframe is what makes "junk" the point instead of the problem, and it is the reason
+Move 2 matters — she has to have been refusing him all game for the last refusal to land.
+
 ### Move 4 — Say out loud what the slot machine is
 
 `NARRATIVE.md` calls the Celestial Fortune coda *"the whole game's thesis in one object."*
@@ -174,9 +219,13 @@ meters, a confidence band — is the evidence standing right there.
    — probability made legible, and Walt's own history. The other two are less clearly
    load-bearing, and poker just became part of the opening. Keep both, fold one into the
    spine, or cut one?
-2. **Does the player get called "Programmer" out loud?** It is the sharpest way to stage
-   the name arc, and it costs one word per Mrs. Hall line — but it means she must speak
-   often enough for it to register.
+2. **Should "Programmer" move off the refusals?** He is already called it — but only when
+   the Generate catalog misses. Proposal is that she also uses it at every power grant, so
+   the name is denied at story beats rather than only at content misses. Keep it on both,
+   or move it?
+2b. **Is the six-object catalog her inventory, or a gap to fill?** See Move 3.5. Framing it
+   as hers costs nothing and turns the weakest-feeling system into the premise made
+   mechanical. Filling it instead is an arms race against arbitrary text input.
 3. **Is the ending the memoir sequence, or the power gate?** Currently Ch7 is designed as
    a seven-stage power-gate puzzle. Move 3 proposes the memoir is the emotional climax and
    the gate is the mechanical one. They can co-exist — gate, then messages, then machine —
