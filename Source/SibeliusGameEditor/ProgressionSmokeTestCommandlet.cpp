@@ -106,6 +106,15 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		Written->State.Unlock(EPowerVerb::Refactor);
 		Written->State.Unlock(EPowerVerb::Generate);
 		Written->State.AddSauce(123);
+
+		/* Capture what was actually written rather than asserting a literal.
+		   This check read `== 123` and went RED the moment a fresh state started with a
+		   50-sauce stake (v0.9.3) — 50 + 123 = 173, the save was perfectly fine, and the
+		   only thing broken was the test's arithmetic. A gate that fails for a reason
+		   nobody has to act on stops being read, which costs more than the check is
+		   worth. The question here is "does sauce survive a round trip", not "is sauce
+		   123", so ask that instead and let the starting stake move freely. */
+		const int32 ExpectedSauce = Written->State.Sauce;
 		Written->State.Claim(TEXT("Smoke.GrantA"));
 		Written->State.Claim(TEXT("Smoke.GrantB"));
 		Written->State.RecordPurchase(TEXT("Budget.Generate"));
@@ -135,7 +144,8 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		if (Loaded)
 		{
 			R.Check(Loaded->SaveVersion == UProgressionSaveGame::CurrentSaveVersion, TEXT("round-trip: SaveVersion stamped"));
-			R.Check(Loaded->State.Sauce == 123, TEXT("round-trip: sauce survives"));
+			R.Check(Loaded->State.Sauce == ExpectedSauce,
+				FString::Printf(TEXT("round-trip: sauce survives (%d)"), ExpectedSauce));
 			R.Check(Loaded->State.IsUnlocked(EPowerVerb::CodeVision), TEXT("round-trip: starter power survives"));
 			R.Check(Loaded->State.IsUnlocked(EPowerVerb::Refactor), TEXT("round-trip: unlocked Refactor survives"));
 			R.Check(Loaded->State.IsUnlocked(EPowerVerb::Generate), TEXT("round-trip: unlocked Generate survives"));

@@ -53,6 +53,28 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Pickup", meta = (ClampMin = "0"))
 	int32 SauceOnCollect = 5;
 
+	/**
+	 * The pickup glow, per instance. Defaults suit the DIM LIBRARY; a book sitting in
+	 * window light (the living-room table) needs a brighter, tighter lamp or it is
+	 * invisible — roughly 4000 at radius 70.
+	 *
+	 * THESE ARE PROPERTIES, NOT A NAME TEST. This was previously chosen with
+	 *
+	 *     GetActorNameOrLabel().Contains(TEXT("LivingRoom"))
+	 *
+	 * which reads the EDITOR LABEL — and actor labels are WITH_EDITOR only. In a cooked
+	 * build there is no label, so it falls back to GetName(), the internal object name,
+	 * which the placement script never set (it only calls set_actor_label). PIE would
+	 * light the book correctly and the shipped game would leave it at library dimness,
+	 * with nothing in any log — the same shape as the prompts that were invisible for
+	 * eight releases. Map data survives cooking; editor labels do not.
+	 */
+	UPROPERTY(EditAnywhere, Category = "Pickup", meta = (ClampMin = "0"))
+	float GlowIntensity = 600.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Pickup", meta = (ClampMin = "1"))
+	float GlowRadius = 140.0f;
+
 private:
 	void EnsureGlow();
 

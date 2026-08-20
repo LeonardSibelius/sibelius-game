@@ -123,10 +123,34 @@ else:
     book.set_actor_location(book_loc, False, False)
     notes.append("duplicated " + src.get_actor_label())
 
+# The living-room table sits in window light, where the library's 600/140 lamp is
+# invisible. Brightness now lives on the INSTANCE instead of a name test in C++:
+# ABookPickup used to choose it with GetActorNameOrLabel().Contains("LivingRoom"), and
+# actor labels are EDITOR-ONLY. In a cooked build there is no label, so the shipped game
+# would have left this book at library dimness with nothing in any log.
+# Unreal's Python bindings snake_case property names, so try the likely spellings and
+# report which one took rather than failing silently.
+glow_applied = {}
+for prop, value in (("glow_intensity", 4000.0), ("glow_radius", 70.0)):
+    for candidate in (prop, prop.replace("_", "")):
+        try:
+            book.set_editor_property(candidate, value)
+            glow_applied[prop] = candidate
+            break
+        except Exception:
+            continue
+
+if len(glow_applied) == 2:
+    notes.append("glow set on the instance: 4000 @ radius 70")
+else:
+    notes.append("WARNING: glow properties NOT set (%s) - the book will use library "
+                 "dimness and may be invisible in window light" % (glow_applied or "none",))
+
 wl = book.get_actor_location()
 payload = {
     "ok": True,
     "label": book.get_actor_label(),
+    "glow_applied": glow_applied,
     "anchor": anchor,
     "location": {"x": round(wl.x, 1), "y": round(wl.y, 1), "z": round(wl.z, 1)},
     "notes": notes,

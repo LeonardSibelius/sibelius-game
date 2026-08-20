@@ -38,23 +38,27 @@ void ABookPickup::EnsureGlow()
 	if (!Glow)
 	{
 		// Duplicated/saved instances can miss a native component added later.
+		// Mobility BEFORE RegisterComponent — a registered component warns and keeps
+		// its old mobility, and a Static light cannot be toggled by SetInert at runtime.
 		Glow = NewObject<UPointLightComponent>(this, TEXT("Glow"));
+		Glow->SetMobility(EComponentMobility::Movable);
 		Glow->SetupAttachment(RootComponent);
 		Glow->RegisterComponent();
 	}
 
-	// Library is dim — 600 reads as a green shelf. The living-room table sits
-	// in window light, so the same lamp is invisible unless we punch it up.
-	const bool bDaylit = GetActorNameOrLabel().Contains(TEXT("LivingRoom"));
+	/* Brightness comes from the INSTANCE, not from the actor's name — see GlowIntensity
+	   in the header for why the old label test could not survive a cook.
+
+	   Defaults are the dim library (600 / 140). The living-room table is set brighter and
+	   tighter (4000 / 70) by Tools/Scripts/place_living_room_book.py; 22000 bleached the
+	   table, so a tight lamp on the book is the right answer in window light. */
 	Glow->SetRelativeLocation(FVector(0.0f, 0.0f, 8.0f));
-	// 22000 bleached the table. A tight lamp on the book is enough in window light.
-	Glow->SetIntensity(bDaylit ? 4000.0f : 600.0f);
-	Glow->SetAttenuationRadius(bDaylit ? 70.0f : 140.0f);
+	Glow->SetIntensity(GlowIntensity);
+	Glow->SetAttenuationRadius(GlowRadius);
 	Glow->SetLightColor(FLinearColor(0.4f, 1.0f, 0.5f));
 	Glow->CastShadows = false;
 	Glow->SetVisibility(!bInert);
 	Glow->SetHiddenInGame(false);
-	Glow->SetMobility(EComponentMobility::Movable);
 }
 
 bool ABookPickup::Collect(UInventoryComponent* Inventory)
