@@ -44,6 +44,20 @@ SIBELIUSGAME_API FString PowerVerbDisplayName(EPowerVerb Verb);
  */
 SIBELIUSGAME_API FString PowerVerbMemoir(EPowerVerb Verb);
 
+/**
+ * ALL EIGHT messages, in CHRONOLOGICAL order — 1988 to 2022. What the finale plays.
+ *
+ * Six of them are the power memoirs above. The other two belong to jobs that never became
+ * a power: San Diego County (PCMS, 2005) and Bally (the Slot Data System, 2007 — the data
+ * warehouse and the reporting, the closest he got to the floor without ever building the
+ * machine). Those two had no home in the code at all until the finale needed them.
+ *
+ * Chronological rather than gameplay order because this is a career being read back, and
+ * the last one has to be the last one: iKrome, 2022, "being retired now, like all the
+ * rest."
+ */
+SIBELIUSGAME_API const TArray<FString>& AllMemoirMessages();
+
 // APPEAL-5 — lifetime stat keys (the RECORDS tab). One namespace so every bump
 // site and the menu spell a key identically; a new stat is a new FName here
 // plus a bump at its code point — the map needs no schema change.

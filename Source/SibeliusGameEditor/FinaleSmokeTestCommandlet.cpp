@@ -70,6 +70,37 @@ int32 UFinaleSmokeTestCommandlet::Main(const FString& Params)
 	R.Check(!Seq2.Submit(EPowerVerb::CodeVision), TEXT("an already-shown verb does not advance"));
 	R.Check(Seq2.CurrentVerb() == EPowerVerb::Compile, TEXT("mid-rite stage still asks for Compile"));
 
+	/* --- THE CLOSING SEQUENCE'S PAYLOAD (docs/SPINE.md Move 3) ---
+	   The finale reads Walt's messages back in order. If that list is short, mis-ordered,
+	   or carries an empty entry, the ending plays a blank beat and nothing says so. */
+	{
+		const TArray<FString>& Messages = AllMemoirMessages();
+		R.Check(Messages.Num() == 8,
+			FString::Printf(TEXT("SPINE: the closing sequence has all EIGHT messages (%d)"), Messages.Num()));
+
+		bool bAllPresent = true;
+		for (const FString& M : Messages)
+		{
+			if (M.IsEmpty()) { bAllPresent = false; }
+		}
+		R.Check(bAllPresent, TEXT("SPINE: no message in the closing sequence is empty"));
+
+		/* The two that belong to no power, and therefore had no home in the code until the
+		   finale needed them. Bally is the one the whole game points at. */
+		bool bHasBally = false, bHasSanDiego = false;
+		for (const FString& M : Messages)
+		{
+			if (M.Contains(TEXT("Bally")))          { bHasBally = true; }
+			if (M.Contains(TEXT("San Diego")))      { bHasSanDiego = true; }
+		}
+		R.Check(bHasBally, TEXT("SPINE: the Bally message is in the closing sequence"));
+		R.Check(bHasSanDiego, TEXT("SPINE: the San Diego County message is in the closing sequence"));
+
+		// Chronological: the career is being read back, so the last one must be the last.
+		R.Check(Messages[0].Contains(TEXT("1988")), TEXT("SPINE: the sequence opens on 1988"));
+		R.Check(Messages.Last().Contains(TEXT("2022")), TEXT("SPINE: the sequence closes on 2022"));
+	}
+
 	UE_LOG(LogFinaleSmoke, Display, TEXT("=== Finale smoke test: %d failure(s) ==="), R.Failures);
 	return R.Failures == 0 ? 0 : 1;
 }

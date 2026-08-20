@@ -153,6 +153,18 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 
+	/* Closing-sequence pacing, tunable on the altar in the editor. Defaults give the
+	   banner room to breathe, then a beat for her, then roughly half a minute of reading —
+	   long for a cutscene, but it is a forty-year career and the dancer is dancing. */
+	UPROPERTY(EditAnywhere, Category = "Finale|Closing", meta = (ClampMin = "0.5"))
+	float ClosingLeadInSeconds = 7.0f;      // banner -> Mrs. Hall's last line
+
+	UPROPERTY(EditAnywhere, Category = "Finale|Closing", meta = (ClampMin = "0.5"))
+	float HallToMemoirSeconds = 8.0f;       // her line -> the first message
+
+	UPROPERTY(EditAnywhere, Category = "Finale|Closing", meta = (ClampMin = "0.5"))
+	float MemoirDwellSeconds = 4.5f;        // gap between messages
+
 private:
 	void TryBindToPlayer();                 // retry until the pawn exists (machine's pattern)
 	void HandlePowerUsed(EPowerVerb Verb);
@@ -161,6 +173,16 @@ private:
 	void SummonDancer();                    // no-op if DancerClass is unset
 	void Announce(const FString& Text, float Seconds = 6.0f) const;   // HUD banner, GEngine fallback
 	FString StagePrompt() const;
+
+	/* THE CLOSING SEQUENCE (docs/SPINE.md Move 3) — Mrs. Hall's last word, then Walt's
+	   eight messages read back in order. Fires once, on the run that actually completes
+	   the Synthesis; a revisit returns before this and the open apse says it all. */
+	void StartClosingSequence();
+	void AdvanceClosingSequence();
+
+	bool bClosingSequenceStarted = false;
+	int32 ClosingIndex = -1;                // -1 = Mrs. Hall; 0..7 = the messages
+	FTimerHandle ClosingTimer;
 
 	FFinaleSequence Sequence;
 	bool bCompleted = false;

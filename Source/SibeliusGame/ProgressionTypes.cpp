@@ -50,6 +50,28 @@ FString PowerVerbMemoir(EPowerVerb Verb)
 	}
 }
 
+const TArray<FString>& AllMemoirMessages()
+{
+	/* docs/MEMOIR_VOICE.md, verbatim, chronological. Walt wrote these in one sitting after
+	   saying he was too discouraged to write memoir sentences; the doc's instruction is
+	   "do not polish the anger out", so they are copied and not edited.
+
+	   The Bally line is the one the whole game points at: the data warehouse and the
+	   accounting reports behind the Slot Data System, and never the machine itself. The
+	   player reads it a few paces from a slot machine he built. */
+	static const TArray<FString> Messages = {
+		TEXT("Hey SAIC, you could have used this AI skill on the CHCS project in 1988."),
+		TEXT("Hey IBM, you could have used this AI skill in 1995 on the San Francisco Project for distributed Java."),
+		TEXT("Hey Seagate, you could have used this AI skill in 1998."),
+		TEXT("Hey Motorola, you could have used this AI skill in 2001."),
+		TEXT("Hey Northrop Grumman, you could have used this AI skill on the Electronic Family Housing system for the Navy in 2002."),
+		TEXT("Hey San Diego County, you could have used this AI skill on the Probation Case Management System in 2005."),
+		TEXT("Hey Bally, you could have used this AI skill on the Slot Data System in 2007. I built the warehouse and the reports. I never got to build the machine."),
+		TEXT("Hey Army Recruiting, you could have used this AI skill on iKrome in 2022. It is being retired now, like all the rest.")
+	};
+	return Messages;
+}
+
 bool ParsePowerVerb(const FString& Name, EPowerVerb& OutVerb)
 {
 	// Compare on a lowered, separator-stripped form so "test-drive", "TestDrive",

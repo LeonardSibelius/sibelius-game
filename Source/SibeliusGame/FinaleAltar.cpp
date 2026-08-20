@@ -5,6 +5,8 @@
 #include "SibeliusGameCharacter.h"
 #include "SibeliusHUD.h"
 #include "SibeliusGame.h"
+#include "MrsHallSubsystem.h"   // her last word, before the messages
+#include "TimerManager.h"
 #include "Components/StaticMeshComponent.h"
 #include "CollisionQueryParams.h"
 #include "Engine/HitResult.h"
@@ -184,6 +186,79 @@ void AFinaleAltar::CompleteSynthesis(bool bAlreadyClaimed)
 	}
 	Announce(TEXT("THE THREE-PART SYNTHESIS IS COMPLETE"), 10.0f);
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Finale] Synthesis complete — walls down, +%d sauce"), SauceReward);
+
+	StartClosingSequence();
+}
+
+void AFinaleAltar::StartClosingSequence()
+{
+	/* THE ENDING (docs/SPINE.md Move 3).
+
+	   The Synthesis was already the mechanical climax — six verbs demonstrated in order,
+	   the last wall dropped, the way to the machine opened. What it never had was anything
+	   saying what that MEANT. The banner said the rite was complete and then the game went
+	   quiet.
+
+	   So the payload goes in the gap that was already here. Mrs. Hall speaks last, and
+	   loses; then Walt's eight messages read back in order, 1988 to 2022. Forty years of
+	   hand-coded systems, every one of them failed or retired, ending a few paces from a
+	   slot machine he finally built himself.
+
+	   Everything around this was already working. Only the middle was missing. */
+	UWorld* World = GetWorld();
+	if (!World || bClosingSequenceStarted)
+	{
+		return;
+	}
+	bClosingSequenceStarted = true;
+	ClosingIndex = -1;   // -1 is Mrs. Hall's line; 0..n-1 are the messages
+
+	World->GetTimerManager().SetTimer(ClosingTimer, this, &AFinaleAltar::AdvanceClosingSequence,
+		FMath::Max(0.5f, ClosingLeadInSeconds), /*bLoop=*/false);
+}
+
+void AFinaleAltar::AdvanceClosingSequence()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	if (ClosingIndex < 0)
+	{
+		// She has called him "Programmer" for the whole game. This is the last thing she
+		// says. Silent (with a log line) if the Final row is not written — see
+		// Content/Data/MrsHallStory.csv.
+		if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+		{
+			Hall->Say(TEXT("Final"));
+		}
+	}
+	else
+	{
+		const TArray<FString>& Messages = AllMemoirMessages();
+		if (!Messages.IsValidIndex(ClosingIndex))
+		{
+			UE_LOG(LogSibeliusGame, Display, TEXT("[Finale] closing sequence done (%d messages)"), Messages.Num());
+			return;   // sequence finished; no further timer
+		}
+
+		APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+		if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+		{
+			// Dwell slightly longer than the gap so each line is still up as the next
+			// arrives — a continuous read rather than a flicker between blanks.
+			HUD->ShowMemoir(Messages[ClosingIndex], MemoirDwellSeconds + 0.75f);
+		}
+	}
+
+	++ClosingIndex;
+
+	// Her line gets its own beat before the list starts.
+	const float NextDelay = (ClosingIndex == 0) ? HallToMemoirSeconds : MemoirDwellSeconds;
+	World->GetTimerManager().SetTimer(ClosingTimer, this, &AFinaleAltar::AdvanceClosingSequence,
+		FMath::Max(0.5f, NextDelay), /*bLoop=*/false);
 }
 
 void AFinaleAltar::SummonDancer()
