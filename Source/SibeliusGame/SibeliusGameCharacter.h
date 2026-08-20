@@ -214,6 +214,17 @@ private:
 	float LastQuitPressTime = -100.0f;   // double-press confirm window
 	float LastNewGamePressTime = -100.0f;   // N N confirm window
 
+	/* MOMENT 1 (docs/SPINE.md Move 2) — Mrs. Hall hands the player the job in the living
+	   room. Once per save, and only for a player who has not earned a power yet. */
+	void ScheduleOpeningTicket();
+	void DeliverOpeningTicket();
+
+	FTimerHandle OpeningTicketTimer;
+
+	/** Long enough to stand up, look around and read the objective before the first thing
+	 *  that happens to you is your employer. */
+	static constexpr float OpeningTicketDelay = 4.0f;
+
 public:
 
 protected:

@@ -6,6 +6,7 @@
 #include "GenerateCatalog.h"
 #include "MrsHallLines.h"           // P2: refusal lines + DC blocklist (data-driven)
 #include "MrsHallMessageWidget.h"   // P2: the styled refusal memo
+#include "MrsHallSubsystem.h"       // SPINE Move 2: the one channel she speaks through
 
 #include "BuildSite.h"
 #include "Components/StaticMeshComponent.h"
@@ -154,8 +155,18 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 	{
 		Line = TEXT("Absolutely not."); // last-ditch fallback if the lines table is missing
 	}
-	ShowMrsHall(Line);
-	PlayMrsHallClip(Picked.AudioKey); // P2.5: her voice alongside the memo (silent until clips exist)
+	/* Presentation now goes through UMrsHallSubsystem (docs/SPINE.md Move 2) — the same
+	   memo, timer and clip path every other beat in the game uses, so there is exactly one
+	   copy of "Mrs. Hall says something". The LINE SELECTION stays here: Chapter 6 picks
+	   from its own EGenerateOutcome-keyed refusal table, which is untouched. */
+	if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+	{
+		Hall->SayLine(Line, Picked.AudioKey);   // silent until the clip is recorded
+	}
+	else
+	{
+		ShowMrsHall(Line);   // no world subsystem (headless): the local fallback still works
+	}
 	return R.Outcome;
 }
 

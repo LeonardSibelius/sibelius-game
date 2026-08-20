@@ -27,6 +27,8 @@
 #include "Engine/World.h"               // GetMapName for the wander-world check
 #include "TravelTransitionSubsystem.h"  // O-to-office travels through the transition cover
 #include "ProgressionSubsystem.h"       // FUN-1: the power gates + sauce cheats
+#include "MrsHallSubsystem.h"           // SPINE Move 2 moment 1: the opening ticket
+#include "TimerManager.h"
 #include "SauceShop.h"                  // FUN-3: re-apply bought upgrades on spawn
 #include "SauceBowl.h"                  // temple ritual: C claims a filled pot in reach
 #include "EngineUtils.h"                // TActorIterator (the pot scan)
@@ -101,6 +103,54 @@ void ASibeliusGameCharacter::BeginPlay()
 	// FUN-3: purchased upgrades land on the fresh components (which just spawned
 	// with authored defaults, so this is exact — never a double apply).
 	FSauceShop::ApplyPersistentPurchases(this);
+
+	ScheduleOpeningTicket();
+}
+
+void ASibeliusGameCharacter::ScheduleOpeningTicket()
+{
+	/* MOMENT 1 (docs/SPINE.md Move 2): the job.
+	   The player wakes in the living room already holding Code Vision and owning nothing
+	   else. Before this, nobody wanted anything from him — which is why the game read as
+	   a tour. Mrs. Hall hands him a ticket against the legacy system and forbids the one
+	   thing that would help, and every room after has a reason to be entered. */
+
+	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (!Progression)
+	{
+		return;   // headless / no save — nothing to schedule
+	}
+
+	/* Only for a player who has not earned anything yet. A fresh state holds Code Vision
+	   and nothing more, so NumUnlocked() > 1 means this is a save in progress: claim the
+	   grant silently so a returning player is never handed "here is your first assignment"
+	   halfway through the game. */
+	if (Progression->GetStateForRead().NumUnlocked() > 1)
+	{
+		Progression->ClaimOneTimeGrant(TEXT("Hall.Ticket"));
+		return;
+	}
+
+	if (!Progression->ClaimOneTimeGrant(TEXT("Hall.Ticket")))
+	{
+		return;   // already delivered on this save
+	}
+
+	// A beat before she speaks. The player needs a moment to find their feet and read the
+	// objective line before the first thing that happens to them is their boss.
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(OpeningTicketTimer, this,
+			&ASibeliusGameCharacter::DeliverOpeningTicket, OpeningTicketDelay, /*bLoop=*/false);
+	}
+}
+
+void ASibeliusGameCharacter::DeliverOpeningTicket()
+{
+	if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+	{
+		Hall->Say(TEXT("Ticket"));
+	}
 }
 
 void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

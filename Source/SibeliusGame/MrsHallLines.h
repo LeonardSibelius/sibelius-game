@@ -86,3 +86,23 @@ SIBELIUSGAME_API FMrsHallLine PickMrsHallLine(
 // P2.5: print the full Line -> AudioKey manifest to the log, so Walt knows exactly which
 // clip to record per line and how to name it (filename + asset = AudioKey, .wav).
 SIBELIUSGAME_API void LogMrsHallAudioManifest(const TMap<EGenerateOutcome, TArray<FMrsHallLine>>& Lines);
+
+/* ---------------- THE STORY LINES (docs/SPINE.md Move 2) ----------------
+   Data/MrsHallStory.csv — everything Mrs. Hall says that is NOT a Generate refusal: the
+   opening ticket, her reaction to each power, the finale.
+
+   A SEPARATE TABLE, deliberately. The refusal table is keyed by EGenerateOutcome, and
+   MrsHallReasonToOutcome maps anything it does not recognise to RefusedNoMatch — so a
+   "Ticket" row added to THAT csv would quietly join the pool of things she says when a
+   spawn request misses, and a player could be handed their opening assignment as the
+   answer to typing "a pine tree". Story lines are keyed by a free FName instead, and
+   Chapter 6 is left exactly as it was.
+
+   Same load strategy as the rest: DataTable asset first (cooks into a package), the
+   committed CSV as an editor-only fallback. */
+SIBELIUSGAME_API bool LoadMrsHallStoryLines(TMap<FName, TArray<FMrsHallLine>>& OutLines, FString& OutError);
+
+/** Deterministic pick within a story Reason group — no RNG, no clock, same discipline as
+ *  PickMrsHallLine. Returns an empty line when that Reason has no rows. */
+SIBELIUSGAME_API FMrsHallLine PickMrsHallStoryLine(
+	const TMap<FName, TArray<FMrsHallLine>>& Lines, FName Reason, int32 Selector);

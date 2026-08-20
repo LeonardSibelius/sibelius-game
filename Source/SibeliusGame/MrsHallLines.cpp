@@ -143,6 +143,63 @@ bool LoadGenerateBlocklist(TArray<FString>& OutWords, FString& OutError)
 	return true;
 }
 
+bool LoadMrsHallStoryLines(TMap<FName, TArray<FMrsHallLine>>& OutLines, FString& OutError)
+{
+	OutLines.Reset();
+	OutError.Reset();
+
+	// Staged-first (Content/Data ships loose), dev fallback — same as the refusal table.
+	FString CsvPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("Data/MrsHallStory.csv"));
+	if (!FPaths::FileExists(CsvPath))
+	{
+		CsvPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TEXT("Data/MrsHallStory.csv"));
+	}
+	UDataTable* Table = LoadTableAssetOrCsv(TEXT("/Game/Data/MrsHallStory.MrsHallStory"),
+		CsvPath, FMrsHallLineRow::StaticStruct(), OutError);
+	if (!Table)
+	{
+		return false;
+	}
+
+	for (const TPair<FName, uint8*>& Row : Table->GetRowMap())
+	{
+		const FMrsHallLineRow* Data = reinterpret_cast<const FMrsHallLineRow*>(Row.Value);
+		if (!Data || Data->Line.IsEmpty() || Data->Reason.IsEmpty())
+		{
+			continue;
+		}
+		FMrsHallLine Picked;
+		Picked.Line = Data->Line;
+		Picked.AudioKey = Data->AudioKey.TrimStartAndEnd();
+
+		// Keyed by the Reason string VERBATIM — no lossy mapping. That is the entire
+		// reason this table is separate from the refusals.
+		OutLines.FindOrAdd(FName(*Data->Reason.TrimStartAndEnd())).Add(Picked);
+	}
+
+	if (OutLines.Num() == 0)
+	{
+		if (OutError.IsEmpty())
+		{
+			OutError = TEXT("no Mrs. Hall story lines parsed");
+		}
+		return false;
+	}
+	return true;
+}
+
+FMrsHallLine PickMrsHallStoryLine(const TMap<FName, TArray<FMrsHallLine>>& Lines, FName Reason, int32 Selector)
+{
+	const TArray<FMrsHallLine>* Group = Lines.Find(Reason);
+	if (!Group || Group->Num() == 0)
+	{
+		return FMrsHallLine();
+	}
+	const int32 N = Group->Num();
+	const int32 Idx = ((Selector % N) + N) % N;   // safe rotation, even for a negative selector
+	return (*Group)[Idx];
+}
+
 FMrsHallLine PickMrsHallLine(const TMap<EGenerateOutcome, TArray<FMrsHallLine>>& Lines,
 	EGenerateOutcome Reason, int32 Selector)
 {

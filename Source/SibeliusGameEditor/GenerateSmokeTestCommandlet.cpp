@@ -333,6 +333,57 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 	R.Check(bAllReasonsHaveLines, TEXT("G7: every refusal reason has at least one non-empty line"));
 	R.Check(bAllReasonsHaveAudioKey, TEXT("G7/P2.5: every refusal reason's line carries a non-empty AudioKey"));
 
+	/* ---------- THE STORY LINES (docs/SPINE.md Move 2) ----------
+	   Everything Mrs. Hall says that is NOT a Generate refusal lives in its own table, so
+	   a story Reason can never leak into the refusal pool: MrsHallReasonToOutcome maps
+	   anything it does not recognise to RefusedNoMatch, so a "Ticket" row in the refusal
+	   CSV could be handed to a player as the answer to typing "a pine tree".
+
+	   These checks exist because the failure mode here is SILENCE. A missing table or a
+	   misspelled Reason makes her say nothing at all — no error, no crash, nothing in the
+	   log — the same quiet failure class that hid every interaction prompt for eight
+	   releases. */
+	{
+		TMap<FName, TArray<FMrsHallLine>> Story;
+		FString StoryErr;
+		const bool bStory = LoadMrsHallStoryLines(Story, StoryErr);
+		R.Check(bStory, TEXT("SPINE: Mrs. Hall story lines load from data"));
+		if (!bStory)
+		{
+			UE_LOG(LogGenerateSmoke, Error, TEXT("  story lines load error: %s"), *StoryErr);
+		}
+
+		// Every Reason the C++ asks for must resolve to a line, or that beat is mute.
+		static const TCHAR* RequiredReasons[] = { TEXT("Ticket") };
+		bool bAllStoryReasons = true;
+		for (const TCHAR* ReasonStr : RequiredReasons)
+		{
+			if (PickMrsHallStoryLine(Story, FName(ReasonStr), 0).Line.IsEmpty())
+			{
+				bAllStoryReasons = false;
+				UE_LOG(LogGenerateSmoke, Warning, TEXT("  SPINE: no story line for Reason '%s'"), ReasonStr);
+			}
+		}
+		R.Check(bAllStoryReasons, TEXT("SPINE: every story Reason the code asks for has a line"));
+
+		// And no story line may also be serving as a Generate refusal.
+		bool bNoLeak = true;
+		for (const TPair<FName, TArray<FMrsHallLine>>& StoryGroup : Story)
+		{
+			for (const FMrsHallLine& S : StoryGroup.Value)
+			{
+				for (const TPair<EGenerateOutcome, TArray<FMrsHallLine>>& RefusalGroup : Lines)
+				{
+					for (const FMrsHallLine& Refusal : RefusalGroup.Value)
+					{
+						if (Refusal.Line.Equals(S.Line)) { bNoLeak = false; }
+					}
+				}
+			}
+		}
+		R.Check(bNoLeak, TEXT("SPINE: no story line has leaked into the Generate refusal pool"));
+	}
+
 	// Selection is deterministic for a given selector (no RNG/clock).
 	R.Check(PickMrsHallLine(Lines, EGenerateOutcome::RefusedNoMatch, 0).Line == PickMrsHallLine(Lines, EGenerateOutcome::RefusedNoMatch, 0).Line,
 		TEXT("G7: line selection is deterministic for a given selector"));
