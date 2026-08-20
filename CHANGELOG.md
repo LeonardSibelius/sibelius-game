@@ -3,6 +3,28 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.9.5 — She notices everything, and the machine gets its name
+
+- **Mrs. Hall reacts to every power you take, not just the first.** She was written to
+  notice Code Vision and then went quiet for the other five — the code was wired for all
+  six the whole time, and the lines were simply missing. Now she gets worse as you get
+  stronger: irritated at Refactor, suspicious at Compile ("Nothing in my shop builds
+  itself, Programmer. What are you using?"), a warning at Test-Drive, a threat at Deploy,
+  and at Generate the closest she comes to saying it outright — *"somebody makes them, and
+  somebody is paid for it, and that was supposed to be you."*
+- **A fourth AI agent, and the last office sphere is gone.** Aisling hands over Generate
+  in the study nook. Kaia gives Refactor, Isla gives Deploy, Nyra gives Test-Drive.
+  Compile keeps its sphere on purpose: it is the payoff of the twelve-book hunt, and a
+  reward you walked to is the opposite of an ambush.
+- **The cathedral machine looks like a machine.** The last object in the game was a
+  square-footprint cube. It is now an upright cabinet with a lit marquee reading
+  **CELESTIAL FORTUNE** in gold — the name of the thing he finally got to build, in the
+  spot on a real cabinet where the manufacturer's name goes.
+- **The altar is back at the apse.** A build script had deleted it to make room for a
+  placeholder years of releases ago and nothing ever put it back. A slot machine standing
+  at a cathedral altar is the whole ending in one silhouette.
+
+
 ## v0.9.4 — Somebody wants something from you
 
 - **You have a boss now, from the first minute.** Mrs. Hall messages you in the living
