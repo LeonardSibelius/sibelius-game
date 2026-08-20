@@ -5,6 +5,8 @@
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "Components/InputComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PlayerController.h"
@@ -12,6 +14,7 @@
 #include "Misc/DateTime.h"
 #include "TimerManager.h"
 #include "PokerScreenWidget.h"
+#include "ProgressionSubsystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogPokerMachine, Log, All);
 
@@ -38,7 +41,31 @@ APokerMachine::APokerMachine()
 void APokerMachine::BeginPlay()
 {
 	Super::BeginPlay();
+	ApplyDeckVisual();
 	TryEnableInput();
+}
+
+void APokerMachine::ApplyDeckVisual()
+{
+	if (!CabinetMesh) { return; }
+
+	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	UMaterialInterface* Ace = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Cards/M_CardAce.M_CardAce"));
+	if (Cube)
+	{
+		CabinetMesh->SetStaticMesh(Cube);
+	}
+	// 18cm thick, 114cm wide, 160cm tall — poker card 2.5:3.5. Center at half height.
+	CabinetMesh->SetRelativeScale3D(FVector(0.18f, 1.14f, 1.60f));
+	CabinetMesh->SetRelativeLocation(FVector(0.f, 0.f, 80.f));
+	if (Ace)
+	{
+		CabinetMesh->SetMaterial(0, Ace);
+	}
+	if (Glow)
+	{
+		Glow->SetRelativeLocation(FVector(50.f, 0.f, 80.f));
+	}
 }
 
 void APokerMachine::TryEnableInput()
@@ -134,6 +161,10 @@ void APokerMachine::OpenScreen(APlayerController* PC)
 	Screen->SetKeyboardFocus();
 
 	bScreenOpen = true;
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->ClaimOneTimeGrant(TEXT("Tutorial.Poker"));
+	}
 	UE_LOG(LogPokerMachine, Display, TEXT("[PokerMachine] screen opened (stake %d)."), BetPerHand);
 }
 

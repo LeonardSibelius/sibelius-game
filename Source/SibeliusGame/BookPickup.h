@@ -10,6 +10,7 @@
 #include "BookPickup.generated.h"
 
 class UStaticMeshComponent;
+class UPointLightComponent;
 class UInventoryComponent;
 
 UCLASS()
@@ -32,8 +33,13 @@ public:
 	// them). Driven by UBranchPIEComponent off the branch depth.
 	void SetInert(bool bNewInert);
 
+	virtual void BeginPlay() override;
+
 	UPROPERTY(VisibleAnywhere, Category = "Pickup")
 	TObjectPtr<UStaticMeshComponent> Mesh;
+
+	UPROPERTY(VisibleAnywhere, Category = "Pickup")
+	TObjectPtr<UPointLightComponent> Glow;
 
 	UPROPERTY(EditAnywhere, Category = "Pickup")
 	EResourceType Resource = EResourceType::Book;
@@ -48,6 +54,8 @@ public:
 	int32 SauceOnCollect = 5;
 
 private:
+	void EnsureGlow();
+
 	bool bCollected = false; // re-entrancy guard (C3)
 	bool bInert = false;     // SIB-36: suspended while a branch is open
 };

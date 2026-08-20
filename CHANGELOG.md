@@ -3,6 +3,16 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.9.3 — First five minutes: living room, Vision, poker
+
+- **New Game starts in the living room**, looking down the hall, poker glass behind you.
+- **Opening banner:** Vision **[V]** shows hidden doors; after you use it, poker is through the glass. No COMPILE scavenger hunt.
+- **50 sauce** on a fresh save, so you can sit at Jacks or Better immediately.
+- **Glowing book on the coffee table** — **E** collects it (+5 sauce). Upstairs is yours to find; the HUD does not nag you there.
+- **Video poker** is a standing ace-of-spades deck. After you leave the machine, **[O] back to office** is on the library panel.
+- HUD sauce / Status lines sit on a **dark chip** so they read on wood.
+- **Many Worlds** is out of the journal. Forest assets stay on disk, unused.
+
 ## v0.9.2 — She celebrates when you say hello
 
 - **Talk to a dancer and she greets you.** Press **E** and she stops dancing,

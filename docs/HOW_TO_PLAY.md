@@ -22,8 +22,6 @@ distilled. You earn it by playing:
 
   - Books pay 5 each — collect them with E.
   - Fighting a Refuser (F) pays 2. Stand your ground.
-  - Curios hidden in the Many Worlds pay 15. Some forests keep one,
-    some keep none.
   - Finishing a chapter pays a bonus, once.
 
 You spend it at THE CAULDRON — the stove in the kitchen. Press E on the
@@ -64,14 +62,6 @@ walk into it and the power is yours, forever. In order:
 If a key does nothing and a message says the power is not yet yours,
 that's Mrs. Hall's truth: go find the shrine, or buy the power at the
 cauldron.
-
-
-## THE MANY WORLDS
-
-The shimmering door in the kitchen leads to a forest that is never the
-same one twice. There is nothing you must do there. Walk. Some worlds
-hide a single glowing curio; most of what you'll find is the walk
-itself. Press O anytime to come home.
 
 
 ## THE CATHEDRAL — THE SYNTHESIS

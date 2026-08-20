@@ -129,6 +129,8 @@ void ACarouselHUD::DrawHUD()
 				if (L.Num() > 0) { Gap(14.0f); }
 				Line(TEXT("A stake rides at the Carousel — walk back to finish the round"), Dim, 0.8f);
 			}
+			if (L.Num() > 0) { Gap(10.0f); }
+			Line(TEXT("[O] back to office"), Gold, 1.1f);
 			DrawPanel(PanelX, PanelY);
 			return;
 		}

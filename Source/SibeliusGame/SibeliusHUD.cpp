@@ -288,8 +288,10 @@ void ASibeliusHUD::DrawBranchLayer()
 			TEXT("BRANCH x%d — a test reality      [7] keep it      [8] undo it"), Depth);
 		float W = 0.f, H = 0.f;
 		GetTextSize(Marker, W, H, Font, 1.6f);
-		DrawText(Marker, FLinearColor(0.75f, 0.63f, 1.0f, 0.95f),
-			(Canvas->ClipX - W) * 0.5f, Canvas->ClipY * 0.12f, Font, 1.6f);
+		const float MarkerX = (Canvas->ClipX - W) * 0.5f;
+		const float MarkerY = Canvas->ClipY * 0.12f;
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f), MarkerX - 14.0f, MarkerY - 8.0f, W + 28.0f, H + 16.0f);
+		DrawText(Marker, FLinearColor(0.75f, 0.63f, 1.0f, 0.95f), MarkerX, MarkerY, Font, 1.6f);
 		return;
 	}
 
@@ -304,8 +306,10 @@ void ASibeliusHUD::DrawBranchLayer()
 			TEXT("TEST-DRIVE: press [6] to branch reality — experiment freely; [7] keeps it, [8] undoes it");
 		float W = 0.f, H = 0.f;
 		GetTextSize(Hint, W, H, Font, 1.1f);
-		DrawText(Hint, FLinearColor(0.75f, 0.63f, 1.0f, 0.65f),
-			(Canvas->ClipX - W) * 0.5f, Canvas->ClipY * 0.84f, Font, 1.1f);
+		const float HintX = (Canvas->ClipX - W) * 0.5f;
+		const float HintY = Canvas->ClipY * 0.84f;
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f), HintX - 12.0f, HintY - 6.0f, W + 24.0f, H + 12.0f);
+		DrawText(Hint, FLinearColor(0.75f, 0.63f, 1.0f, 0.95f), HintX, HintY, Font, 1.1f);
 	}
 }
 
@@ -320,15 +324,26 @@ void ASibeliusHUD::DrawPlayerLayer()
 	// Walt's ask: a launch hint, upper-left, sauce-green — the two keys that
 	// open everything else. Shows for the first stretch of each world, then
 	// fades (the M menu itself carries the full list). Suppressed while the
-	// dev overlay owns that corner.
+	// dev overlay owns that corner. Dark chip so the green doesn't vanish
+	// into wood, stone, or the living-room wall.
 	constexpr double HintVisibleSeconds = 40.0;
 	constexpr double HintFadeSeconds = 5.0;
+	constexpr float ChipPadX = 10.0f;
+	constexpr float ChipPadY = 6.0f;
+	constexpr FLinearColor ChipBack(0.0f, 0.0f, 0.0f, 0.72f);
 	if (!bOverlayVisible && Now < HintVisibleSeconds + HintFadeSeconds)
 	{
+		const FString LaunchHint = TEXT("M for Status, J for Journal");
 		const float HintAlpha = static_cast<float>(
 			FMath::Clamp((HintVisibleSeconds + HintFadeSeconds - Now) / HintFadeSeconds, 0.0, 1.0));
-		DrawText(TEXT("M for Status, J for Journal"),
-			FLinearColor(0.4f, 1.0f, 0.5f, 0.95f * HintAlpha), 16.0f, 24.0f, nullptr, OverlayTextScale);
+		float LaunchW = 0.0f, LaunchH = 0.0f;
+		GetTextSize(LaunchHint, LaunchW, LaunchH, nullptr, OverlayTextScale);
+		const float LaunchX = 16.0f;
+		const float LaunchY = 24.0f;
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f * HintAlpha),
+			LaunchX - ChipPadX, LaunchY - ChipPadY, LaunchW + ChipPadX * 2.0f, LaunchH + ChipPadY * 2.0f);
+		DrawText(LaunchHint,
+			FLinearColor(0.4f, 1.0f, 0.5f, 0.95f * HintAlpha), LaunchX, LaunchY, nullptr, OverlayTextScale);
 	}
 
 	// Sauce count, top-right — the one number the player always sees.
@@ -337,8 +352,6 @@ void ASibeliusHUD::DrawPlayerLayer()
 		const FString SauceLine = FString::Printf(TEXT("SAUCE  %d"), Progression->GetSauce());
 		float W = 0.0f, H = 0.0f;
 		GetTextSize(SauceLine, W, H, nullptr, OverlayTextScale);
-		const float SauceX = Canvas->ClipX - W - 24.0f;
-		DrawText(SauceLine, FLinearColor(0.4f, 1.0f, 0.5f, 0.95f), SauceX, 24.0f, nullptr, OverlayTextScale);
 
 		// Walt's ask: a standing reminder of the menu key, tucked under the count.
 		// (M, not Tab — Slate eats Tab in PIE; see the character's key bindings.)
@@ -346,8 +359,21 @@ void ASibeliusHUD::DrawPlayerLayer()
 		float HintW = 0.0f, HintH = 0.0f;
 		const float HintScale = OverlayTextScale * 0.7f;
 		GetTextSize(MenuHint, HintW, HintH, nullptr, HintScale);
-		DrawText(MenuHint, FLinearColor(0.7f, 0.7f, 0.7f, 0.7f),
-			Canvas->ClipX - HintW - 24.0f, 24.0f + H + 4.0f, nullptr, HintScale);
+
+		const float SauceY = 24.0f;
+		const float LineGap = 4.0f;
+		const float MenuY = SauceY + H + LineGap;
+		const float BlockRight = Canvas->ClipX - 24.0f;
+		const float BlockW = FMath::Max(W, HintW);
+		const float BlockH = H + LineGap + HintH;
+		const float BlockX = BlockRight - BlockW;
+		DrawRect(ChipBack,
+			BlockX - ChipPadX, SauceY - ChipPadY, BlockW + ChipPadX * 2.0f, BlockH + ChipPadY * 2.0f);
+
+		const float SauceX = BlockRight - W;
+		DrawText(SauceLine, FLinearColor(0.4f, 1.0f, 0.5f, 0.95f), SauceX, SauceY, nullptr, OverlayTextScale);
+		DrawText(MenuHint, FLinearColor(0.85f, 0.85f, 0.85f, 0.9f),
+			BlockRight - HintW, MenuY, nullptr, HintScale);
 
 		// The +N/-N delta floats under the hint, then fades.
 		if (Now < SauceFlashUntil && LastSauceDelta != 0)
@@ -357,7 +383,13 @@ void ASibeliusHUD::DrawPlayerLayer()
 			const FLinearColor DeltaColor = LastSauceDelta > 0
 				? FLinearColor(0.4f, 1.0f, 0.5f, Alpha)
 				: FLinearColor(1.0f, 0.55f, 0.3f, Alpha);
-			DrawText(DeltaLine, DeltaColor, SauceX, 24.0f + H + HintH + 8.0f, nullptr, OverlayTextScale);
+			float DeltaW = 0.0f, DeltaH = 0.0f;
+			GetTextSize(DeltaLine, DeltaW, DeltaH, nullptr, OverlayTextScale);
+			const float DeltaY = MenuY + HintH + 8.0f;
+			const float DeltaX = BlockRight - DeltaW;
+			DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f * Alpha),
+				DeltaX - ChipPadX, DeltaY - ChipPadY, DeltaW + ChipPadX * 2.0f, DeltaH + ChipPadY * 2.0f);
+			DrawText(DeltaLine, DeltaColor, DeltaX, DeltaY, nullptr, OverlayTextScale);
 		}
 	}
 
@@ -426,7 +458,6 @@ FString ASibeliusHUD::ComputeObjective() const
 		}
 	}
 
-	const int32 Books = Inv ? Inv->GetCount(EResourceType::Book) : 0;
 	const int32 Keys  = Inv ? Inv->GetCount(EResourceType::Key) : 0;
 	const int32 Powers = Progression->NumUnlocked();
 	const int32 PowerCount = static_cast<int32>(EPowerVerb::Count);
@@ -453,25 +484,33 @@ FString ASibeliusHUD::ComputeObjective() const
 		return FString();   // Synthesis done: free play, no nagging
 	}
 
-	// 2) The opening beat: books are the first thing a stranger can DO.
-	if (Books == 0 && Keys == 0 && Powers == 0)
+	// 2) Opening: they start with Code Vision. Teach it on the glass behind them
+	// (the poker door). Do NOT send a new player hunting COMPILE.
+	if (!Progression->HasClaimedGrant(TEXT("Tutorial.Vision")))
 	{
-		return TEXT("Explore the office — collect the glowing books [E]");
+		return TEXT("Vision [V] shows hidden doors. Turn around and look at the glass.");
 	}
 
-	// 3) Books in hand but no way to spend them yet: earn Compile.
+	// 3) Poker through the glass. A living-room table book must not steal this
+	// line — they pick that up for E + sauce, then still go play.
+	if (!Progression->HasClaimedGrant(TEXT("Tutorial.Poker")) && Keys == 0)
+	{
+		return TEXT("Vision [V] shows hidden doors. Poker is through the glass behind you.");
+	}
+
+	// 4) After poker: a shrine, if they don't have Compile. Not an upstairs invite.
 	if (Keys == 0 && !Progression->IsUnlocked(EPowerVerb::Compile))
 	{
-		return TEXT("A power is granted somewhere in this house — find COMPILE");
+		return TEXT("Walk into a glowing shrine when you find one");
 	}
 
-	// 4) Compile earned: build the key from the books.
+	// 5) Compile earned, no key: they find the build site upstairs themselves.
 	if (Keys == 0)
 	{
-		return TEXT("Take your books upstairs — face the build site and press [C] to compile the key");
+		return FString();
 	}
 
-	// 5) Key in hand, powers remain: the wider house opens.
+	// 6) Key in hand, powers remain: the wider house opens.
 	return FString::Printf(
 		TEXT("Your key opens the attic. Powers earned: %d of %d — seek the granting places"),
 		Powers, PowerCount);
@@ -495,7 +534,7 @@ void ASibeliusHUD::DrawObjective()
 	GetTextSize(Objective, W, H, nullptr, Scale);
 	const float X = (Canvas->ClipX - W) * 0.5f;
 	const float Y = 20.0f;
-	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.5f), X - 14.0f, Y - 6.0f, W + 28.0f, H + 12.0f);
+	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f), X - 14.0f, Y - 6.0f, W + 28.0f, H + 12.0f);
 	DrawText(Objective, FLinearColor(1.0f, 0.85f, 0.35f, 1.0f), X, Y, nullptr, Scale);
 }
 
@@ -547,6 +586,7 @@ void ASibeliusHUD::DrawBackToOfficeHint()
 	GetTextSize(Hint, HintW, HintH, nullptr, OverlayTextScale);
 	const float HintX = (Canvas->ClipX - HintW) * 0.5f;
 	const float HintY = Canvas->ClipY - HintH - 48.0f;   // a hand above the bottom edge
+	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f), HintX - 10.0f, HintY - 6.0f, HintW + 20.0f, HintH + 12.0f);
 	DrawText(Hint, FLinearColor(1.0f, 1.0f, 1.0f, 0.9f), HintX, HintY, nullptr, OverlayTextScale);
 }
 

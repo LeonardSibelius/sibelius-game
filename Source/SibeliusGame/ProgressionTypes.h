@@ -63,8 +63,10 @@ struct SIBELIUSGAME_API FProgressionState
 	uint8 UnlockedMask = 1 << static_cast<uint8>(EPowerVerb::CodeVision);
 
 	// The unified currency (FUN_PLAN Step 2). Never negative.
+	// Fresh players start with 50 so they can sit at video poker (10 a hand)
+	// before they've collected books. Existing saves keep whatever they had.
 	UPROPERTY(SaveGame)
-	int32 Sauce = 0;
+	int32 Sauce = 50;
 
 	// One-time grant keys already claimed (power shrines, chapter-end rewards)
 	// — so replaying a level can't farm its big grants.

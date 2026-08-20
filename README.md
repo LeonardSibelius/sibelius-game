@@ -2,7 +2,9 @@
 
 A first-person narrative metroidvania built in **Unreal Engine 5.7**. You play Walt Parkman, who becomes the three-part entity **Leonard Sibelius** — composed of himself, Claude Cowork, and Claude Code. The setting is an ordinary engineer's home office whose architecture *is* the puzzle: each chapter grants one new way to act on the building's structure — to **see** it, **edit** it, or **rebuild** it — and uses that verb to reach parts of the level that were previously closed. The antagonist is **Mrs. Hall**, never embodied because she is a *system*, not a person: she manifests as red error-block walls and as the refusals that block what you try to make.
 
-The arc follows a software-engineering lifecycle — **Code Vision → Refactor → Compile → Test-Drive → Deploy → Generate → Three-Part Synthesis** — and ends in a gothic cathedral of light, where the engineer combines every power he has earned. Beyond the arc, a hidden **Sauce Door** in the kitchen opens onto **procedurally-generated worlds** built with Unreal Engine 5's PCG framework — a standing experiment in how far procedural generation can go toward *composing* a scene, not just populating one.
+The arc follows a software-engineering lifecycle — **Code Vision → Refactor → Compile → Test-Drive → Deploy → Generate → Three-Part Synthesis** — and ends in a gothic cathedral of light, where the engineer combines every power he has earned.
+
+**Many Worlds / PCG forests are out of the game.** Runtime generation did not cook; a baked deck blew the download past 10 GB. The paid EasyBiomes kit **stays on disk — do not delete it, do not use it.** Lock: `docs/FORESTS_DO_NOT_USE.md`.
 
 > Part of **Leonard Sibelius, Inc. — an anything machine. Software with AI in it.** · [leonardsibelius.com](https://leonardsibelius.com)
 
@@ -10,7 +12,7 @@ The arc follows a software-engineering lifecycle — **Code Vision → Refactor 
 
 **Chapters 1–6 are shipped and playable on `main`**, each gated by a passing headless smoke test. **Chapter 7 — Three-Part Synthesis** is in progress: its cathedral environment is built and walkable, and the **office → attic → cathedral path is playable end to end** (collect books → build the staircase → earn the key → unlock the attic hatch → climb up → open a gothic door → arrive in the cathedral of light). The remaining Ch7 work is the in-cathedral finale itself.
 
-**The Many Worlds Door (Sauce Door) now opens onto a shuffled deck of eight authored forests** and is live as a free Windows build on itch (current build **v0.5.4**). Each world is a photoscanned poplar forest generated in-editor with UE5 PCG (the EasyBiomes kit plus a recipe/conductor system built for this project), hand-vetted, and baked to its own level; the door picks one at random on every entry — never the same twice in a row. Every arrival lands on the same composed view: the forest road, a lone hero poplar down the sightline, three Shinbi watchers at the roadside, and a sailboat run aground where no boat should be.
+**Many Worlds is retired** (Walt, 2026-07-16). Historical itch builds had a forest deck; current `main` does not. See `docs/FORESTS_DO_NOT_USE.md`.
 
 ### Shipped chapters
 
@@ -26,17 +28,19 @@ The arc follows a software-engineering lifecycle — **Code Vision → Refactor 
 
 **Ch6 — Generate.** Press **G**, type what you want ("a lamp," "a pine tree," "a sofa"), and the matching object is spawned from a curated, offline catalog — content-safe and shippable, with natural-language keyword matching (57 keywords across 6 entries). Requests outside the catalog draw a Mrs. Hall **refusal** instead.
 
-### Shipped features (beyond the arc)
+### Retired — do not revive
 
-**The Many Worlds Door.** Use the Sauce of all Knowledge in the kitchen and a hidden door shimmers into being, revealed with **Code Vision (V)** and marked *Many Worlds — no two alike*. Step through (**E**) and you arrive in one of eight **Elsewhere** forests — poplar woods dealt from different seeds, each with its own arrangement of canopy, meadow, dead-wood, and dense growth, and its own re-rolled insect and wind ambience. Wander as far as you like; press **O — Back to Office** at any time, and step through again for a different world (the door never repeats itself back-to-back). The earlier curio / Cabinet of Curiosities loop is set aside for now; the feature chases one feeling — *I wonder what's in there this time* — wonder, not collection.
+**Many Worlds / forest deck.** Cut. Paid EasyBiomes + Shinbi assets remain on disk. **Do not delete, do not use.** `docs/FORESTS_DO_NOT_USE.md`.
 
 ### In progress
 
 **Ch7 — Three-Part Synthesis.** The golden cathedral finale. The environment is a *cathedral of light* — stone gothic arches, stained glass on both flanks plus a glass apse, entrance wall, and ceiling canopy, a reflective marble floor, golden raking sun and volumetric fog, and the slot-machine cabinet standing at the apse as the altar. The **attic → cathedral door** (`ACathedralDoor`, press **E**) is live and gated by its own smoke test. Remaining: the **seven-stage power-gate puzzle** (all six earned powers combined against the last Mrs. Hall wall) and the **slot-machine coda**.
 
-## Procedural generation (UE5 PCG)
+## Procedural generation (UE5 PCG) — parked
 
-The Many Worlds forests are built on **Unreal Engine 5's PCG framework** via the **EasyBiomes** photoscanned poplar kit — real captured plant geometry as **Nanite full-geometry foliage**, not alpha-mapped cards, which is why it holds up close. On top of the kit sits a small authored system built for this project:
+~~The Many Worlds forests~~ **Retired.** Runtime PCG did not cook; baked decks blew the download. The notes below are history, not a work list. **Do not use `Content/EasyBiomes/`. Do not delete it.**
+
+The Many Worlds forests were built on **Unreal Engine 5's PCG framework** via the **EasyBiomes** photoscanned poplar kit — real captured plant geometry as **Nanite full-geometry foliage**, not alpha-mapped cards, which is why it holds up close. On top of the kit sits a small authored system built for this project:
 
 - **World Conductor** (`BP_WorldConductor`) — one seed re-rolls the whole world: it reseeds and row-rotates the four hand-drawn spline regions (each region draws a different kit "look" — meadowed, bushy, dense, dead — from a data table), and applies the recipe's sun + fog mood before the regions spawn.
 - **World Recipe** (`PDA_WorldRecipe` / `DA_Recipe_01_PoplarForest`) — a data asset that owns the vegetation palette, densities, lighting mood, and the hero mesh. The recipe drives generation; the graphs stay untouched.
@@ -113,13 +117,10 @@ Branch and deploy actions (Ch4/Ch5) are also bound to developer keys (enter / me
 
 ## Roadmap
 
-The seven-chapter arc follows a software-engineering metaphor. **Ch1–Ch6 above are shipped; Ch7's cathedral environment and entry path are playable; the Many Worlds Door and its deck of eight forests are shipped.**
+The seven-chapter arc follows a software-engineering metaphor. **Ch1–Ch6 above are shipped; Ch7's cathedral environment and entry path are playable. Many Worlds / forests are retired** (`docs/FORESTS_DO_NOT_USE.md`).
 
 - **Ch7 — Three-Part Synthesis** *(in progress)*. The cathedral finale: the seven-stage power-gate puzzle that combines every earned power against the final Mrs. Hall wall.
 - **Coda — the slot machine.** A standalone, deterministic slot model (`SlotGameModel`) validated by a million-spin par-sheet test (RTP, hit frequency, exposure caps), installed at the cathedral apse as the engineer's first act of creation with his god-powers.
-- **More worlds for the deck** *(planned)*. New cards are cheap now — one seed, one vetting walk, one Save As. Beyond the poplar forest: new terrain stages and kits (a flooded library, a clockwork attic, a starlit void) — the real lever for "a different world each time."
-- **True runtime regeneration** *(parked)*. Blocked by PCG runtime generation not running in cooked builds with the current kit/engine; revisit on future engine versions. The deck architecture already isolates this — only the door's pick logic would change.
-- **PCG composition** *(ongoing research)*. Pushing each new generation of AI at UE5's procedural tools until scatter becomes art direction — placement that *composes*, not just populates.
 
 ## Credits
 
@@ -127,6 +128,6 @@ The seven-chapter arc follows a software-engineering metaphor. **Ch1–Ch6 above
 - Cathedral: **Ultimate Gothic Cathedral** by **Ultima Store** (Fab, AI-usage permitted).
 - Stained glass materials: **Stained Glass 3D** by **twins-creators** (Fab, AI-usage permitted).
 - Elsewhere kits: **Modular Sci-Fi Environment** and **SciFi Boxes** by **Crebotoly** (Fab, AI-usage permitted).
-- Many Worlds forest: **Broadleaf Poplar Forest — PCG Biome** by **EasyBiomes** (Fab) — photoscanned, **Nanite full-geometry foliage** (no alpha-card fakery), the product of 8+ years of photogrammetry R&D. Used with thanks and admiration. https://www.fab.com/listings/61f2b0fc-5656-46b7-86ef-3c2100cebcb4
-- Forest watchers: **Paragon: Shinbi** by **Epic Games** (free).
+- Forest kit (purchased, **not used in the game** — do not delete): **Broadleaf Poplar Forest — PCG Biome** by **EasyBiomes** (Fab). https://www.fab.com/listings/61f2b0fc-5656-46b7-86ef-3c2100cebcb4
+- Forest watchers (same parking lot): **Paragon: Shinbi** by **Epic Games** (free).
 - The grounded sailboat: **VOL16 Boats** pack (Fab).

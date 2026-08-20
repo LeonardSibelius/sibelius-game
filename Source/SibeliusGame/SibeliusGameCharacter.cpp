@@ -524,6 +524,16 @@ void ASibeliusGameCharacter::OnCodeVisionStarted()
 	{
 		CodeVisionComp->ActivateCodeVision();
 		OnPowerVerbUsed.Broadcast(EPowerVerb::CodeVision);
+		if (UWorld* World = GetWorld())
+		{
+			if (UGameInstance* GI = World->GetGameInstance())
+			{
+				if (UProgressionSubsystem* Progression = GI->GetSubsystem<UProgressionSubsystem>())
+				{
+					Progression->ClaimOneTimeGrant(TEXT("Tutorial.Vision"));
+				}
+			}
+		}
 	}
 }
 
@@ -666,7 +676,7 @@ void ASibeliusGameCharacter::ResetProgression()
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Orange,
-				TEXT("ResetProgression: back to Code Vision only, 0 sauce"));
+				TEXT("ResetProgression: back to Code Vision only, 50 sauce"));
 		}
 	}
 }

@@ -55,30 +55,51 @@ void UInteractorComponent::UpdateFocus()
 
 	// Sphere sweep instead of a razor-thin line: a 71-year-old thumb should not
 	// need sniper aim to play a slot machine. Radius 0 falls back to a line.
-	FHitResult Hit;
-	const bool bHit = (InteractRadius > 0.f)
-		? World->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility,
-			FCollisionShape::MakeSphere(InteractRadius), Params)
-		: World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+	// SweepMulti: a book on a table loses SweepSingle to the tabletop. Take the
+	// first IInteractable at or just behind that first contact (not through a wall).
+	TArray<FHitResult> Hits;
+	if (InteractRadius > 0.f)
+	{
+		World->SweepMultiByChannel(Hits, Start, End, FQuat::Identity, ECC_Visibility,
+			FCollisionShape::MakeSphere(InteractRadius), Params);
+	}
+	else
+	{
+		FHitResult LineHit;
+		if (World->LineTraceSingleByChannel(LineHit, Start, End, ECC_Visibility, Params))
+		{
+			Hits.Add(LineHit);
+		}
+	}
 
-	// Two kinds of focus target. Actors implementing IInteractable are the general
-	// case; the dancing girls are the exception — they are MetaHuman actors we do not
-	// own and cannot re-parent, so they are recognised by carrying a dancer component
-	// instead. See DancerAgentSubsystem.h for why that component is attached by a scan.
+	auto IsInteractTarget = [](AActor* A) -> bool
+	{
+		return A && (A->Implements<UInteractable>()
+			|| A->FindComponentByClass<UDancerAgentComponent>() != nullptr);
+	};
+
 	AActor* Target = nullptr;
 	FText Prompt;
-
-	if (AActor* HitActor = bHit ? Hit.GetActor() : nullptr)
+	float FurnitureDist = -1.f;
+	constexpr float OnSurfaceSlack = 50.f;   // cm past the table/shelf we just hit
+	for (const FHitResult& Hit : Hits)
 	{
-		if (HitActor->Implements<UInteractable>())
+		AActor* HitActor = Hit.GetActor();
+		if (!HitActor)
 		{
-			Target = HitActor;
-			Prompt = IInteractable::Execute_GetInteractionPrompt(HitActor);
+			continue;
 		}
-		else if (const UDancerAgentComponent* Agent = HitActor->FindComponentByClass<UDancerAgentComponent>())
+		if (IsInteractTarget(HitActor))
 		{
-			Target = HitActor;
-			Prompt = Agent->GetPrompt();
+			if (FurnitureDist < 0.f || Hit.Distance <= FurnitureDist + OnSurfaceSlack)
+			{
+				Target = HitActor;
+			}
+			break;
+		}
+		if (FurnitureDist < 0.f)
+		{
+			FurnitureDist = Hit.Distance;
 		}
 	}
 
@@ -104,6 +125,17 @@ void UInteractorComponent::UpdateFocus()
 	}
 
 	FocusedActor = Target;
+	if (Prompt.IsEmpty())
+	{
+		if (Target->Implements<UInteractable>())
+		{
+			Prompt = IInteractable::Execute_GetInteractionPrompt(Target);
+		}
+		else if (const UDancerAgentComponent* Agent = Target->FindComponentByClass<UDancerAgentComponent>())
+		{
+			Prompt = Agent->GetPrompt();
+		}
+	}
 
 	/* THE prompt. Every IInteractable in the game arrives here, which is why this one line
 	   mattered more than the other seventeen put together.

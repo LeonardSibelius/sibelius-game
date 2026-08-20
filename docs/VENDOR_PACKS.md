@@ -60,6 +60,8 @@ unless noted. Sizes are what was on disk on 2 Aug 2026.
 | `ModularSciFiEnv_1` | 168 MB | no |
 | `XenoMocap` | 48 MB | no — free pack, UE4 skeleton, unused |
 | `Audio` | 5 MB | yes — `GenerateComponent.cpp` (`/Game/Audio/MrsHall/`) |
+| `EasyBiomes` | large (Nanite foliage) | **NO — parked. Paid kit. Do not delete. Do not cook. Do not use.** See `docs/FORESTS_DO_NOT_USE.md` |
+| `ParagonShinbi` | (Fab, free) | **NO — forest watchers for the parked Many Worlds deck. Do not delete. Do not use.** |
 
 Also ignored and NOT re-downloadable — these are rebuilt, not fetched:
 

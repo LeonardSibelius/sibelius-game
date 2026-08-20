@@ -43,7 +43,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Poker Machine")
 	TObjectPtr<USceneComponent> SceneRoot;
 
-	// Assign in editor (placeholder cube until Walt picks a cabinet mesh).
+	// Standing deck of cards (Engine cube, card proportions, M_CardAce / M_CardBack).
 	// BlockAll so the interactor's ECC_Visibility focus trace lands (SC9).
 	UPROPERTY(VisibleAnywhere, Category = "Poker Machine")
 	TObjectPtr<UStaticMeshComponent> CabinetMesh;
@@ -54,6 +54,9 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	/** Replace the default cube with a standing poker deck (ace face, card aspect). */
+	void ApplyDeckVisual();
 
 private:
 	void OpenScreen(APlayerController* PC);

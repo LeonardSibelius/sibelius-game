@@ -152,11 +152,12 @@ bool RunProgressionSelfTest(FString& OutError)
 {
 	FProgressionState S;
 
-	// Fresh state: Code Vision only, zero sauce.
+	// Fresh state: Code Vision only, starting stake of 50 (five poker hands).
 	if (!S.IsUnlocked(EPowerVerb::CodeVision)) { OutError = TEXT("fresh state must start with Code Vision"); return false; }
 	if (S.IsUnlocked(EPowerVerb::Refactor))    { OutError = TEXT("fresh state must NOT have Refactor"); return false; }
 	if (S.NumUnlocked() != 1)                  { OutError = TEXT("fresh state must have exactly 1 power"); return false; }
-	if (S.Sauce != 0)                          { OutError = TEXT("fresh state must have 0 sauce"); return false; }
+	if (S.Sauce != 50)                         { OutError = TEXT("fresh state must start with 50 sauce"); return false; }
+	if (!S.TrySpendSauce(50) || S.Sauce != 0)  { OutError = TEXT("starting stake must be spendable down to 0"); return false; }
 
 	// Unlock semantics: first true, repeat false, state sticks.
 	if (!S.Unlock(EPowerVerb::Refactor))       { OutError = TEXT("first Unlock must return true"); return false; }

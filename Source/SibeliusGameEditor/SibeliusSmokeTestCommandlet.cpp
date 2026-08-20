@@ -29,10 +29,12 @@ const FString ExpectedGameModeSubstring = TEXT("FirstPerson");
 const int32 MinActorCount = 1000;
 const int32 MaxActorCount = 1150;
 
-// Office bounding box (world units). Generous: catches spawn-in-field / under-world
-// without tripping on a small PlayerStart nudge. Known-good is ~(-1832, 10500, 400).
+// House bounding box (world units). Spawn is the living room (Walt 2026-08-19):
+// facing the hallway, poker door behind on the sliding glass. Old office spawn
+// was ~(-1832, 10365, 414). Living-room known-good is ~(-2050, 9450, 158)
+// (carpet Z~62 + capsule half-height). Z=130 fell through the floor.
 const FBox OfficeBounds(
-FVector(-2300.0, 9500.0, 100.0),
+FVector(-2600.0, 8900.0, 50.0),
 FVector(-1300.0, 11500.0, 800.0));
 
 struct FResult
