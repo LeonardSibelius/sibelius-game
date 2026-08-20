@@ -47,9 +47,17 @@ TSharedRef<SWidget> UMrsHallMessageWidget::RebuildWidget()
 		BodyText->SetColorAndOpacity(FSlateColor(FLinearColor(0.12f, 0.09f, 0.05f, 1.0f)));
 		BodyText->SetAutoWrapText(true);
 
+		/* Wrap at an EXPLICIT width, and let the card grow downward to fit.
+		   SetAutoWrapText alone wraps to whatever width the parent offers — fine while the
+		   slot was a fixed band, useless once the card auto-sizes, because then the parent
+		   offers as much width as the text asks for and a long line runs off screen in one
+		   strip. WrapTextAt is the control that actually holds. (Same lesson as the SizeBox
+		   width override, which does not govern text wrapping either.) */
+		BodyText->SetWrapTextAt(CardWidth - 2.0f * BodyPadX);
+
 		UBorder* BodyPad = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("MemoBodyPad"));
 		BodyPad->SetBrushColor(FLinearColor(0.0f, 0.0f, 0.0f, 0.0f)); // transparent — padding only
-		BodyPad->SetPadding(FMargin(22.0f, 18.0f));
+		BodyPad->SetPadding(FMargin(BodyPadX, 18.0f));
 		BodyPad->SetContent(BodyText);
 
 		Box->AddChildToVerticalBox(HeaderBar);
@@ -58,10 +66,23 @@ TSharedRef<SWidget> UMrsHallMessageWidget::RebuildWidget()
 
 		if (UCanvasPanelSlot* CSlot = Canvas->AddChildToCanvas(Card))
 		{
-			// Upper-center band, clear of the reticle. Stretch anchors + zero offsets — the
-			// robust layout from P1 (a point anchor + SetSize produced a zero-size box).
-			CSlot->SetAnchors(FAnchors(0.26f, 0.11f, 0.74f, 0.30f));
-			CSlot->SetOffsets(FMargin(0.0f));
+			/* THE CARD GROWS TO FIT ITS LINE.
+
+			   This was a fixed band — FAnchors(0.26, 0.11, 0.74, 0.30), i.e. 11%..30% of
+			   screen height — which was tall enough for Chapter 6's one-line refusals and
+			   nothing else. The four-line opening ticket (SPINE moment 1) rendered its last
+			   line BELOW the painted card, as dark text straight onto the living room, where
+			   it was unreadable. Any future line longer than the ones it was tuned against
+			   would have done the same.
+
+			   Auto-size instead: a top-centre point anchor, aligned (0.5, 0) so it hangs
+			   centred from that point, and the slot takes the card's desired height. Width
+			   is governed by BodyText's WrapTextAt above, NOT by the slot — which is why
+			   auto-size is safe here where P1's "point anchor + SetSize" produced a
+			   zero-size box. */
+			CSlot->SetAnchors(FAnchors(0.5f, 0.11f, 0.5f, 0.11f));
+			CSlot->SetAlignment(FVector2D(0.5f, 0.0f));
+			CSlot->SetAutoSize(true);
 		}
 	}
 

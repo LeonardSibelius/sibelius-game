@@ -25,6 +25,21 @@ public:
 	// Set the memo body (the line she says). Safe before or after construction.
 	void SetMessage(const FText& Line);
 
+	/**
+	 * Memo width in pixels, and the horizontal padding inside it.
+	 *
+	 * ABSOLUTE, not a fraction of the screen, on purpose: the fonts here are absolute sizes
+	 * too (22 and 26), so a relative width changed the characters-per-line with resolution
+	 * while the glyphs stayed put. A fixed width keeps the line breaks identical everywhere.
+	 *
+	 * The card's HEIGHT is deliberately NOT fixed — it grows to fit however many lines the
+	 * body wraps to. It used to be pinned to an 11%..30% band, which fit Chapter 6's
+	 * one-line refusals and dropped the last line of anything longer onto the floor of the
+	 * living room, unreadable and unremarked.
+	 */
+	static constexpr float CardWidth = 900.0f;
+	static constexpr float BodyPadX  = 22.0f;
+
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
