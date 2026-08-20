@@ -170,6 +170,16 @@ void APowerGrant::BindToAgent()
 		return;
 	}
 
+	/* STAND THE POLE DOWN FIRST, BEFORE looking for her component.
+	   The first version did this only AFTER a successful bind, and returned early when the
+	   component was missing — but UDancerAgentComponent is attached by
+	   DancerAgentSubsystem's scan, which runs on a FIVE SECOND cycle. So for the first
+	   seconds of every session the trigger was still live, and Walt kept meeting Deploy's
+	   slot machine on the staircase even though the binding worked and Isla's prompt read
+	   correctly a moment later. Designating an agent is enough on its own to retire the
+	   sphere; whether she has woken up yet is a separate question. */
+	StandDown();
+
 	UDancerAgentComponent* Agent = GrantedByAgent->FindComponentByClass<UDancerAgentComponent>();
 	if (!Agent)
 	{
@@ -192,7 +202,14 @@ void APowerGrant::BindToAgent()
 
 	Agent->SetPowerGrant(this, Power);
 
-	// The pole is now decoration for a job someone else does. Hide it and stand down.
+	UE_LOG(LogSibeliusGame, Display, TEXT("[PowerGrant] %s is now given by %s"),
+		*PowerVerbDisplayName(Power), *GrantedByAgent->GetName());
+}
+
+void APowerGrant::StandDown()
+{
+	// The pole is decoration for a job someone else does now: invisible, and unable to
+	// take the screen off anyone who walks past. Idempotent — BindToAgent may retry.
 	if (Mesh)       { Mesh->SetVisibility(false); }
 	if (BeaconMesh) { BeaconMesh->SetVisibility(false); }
 	if (Glow)       { Glow->SetVisibility(false); }
@@ -201,9 +218,6 @@ void APowerGrant::BindToAgent()
 		Trigger->SetGenerateOverlapEvents(false);
 		Trigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
-
-	UE_LOG(LogSibeliusGame, Display, TEXT("[PowerGrant] %s is now given by %s"),
-		*PowerVerbDisplayName(Power), *GrantedByAgent->GetName());
 }
 
 FString APowerGrant::GetActorLabelSafe() const

@@ -66,6 +66,11 @@ private:
 	 *  the dancer's component is attached by a runtime scan and may not exist yet. */
 	void BindToAgent();
 
+	/** Hide the pole and kill its overlap trigger. Called the moment an agent is
+	 *  DESIGNATED, not when she is found — her component arrives on a 5s scan cycle, and
+	 *  waiting for it left the sphere live and ambushing for the first seconds of play. */
+	void StandDown();
+
 	FString GetActorLabelSafe() const;   // labels are editor-only; logs still need a name
 
 	FTimerHandle AgentBindTimer;
