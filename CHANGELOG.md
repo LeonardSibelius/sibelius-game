@@ -3,6 +3,27 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+## v0.9.4 — Somebody wants something from you
+
+- **You have a boss now, from the first minute.** Mrs. Hall messages you in the living
+  room: the legacy system threw overnight, fix it, and do it by hand — she is not paying a
+  senior developer to ask a machine. Press **V** a few seconds later and she notices.
+- **The AI agents hand over the powers.** No more floating spheres on poles. Walk up to a
+  dancer, press **E**, and she offers you what your employer forbade — *"[E] ask Kaia for
+  REFACTOR"*. They introduce themselves as AI agents; now they act like it.
+- **Nothing ambushes you any more.** Shrines used to open a staked slot machine the moment
+  you walked within a metre — including through a floor, from the staircase below. A power
+  is something you ask for.
+- **The journal keeps your record.** Every message you have earned, collected under
+  *WHAT I WOULD TELL THEM*, re-readable whenever you like.
+- **The ending says what it was for.** Complete the Synthesis and the walls come down, Mrs.
+  Hall says her last word, and forty years of messages to former employers read back in
+  order — 1988 to 2022 — a few paces from a slot machine you built yourself.
+- **In the cathedral, E means the machine.** The old wooden door's prompt is gone; **O**
+  takes you home from anywhere, as it always did.
+- The living-room book glows properly again, the service panel's columns line up, and the
+  memo card grows to fit whatever she has to say.
+
 ## v0.9.3 — First five minutes: living room, Vision, poker
 
 - **New Game starts in the living room**, looking down the hall, poker glass behind you.
