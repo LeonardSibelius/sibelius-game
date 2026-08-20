@@ -219,6 +219,10 @@ private:
 	void ScheduleOpeningTicket();
 	void DeliverOpeningTicket();
 
+	/** SPINE moment 2+ — she reacts the first time each power is actually USED. Bound to
+	 *  this pawn's own OnPowerVerbUsed, which only fires on a use the power gate allowed. */
+	void HandlePowerUsedForHall(EPowerVerb Verb);
+
 	FTimerHandle OpeningTicketTimer;
 
 	/** Long enough to stand up, look around and read the objective before the first thing

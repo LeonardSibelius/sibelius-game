@@ -353,8 +353,10 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 			UE_LOG(LogGenerateSmoke, Error, TEXT("  story lines load error: %s"), *StoryErr);
 		}
 
-		// Every Reason the C++ asks for must resolve to a line, or that beat is mute.
-		static const TCHAR* RequiredReasons[] = { TEXT("Ticket") };
+		/* Reasons that are WRITTEN and therefore must keep working. This list is the
+		   contract: add a beat's line to the CSV, add its Reason here, and the gate will
+		   hold it from then on. */
+		static const TCHAR* RequiredReasons[] = { TEXT("Ticket"), TEXT("Power.CodeVision") };
 		bool bAllStoryReasons = true;
 		for (const TCHAR* ReasonStr : RequiredReasons)
 		{
@@ -365,6 +367,33 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 			}
 		}
 		R.Check(bAllStoryReasons, TEXT("SPINE: every story Reason the code asks for has a line"));
+
+		/* The REMAINING beats, reported and not failed. The character now asks for
+		   Power.<Verb> on the first use of every power (one subscription to the gated
+		   OnPowerVerbUsed chokepoint), so the code is wired for all six — but the writing
+		   is Walt's, and an unwritten line is a deliberate silence, not a defect. Printing
+		   the outstanding ones here means the remaining work is visible in the gate rather
+		   than discovered by walking around the game wondering why she said nothing. */
+		static const TCHAR* AllPowerReasons[] = {
+			TEXT("Power.CodeVision"), TEXT("Power.Refactor"), TEXT("Power.Compile"),
+			TEXT("Power.TestDrive"),  TEXT("Power.Deploy"),   TEXT("Power.Generate")
+		};
+		int32 Written = 0;
+		FString Missing;
+		for (const TCHAR* ReasonStr : AllPowerReasons)
+		{
+			if (PickMrsHallStoryLine(Story, FName(ReasonStr), 0).Line.IsEmpty())
+			{
+				Missing += FString::Printf(TEXT(" %s"), ReasonStr);
+			}
+			else
+			{
+				++Written;
+			}
+		}
+		UE_LOG(LogGenerateSmoke, Display,
+			TEXT("  SPINE: power beats written %d/6.%s"),
+			Written, Missing.IsEmpty() ? TEXT("") : *FString::Printf(TEXT(" Still to write:%s"), *Missing));
 
 		// And no story line may also be serving as a Generate refusal.
 		bool bNoLeak = true;

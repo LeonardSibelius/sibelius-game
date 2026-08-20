@@ -105,6 +105,52 @@ void ASibeliusGameCharacter::BeginPlay()
 	FSauceShop::ApplyPersistentPurchases(this);
 
 	ScheduleOpeningTicket();
+
+	/* SPINE moment 2+: she notices the first time you USE each power.
+	   One subscription rather than six call sites. OnPowerVerbUsed is the gated-input
+	   chokepoint (see FinaleAltar.h) — it fires only when a press actually did something,
+	   so she never reacts to a power the gate refused. Reacting to something that did not
+	   happen would be worse than saying nothing. */
+	OnPowerVerbUsed.AddUObject(this, &ASibeliusGameCharacter::HandlePowerUsedForHall);
+}
+
+void ASibeliusGameCharacter::HandlePowerUsedForHall(EPowerVerb Verb)
+{
+	// Stable token per verb. Local switch rather than a file-scope helper: generic names
+	// at namespace scope collide across a unity blob (the ProceduralPcm.h lesson).
+	const TCHAR* Token = nullptr;
+	switch (Verb)
+	{
+	case EPowerVerb::CodeVision: Token = TEXT("CodeVision"); break;
+	case EPowerVerb::Refactor:   Token = TEXT("Refactor");   break;
+	case EPowerVerb::Compile:    Token = TEXT("Compile");    break;
+	case EPowerVerb::TestDrive:  Token = TEXT("TestDrive");  break;
+	case EPowerVerb::Deploy:     Token = TEXT("Deploy");     break;
+	case EPowerVerb::Generate:   Token = TEXT("Generate");   break;
+	default: return;
+	}
+
+	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (!Progression)
+	{
+		return;
+	}
+
+	/* Once per power, per save, on the existing saved grant machinery. Its OWN key, not
+	   the tutorial's: Tutorial.Vision is already claimed on any save where the player has
+	   used Vision, so reusing it would mean she stayed silent forever on every existing
+	   save. */
+	if (!Progression->ClaimOneTimeGrant(FName(*FString::Printf(TEXT("Hall.FirstUse.%s"), Token))))
+	{
+		return;
+	}
+
+	// Silent (with a log line) for any verb whose line is not written yet — see
+	// Content/Data/MrsHallStory.csv and the RequiredReasons list in GenerateSmokeTest.
+	if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+	{
+		Hall->Say(FName(*FString::Printf(TEXT("Power.%s"), Token)));
+	}
 }
 
 void ASibeliusGameCharacter::ScheduleOpeningTicket()
