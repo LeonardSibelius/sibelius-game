@@ -1,4 +1,9 @@
 Name,Reason,Line,AudioKey
 ticket_1,Ticket,"You. Programmer. The legacy system threw again overnight. Fix it before I have to explain it to anyone. And you do it by hand — I'm not paying a senior developer to ask a machine.",mrshall_ticket_1
 power_vision_1,Power.CodeVision,"You. Programmer. Whatever you think you just did, the walls are where they have always been. Do the ticket.",mrshall_power_vision_1
+power_refactor_1,Power.Refactor,"You. Programmer. That value was set by someone who thought about it longer than you have. Put it back and do the ticket.",mrshall_power_refactor_1
+power_compile_1,Power.Compile,"Parts I never issued, assembled into something I never approved. Nothing in my shop builds itself, Programmer. What are you using?",mrshall_power_compile_1
+power_testdrive_1,Power.TestDrive,"A senior developer does not try it both ways and keep whichever he likes — he knows. I am watching the work now, Programmer. Take that as a warning.",mrshall_power_testdrive_1
+power_deploy_1,Power.Deploy,"You put that into the world without my approval. Nothing goes live under my roof unless I say it does, Programmer. Do it again and there is no position to come back to.",mrshall_power_deploy_1
+power_generate_1,Power.Generate,"You asked out loud and the world answered. Things do not come from nothing, Programmer — somebody makes them, and somebody is paid for it, and that was supposed to be you.",mrshall_power_generate_1
 final_1,Final,"You. Programmer. I said it would never replace a senior developer. I did not say what it would do for one. There is no ticket today. Build whatever you like.",mrshall_final_1

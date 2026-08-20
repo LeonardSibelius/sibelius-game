@@ -375,7 +375,12 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 		/* Reasons that are WRITTEN and therefore must keep working. This list is the
 		   contract: add a beat's line to the CSV, add its Reason here, and the gate will
 		   hold it from then on. */
-		static const TCHAR* RequiredReasons[] = { TEXT("Ticket"), TEXT("Power.CodeVision"), TEXT("Final") };
+		static const TCHAR* RequiredReasons[] = {
+			TEXT("Ticket"),
+			TEXT("Power.CodeVision"), TEXT("Power.Refactor"), TEXT("Power.Compile"),
+			TEXT("Power.TestDrive"),  TEXT("Power.Deploy"),   TEXT("Power.Generate"),
+			TEXT("Final")
+		};
 		bool bAllStoryReasons = true;
 		for (const TCHAR* ReasonStr : RequiredReasons)
 		{
