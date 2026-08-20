@@ -1,11 +1,17 @@
 // JournalWidget.h
 //
-// SIB-41 — the Journal/story panel. A native (C++-built) UUserWidget: a scrollable
-// text panel that shows the narrative from docs/NARRATIVE.md, loaded at runtime.
+// SIB-41 — the Journal panel. A native (C++-built) UUserWidget: a scrollable text panel.
 // Toggled with J (see SibeliusGameCharacter). Default OFF, dismissable.
 //
-// NOTE: docs/ is NOT staged into a packaged build — reading it at runtime is fine for
-// editor/PIE only. For shipping, bake the text into Content or a data asset.
+// It shows TWO things:
+//   1. Content/Journal/HOW_TO_PLAY.md — the player's how-to guide, staged as a loose
+//      NonUFS file so it ships. (docs/HOW_TO_PLAY.md is the editor-time fallback.)
+//   2. The player's own collected memoir messages — see ComposeMemoirRecord.
+//
+// This comment used to say the panel showed docs/NARRATIVE.md, which stopped being true
+// when Walt made J the how-to-play guide. The stale version cost real time: a reader of
+// the comment concludes the game hands the player its own lore bible, and writes that
+// down as a design problem (docs/SPINE.md, since corrected). Read the function.
 
 #pragma once
 
@@ -37,6 +43,11 @@ protected:
 private:
 	// Push the cached text (or a placeholder) into BodyText, if it's been built yet.
 	void ApplyText();
+
+	/** The player's collected memoir messages, appended under the how-to-play text.
+	 *  Derived from saved progression — see the comment on the implementation for why it
+	 *  deliberately adds no new save field. */
+	FString ComposeMemoirRecord() const;
 
 	UPROPERTY()
 	TObjectPtr<UScrollBox> ScrollBox;

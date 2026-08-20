@@ -145,6 +145,23 @@ void ASibeliusGameCharacter::HandlePowerUsedForHall(EPowerVerb Verb)
 		return;
 	}
 
+	/* CODE VISION'S MEMOIR HAS NEVER BEEN SEEN BY ANYBODY.
+	   The unlock ceremony shows Walt's message to the matching employer, but it hangs off
+	   UProgressionSubsystem::UnlockPower, which only broadcasts when a verb is NEWLY
+	   unlocked — and Code Vision is already set in a fresh save's default UnlockedMask.
+	   So SAIC 1988, the FIRST of the eight and the one about seeing what code could be,
+	   has never fired in any build. It fires here instead, on the first use, which is when
+	   the power becomes real to the player.
+
+	   It also reads well against Mrs. Hall's reply below: his line to a former employer at
+	   the bottom of the screen, her dismissal at the top. */
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	ASibeliusHUD* Hud = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr;
+	if (Hud && Verb == EPowerVerb::CodeVision)
+	{
+		Hud->ShowMemoir(PowerVerbMemoir(Verb));
+	}
+
 	// Silent (with a log line) for any verb whose line is not written yet — see
 	// Content/Data/MrsHallStory.csv and the RequiredReasons list in GenerateSmokeTest.
 	if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))

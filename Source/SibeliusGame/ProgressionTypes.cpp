@@ -25,6 +25,31 @@ FString PowerVerbDisplayName(EPowerVerb Verb)
 	}
 }
 
+FString PowerVerbMemoir(EPowerVerb Verb)
+{
+	/* Walt's eight messages, docs/MEMOIR_VOICE.md — verbatim, and deliberately not
+	   polished. Six are mapped to powers here; the Bally and San Diego County messages are
+	   level placards. Moved out of SibeliusHUD.cpp so the Journal can show the player's
+	   collected record as well as the twelve-second flash at the moment of earning. */
+	switch (Verb)
+	{
+	case EPowerVerb::CodeVision:
+		return TEXT("Hey SAIC, you could have used this AI skill on the CHCS project in 1988.");
+	case EPowerVerb::Refactor:
+		return TEXT("Hey Seagate, you could have used this AI skill in 1998.");
+	case EPowerVerb::Compile:
+		return TEXT("Hey IBM, you could have used this AI skill in 1995 on the San Francisco Project for distributed Java.");
+	case EPowerVerb::TestDrive:
+		return TEXT("Hey Motorola, you could have used this AI skill in 2001.");
+	case EPowerVerb::Deploy:
+		return TEXT("Hey Northrop Grumman, you could have used this AI skill on the Electronic Family Housing system for the Navy in 2002.");
+	case EPowerVerb::Generate:
+		return TEXT("Hey Army Recruiting, you could have used this AI skill on iKrome in 2022. It is being retired now, like all the rest.");
+	default:
+		return FString();
+	}
+}
+
 bool ParsePowerVerb(const FString& Name, EPowerVerb& OutVerb)
 {
 	// Compare on a lowered, separator-stripped form so "test-drive", "TestDrive",

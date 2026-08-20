@@ -33,6 +33,17 @@ enum class EPowerVerb : uint8
 // Display name for prompts/toasts ("CODE VISION", "TEST-DRIVE", ...).
 SIBELIUSGAME_API FString PowerVerbDisplayName(EPowerVerb Verb);
 
+/**
+ * Walt's message to the employer this power belongs to — docs/MEMOIR_VOICE.md, verbatim.
+ * Forty years, one sentence at a time. Empty for an unrecognised verb.
+ *
+ * Lives here rather than in the HUD because it is now read in two places: the flash at the
+ * moment a power is earned, and the player's collected record in the Journal. It was a
+ * file-static inside SibeliusHUD.cpp, which meant the strongest writing in the project
+ * existed in exactly one place that could show it, for twelve seconds, once.
+ */
+SIBELIUSGAME_API FString PowerVerbMemoir(EPowerVerb Verb);
+
 // APPEAL-5 — lifetime stat keys (the RECORDS tab). One namespace so every bump
 // site and the menu spell a key identically; a new stat is a new FName here
 // plus a bump at its code point — the map needs no schema change.

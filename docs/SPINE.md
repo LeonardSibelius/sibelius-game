@@ -58,13 +58,21 @@ The eight memoir messages fire as **12-second HUD text** at power unlocks, one a
 scattered, unrecoverable. Six of the eight are wired
 (`SibeliusHUD.cpp::MemoirLineForVerb`); two are level placards. Nothing collects them.
 
-### 4. The journal hands the player the design document
+### 4. ~~The journal hands the player the design document~~ — WRONG, corrected 2026-08-19
 
-`UJournalWidget::RefreshFromNarrative()` loads `docs/NARRATIVE.md` and displays it.
+The first draft of this document claimed pressing **J** shows the player the lore bible.
+**It does not.** `RefreshFromNarrative()` loads `Content/Journal/HOW_TO_PLAY.md` — a proper
+player guide, staged as a loose file so it ships — with `docs/HOW_TO_PLAY.md` as the
+editor-time fallback. Walt changed that at some point and the panel has been right ever
+since.
 
-Pressing **J** shows the player the lore bible — including the meta sections about Claude,
-Fable 5, EasyBiomes credits and the company creed. That is the "plot lives in a document"
-problem made literal: the game's answer to *what is going on* is to show you the notes.
+What was stale was the **class comment**, which still described the old behaviour, and I
+read the comment instead of the function. That is twice in one session that a stale comment
+has produced a wrong conclusion (the other being `Pad()`'s claim that it aligns text in a
+proportional font). Both comments have been corrected in place.
+
+The journal being already correct made Move 3 *smaller*, not larger: the record has a good
+home to go into rather than a bad one to replace.
 
 ---
 

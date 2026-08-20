@@ -12,6 +12,7 @@
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "ProgressionSubsystem.h"   // the player's earned memoir record
 
 UJournalWidget::UJournalWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -96,7 +97,66 @@ void UJournalWidget::RefreshFromNarrative()
 		UE_LOG(LogTemp, Warning, TEXT("[Journal] FAILED to load '%s' (exists=%d)"), *FullPath, bExists ? 1 : 0);
 	}
 
+	JournalText += ComposeMemoirRecord();
 	ApplyText();
+}
+
+FString UJournalWidget::ComposeMemoirRecord() const
+{
+	/* THE PLAYER'S OWN RECORD (docs/SPINE.md Move 3).
+
+	   Walt's eight messages to former employers are the strongest writing in this project,
+	   and until now each one appeared for twelve seconds at a power unlock and was gone
+	   forever — no record, no way to read it again. Forty years spent as loose change.
+
+	   NO NEW SAVE FIELD. "Which memoirs has the player earned" is already answered by
+	   state the save holds: the five earned powers are in UnlockedMask, and Code Vision —
+	   which a fresh save already owns, so it is never "unlocked" — is marked by the
+	   Hall.FirstUse.CodeVision grant claimed the first time V is actually used. Storing a
+	   second list would be duplicate state that can disagree with the first. The two
+	   PLACARD messages (Bally, San Diego County) are not powers and WILL need storage when
+	   they land; that is the point to add a field, not before. */
+	const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this);
+	if (!Prog)
+	{
+		return FString();
+	}
+	const FProgressionState& S = Prog->GetStateForRead();
+
+	FString Out;
+	int32 Count = 0;
+	for (int32 i = 0; i < static_cast<int32>(EPowerVerb::Count); ++i)
+	{
+		const EPowerVerb Verb = static_cast<EPowerVerb>(i);
+		if (!S.IsUnlocked(Verb))
+		{
+			continue;
+		}
+		// Code Vision is owned from the first frame; it counts only once actually used.
+		if (Verb == EPowerVerb::CodeVision && !S.HasClaimed(TEXT("Hall.FirstUse.CodeVision")))
+		{
+			continue;
+		}
+		const FString Line = PowerVerbMemoir(Verb);
+		if (Line.IsEmpty())
+		{
+			continue;
+		}
+		Out += FString::Printf(TEXT("\n%s\n    %s\n"), *PowerVerbDisplayName(Verb), *Line);
+		++Count;
+	}
+
+	if (Count == 0)
+	{
+		return TEXT("\n\n\nWHAT I WOULD TELL THEM\n\n")
+			TEXT("    Nothing yet. Earn a power and you will have something to say.\n");
+	}
+
+	return FString::Printf(
+		TEXT("\n\n\nWHAT I WOULD TELL THEM\n\n")
+		TEXT("    %d of 6 so far. Forty years of hand-coded systems, and every one of\n")
+		TEXT("    them either failed or is being retired.\n%s"),
+		Count, *Out);
 }
 
 FString UJournalWidget::CleanMarkdown(const FString& Raw)

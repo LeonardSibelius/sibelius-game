@@ -46,6 +46,17 @@ public:
 	// FUN-6: the finale altar borrows the ceremony banner for its stage cues.
 	void ShowBanner(const FString& Text, float Seconds = 5.0f);
 
+	/**
+	 * Show one of Walt's messages to a former employer (docs/MEMOIR_VOICE.md).
+	 *
+	 * Public because it is no longer only the unlock ceremony's to fire: CODE VISION is
+	 * unlocked in a fresh save's default mask, so UnlockPower never broadcasts for it and
+	 * its message — SAIC, 1988, the FIRST of the eight — has never been shown to anybody.
+	 * It now fires on the first USE of Vision instead, which is the moment the power
+	 * becomes real to the player.
+	 */
+	void ShowMemoir(const FString& Text, float Seconds = 12.0f);
+
 	// SIB-39 dev overlay visibility. Static so the toggle key (character) and the
 	// ScanForSite log gate (UBuildComponent) share one flag without a HUD lookup.
 	// Default ON (Walt likes seeing it).

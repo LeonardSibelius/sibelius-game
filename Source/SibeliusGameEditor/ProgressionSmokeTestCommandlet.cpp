@@ -97,6 +97,35 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(bSlapGone, TEXT("maxed upgrade leaves the catalog"));
 	}
 
+	/* --- The memoir record (docs/SPINE.md Move 3) ---
+	   Every power must carry one of Walt's messages, or the Journal's record silently
+	   drops a line and nobody finds out. Cheap to assert, and the failure is invisible. */
+	{
+		bool bAllVerbsHaveMemoir = true;
+		for (int32 i = 0; i < static_cast<int32>(EPowerVerb::Count); ++i)
+		{
+			if (PowerVerbMemoir(static_cast<EPowerVerb>(i)).IsEmpty())
+			{
+				bAllVerbsHaveMemoir = false;
+				UE_LOG(LogProgressionSmoke, Warning, TEXT("  no memoir line for %s"),
+					*PowerVerbDisplayName(static_cast<EPowerVerb>(i)));
+			}
+		}
+		R.Check(bAllVerbsHaveMemoir, TEXT("SPINE: every power verb carries a memoir message"));
+
+		/* Code Vision is unlocked in a FRESH state, so UnlockPower never broadcasts for it
+		   and its message (SAIC 1988 — the first of the eight) never fired in any shipped
+		   build. It now hangs off the first USE of Vision, marked by this grant. If that
+		   key ever drifts, the Journal quietly stops crediting it. */
+		FProgressionState Fresh;
+		R.Check(Fresh.IsUnlocked(EPowerVerb::CodeVision),
+			TEXT("SPINE: a fresh save already owns Code Vision (so its memoir cannot come from UnlockPower)"));
+		R.Check(!Fresh.HasClaimed(TEXT("Hall.FirstUse.CodeVision")),
+			TEXT("SPINE: a fresh save has NOT yet used Vision, so its memoir is not yet credited"));
+		R.Check(Fresh.Claim(TEXT("Hall.FirstUse.CodeVision")) && Fresh.HasClaimed(TEXT("Hall.FirstUse.CodeVision")),
+			TEXT("SPINE: first use of Vision credits its memoir exactly once"));
+	}
+
 	// --- 3) Save round-trip on the sandbox slot: write -> load -> compare -> delete.
 	{
 		FSibeliusSaveIO::Delete(SandboxSlot); // pre-clean a crashed prior run
