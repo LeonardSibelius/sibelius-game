@@ -49,6 +49,24 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
 	FText PromptText = NSLOCTEXT("Sibelius", "CathedralDoorPrompt", "Enter the cathedral [E]");
 
+	/**
+	 * Turn this door off entirely — no prompt, and E does nothing.
+	 *
+	 * For the cathedral's RETURN door. There used to be a wooden door there that you
+	 * opened with E; the door is gone and O has been the way home from any world for a
+	 * long time, so the surviving prompt offered a second, undocumented exit that
+	 * contradicted the HUD's own "[O] Back to Office" hint.
+	 *
+	 * Walt, 2026-08-19: "I use [o] now to get home so drop that prompt and that action
+	 * there, [E] is saved for playing the slot machine when you get past the altar."
+	 *
+	 * Emptying PromptText alone would NOT have been enough: the interactor still focuses
+	 * any IInteractable, so E would have kept travelling with nothing on screen to say so
+	 * — an invisible exit is worse than a redundant one. This kills the action too.
+	 */
+	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
+	bool bInteractive = true;
+
 	// SIB-43 (Walt QA): arriving players spawn within reach of the return
 	// door — a reflexive E bounced him straight back. The door refuses to
 	// travel for this many seconds after level load. Invisible in normal play.

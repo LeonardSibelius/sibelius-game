@@ -50,6 +50,12 @@ void ACathedralDoor::BeginPlay()
 
 void ACathedralDoor::Interact_Implementation(AActor* Interactor)
 {
+	// Switched off entirely (the cathedral's old return door) — see bInteractive.
+	if (!bInteractive)
+	{
+		return;
+	}
+
 	// Gated door: no collision means the focus trace can't reach us, but guard
 	// against a direct Execute_Interact regardless.
 	if (!bRevealed)
@@ -87,7 +93,7 @@ void ACathedralDoor::Interact_Implementation(AActor* Interactor)
 
 FText ACathedralDoor::GetInteractionPrompt_Implementation() const
 {
-	return bRevealed ? PromptText : FText::GetEmpty();
+	return (bInteractive && bRevealed) ? PromptText : FText::GetEmpty();
 }
 
 bool ACathedralDoor::IsTravelAllowed(const UBranchSubsystem* Branch)
