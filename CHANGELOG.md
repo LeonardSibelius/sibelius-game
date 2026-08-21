@@ -3,6 +3,10 @@
 All notable, player-facing milestones for the Sibelius game. Versions track the
 packaged Win64 builds pushed to itch.
 
+Versions are `x.y.z` for a release and `x.y.z.N` for a fix to an already-shipped build
+(no new content) — see `docs/sib-42-packaging-notes.md`. A `.N` fix is a line under its
+parent release heading, never a heading of its own.
+
 ## v0.9.5 — She notices everything, and the machine gets its name
 
 - **Mrs. Hall reacts to every power you take, not just the first.** She was written to

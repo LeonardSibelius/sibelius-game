@@ -174,9 +174,48 @@ later) and play start to finish: office bang → powers → cathedral → slot c
 5. Wait out PK4. Then run SibeliusGame.exe from the output folder and play
    the full loop: bang → office → attic → cathedral → E → spin → Esc.
 
+## Version numbers — when to use a fourth digit
+
+**Adopted 2026-08-20 (Walt).** Releases may carry three parts or four:
+
+| Form | Means | Changelog |
+|---|---|---|
+| **`x.y.z`** | anything a player would notice as new or changed | its own `## vX.Y.Z` heading |
+| **`x.y.z.N`** | a fix to something ALREADY SHIPPED, **no new content** | a line under the existing `x.y.z` heading — never its own |
+
+**Why the fourth digit earns its place.** `0.9.6` *promises* something. When all that
+happened is that 0.9.5 shipped with a dancer standing inside a wall, calling the repair
+0.9.6 spends a number you will want later and tells returning players there is something
+new to come back for when there is not. The fix is `0.9.5.1`.
+
+The test is content, not size: a one-line change that alters what the player gets is
+`x.y.z`; a rebuild that only makes the shipped thing work as intended is `x.y.z.N`.
+
+**Nothing in the project parses the version, so four parts is safe.** Verified 2026-08-20:
+
+- UE's `ProjectVersion` is a free-form string and is never split into integers — the only
+  `0.9.x` strings anywhere in `Source/` are inside comments.
+- butler's `--userversion` accepts any string.
+- Steam identifies builds by build id, not by version text.
+- Windows file-version resources are natively four-part (`major.minor.build.revision`),
+  so if anything this fits better than three.
+
+**Naming, so it does not get improvised at 2am.** The scripts compact the version into
+filenames, and a fourth digit does not compact cleanly. The rule:
+
+```
+0.9.5     ->  Tools/Scripts/package_v095.ps1    builds\sibelius-v0.9.5
+0.9.5.1   ->  Tools/Scripts/package_v0951.ps1   builds\sibelius-v0.9.5.1
+```
+
+Ugly, unambiguous, consistent with what is already on disk.
+
+---
+
 ## Release runbook (recurring — butler push to itch)
 
-Recorded from the v0.5.1 push (2026-07) so it's not a scavenger hunt next time:
+Recorded from the v0.5.1 push (2026-07) so it's not a scavenger hunt next time.
+`<x.y.z>` below means the full version, four parts included when there are four:
 
 1. Bump `Config/DefaultGame.ini` → `ProjectVersion=<x.y.z>`.
 2. Package: `Tools/Scripts/package_v051.ps1` (copy per version; edits the
