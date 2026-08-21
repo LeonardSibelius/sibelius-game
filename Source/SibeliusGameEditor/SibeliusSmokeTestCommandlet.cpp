@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "EngineUtils.h"
 #include "Engine/MapBuildDataRegistry.h"
+#include "LegacyMachine.h"      // MACHINE_PLAN §8 — the legacy system must exist and be broken
 
 #if WITH_EDITOR
 #include "FileHelpers.h" // UEditorLoadingAndSavingUtils (editor-only)
@@ -143,6 +144,29 @@ for (TActorIterator<AActor> It(World); It; ++It)
 }
 R.Check(ActorCount >= MinActorCount && ActorCount <= MaxActorCount,
 FString::Printf(TEXT("Actor count in [%d, %d] (found %d)"), MinActorCount, MaxActorCount, ActorCount));
+
+/* THE LEGACY SYSTEM (docs/MACHINE_PLAN.md §8 — the one-day test).
+   Mrs. Hall's opening ticket is about this machine, so if it is missing the game's
+   inciting incident points at nothing again. The self-test is pure state: born broken,
+   refactoring the faulty part fixes it, reverting breaks it again — that last one is
+   what proves a DISCARDED Test-Drive branch cannot leave the machine wrongly fixed. */
+ALegacyMachine* Machine = nullptr;
+for (TActorIterator<ALegacyMachine> It(World); It; ++It)
+{
+	Machine = *It;
+	break;
+}
+R.Check(Machine != nullptr, TEXT("MACHINE: the legacy system is in the office"));
+if (Machine)
+{
+	FString MachineError;
+	const bool bMachineOk = Machine->RunMachineSelfTest(MachineError);
+	R.Check(bMachineOk, TEXT("MACHINE: broken -> refactor fixes -> revert re-breaks"));
+	if (!bMachineOk)
+	{
+		UE_LOG(LogSmokeTest, Error, TEXT("  machine self-test: %s"), *MachineError);
+	}
+}
 
 const ULevel* PersistentLevel = World->PersistentLevel;
 const bool bHasBuildData = PersistentLevel && PersistentLevel->MapBuildData != nullptr;
