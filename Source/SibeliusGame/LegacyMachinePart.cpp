@@ -36,12 +36,17 @@ ALegacyMachinePart::ALegacyMachinePart()
 	Plaque->SetVerticalAlignment(EVRTA_TextCenter);
 	Plaque->SetTextRenderColor(FColor(180, 176, 165, 255));   // engraved grey
 
-	// THE SOURCE: bigger and hotter, and off until Code Vision is held.
+	// THE SOURCE: off until Code Vision is held, and sat directly ABOVE its own part.
+	//
+	// It used to be 13cm tall at +60. With the stages 75cm apart that ran each line
+	// straight across its neighbour's box -- COUNTER's text lay over GRADER, which is
+	// precisely the pair the player has to compare. Smaller, and lifted clear of the
+	// boxes so the five lines stack in a readable column instead of overlapping.
 	TrueLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("TrueLabel"));
 	TrueLabel->SetupAttachment(Mesh);
-	TrueLabel->SetRelativeLocation(FVector(-70.0f, 0.0f, 60.0f));
+	TrueLabel->SetRelativeLocation(FVector(-70.0f, 0.0f, 78.0f));
 	TrueLabel->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
-	TrueLabel->SetWorldSize(13.0f);
+	TrueLabel->SetWorldSize(8.0f);
 	TrueLabel->SetHorizontalAlignment(EHTA_Center);
 	TrueLabel->SetVerticalAlignment(EVRTA_TextCenter);
 	TrueLabel->SetVisibility(false);

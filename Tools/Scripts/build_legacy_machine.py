@@ -11,9 +11,9 @@ WHAT IT BUILDS
     LegacyPart_01..05    five stages, each with a plaque (the docs) and a true name
                          (the source, Code Vision only)
 
-THE PUZZLE IS ONE DISAGREEMENT. Every plaque describes a reasonable part and every part
-except one is telling the truth. GRADER's housing says it passes anything at grade B or
-better; its source says the comparison is backwards. Nothing points at it -- no marker, no
+THE PUZZLE IS ONE DISAGREEMENT. On four parts the plaque and the true name are WORD FOR
+WORD IDENTICAL, so the eye skims them. GRADER's housing says grade B or better passes;
+its source passes only what is better than A, and nothing is better than A. No marker, no
 prompt, no highlight. The player watches the machine reject everything, reads five
 plaques that all sound fine, holds V, and finds the one line that does not match.
 
@@ -51,20 +51,33 @@ YAW = 0.0
 
 # The five stages. (plaque = the docs, true_name = the source, faulty)
 #
-# Read the plaques and nothing is obviously wrong; read the true names and exactly one
-# contradicts its own housing. INTAKE claims and does the same thing. So does COUNTER.
-# GRADER's plaque promises "grade B or better passes" and its source rejects everything.
+# PLAIN ENGLISH, NOT FAKE CODE.
+#
+# The first version wrote the true names as pseudo-source -- "intake() -> blank [ok]",
+# "count += 1 [ok]", "pass = (grade > A)". Walt, a programmer of forty years, walked up to
+# the first box, pressed V and asked what the message meant. That is the whole answer: if
+# the four HONEST parts read as noise, the liar does not stand out from them, it is just
+# more noise. The code styling was decoration -- it made "source" LOOK like source instead
+# of doing source's job.
+#
+# So the true name is written in exactly the same voice as the plaque, and on an honest
+# part it is WORD FOR WORD IDENTICAL. The eye skims four matching pairs in a second and
+# stops dead at the fifth. Nothing to decode; the only thing that differs is what it says.
+#
+# GRADER's pair is the puzzle: the housing promises "grade B or better passes" and the
+# source passes only what is better than A. Nothing is better than A -- which is a thing
+# you realise rather than read, and realising it is the feeling this test is for.
 PARTS = [
     ("INTAKE",   "INTAKE\ntakes one blank per cycle",
-                 "intake()  ->  blank  [ok]", False),
+                 "takes one blank per cycle", False),
     ("COUNTER",  "COUNTER\nlogs every blank it sees",
-                 "count += 1  [ok]", False),
+                 "logs every blank it sees", False),
     ("GRADER",   "GRADER\ngrade B or better passes",
-                 "pass = (grade > A)   <-- nothing is above A", True),
+                 "passes only what is better than A", True),
     ("STAMP",    "STAMP\nmarks the passing blanks",
-                 "stamp(passing)  [ok]", False),
+                 "marks the passing blanks", False),
     ("OUTFEED",  "OUTFEED\ndelivers to the accept bin",
-                 "deliver(stamped)  [ok]", False),
+                 "delivers to the accept bin", False),
 ]
 
 notes = []
@@ -237,9 +250,11 @@ else:
 payload = {
     "map": MAP,
     "notes": notes,
-    "the_puzzle": "GRADER's plaque promises 'grade B or better passes'; its true name "
-                  "reads 'pass = (grade > A)' — nothing is above A, so it rejects "
-                  "everything. Nothing in the level points at it.",
+    "the_puzzle": "Four parts say the same thing on their plaque and under Code "
+                  "Vision, word for word. GRADER does not: the housing promises "
+                  "'grade B or better passes' and the source passes only what is "
+                  "better than A. Nothing is better than A. Nothing in the level "
+                  "points at it.",
     "how_to_play": "walk up, watch a cycle reject, read the five plaques, hold V to see "
                    "the true names, R the GRADER, watch the next piece land in ACCEPT. "
                    "Then [6] branch, [8] discard to see the fault come back, and Deploy "

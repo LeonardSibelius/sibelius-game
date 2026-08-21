@@ -318,6 +318,38 @@ bool ALegacyMachine::RunMachineSelfTest(FString& OutError) const
 		return false;
 	}
 
+	/* THE INVARIANT THE PUZZLE RESTS ON: exactly the faulty part disagrees with itself.
+	   On an honest part the plaque and the true name are word for word identical, so the
+	   eye skims them; the liar is the only pair that differs. Get this wrong in either
+	   direction and the puzzle breaks silently — an honest part whose lines disagree is a
+	   red herring with no fix behind it, and a faulty part whose lines AGREE cannot be
+	   diagnosed at all. Neither shows up as a crash, only as a player wandering. */
+	for (const TObjectPtr<ALegacyMachinePart>& Part : Parts)
+	{
+		if (!Part)
+		{
+			continue;
+		}
+		// The plaque is "NAME\nwhat it claims"; compare the claim, not the heading.
+		FString Claim = Part->PlaqueText;
+		int32 Newline = INDEX_NONE;
+		if (Claim.FindLastChar(TEXT('\n'), Newline))
+		{
+			Claim.RightChopInline(Newline + 1);
+		}
+		const bool bAgrees = Claim.TrimStartAndEnd().Equals(Part->TrueName.TrimStartAndEnd());
+		if (bAgrees == Part->bIsFaulty)
+		{
+			OutError = FString::Printf(
+				TEXT("'%s' is %s but its plaque and true name %s — the only part whose two "
+				     "lines disagree must be the faulty one"),
+				*Part->GetName(),
+				Part->bIsFaulty ? TEXT("FAULTY") : TEXT("honest"),
+				bAgrees ? TEXT("agree") : TEXT("disagree"));
+			return false;
+		}
+	}
+
 	if (IsHealthy())
 	{
 		OutError = TEXT("machine reports healthy while its faulty part is un-refactored");
