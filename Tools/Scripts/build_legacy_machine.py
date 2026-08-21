@@ -45,7 +45,8 @@ PART_PREFIX = "LegacyPart_"
 # Where it stands. The living room end of the office, on the ground floor, in the open
 # so the player meets it early -- this is the ticket, not a secret.
 ORIGIN = unreal.Vector(-1900.0, 9500.0, 0.0)
-PART_SPACING = 120.0          # cm between stages, along +Y
+PART_SPACING = 75.0           # cm between stages, along +Y (was 120: the row ran 480cm
+                              # and its far end reached the bathroom doorway)
 YAW = 0.0
 
 # The five stages. (plaque = the docs, true_name = the source, faulty)
@@ -73,6 +74,51 @@ les.load_level(MAP)
 
 machine_cls = unreal.load_class(None, "/Script/SibeliusGame.LegacyMachine")
 part_cls = unreal.load_class(None, "/Script/SibeliusGame.LegacyMachinePart")
+
+# ---------------------------------------------------------------- the label material
+#
+# UNLIT, OR THE TEXT WASHES OUT. UTextRenderComponent defaults to
+# DefaultTextMaterialOpaque, which is DEFAULT_LIT -- in a bright room the tally rendered
+# as a pale orange smear and the plaques were hard to read. Exactly the same fault the
+# cathedral marquee hit, and the same fix.
+#
+# DUPLICATED from the engine material, never built from scratch: the font keeps its glyph
+# shapes in an atlas that the material samples into OPACITY MASK, and a hand-built
+# material has no atlas lookup, so the letters simply do not exist. (Learned the hard way
+# on the marquee -- see Tools/Scripts/build_cabinet_marquee.py.)
+LABEL_MAT_PATH = "/Game/SlotFactory/M_LabelUnlit"
+mel = unreal.MaterialEditingLibrary
+label_mat = None
+if unreal.EditorAssetLibrary.does_asset_exist(LABEL_MAT_PATH):
+    unreal.EditorAssetLibrary.delete_asset(LABEL_MAT_PATH)
+label_mat = unreal.EditorAssetLibrary.duplicate_asset(
+    "/Engine/EngineMaterials/DefaultTextMaterialOpaque", LABEL_MAT_PATH)
+if label_mat:
+    label_mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    src = mel.get_material_property_input_node(label_mat, unreal.MaterialProperty.MP_BASE_COLOR)
+    if src:
+        # Unlit ignores base colour, so the font-atlas-times-vertex-colour node has to
+        # reach emissive too. x1.6 -- readable and crisp, deliberately NOT the marquee's
+        # x5: these are engraved plaques, not a neon sign.
+        k = mel.create_material_expression(label_mat, unreal.MaterialExpressionConstant, -600, 260)
+        k.set_editor_property("r", 1.6)
+        mul = mel.create_material_expression(label_mat, unreal.MaterialExpressionMultiply, -350, 160)
+        mel.connect_material_expressions(src, "", mul, "A")
+        mel.connect_material_expressions(k, "", mul, "B")
+        mel.connect_material_property(mul, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    mel.recompile_material(label_mat)
+    unreal.EditorAssetLibrary.save_asset(LABEL_MAT_PATH)
+    notes.append("M_LabelUnlit ready (unlit, x1.6)")
+else:
+    notes.append("could not duplicate the engine text material — labels stay lit")
+
+
+def unlit_text(actor):
+    """Point every TextRenderComponent on an actor at the unlit material."""
+    if not label_mat:
+        return
+    for c in actor.get_components_by_class(unreal.TextRenderComponent):
+        c.set_material(0, label_mat)
 
 if machine_cls is None or part_cls is None:
     notes.append("LegacyMachine/LegacyMachinePart classes not found — build the editor "
@@ -130,6 +176,7 @@ else:
                 notes.append("could not set the refactor edit on %s: %s" % (short, e))
         else:
             notes.append("%s has no RefactorableComponent — it cannot be fixed" % short)
+        unlit_text(p)   # plaque + true name, readable at any lighting
         placed.append(p)
 
     notes.append("placed %d parts, faulty = %s"
@@ -160,17 +207,29 @@ else:
         # REAL CENTIMETRES. These hang off a bare Root now, not off the stretched bed,
         # so an offset means what it says. Under the old Bed parenting the tally's 14cm
         # became 1.68cm and sat on the floor behind the parts, invisible.
-        place_child("workpiece", unreal.Vector(0.0, -260.0, 55.0), unreal.Vector(0.25, 0.25, 0.25))
-        place_child("accept_bin", unreal.Vector(-95.0, 330.0, 18.0), unreal.Vector(0.7, 0.7, 0.36))
-        place_child("reject_bin", unreal.Vector(95.0, 330.0, 18.0), unreal.Vector(0.7, 0.7, 0.36))
-        place_child("accept_label", unreal.Vector(-95.0, 330.0, 55.0), unreal.Vector(1.0, 1.0, 1.0))
-        place_child("reject_label", unreal.Vector(95.0, 330.0, 55.0), unreal.Vector(1.0, 1.0, 1.0))
+        # BOTH BINS ON THE PLAYER'S SIDE (-X), not straddling the row.
+        #
+        # The first layout put them +/-95cm either side of the machine line and 90cm past
+        # OUTFEED. That is where the bathroom doorway is: ACCEPT landed on the living-room
+        # rug and REJECT landed on bathroom tile, through a wall. It also meant the bin
+        # labels were read from a different angle than the part plaques, so they rendered
+        # back-to-front.
+        #
+        # Keeping them on the -X side -- the side the plaques face and the player walks --
+        # fixes the room AND the facing, because now they are read from the same place
+        # everything else is.
+        place_child("workpiece", unreal.Vector(0.0, -170.0, 55.0), unreal.Vector(0.25, 0.25, 0.25))
+        place_child("accept_bin", unreal.Vector(-70.0, 235.0, 18.0), unreal.Vector(0.6, 0.6, 0.3))
+        place_child("reject_bin", unreal.Vector(-165.0, 235.0, 18.0), unreal.Vector(0.6, 0.6, 0.3))
+        place_child("accept_label", unreal.Vector(-70.0, 235.0, 52.0), unreal.Vector(1.0, 1.0, 1.0))
+        place_child("reject_label", unreal.Vector(-165.0, 235.0, 52.0), unreal.Vector(1.0, 1.0, 1.0))
 
         tally = m.get_editor_property("tally")
         if tally:
             tally.set_editor_property("relative_location", unreal.Vector(-70.0, 0.0, 165.0))
             tally.set_editor_property("relative_rotation", unreal.Rotator(0.0, 0.0, 180.0))
 
+        unlit_text(m)   # tally + ACCEPT/REJECT labels
         notes.append("machine wired to %d parts" % len(placed))
         les.save_current_level()
         notes.append("level saved")
