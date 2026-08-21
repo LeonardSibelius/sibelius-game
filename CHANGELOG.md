@@ -7,7 +7,7 @@ Versions are `x.y.z` for a release and `x.y.z.N` for a fix to an already-shipped
 (no new content) — see `docs/sib-42-packaging-notes.md`. A `.N` fix is a line under its
 parent release heading, never a heading of its own.
 
-## Unreleased — The First Ticket
+## v0.9.6 — The First Ticket
 
 - **The opening job is the legacy system.** New Game still starts in the living room.
   Mrs. Hall still hands you the ticket. The gold objective now sends you to the machine
@@ -21,7 +21,8 @@ parent release heading, never a heading of its own.
   open after the ticket.
 - **Elise gives COMPILE in the bedroom.** The library alcove sphere is only the attic
   key. Walk into it — you do not need COMPILE. The cyan pole that hung down the
-  stairwell is gone.
+  stairwell is gone. The attic ladder ghost shows once you have COMPILE; **C** builds
+  it if you have the books.
 
 ## v0.9.5 — She notices everything, and the machine gets its name
 

@@ -45,6 +45,16 @@ Paste-ready text for the itch.io page. Walt owns the final words — edit freely
 > over the temple throne released back into the wild. Same game. Half the
 > wait. — Walt
 
+## The v0.9.6 devlog (paste-ready — Walt edits freely)
+
+> **v0.9.6: you have a job.**
+> Mrs. Hall has been complaining about the legacy system since the first minute of
+> this game. Until now it was not in the house. It is in the living room. Hold **V**,
+> find the part that is lying, take Refactor from an AI agent upstairs, **R** it.
+> The next piece lands in ACCEPT. She notices you did not do it by hand.
+> Poker, the dancers, and the cathedral are still there. They open after the ticket.
+> — Walt
+
 ## The v0.7.3 devlog (paste-ready — Walt edits freely)
 
 > **v0.7.3: worth coming back.**

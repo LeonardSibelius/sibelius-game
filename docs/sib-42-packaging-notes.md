@@ -206,6 +206,7 @@ filenames, and a fourth digit does not compact cleanly. The rule:
 ```
 0.9.5     ->  Tools/Scripts/package_v095.ps1    builds\sibelius-v0.9.5
 0.9.5.1   ->  Tools/Scripts/package_v0951.ps1   builds\sibelius-v0.9.5.1
+0.9.6     ->  Tools/Scripts/package_v096.ps1    builds\sibelius-v0.9.6
 ```
 
 Ugly, unambiguous, consistent with what is already on disk.
