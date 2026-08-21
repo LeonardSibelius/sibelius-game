@@ -6,9 +6,11 @@
 > a machine. I tried to be a programmer for many years. what if you could make building
 > software the plot of the game?"
 
-**Nothing here is ratified.** This supersedes `docs/OPEN_WORLD_PLAN.md` as the proposed
-direction — that document's §7 test still stands as a method, but its subject was wrong.
-A forest costs 10 GB and says nothing. A machine costs a few meshes and says everything.
+**§8 is ratified (Walt, 2026-08-21): he stopped on GRADER.** The rest of this document
+— seven escalating tickets, the cathedral as the machine you ship — is still a proposal.
+This supersedes `docs/OPEN_WORLD_PLAN.md` as the direction. That document's §7 test still
+stands as a method, but its subject was wrong. A forest costs 10 GB and says nothing. A
+machine costs a few meshes and says everything.
 
 ---
 
@@ -179,6 +181,12 @@ the verbs to act on.
 ---
 
 ## 8. The test — one machine, one bug, one day
+
+> 🔒 **RATIFIED (Walt, 2026-08-21):** he held V, looked down the row, and stopped
+> on GRADER without hunting. The one-day test passed. The First Ticket (opening
+> job in the living room, Kaia for Refactor, ACCEPT closes it) is the next build.
+> The seven-act rewrite in §5 is still not this pass — land 1.0 before
+> restructuring the chapters.
 
 Do not design seven acts. Do not restructure the chapters. Build **one broken machine**:
 

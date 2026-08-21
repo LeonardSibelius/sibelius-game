@@ -376,7 +376,7 @@ int32 UGenerateSmokeTestCommandlet::Main(const FString& Params)
 		   contract: add a beat's line to the CSV, add its Reason here, and the gate will
 		   hold it from then on. */
 		static const TCHAR* RequiredReasons[] = {
-			TEXT("Ticket"),
+			TEXT("Ticket"), TEXT("Ticket.Closed"),
 			TEXT("Power.CodeVision"), TEXT("Power.Refactor"), TEXT("Power.Compile"),
 			TEXT("Power.TestDrive"),  TEXT("Power.Deploy"),   TEXT("Power.Generate"),
 			TEXT("Final")

@@ -7,6 +7,22 @@ Versions are `x.y.z` for a release and `x.y.z.N` for a fix to an already-shipped
 (no new content) — see `docs/sib-42-packaging-notes.md`. A `.N` fix is a line under its
 parent release heading, never a heading of its own.
 
+## Unreleased — The First Ticket
+
+- **The opening job is the legacy system.** New Game still starts in the living room.
+  Mrs. Hall still hands you the ticket. The gold objective now sends you to the machine
+  that has been rejecting overnight, not to poker through the glass. Hold **V**, find
+  the part that is lying, take Refactor from Kaia upstairs, **R** it. The next piece
+  lands in ACCEPT. She notices you did not do it by hand.
+- **The fix is readable.** After Refactor, GRADER's true name agrees with its plaque.
+  Reloading keeps the job done even without Deploy (you do not have that verb yet).
+- **It looks like equipment, not a debug sketch.** The row is Crebotoly crates already
+  in the project. Poker, the other agents, and the cathedral are still there — they
+  open after the ticket.
+- **Elise gives COMPILE in the bedroom.** The library alcove sphere is only the attic
+  key. Walk into it — you do not need COMPILE. The cyan pole that hung down the
+  stairwell is gone.
+
 ## v0.9.5 — She notices everything, and the machine gets its name
 
 - **Mrs. Hall reacts to every power you take, not just the first.** She was written to

@@ -5,6 +5,9 @@
 #include "SlotScreenWidget.h"
 #include "HallAlarmSubsystem.h"   // the trial rings the alarm (temple-pour pattern)
 #include "DancerAgentComponent.h" // SPINE: an AI agent can be the way in
+#include "InventoryComponent.h"   // attic-key shrine spends books / mints a Key
+#include "CompileTypes.h"         // EResourceType::Book / Key
+#include "SibeliusHUD.h"          // "need N books" when the alcove is not ready
 #include "SibeliusGame.h"         // LogSibeliusGame
 #include "TimerManager.h"
 #include "Blueprint/UserWidget.h"
@@ -166,6 +169,14 @@ void APowerGrant::OnTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		return;
 	}
 
+	// The attic-key sphere spends books and mints a Key. It is not a power
+	// trial — walking in with enough books is the whole beat.
+	if (bGrantsKey)
+	{
+		ClaimNow(Pawn);
+		return;
+	}
+
 	// Walt's trial: a POWER must be won at the machine, not collected like
 	// loose change. Sauce-only markers keep the instant walk-in grant.
 	if (bSlotTrial && bGrantsPower)
@@ -177,7 +188,7 @@ void APowerGrant::OnTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 		return;
 	}
 
-	ClaimNow();
+	ClaimNow(Pawn);
 }
 
 void APowerGrant::BindToAgent()
@@ -232,9 +243,21 @@ void APowerGrant::StandDown()
 {
 	// The pole is decoration for a job someone else does now: invisible, and unable to
 	// take the screen off anyone who walks past. Idempotent — BindToAgent may retry.
-	if (Mesh)       { Mesh->SetVisibility(false); }
-	if (BeaconMesh) { BeaconMesh->SetVisibility(false); }
-	if (Glow)       { Glow->SetVisibility(false); }
+	if (Mesh)
+	{
+		Mesh->SetVisibility(false);
+		Mesh->SetHiddenInGame(true);
+	}
+	if (BeaconMesh)
+	{
+		BeaconMesh->SetVisibility(false);
+		BeaconMesh->SetHiddenInGame(true);
+	}
+	if (Glow)
+	{
+		Glow->SetVisibility(false);
+		Glow->SetHiddenInGame(true);
+	}
 	if (Trigger)
 	{
 		Trigger->SetGenerateOverlapEvents(false);
@@ -349,8 +372,28 @@ void APowerGrant::CloseTrialWidget()
 	bTrialOpen = false;
 }
 
-void APowerGrant::ClaimNow()
+void APowerGrant::ClaimNow(APawn* Pawn)
 {
+	UInventoryComponent* Inv = Pawn
+		? Pawn->FindComponentByClass<UInventoryComponent>()
+		: nullptr;
+
+	if (bGrantsKey && BookCost > 0)
+	{
+		const int32 Have = Inv ? Inv->GetCount(EResourceType::Book) : 0;
+		if (Have < BookCost)
+		{
+			const FString Line = FString::Printf(
+				TEXT("THE ATTIC KEY NEEDS %d BOOKS — YOU HAVE %d"), BookCost, Have);
+			APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+			if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+			{
+				HUD->ShowBanner(Line, 3.5f);
+			}
+			return;   // shrine stays; come back with the books
+		}
+	}
+
 	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
 	if (!Progression || !Progression->ClaimOneTimeGrant(EffectiveGrantKey()))
 	{
@@ -363,6 +406,19 @@ void APowerGrant::ClaimNow()
 	if (bGrantsPower)
 	{
 		Progression->UnlockPower(Power);
+	}
+	if (bGrantsKey && Inv)
+	{
+		if (BookCost > 0)
+		{
+			Inv->Spend(EResourceType::Book, BookCost);
+		}
+		Inv->Add(EResourceType::Key, 1);
+		APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+		if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+		{
+			HUD->ShowBanner(TEXT("THE ATTIC KEY"), 4.0f);
+		}
 	}
 	Progression->GrantSauce(SauceReward);
 

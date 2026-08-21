@@ -1,5 +1,6 @@
 Name,Reason,Line,AudioKey
 ticket_1,Ticket,"You. Programmer. The legacy system threw again overnight. Fix it before I have to explain it to anyone. And you do it by hand — I'm not paying a senior developer to ask a machine.",mrshall_ticket_1
+ticket_closed_1,Ticket.Closed,"You. Programmer. It is producing. I did not authorise a change to the grader, and I can see that you did not do it by hand. There will be another ticket.",mrshall_ticket_closed_1
 power_vision_1,Power.CodeVision,"You. Programmer. Whatever you think you just did, the walls are where they have always been. Do the ticket.",mrshall_power_vision_1
 power_refactor_1,Power.Refactor,"You. Programmer. That value was set by someone who thought about it longer than you have. Put it back and do the ticket.",mrshall_power_refactor_1
 power_compile_1,Power.Compile,"Parts I never issued, assembled into something I never approved. Nothing in my shop builds itself, Programmer. What are you using?",mrshall_power_compile_1

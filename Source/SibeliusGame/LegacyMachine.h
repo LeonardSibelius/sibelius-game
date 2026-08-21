@@ -115,6 +115,11 @@ public:
 	 *  back. Pure state — no world, no player, no ticking. */
 	bool RunMachineSelfTest(FString& OutError) const;
 
+	/** Progression grant claimed on the first ACCEPT. Durable (the progression slot),
+	 *  so a fresh player who cannot Deploy yet still finds the job done after a reload.
+	 *  Scoped to this machine — we do not snapshot the house. */
+	static const FName ClosedTicketGrant;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -128,7 +133,15 @@ private:
 	void FinishCycle();
 	void UpdateTally();
 
+	/** First ACCEPT on a healthy machine closes Mrs. Hall's opening ticket. */
+	void TryCloseTicket();
+
+	/** If the ticket was already closed on this save, re-apply the fix after every
+	 *  part's RefactorableComponent has reset itself in BeginPlay. */
+	void MaybeRestoreClosedTicket();
+
 	FTimerHandle BindRetryHandle;
+	FTimerHandle RestoreTicketHandle;
 	int32 BindAttempts = 0;
 	bool bBoundToCodeVision = false;
 

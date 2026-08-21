@@ -13,6 +13,7 @@
 
 class UStaticMeshComponent;
 class USceneComponent;
+class USphereComponent;
 class UInventoryComponent;
 class ANavLinkProxy;
 class UPointLightComponent;
@@ -78,9 +79,16 @@ public:
 	virtual void PostEditImport() override;
 #endif
 
-	// IInteractable: E dismantles a built site (refund). Building is the B verb (UBuildComponent::TriggerBuild).
+	// IInteractable: E dismantles a built staircase. The attic-key orb is taken with E
+	// (or by walking into it) — it does not wait for COMPILE.
 	virtual void Interact_Implementation(AActor* Interactor) override;
 	virtual FText GetInteractionPrompt_Implementation() const override;
+
+	/** Library alcove orb: a KeyItem site. Taken with books, never with COMPILE. */
+	bool IsAtticKeyOrb() const { return Output == EBuildOutput::KeyItem; }
+
+	/** Spend the books and mint the attic Key. Safe if already taken or unaffordable. */
+	void TryTakeAtticKey(AActor* Taker);
 
 	// True when the inventory can afford this site and it isn't built yet.
 	bool CanBuild(const UInventoryComponent* Inventory) const;
@@ -109,6 +117,10 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Build")
 	TObjectPtr<USceneComponent> SceneRoot; // CP3 lesson: explicit root or GetActorLocation() lies
+
+	/** Walk-in / look-at volume for the attic-key orb. Disabled on staircase sites. */
+	UPROPERTY(VisibleAnywhere, Category = "Build")
+	TObjectPtr<USphereComponent> KeyTrigger;
 
 	UPROPERTY(VisibleAnywhere, Category = "Build")
 	TObjectPtr<UStaticMeshComponent> GhostMesh; // translucent preview, never collides (C8: separate component)
@@ -177,6 +189,13 @@ public:
 private:
 	void ApplyBuiltState(bool bBuilt);
 	void SetNavLinkEnabled(bool bEnabled);
+	void ArmKeyPickup();
+	void EnableGhostInteract();
+
+	UFUNCTION()
+	void OnKeyTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+		const FHitResult& SweepResult);
 
 	// SIB-27 art: restyle GhostMesh into a floating glowing orb (sphere + emissive MID +
 	// glow light) when bGhostAsOrb. Called once on BeginPlay for an unbuilt orb site.

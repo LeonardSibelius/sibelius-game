@@ -5,6 +5,8 @@
 #include "LegacyMachinePart.h"
 #include "CodeVisionComponent.h"
 #include "RefactorableComponent.h"
+#include "ProgressionSubsystem.h"
+#include "MrsHallSubsystem.h"
 #include "SibeliusGame.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -13,6 +15,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
+
+const FName ALegacyMachine::ClosedTicketGrant(TEXT("Ticket.Legacy.Closed"));
 
 ALegacyMachine::ALegacyMachine()
 {
@@ -118,6 +122,16 @@ void ALegacyMachine::BeginPlay()
 
 	BeginCycle();
 	TryBindCodeVision();
+
+	/* THE JOB STAYS DONE without Deploy. URefactorableComponent::BeginPlay resets
+	   bIsRefactored, and Deploy apply is a next-tick on the pawn — both would put a
+	   closed ticket back to broken if we applied here. 0.15s is after those resets
+	   and still well before the first workpiece reaches a bin (~5s). */
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(RestoreTicketHandle, this,
+			&ALegacyMachine::MaybeRestoreClosedTicket, 0.15f, false);
+	}
 }
 
 void ALegacyMachine::TryBindCodeVision()
@@ -194,6 +208,7 @@ void ALegacyMachine::FinishCycle()
 	if (bLastRunAccepted)
 	{
 		++Accepted;
+		TryCloseTicket();
 	}
 	else
 	{
@@ -202,6 +217,44 @@ void ALegacyMachine::FinishCycle()
 	UpdateTally();
 	bResting = true;
 	StageElapsed = 0.0f;
+}
+
+void ALegacyMachine::TryCloseTicket()
+{
+	// Editor commandlets load this map without a player. Do not write the
+	// progression slot just because a self-test made one piece accept.
+	if (!UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		return;
+	}
+
+	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (!Progression || !Progression->ClaimOneTimeGrant(ClosedTicketGrant))
+	{
+		return;
+	}
+
+	if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+	{
+		Hall->Say(TEXT("Ticket.Closed"));
+	}
+}
+
+void ALegacyMachine::MaybeRestoreClosedTicket()
+{
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (!Progression || !Progression->HasClaimedGrant(ClosedTicketGrant))
+	{
+		return;
+	}
+
+	for (const TObjectPtr<ALegacyMachinePart>& Part : Parts)
+	{
+		if (Part && Part->bIsFaulty && Part->Refactorable && !Part->Refactorable->IsRefactored())
+		{
+			Part->Refactorable->ApplyRefactor();
+		}
+	}
 }
 
 void ALegacyMachine::UpdateTally()
@@ -333,14 +386,8 @@ bool ALegacyMachine::RunMachineSelfTest(FString& OutError) const
 		{
 			continue;
 		}
-		// The plaque is "NAME\nwhat it claims"; compare the claim, not the heading.
-		FString Claim = Part->PlaqueText;
-		int32 Newline = INDEX_NONE;
-		if (Claim.FindLastChar(TEXT('\n'), Newline))
-		{
-			Claim.RightChopInline(Newline + 1);
-		}
-		const bool bAgrees = Claim.TrimStartAndEnd().Equals(Part->TrueName.TrimStartAndEnd());
+		const FString Claim = Part->GetPlaqueClaim();
+		const bool bAgrees = Claim.Equals(Part->TrueName.TrimStartAndEnd());
 		if (bAgrees == Part->bIsFaulty)
 		{
 			OutError = FString::Printf(
@@ -360,18 +407,44 @@ bool ALegacyMachine::RunMachineSelfTest(FString& OutError) const
 	}
 
 	Faulty->Refactorable->ApplyRefactor();
+	Faulty->SyncLabelsToState();
 	if (!IsHealthy())
 	{
 		OutError = TEXT("refactoring the faulty part did not make the machine healthy");
 		return false;
 	}
+	{
+		const FString Shown = Faulty->TrueLabel
+			? Faulty->TrueLabel->Text.ToString().TrimStartAndEnd()
+			: FString();
+		if (!Shown.Equals(Faulty->GetPlaqueClaim()))
+		{
+			OutError = FString::Printf(
+				TEXT("after refactor the true name still reads '%s' — the fix must make "
+				     "the two lines agree, or holding V after R still shows a liar"),
+				*Shown);
+			return false;
+		}
+	}
 
 	Faulty->Refactorable->RevertRefactor();
+	Faulty->SyncLabelsToState();
 	if (IsHealthy())
 	{
 		OutError = TEXT("reverting the refactor did not restore the fault — a discarded "
 		                "Test-Drive branch would leave the machine wrongly fixed");
 		return false;
+	}
+	{
+		const FString Shown = Faulty->TrueLabel
+			? Faulty->TrueLabel->Text.ToString().TrimStartAndEnd()
+			: FString();
+		if (Shown.Equals(Faulty->GetPlaqueClaim()))
+		{
+			OutError = TEXT("reverting the refactor left the true name agreeing with the "
+			                "plaque — a discarded Test-Drive would hide the lie");
+			return false;
+		}
 	}
 
 	return true;

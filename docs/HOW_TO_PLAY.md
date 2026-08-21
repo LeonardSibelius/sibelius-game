@@ -14,6 +14,14 @@ carry all six verbs to the cathedral for the Three-Part Synthesis.
 
 ## THE LOOP
 
+You start with a job. Mrs. Hall's legacy system is in the living room,
+rejecting everything. Hold **V** and read the parts. One of them is lying.
+**R** is not yet yours — an AI agent upstairs has the verb. Take it, come
+back, fix the liar. When the next piece lands in ACCEPT, the ticket is done.
+
+Poker is through the glass when you want it. The rest of the house opens
+after the job.
+
 Explore. Collect. Earn Sauce. Spend it or risk it. Earn the next power.
 Everything you do feeds the next thing.
 
@@ -41,13 +49,17 @@ Each power is granted at a glowing shrine somewhere in the office —
 walk into it and the power is yours, forever. In order:
 
   CODE VISION (hold V) — you begin with this. See the hidden structure
-    of things. Some doors only exist while you are looking properly.
+    of things: concealed doors, and the true names on the legacy system.
+    On a healthy part the plaque and the true name agree. On a liar, they
+    do not.
 
   REFACTOR (R) — reshape what you're looking at. Tagged objects shrink,
     fade, or move aside.
 
-  COMPILE (C) — build at a build site, if you carry the books it needs.
-    The key to the attic is built, not found.
+  COMPILE (C) — ask Elise in the bedroom. Then stand in the opening where
+    the attic ladder was: a ghost ladder appears, and C builds it if you
+    have the books. The glowing sphere in the library alcove is the attic
+    key: walk into it (or press E). You do not need COMPILE for that orb.
 
   TEST-DRIVE (6 / 7 / 8) — branch reality (6), then merge what worked
     (7) or discard what didn't (8). The world greys while you're inside

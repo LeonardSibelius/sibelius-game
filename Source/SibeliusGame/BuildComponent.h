@@ -26,6 +26,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Build")
 	void TriggerBuild();
 
+	/** Walk-up / C on the library alcove orb. Does not require COMPILE. */
+	bool TryTakeNearbyAtticKey();
+
 	// Collect / unlock / dismantle on E run through the shared IInteractable system
 	// (UInteractorComponent) - the Ch3 actors implement the interface directly (C7).
 

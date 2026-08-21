@@ -11,6 +11,9 @@ WHAT IT BUILDS
     LegacyPart_01..05    five stages, each with a plaque (the docs) and a true name
                          (the source, Code Vision only)
 
+LOOK: Crebotoly crate meshes (SciFiBoxes_A), already in DirectoriesToAlwaysCook.
+An ugly production line on a QuadArt rug is the job. Engine cubes were the sketch.
+
 THE PUZZLE IS ONE DISAGREEMENT. On four parts the plaque and the true name are WORD FOR
 WORD IDENTICAL, so the eye skims them. GRADER's housing says grade B or better passes;
 its source passes only what is better than A, and nothing is better than A. No marker, no
@@ -19,15 +22,14 @@ plaques that all sound fine, holds V, and finds the one line that does not match
 
 That is the entire question this test exists to answer: is that ten minutes fun?
 
-WHY THE FIX IS A "SCALE" REFACTOR. It has to be SOMETHING, because URefactorableComponent
-edits a material or a scale and there is no authored material for a corrected part. Scale
-gives the part a small visible shrug when it is fixed. What actually matters is
-bIsRefactored -- LegacyMachinePart::IsBehaving() reads it, and because that component is
-already IBranchable with a level-baked GUID, Test-Drive and Deploy work on this machine
-with no new code.
+WHY THE FIX IS A MATERIAL REFACTOR. URefactorableComponent edits a material or a scale.
+Scale was the sketch: shrinking a box does not read as correcting a comparison. A cooler
+crate material does, and bIsRefactored is still what IsBehaving() reads. The true-name
+label also swaps to the plaque claim in C++, so holding V after R shows two matching
+lines.
 
-EditType/RefactoredScale are PROTECTED in C++ and set here instead, exactly as a human
-would set them in the Details panel.
+EditType / RefactoredMaterial are PROTECTED in C++ and set here instead, exactly as a
+human would set them in the Details panel.
 
 Idempotent: re-running clears and rebuilds the machine and its parts.
 
@@ -49,6 +51,11 @@ PART_SPACING = 75.0           # cm between stages, along +Y (was 120: the row ra
                               # and its far end reached the bathroom doorway)
 YAW = 0.0
 
+# Unreal Python Rotator positional args are (roll, pitch, yaw) — not C++
+# FRotator(pitch, yaw, roll). Rotator(0, 180, 0) is PITCH 180: the plaques
+# hang upside down. ACCEPT/REJECT already used (0, 0, 180) and read correctly.
+FACE_PLAYER = unreal.Rotator(roll=0.0, pitch=0.0, yaw=180.0)
+
 # The five stages. (plaque = the docs, true_name = the source, faulty)
 #
 # PLAIN ENGLISH, NOT FAKE CODE.
@@ -67,6 +74,22 @@ YAW = 0.0
 # GRADER's pair is the puzzle: the housing promises "grade B or better passes" and the
 # source passes only what is better than A. Nothing is better than A -- which is a thing
 # you realise rather than read, and realising it is the feeling this test is for.
+
+# Crebotoly SciFiBoxes_A — already cooked. Five colour variants so the row is a family,
+# not a clone stamp. Bins are open crates. The workpiece is a small closed crate (a blank).
+PART_MESHES = [
+    "/Game/SciFiBoxes_A/Meshes/Box2/Box2_v0",
+    "/Game/SciFiBoxes_A/Meshes/Box2/Box2_v1",
+    "/Game/SciFiBoxes_A/Meshes/Box2/Box2_v2",
+    "/Game/SciFiBoxes_A/Meshes/Box2/Box2_v3",
+    "/Game/SciFiBoxes_A/Meshes/Box2/Box2_v4",
+]
+BIN_MESH = "/Game/SciFiBoxes_A/Meshes/Box1/Box1_Open_Empty_v0"
+BED_MESH = "/Game/SciFiBoxes_A/Meshes/Box3/Box3_v0"
+WORKPIECE_MESH = "/Game/SciFiBoxes_A/Meshes/Box1/Box1_Closed_v0"
+FIXED_MAT = "/Game/SciFiBoxes_A/Materials/Grey"   # the corrected GRADER: cooler, not shrunk
+
+PART_TARGET_HEIGHT = 70.0     # cm, after scale — plaque-readable, not furniture-tall
 PARTS = [
     ("INTAKE",   "INTAKE\ntakes one blank per cycle",
                  "takes one blank per cycle", False),
@@ -133,6 +156,68 @@ def unlit_text(actor):
     for c in actor.get_components_by_class(unreal.TextRenderComponent):
         c.set_material(0, label_mat)
 
+
+def load_mesh(path):
+    asset = unreal.EditorAssetLibrary.load_asset(path)
+    if asset is None:
+        notes.append("missing mesh %s" % path)
+    return asset
+
+
+def mesh_local_box(static_mesh):
+    """Axis-aligned box in mesh space (cm). Falls back to a 100cm cube."""
+    try:
+        box = static_mesh.get_bounding_box()
+        return box.min, box.max
+    except Exception:
+        return unreal.Vector(-50, -50, -50), unreal.Vector(50, 50, 50)
+
+
+def scale_to_height(current_height, target_height):
+    if current_height < 1.0:
+        return 1.0
+    return target_height / current_height
+
+
+def assign_mesh(comp, path):
+    asset = load_mesh(path)
+    if asset is None or comp is None:
+        return None
+    try:
+        comp.set_editor_property("static_mesh", asset)
+    except Exception as e:
+        notes.append("could not assign %s: %s" % (path, e))
+        return None
+    return asset
+
+
+def place_labels_on_minus_x_face(part, static_mesh):
+    """THE PAIRING IS THE PUZZLE. Plaque above, true name below, on the -X face.
+    Offsets were tuned for a 100cm cube; new meshes put them in the air unless
+    they are placed from the mesh's own bounds."""
+    mn, mx = mesh_local_box(static_mesh)
+    height = mx.z - mn.z
+    front = mn.x - 2.0
+    mid_z = (mx.z + mn.z) * 0.5
+    plaque = None
+    true_label = None
+    for c in part.get_components_by_class(unreal.TextRenderComponent):
+        name = c.get_name()
+        if "Plaque" in name:
+            plaque = c
+        elif "True" in name:
+            true_label = c
+    if plaque:
+        plaque.set_editor_property(
+            "relative_location", unreal.Vector(front, 0.0, mid_z + height * 0.22))
+        plaque.set_editor_property("relative_rotation", FACE_PLAYER)
+        plaque.set_world_size(9.0)
+    if true_label:
+        true_label.set_editor_property(
+            "relative_location", unreal.Vector(front - 2.0, 0.0, mid_z - height * 0.18))
+        true_label.set_editor_property("relative_rotation", FACE_PLAYER)
+        true_label.set_world_size(9.0)
+
 if machine_cls is None or part_cls is None:
     notes.append("LegacyMachine/LegacyMachinePart classes not found — build the editor "
                  "target first (they are new UCLASSes; Live Coding cannot add them)")
@@ -151,6 +236,10 @@ else:
         notes.append("cleared %d actor(s) from a previous run" % removed)
 
     # ---- the parts
+    fixed_mat = unreal.EditorAssetLibrary.load_asset(FIXED_MAT)
+    if fixed_mat is None:
+        notes.append("missing corrected material %s — GRADER will have no visible fix" % FIXED_MAT)
+
     placed = []
     for i, (short, plaque, true_name, faulty) in enumerate(PARTS):
         loc = unreal.Vector(ORIGIN.x, ORIGIN.y + i * PART_SPACING, ORIGIN.z + 90.0)
@@ -159,7 +248,7 @@ else:
             notes.append("could not spawn part %s" % short)
             continue
         p.set_actor_label("%s%02d_%s" % (PART_PREFIX, i + 1, short))
-        p.set_actor_scale3d(unreal.Vector(0.55, 0.55, 0.9))
+        p.set_actor_scale3d(unreal.Vector(1.0, 1.0, 1.0))
         p.set_editor_property("plaque_text", plaque)
         p.set_editor_property("true_name", true_name)
         # bIsFaulty -> "is_faulty". Unreal's Python bindings STRIP the leading 'b' from
@@ -178,13 +267,26 @@ else:
         if not set_fault:
             notes.append("COULD NOT SET the fault flag on %s — no puzzle" % short)
 
+        mesh_comp = p.get_editor_property("mesh")
+        mesh_path = PART_MESHES[i] if i < len(PART_MESHES) else PART_MESHES[-1]
+        sm = assign_mesh(mesh_comp, mesh_path)
+        if sm is not None:
+            mn, mx = mesh_local_box(sm)
+            s = scale_to_height(mx.z - mn.z, PART_TARGET_HEIGHT)
+            p.set_actor_scale3d(unreal.Vector(s, s, s))
+            place_labels_on_minus_x_face(p, sm)
+            notes.append("%s mesh %s scale %.3f bounds_z %.1f" % (
+                short, mesh_path.split("/")[-1], s, mx.z - mn.z))
+
         # The refactor edit, set here because these are protected in C++.
+        # MATERIAL, not scale: shrinking a crate is not a fix. Grey is the
+        # corrected look; bIsRefactored is what the machine actually reads.
         refac = p.get_component_by_class(unreal.RefactorableComponent)
         if refac:
             try:
-                refac.set_editor_property("edit_type", unreal.RefactorEditType.SCALE)
-                refac.set_editor_property("refactored_scale",
-                                          unreal.Vector(0.55, 0.55, 0.75))
+                refac.set_editor_property("edit_type", unreal.RefactorEditType.MATERIAL)
+                if faulty and fixed_mat is not None:
+                    refac.set_editor_property("refactored_material", fixed_mat)
             except Exception as e:
                 notes.append("could not set the refactor edit on %s: %s" % (short, e))
         else:
@@ -206,10 +308,20 @@ else:
         m.set_actor_label(MACHINE_LABEL)
         m.set_editor_property("parts", placed)
 
+        def fit_comp(comp, mesh_path, target_x, target_y, target_z):
+            sm = assign_mesh(comp, mesh_path)
+            if sm is None or comp is None:
+                return
+            mn, mx = mesh_local_box(sm)
+            sx = target_x / max(mx.x - mn.x, 1.0)
+            sy = target_y / max(mx.y - mn.y, 1.0)
+            sz = target_z / max(mx.z - mn.z, 1.0)
+            comp.set_editor_property("relative_scale3d", unreal.Vector(sx, sy, sz))
+
         # The bed runs along Y through the parts; bins sit past the last stage.
         bed = m.get_editor_property("bed")
         if bed:
-            bed.set_editor_property("relative_scale3d", unreal.Vector(0.5, 5.6, 0.12))
+            fit_comp(bed, BED_MESH, 50.0, 360.0, 12.0)
 
         def place_child(prop, rel, scale):
             c = m.get_editor_property(prop)
@@ -231,9 +343,12 @@ else:
         # Keeping them on the -X side -- the side the plaques face and the player walks --
         # fixes the room AND the facing, because now they are read from the same place
         # everything else is.
-        place_child("workpiece", unreal.Vector(0.0, -170.0, 55.0), unreal.Vector(0.25, 0.25, 0.25))
-        place_child("accept_bin", unreal.Vector(-70.0, 235.0, 18.0), unreal.Vector(0.6, 0.6, 0.3))
-        place_child("reject_bin", unreal.Vector(-165.0, 235.0, 18.0), unreal.Vector(0.6, 0.6, 0.3))
+        place_child("workpiece", unreal.Vector(0.0, -170.0, 55.0), unreal.Vector(1.0, 1.0, 1.0))
+        fit_comp(m.get_editor_property("workpiece"), WORKPIECE_MESH, 18.0, 18.0, 18.0)
+        place_child("accept_bin", unreal.Vector(-70.0, 235.0, 18.0), unreal.Vector(1.0, 1.0, 1.0))
+        place_child("reject_bin", unreal.Vector(-165.0, 235.0, 18.0), unreal.Vector(1.0, 1.0, 1.0))
+        fit_comp(m.get_editor_property("accept_bin"), BIN_MESH, 55.0, 55.0, 28.0)
+        fit_comp(m.get_editor_property("reject_bin"), BIN_MESH, 55.0, 55.0, 28.0)
         place_child("accept_label", unreal.Vector(-70.0, 235.0, 52.0), unreal.Vector(1.0, 1.0, 1.0))
         place_child("reject_label", unreal.Vector(-165.0, 235.0, 52.0), unreal.Vector(1.0, 1.0, 1.0))
 
@@ -256,9 +371,9 @@ payload = {
                   "better than A. Nothing is better than A. Nothing in the level "
                   "points at it.",
     "how_to_play": "walk up, watch a cycle reject, read the five plaques, hold V to see "
-                   "the true names, R the GRADER, watch the next piece land in ACCEPT. "
-                   "Then [6] branch, [8] discard to see the fault come back, and Deploy "
-                   "to make the fix survive a reload.",
+                   "the true names. R is locked — ask Kaia upstairs, come back, R the "
+                   "GRADER, watch the next piece land in ACCEPT. The ticket closes. "
+                   "Reload keeps it producing without Deploy.",
 }
 text = json.dumps(payload, indent=2)
 out = unreal.Paths.project_saved_dir() + "build_legacy_machine.json"

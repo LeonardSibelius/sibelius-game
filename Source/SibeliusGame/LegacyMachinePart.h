@@ -67,6 +67,16 @@ public:
 	 *  the pawn would be N times the timers for the same answer. */
 	void SetTrueNameVisible(bool bVisible);
 
+	/** The plaque's claim, without the heading. "GRADER\ngrade B or better passes"
+	 *  becomes "grade B or better passes". The eye compares this to TrueName. */
+	FString GetPlaqueClaim() const;
+
+	/** Push PlaqueText onto the plaque and the live true-name (authored lie, or the
+	 *  claim once this part has been refactored) onto TrueLabel. BeginPlay, a refactor,
+	 *  a revert, and the headless self-test all go through here so the displayed pair
+	 *  cannot drift from the state the machine is actually running. */
+	void SyncLabelsToState();
+
 	UPROPERTY(VisibleAnywhere, Category = "Legacy Part")
 	TObjectPtr<UStaticMeshComponent> Mesh;
 
@@ -85,4 +95,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+private:
+	UFUNCTION()
+	void HandleRefactorChanged(bool bIsRefactored);
 };

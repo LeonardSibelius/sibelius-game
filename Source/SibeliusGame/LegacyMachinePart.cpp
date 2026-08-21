@@ -78,19 +78,65 @@ void ALegacyMachinePart::BeginPlay()
 {
 	Super::BeginPlay();
 
+	/* Face the office approach (-X). The placement script once copied C++'s
+	   FRotator(0, 180, 0) into Python as Rotator(0, 180, 0). Python's positional
+	   args are (roll, pitch, yaw), so that wrote pitch 180 and the plaques hung
+	   upside down. Force yaw 180 here so a bad instance value cannot restamp it. */
+	static const FRotator FacePlayer(0.0f, 180.0f, 0.0f);
+	if (Plaque)
+	{
+		Plaque->SetRelativeRotation(FacePlayer);
+	}
+	if (TrueLabel)
+	{
+		TrueLabel->SetRelativeRotation(FacePlayer);
+		// The liar reads hot; the honest parts read cool. This is a hint, not the
+		// answer -- the player still has to notice WHAT it says. Colour is garnish:
+		// Code Vision floods the screen green, so the disagreement has to carry itself.
+		TrueLabel->SetTextRenderColor(bIsFaulty ? FColor(255, 90, 60, 255)
+		                                        : FColor(120, 230, 255, 255));
+		TrueLabel->SetVisibility(false);
+	}
+
+	if (Refactorable)
+	{
+		Refactorable->OnRefactorChanged.AddDynamic(this, &ALegacyMachinePart::HandleRefactorChanged);
+	}
+	SyncLabelsToState();
+}
+
+FString ALegacyMachinePart::GetPlaqueClaim() const
+{
+	FString Claim = PlaqueText;
+	int32 Newline = INDEX_NONE;
+	if (Claim.FindLastChar(TEXT('\n'), Newline))
+	{
+		Claim.RightChopInline(Newline + 1);
+	}
+	return Claim.TrimStartAndEnd();
+}
+
+void ALegacyMachinePart::SyncLabelsToState()
+{
 	if (Plaque)
 	{
 		Plaque->SetText(FText::FromString(PlaqueText));
 	}
 	if (TrueLabel)
 	{
-		TrueLabel->SetText(FText::FromString(TrueName));
-		// The liar reads hot; the honest parts read cool. This is a hint, not the
-		// answer -- the player still has to notice WHAT it says.
-		TrueLabel->SetTextRenderColor(bIsFaulty ? FColor(255, 90, 60, 255)
-		                                        : FColor(120, 230, 255, 255));
-		TrueLabel->SetVisibility(false);
+		// THE FIX MADE VISIBLE. A refactored liar's source agrees with its docs, so
+		// holding V after R shows the same sentence twice — the same scan that found
+		// the fault now confirms it is gone. Revert (a discarded Test-Drive) puts the
+		// authored lie back. Authored TrueName is never overwritten; only the label.
+		const bool bSourceAgrees = Refactorable && Refactorable->IsRefactored();
+		TrueLabel->SetText(FText::FromString(bSourceAgrees ? GetPlaqueClaim() : TrueName));
 	}
+}
+
+void ALegacyMachinePart::HandleRefactorChanged(bool bIsRefactored)
+{
+	(void)bIsRefactored;
+	SyncLabelsToState();
 }
 
 bool ALegacyMachinePart::IsBehaving() const

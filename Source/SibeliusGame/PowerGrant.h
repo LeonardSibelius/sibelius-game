@@ -98,6 +98,16 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Power Grant")
 	bool bGrantsPower = true;
 
+	/** Walk-in mints an attic Key. The library alcove sphere uses this instead of
+	 *  granting COMPILE — Elise in the bedroom hands that verb over now. */
+	UPROPERTY(EditAnywhere, Category = "Power Grant")
+	bool bGrantsKey = false;
+
+	/** Books spent when bGrantsKey. 0 = the key is free. Matches KeyBuildSite's
+	 *  default of 8 so the book hunt still has a payoff. */
+	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "0"))
+	int32 BookCost = 0;
+
 	// Sauce paid alongside the grant. The unified currency arrives WITH the
 	// power so the player meets both systems in the same beat.
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "0"))
@@ -174,7 +184,7 @@ private:
 	void FinishTrialClaim();   // deferred so THE MACHINE YIELDS moment lands
 	void HandleTrialClosed();
 	void CloseTrialWidget();
-	void ClaimNow();   // the original walk-in grant, now the trial's prize
+	void ClaimNow(class APawn* Pawn = nullptr);   // walk-in grant; Pawn needed to mint a Key
 
 	UPROPERTY()
 	TObjectPtr<class USlotScreenWidget> TrialWidget;

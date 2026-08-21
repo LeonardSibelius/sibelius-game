@@ -1,7 +1,11 @@
 #include "BuildSite.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SphereComponent.h"
 #include "InventoryComponent.h"
+#include "SibeliusHUD.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "Navigation/NavLinkProxy.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
@@ -48,6 +52,17 @@ ABuildSite::ABuildSite()
 	GhostGlow->SetVisibility(false);
 	GhostOrbMaterial = TSoftObjectPtr<UMaterialInterface>(
 		FSoftObjectPath(TEXT("/Game/ModularSciFiEnv_K/Materials/Base/M_LampEmiss_MAT.M_LampEmiss_MAT")));
+
+	// The library alcove orb is taken by walking into it (or E), not by COMPILE.
+	KeyTrigger = CreateDefaultSubobject<USphereComponent>(TEXT("KeyTrigger"));
+	KeyTrigger->SetupAttachment(SceneRoot);
+	KeyTrigger->InitSphereRadius(250.0f);
+	KeyTrigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	KeyTrigger->SetCollisionResponseToAllChannels(ECR_Ignore);
+	KeyTrigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	KeyTrigger->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	KeyTrigger->SetGenerateOverlapEvents(false);
+	KeyTrigger->SetCanEverAffectNavigation(false);
 }
 
 void ABuildSite::BeginPlay()
@@ -63,6 +78,8 @@ void ABuildSite::BeginPlay()
 		SetupGhostOrb();
 		SetActorTickEnabled(true);
 	}
+
+	ArmKeyPickup();
 }
 
 void ABuildSite::OnConstruction(const FTransform& Transform)
@@ -117,7 +134,9 @@ bool ABuildSite::Build(UInventoryComponent* Inventory)
 	// building IS acquiring. Latch built (so CanBuild/Build are idempotent, K4), then
 	// reveal-then-consume instead of the normal built presentation. The bIsBuilt latch
 	// above (in CanBuild) guarantees this runs at most once.
-	if (bConsumeOnBuild)
+	// KeyItem always consumes: the alcove orb is a pickup, never a leftover mesh
+	// that E could refund (K2 attic soft-lock).
+	if (bConsumeOnBuild || Output == EBuildOutput::KeyItem)
 	{
 		bIsBuilt = true;
 		BeginReveal(); // PIE: float-and-spin; headless: consume synchronously (K3)
@@ -135,7 +154,7 @@ bool ABuildSite::Dismantle(UInventoryComponent* Inventory)
 	// SIB-27 (K2): a consumable site is never dismantlable. Without this, E on the
 	// revealed/consumed key would refund the cost and spend the Key back out — the
 	// attic soft-lock. Guard here too so no caller path (E, Blueprint, test) can hit it.
-	if (bConsumeOnBuild)
+	if (bConsumeOnBuild || Output == EBuildOutput::KeyItem)
 	{
 		return false;
 	}
@@ -160,6 +179,11 @@ bool ABuildSite::Dismantle(UInventoryComponent* Inventory)
 
 void ABuildSite::Interact_Implementation(AActor* Interactor)
 {
+	if (IsAtticKeyOrb())
+	{
+		TryTakeAtticKey(Interactor);
+		return;
+	}
 	if (bConsumeOnBuild)
 	{
 		return; // SIB-27 (K2): consumable sites are inert to E — no dismantle, no refund.
@@ -175,6 +199,11 @@ void ABuildSite::Interact_Implementation(AActor* Interactor)
 
 FText ABuildSite::GetInteractionPrompt_Implementation() const
 {
+	if (IsAtticKeyOrb())
+	{
+		return bIsBuilt ? FText::GetEmpty() : FText::FromString(FString::Printf(
+			TEXT("Attic key [E] — %d books"), Cost));
+	}
 	if (bConsumeOnBuild)
 	{
 		return FText::GetEmpty(); // SIB-27 (K2): consumable sites never prompt for E.
@@ -182,11 +211,118 @@ FText ABuildSite::GetInteractionPrompt_Implementation() const
 	return bIsBuilt ? NSLOCTEXT("Sibelius", "BuildSiteDismantlePrompt", "Dismantle — full refund [E]") : FText::GetEmpty();
 }
 
+void ABuildSite::OnKeyTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	APawn* Pawn = Cast<APawn>(OtherActor);
+	if (Pawn && Pawn->IsPlayerControlled())
+	{
+		TryTakeAtticKey(Pawn);
+	}
+}
+
+void ABuildSite::TryTakeAtticKey(AActor* Taker)
+{
+	if (!IsAtticKeyOrb() || bIsBuilt)
+	{
+		return;
+	}
+	UInventoryComponent* Inv = Taker ? Taker->FindComponentByClass<UInventoryComponent>() : nullptr;
+	APawn* Pawn = Cast<APawn>(Taker);
+	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+	if (!PC && Taker)
+	{
+		PC = Taker->GetWorld() ? Taker->GetWorld()->GetFirstPlayerController() : nullptr;
+	}
+	ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr;
+
+	if (!CanBuild(Inv))
+	{
+		const int32 Have = Inv ? Inv->GetCount(CostResource) : 0;
+		if (HUD)
+		{
+			HUD->ShowBanner(FString::Printf(
+				TEXT("THE ATTIC KEY NEEDS %d BOOKS — YOU HAVE %d"), Cost, Have), 3.5f);
+		}
+		return;
+	}
+	if (Build(Inv) && HUD)
+	{
+		HUD->ShowBanner(TEXT("THE ATTIC KEY"), 4.0f);
+	}
+}
+
+void ABuildSite::ArmKeyPickup()
+{
+	if (!IsAtticKeyOrb() || bIsBuilt)
+	{
+		return;
+	}
+
+	SetActorTickEnabled(true);
+	SetGhostVisible(true);
+
+	if (KeyTrigger)
+	{
+		KeyTrigger->SetSphereRadius(250.0f);
+		KeyTrigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		KeyTrigger->SetCollisionResponseToAllChannels(ECR_Ignore);
+		KeyTrigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+		KeyTrigger->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		KeyTrigger->SetGenerateOverlapEvents(true);
+		KeyTrigger->OnComponentBeginOverlap.AddDynamic(this, &ABuildSite::OnKeyTriggerOverlap);
+
+		TArray<AActor*> Already;
+		KeyTrigger->GetOverlappingActors(Already, APawn::StaticClass());
+		for (AActor* A : Already)
+		{
+			if (APawn* Pawn = Cast<APawn>(A))
+			{
+				if (Pawn->IsPlayerControlled())
+				{
+					UInventoryComponent* Inv = Pawn->FindComponentByClass<UInventoryComponent>();
+					if (CanBuild(Inv))
+					{
+						TryTakeAtticKey(Pawn);
+					}
+				}
+			}
+		}
+	}
+
+	EnableGhostInteract();
+	if (GhostMesh)
+	{
+		GhostMesh->OnComponentBeginOverlap.AddDynamic(this, &ABuildSite::OnKeyTriggerOverlap);
+	}
+}
+
+void ABuildSite::EnableGhostInteract()
+{
+	if (!GhostMesh)
+	{
+		return;
+	}
+	GhostMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GhostMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	GhostMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	GhostMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	GhostMesh->SetGenerateOverlapEvents(true);
+}
+
 void ABuildSite::SetGhostVisible(bool bVisible)
 {
+	if (IsAtticKeyOrb() && !bIsBuilt)
+	{
+		bVisible = true;   // the alcove orb stays lit; taking it does not wait for COMPILE
+	}
 	if (!bIsBuilt && GhostMesh)
 	{
 		GhostMesh->SetHiddenInGame(!bVisible);
+		if (IsAtticKeyOrb())
+		{
+			EnableGhostInteract();
+		}
 		if (bGhostAsOrb && GhostGlow)
 		{
 			GhostGlow->SetVisibility(bVisible); // the orb's glow follows the preview
@@ -249,7 +385,7 @@ void ABuildSite::ApplyBuiltState(bool bBuilt)
 	// consumable site that was already built must present Consumed immediately — mesh
 	// hidden, inert, NO reveal animation and NO re-shown key. The Build() verb takes the
 	// reveal path instead (it never routes through here for consumable sites).
-	if (bConsumeOnBuild && bBuilt)
+	if ((bConsumeOnBuild || Output == EBuildOutput::KeyItem) && bBuilt)
 	{
 		EnterConsumed();
 		return;
@@ -284,6 +420,26 @@ void ABuildSite::Tick(float DeltaSeconds)
 		OrbBobTime += DeltaSeconds;
 		const float Bob = FMath::Sin(OrbBobTime * 2.0f) * 8.0f; // ±8cm hover
 		GhostMesh->SetRelativeLocation(OrbBaseRelLoc + FVector(0.f, 0.f, Bob));
+	}
+
+	// Walk-up grant: no COMPILE, no new collision component required. The player's
+	// existing site scan also does this; Tick covers standing still on the orb.
+	if (IsAtticKeyOrb() && !bIsBuilt)
+	{
+		APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+		APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+		if (Pawn)
+		{
+			const float Reach = FMath::Max(InteractRadius, 250.f);
+			if (FVector::DistSquared(Pawn->GetActorLocation(), GetActorLocation()) <= FMath::Square(Reach))
+			{
+				UInventoryComponent* Inv = Pawn->FindComponentByClass<UInventoryComponent>();
+				if (CanBuild(Inv))
+				{
+					TryTakeAtticKey(Pawn);
+				}
+			}
+		}
 	}
 
 	// K6: only the reveal drives Tick. Once Consumed (or never revealing), bail — and
@@ -371,6 +527,11 @@ void ABuildSite::EnterConsumed()
 	{
 		GhostGlow->SetVisibility(false); // orb glow gone with the consumed key
 	}
+	if (KeyTrigger)
+	{
+		KeyTrigger->SetGenerateOverlapEvents(false);
+		KeyTrigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 	SetNavLinkEnabled(false); // key sites carry no NavLink, but stay coherent regardless
 }
 
@@ -446,9 +607,9 @@ bool ABuildSite::RunConsumeOnBuildSelfTest(FString& OutError)
 	// SIB-27 ledger K2–K6, headless. Requires a fresh, un-built consumable site; the
 	// reveal consumes synchronously here (no renderer), so the terminal Consumed state
 	// is observable inline. Reveal *feel* is PIE-only and not asserted.
-	if (!bConsumeOnBuild)
+	if (!bConsumeOnBuild && Output != EBuildOutput::KeyItem)
 	{
-		OutError = TEXT("Self-test requires bConsumeOnBuild=true");
+		OutError = TEXT("Self-test requires bConsumeOnBuild=true or a KeyItem site");
 		return false;
 	}
 	if (bIsBuilt)

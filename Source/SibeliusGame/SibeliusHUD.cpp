@@ -22,6 +22,7 @@
 #include "BranchSubsystem.h"                  // Test-Drive marker (Shipping-safe HUD draw)
 #include "BranchPIEComponent.h"               // Test-Drive near-branchable hint
 #include "GameFramework/Character.h"
+#include "LegacyMachine.h"                    // First Ticket: the opening job is this machine
 
 // FUN-8: default OFF now that the player has real surfaces (Tab menu, sauce
 // counter, banners). H brings it back — it's Walt's debug view, not the UI.
@@ -444,6 +445,44 @@ FString ASibeliusHUD::ComputeObjective() const
 	const int32 Powers = Progression->NumUnlocked();
 	const int32 PowerCount = static_cast<int32>(EPowerVerb::Count);
 
+	/* FIRST TICKET (docs/MACHINE_PLAN.md §8, ratified). Mrs. Hall already handed
+	   the player a job; the gold line used to send them to poker instead. While the
+	   legacy system is in this level and the ticket is open, that job outranks the
+	   glass / poker / agent beats. Cathedral and temple keep their own objectives. */
+	{
+		FString Map = W->GetMapName();
+		Map.RemoveFromStart(W->StreamingLevelsPrefix);
+		const bool bAway = Map.Contains(TEXT("Cathedral")) || Map.Contains(TEXT("AI_Temple"))
+			|| Map.Contains(TEXT("Forest")) || Map.Contains(TEXT("Carousel"));
+		if (!bAway
+			&& !Progression->IsUnlocked(EPowerVerb::Compile)
+			&& !Progression->HasClaimedGrant(ALegacyMachine::ClosedTicketGrant))
+		{
+			const ALegacyMachine* Machine = nullptr;
+			for (TActorIterator<ALegacyMachine> It(const_cast<UWorld*>(W)); It; ++It)
+			{
+				Machine = *It;
+				break;
+			}
+			if (Machine)
+			{
+				if (!Progression->HasClaimedGrant(TEXT("Tutorial.Vision")))
+				{
+					return TEXT("The legacy system is throwing. Hold [V] and read the parts.");
+				}
+				if (!Progression->IsUnlocked(EPowerVerb::Refactor))
+				{
+					return TEXT("One part is lying. [R] is not yet yours — an AI agent has the verb.");
+				}
+				if (!Machine->IsHealthy())
+				{
+					return TEXT("Back to the machine. Fix the part that is lying [R].");
+				}
+				return TEXT("Watch the next piece. ACCEPT means the ticket is done.");
+			}
+		}
+	}
+
 	// 1) ALL POWERS outranks the early beats (Walt QA: a veteran whose keys
 	// were long spent got told to build a key while standing at the finale).
 	if (Powers >= PowerCount)
@@ -487,20 +526,64 @@ FString ASibeliusHUD::ComputeObjective() const
 	   from the AI agents now (docs/SPINE.md): you ASK, and asking is a choice. It also
 	   stops the game using a word — shrine — that it never says anywhere else and that
 	   belongs to a cathedral rather than a home office. */
+	if (Keys == 0)
+	{
+		const int32 Books = Inv ? Inv->GetCount(EResourceType::Book) : 0;
+		int32 KeyCost = 0;
+		for (TActorIterator<ABuildSite> It(const_cast<UWorld*>(W)); It; ++It)
+		{
+			if (It->IsAtticKeyOrb() && !It->IsBuilt())
+			{
+				KeyCost = It->Cost;
+				break;
+			}
+		}
+		if (KeyCost > 0 && Books >= KeyCost)
+		{
+			return TEXT("Walk into the glowing sphere in the library alcove — it is the attic key");
+		}
+	}
+
 	if (Keys == 0 && !Progression->IsUnlocked(EPowerVerb::Compile))
 	{
 		return TEXT("The AI agents can give you powers. Find one and press [E].");
 	}
 
-	// 5) Compile earned, no key: they find the build site upstairs themselves.
+	// 5) COMPILE is yours: the attic ladder is a build, not a find. Tell them
+	// where, and how many books, so a short stack does not look like a missing site.
+	if (Progression->IsUnlocked(EPowerVerb::Compile))
+	{
+		const ABuildSite* Stair = nullptr;
+		for (TActorIterator<ABuildSite> It(const_cast<UWorld*>(W)); It; ++It)
+		{
+			if (It->Output == EBuildOutput::Structure && !It->IsBuilt())
+			{
+				Stair = *It;
+				break;
+			}
+		}
+		if (Stair)
+		{
+			const int32 Books = Inv ? Inv->GetCount(EResourceType::Book) : 0;
+			if (Books < Stair->Cost)
+			{
+				return FString::Printf(
+					TEXT("The attic ladder needs %d books, then [C] at the opening. You have %d"),
+					Stair->Cost, Books);
+			}
+			return TEXT("Stand in the opening where the ladder was and press [C]");
+		}
+	}
+
+	// 6) Compile earned, no key: they find the alcove themselves.
 	if (Keys == 0)
 	{
 		return FString();
 	}
 
-	// 6) Key in hand, powers remain: the wider house opens.
+	// 7) Key in hand, powers remain: the wider house opens.
 	return FString::Printf(
-		TEXT("Your key opens the attic. Powers earned: %d of %d — seek the granting places"),
+		TEXT("Your key opens the attic hatch [E]. Powers earned: %d of %d — seek the granting places"),
 		Powers, PowerCount);
 }
 

@@ -670,6 +670,12 @@ void ASibeliusGameCharacter::OnRefactorPressed()
 
 void ASibeliusGameCharacter::OnBuildPressed()
 {
+	// The library alcove orb is the attic key, not a COMPILE site.
+	if (BuildComp && BuildComp->TryTakeNearbyAtticKey())
+	{
+		return;
+	}
+
 	if (!CheckPowerUnlocked(EPowerVerb::Compile))
 	{
 		return;

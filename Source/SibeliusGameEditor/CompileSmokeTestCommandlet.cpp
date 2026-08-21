@@ -112,7 +112,7 @@ int32 UCompileSmokeTestCommandlet::Main(const FString& Params)
 		// dismantle leg — it's intentionally never dismantlable — so route it to the
 		// consume-on-build ledger instead.
 		FString Err;
-		const bool bSelfTestOk = Site->bConsumeOnBuild
+		const bool bSelfTestOk = (Site->bConsumeOnBuild || Site->Output == EBuildOutput::KeyItem)
 			? Site->RunConsumeOnBuildSelfTest(Err)
 			: Site->RunBuildSelfTest(Err);
 		R.Check(bSelfTestOk,
@@ -163,6 +163,31 @@ int32 UCompileSmokeTestCommandlet::Main(const FString& Params)
 		else
 		{
 			R.Fail(TEXT("Could not spawn a consumable test BuildSite (K2–K6)"));
+		}
+
+		// Walk-up / E: the alcove orb grants the Key without COMPILE.
+		if (ABuildSite* WalkUp = World->SpawnActor<ABuildSite>(ABuildSite::StaticClass(), SpawnParams))
+		{
+			WalkUp->Output = EBuildOutput::KeyItem;
+			WalkUp->bConsumeOnBuild = true;
+			WalkUp->CostResource = EResourceType::Book;
+			WalkUp->Cost = 8;
+			UInventoryComponent* Inv = NewObject<UInventoryComponent>(WalkUp, TEXT("WalkUpInv"));
+			WalkUp->AddInstanceComponent(Inv);
+			Inv->RegisterComponent();
+			Inv->Add(EResourceType::Book, 12);
+			WalkUp->TryTakeAtticKey(WalkUp);
+			R.Check(WalkUp->IsBuilt() || WalkUp->IsConsumed(),
+				TEXT("Walk-up attic key consumes the site without COMPILE"));
+			R.Check(Inv->GetCount(EResourceType::Key) == 1,
+				TEXT("Walk-up attic key grants exactly one Key"));
+			R.Check(Inv->GetCount(EResourceType::Book) == 4,
+				TEXT("Walk-up attic key spends 8 books (12-8=4)"));
+			WalkUp->Destroy();
+		}
+		else
+		{
+			R.Fail(TEXT("Could not spawn a walk-up KeyItem BuildSite"));
 		}
 	}
 
