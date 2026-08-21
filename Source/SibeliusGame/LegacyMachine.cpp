@@ -18,8 +18,12 @@ ALegacyMachine::ALegacyMachine()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	// See the header: a bare root, so the bed's stretch does not reach its siblings.
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	SetRootComponent(Root);
+
 	Bed = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bed"));
-	SetRootComponent(Bed);
+	Bed->SetupAttachment(Root);
 	Bed->SetCollisionProfileName(TEXT("BlockAll"));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
@@ -31,7 +35,7 @@ ALegacyMachine::ALegacyMachine()
 	Bed->SetRelativeScale3D(FVector(4.4f, 0.5f, 0.12f));
 
 	Workpiece = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Workpiece"));
-	Workpiece->SetupAttachment(Bed);
+	Workpiece->SetupAttachment(Root);
 	Workpiece->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	if (CubeMesh)
 	{
@@ -39,7 +43,7 @@ ALegacyMachine::ALegacyMachine()
 	}
 
 	AcceptBin = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AcceptBin"));
-	AcceptBin->SetupAttachment(Bed);
+	AcceptBin->SetupAttachment(Root);
 	AcceptBin->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	if (CubeMesh)
 	{
@@ -47,19 +51,41 @@ ALegacyMachine::ALegacyMachine()
 	}
 
 	RejectBin = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RejectBin"));
-	RejectBin->SetupAttachment(Bed);
+	RejectBin->SetupAttachment(Root);
 	RejectBin->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	if (CubeMesh)
 	{
 		RejectBin->SetStaticMesh(CubeMesh);
 	}
 
+	// THE EVIDENCE, at reading height. Offsets here are real centimetres now that these
+	// hang off a bare root instead of the stretched bed.
 	Tally = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Tally"));
-	Tally->SetupAttachment(Bed);
-	Tally->SetWorldSize(14.0f);
+	Tally->SetupAttachment(Root);
+	Tally->SetRelativeLocation(FVector(-70.0f, 0.0f, 165.0f));
+	Tally->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
+	Tally->SetWorldSize(18.0f);
 	Tally->SetHorizontalAlignment(EHTA_Center);
 	Tally->SetVerticalAlignment(EVRTA_TextCenter);
 	Tally->SetTextRenderColor(FColor(255, 120, 90, 255));
+
+	AcceptLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("AcceptLabel"));
+	AcceptLabel->SetupAttachment(Root);
+	AcceptLabel->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
+	AcceptLabel->SetWorldSize(13.0f);
+	AcceptLabel->SetHorizontalAlignment(EHTA_Center);
+	AcceptLabel->SetVerticalAlignment(EVRTA_TextCenter);
+	AcceptLabel->SetText(FText::FromString(TEXT("ACCEPT")));
+	AcceptLabel->SetTextRenderColor(FColor(120, 235, 140, 255));
+
+	RejectLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("RejectLabel"));
+	RejectLabel->SetupAttachment(Root);
+	RejectLabel->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
+	RejectLabel->SetWorldSize(13.0f);
+	RejectLabel->SetHorizontalAlignment(EHTA_Center);
+	RejectLabel->SetVerticalAlignment(EVRTA_TextCenter);
+	RejectLabel->SetText(FText::FromString(TEXT("REJECT")));
+	RejectLabel->SetTextRenderColor(FColor(255, 120, 90, 255));
 }
 
 void ALegacyMachine::BeginPlay()

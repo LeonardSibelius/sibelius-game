@@ -157,14 +157,18 @@ else:
                 c.set_editor_property("relative_location", rel)
                 c.set_editor_property("relative_scale3d", scale)
 
-        # Relative to a bed scaled (0.5, 5.6, 0.12): divide world cm by that scale.
-        place_child("workpiece", unreal.Vector(0.0, 0.0, 4.0), unreal.Vector(0.5, 0.05, 2.0))
-        place_child("accept_bin", unreal.Vector(-120.0, 62.0, 3.0), unreal.Vector(1.4, 0.11, 3.0))
-        place_child("reject_bin", unreal.Vector(120.0, 62.0, 3.0), unreal.Vector(1.4, 0.11, 3.0))
+        # REAL CENTIMETRES. These hang off a bare Root now, not off the stretched bed,
+        # so an offset means what it says. Under the old Bed parenting the tally's 14cm
+        # became 1.68cm and sat on the floor behind the parts, invisible.
+        place_child("workpiece", unreal.Vector(0.0, -260.0, 55.0), unreal.Vector(0.25, 0.25, 0.25))
+        place_child("accept_bin", unreal.Vector(-95.0, 330.0, 18.0), unreal.Vector(0.7, 0.7, 0.36))
+        place_child("reject_bin", unreal.Vector(95.0, 330.0, 18.0), unreal.Vector(0.7, 0.7, 0.36))
+        place_child("accept_label", unreal.Vector(-95.0, 330.0, 55.0), unreal.Vector(1.0, 1.0, 1.0))
+        place_child("reject_label", unreal.Vector(95.0, 330.0, 55.0), unreal.Vector(1.0, 1.0, 1.0))
 
         tally = m.get_editor_property("tally")
         if tally:
-            tally.set_editor_property("relative_location", unreal.Vector(-150.0, 0.0, 14.0))
+            tally.set_editor_property("relative_location", unreal.Vector(-70.0, 0.0, 165.0))
             tally.set_editor_property("relative_rotation", unreal.Rotator(0.0, 0.0, 180.0))
 
         notes.append("machine wired to %d parts" % len(placed))

@@ -75,8 +75,25 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine")
 	int32 Rejected = 0;
 
+	/* A BARE ROOT, and everything else hangs off IT rather than off the bed.
+	   The first build made Bed the root and attached the workpiece, the bins and the
+	   tally to it. Bed is scaled (0.5, 5.6, 0.12) to run the length of the machine, and
+	   children INHERIT that scale — so a tally placed 14cm up landed 1.68cm up, at floor
+	   level behind the parts, and the bins came out squashed. The machine's own evidence
+	   was invisible. Siblings never hang off a stretched component. */
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine")
+	TObjectPtr<USceneComponent> Root;
+
 	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine")
 	TObjectPtr<UStaticMeshComponent> Bed;
+
+	/** Bin labels, so the verdict is readable rather than inferred from which way the
+	 *  workpiece went. */
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine")
+	TObjectPtr<UTextRenderComponent> AcceptLabel;
+
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine")
+	TObjectPtr<UTextRenderComponent> RejectLabel;
 
 	/** The thing being processed. Slides from part to part, then drops into a bin. */
 	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine")
