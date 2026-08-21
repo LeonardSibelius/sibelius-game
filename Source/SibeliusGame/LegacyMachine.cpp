@@ -62,9 +62,12 @@ ALegacyMachine::ALegacyMachine()
 	// hang off a bare root instead of the stretched bed.
 	Tally = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Tally"));
 	Tally->SetupAttachment(Root);
-	Tally->SetRelativeLocation(FVector(-70.0f, 0.0f, 165.0f));
+	// SMALL, AND ON THE MACHINE. At 18cm and 70cm above the boxes this rendered three
+	// metres tall across the middle of the room, shouting over the very lines the player
+	// is meant to be reading. It is a gauge on a housing, not a billboard.
+	Tally->SetRelativeLocation(FVector(-75.0f, -190.0f, 45.0f));
 	Tally->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
-	Tally->SetWorldSize(18.0f);
+	Tally->SetWorldSize(10.0f);
 	Tally->SetHorizontalAlignment(EHTA_Center);
 	Tally->SetVerticalAlignment(EVRTA_TextCenter);
 	Tally->SetTextRenderColor(FColor(255, 120, 90, 255));

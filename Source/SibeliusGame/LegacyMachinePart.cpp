@@ -36,17 +36,29 @@ ALegacyMachinePart::ALegacyMachinePart()
 	Plaque->SetVerticalAlignment(EVRTA_TextCenter);
 	Plaque->SetTextRenderColor(FColor(180, 176, 165, 255));   // engraved grey
 
-	// THE SOURCE: off until Code Vision is held, and sat directly ABOVE its own part.
-	//
-	// It used to be 13cm tall at +60. With the stages 75cm apart that ran each line
-	// straight across its neighbour's box -- COUNTER's text lay over GRADER, which is
-	// precisely the pair the player has to compare. Smaller, and lifted clear of the
-	// boxes so the five lines stack in a readable column instead of overlapping.
+	/* THE SOURCE: ON THE BOX FACE, DIRECTLY UNDER THE PLAQUE. Off until Code Vision.
+
+	   This label has now been wrong twice, and both times for the same reason. First it
+	   floated 60cm above the part; then 78cm and smaller. Walt held V, looked straight at
+	   a working machine and asked "what am I looking at here?" -- because a line hanging
+	   in mid-air reads as graffiti over the room, not as THAT BOX's truth, and pairing it
+	   back to its own part is mental work.
+
+	   The pairing IS the puzzle. It has to be effortless, so the two lines share one
+	   surface: the plaque above, what it really does immediately below, same size, same
+	   alignment, same face. Hold V and each box shows "what I claim" over "what I do".
+	   Four boxes say the same sentence twice, which reads instantly as a doubling. GRADER
+	   shows two different sentences in the same place, and there is nothing to
+	   cross-reference.
+
+	   Colour is NOT the mechanism, only a garnish: Code Vision floods the screen green
+	   and flattens the red/cyan distinction to almost nothing. The disagreement carries
+	   itself. */
 	TrueLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("TrueLabel"));
 	TrueLabel->SetupAttachment(Mesh);
-	TrueLabel->SetRelativeLocation(FVector(-70.0f, 0.0f, 78.0f));
+	TrueLabel->SetRelativeLocation(FVector(-57.0f, 0.0f, -8.0f));
 	TrueLabel->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
-	TrueLabel->SetWorldSize(8.0f);
+	TrueLabel->SetWorldSize(9.0f);
 	TrueLabel->SetHorizontalAlignment(EHTA_Center);
 	TrueLabel->SetVerticalAlignment(EVRTA_TextCenter);
 	TrueLabel->SetVisibility(false);

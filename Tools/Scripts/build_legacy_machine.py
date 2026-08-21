@@ -239,7 +239,7 @@ else:
 
         tally = m.get_editor_property("tally")
         if tally:
-            tally.set_editor_property("relative_location", unreal.Vector(-70.0, 0.0, 165.0))
+            tally.set_editor_property("relative_location", unreal.Vector(-75.0, -190.0, 45.0))
             tally.set_editor_property("relative_rotation", unreal.Rotator(0.0, 0.0, 180.0))
 
         unlit_text(m)   # tally + ACCEPT/REJECT labels
