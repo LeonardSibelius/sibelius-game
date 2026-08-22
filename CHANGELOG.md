@@ -7,6 +7,35 @@ Versions are `x.y.z` for a release and `x.y.z.N` for a fix to an already-shipped
 (no new content) — see `docs/sib-42-packaging-notes.md`. A `.N` fix is a line under its
 parent release heading, never a heading of its own.
 
+## v0.9.7 — The machine shows you where it broke
+
+- **The legacy system tells you where it failed.** The piece used to travel the whole
+  row and get thrown out at the end no matter which stage was wrong, so a broken INTAKE
+  and a broken GRADER looked identical. Now it stops dead at the part that rejected it,
+  that part's lamp lights **REJECTED HERE**, and it goes to the bin from there. You still
+  have to work out *why* — the plaque sounds perfectly reasonable until you hold **V**.
+- **The housing keeps a run log**, and it is already full when you walk up: 03:41 through
+  03:46, all failing at the same stage. Mrs. Hall says it threw overnight; now you can
+  read the night.
+- **You can stop the line and step it.** **E** on any crate halts it, then walks it one
+  beat at a time — a leg of travel, the jam, the drop into the bin — and the prompt says
+  what the next press will do. Press E once more between pieces to let it run again.
+- **A second job.** Close the first ticket and the line runs clean for a while, then
+  starts dropping pieces — not all of them, one in three. It is a different kind of bug
+  and it needs a different habit: you cannot tell whether you fixed it by watching,
+  because three good pieces is what luck looks like. Branch reality with **[6]**, press
+  **E** to run twenty test pieces off the record, and **[7]** to keep the fix. The job
+  will not close on a lucky cycle.
+- **You can read the labels now.** Every plaque, true name, tally and log row sits on a
+  dark plate, so text stops fighting the wood floor and the crates behind it. The two
+  housing readouts were also rendering at twice the size of the plaques they support;
+  they are sized against them now.
+- **It looks like it is working.** The piece arcs between stations and turns a quarter
+  each stage, squashes when a station presses on it, rattles under a blinking lamp when
+  it jams, falls into the bin, and the winning bin's label swells as it lands.
+- Saves from 0.9.6 load. If you already closed the first ticket, the second one is
+  waiting for you in the living room.
+
 ## v0.9.6 — The First Ticket
 
 - **The opening job is the legacy system.** New Game still starts in the living room.

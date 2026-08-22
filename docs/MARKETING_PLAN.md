@@ -100,6 +100,59 @@ falls out of the footage in one conversion step.
    Playtest can replace itch alpha distribution later (mirrors GhostCam's
    closed-alpha plan). Decision point: when mechanics stop churning.
 
+## Paste-ready: the feedback-sub post (v0.9.7, written 2026-08-22)
+
+Ring 1 of channel 3 — **r/DestroyMyGame** and **r/playmygame**. These exist for exactly
+what Walt asked for: strangers who will try it and say what is wrong. Low stakes, brutal,
+useful, and nobody there is offended by an alpha.
+
+**Read each sub's rules first.** r/DestroyMyGame usually requires a video or GIF in the
+post itself and is hostile to bare store links; r/playmygame wants a playable link and a
+specific question. Post one sub per day, never the same text twice, and reply to every
+comment personally — that is the whole value.
+
+**THE ASK MATTERS MORE THAN THE PITCH.** "Try my game" gets nothing. One narrow question
+about the first ten minutes gets real answers. For 0.9.7 the question is the one the
+whole machine was built to test:
+
+> *Was finding the broken part satisfying, with no quest marker telling you which one?*
+
+---
+
+**Title:** I'm 71, spent 40 years on data systems, and made a game where debugging a
+machine is the plot. First ten minutes — does the puzzle land?
+
+**Body:**
+
+Free, Windows, no signup: https://leonardsibelius.itch.io/leonard-sibelius
+
+You play a programmer. Your boss messages you in the first minute: the legacy system
+threw again overnight, fix it, and do it by hand — she is not paying a senior developer
+to ask a machine.
+
+The legacy system is a real machine in the living room. It runs while you watch. A blank
+travels down a row of five stations and lands in REJECT every time, and the housing keeps
+a log of the night it spent doing that. Every station has a plaque saying what it does.
+One of them is lying, and the only way to see it is a power that shows you what each part
+*actually* does. No quest marker, no highlighted object.
+
+**What I want to know:** did you find the broken part by reasoning, or by clicking
+everything? And did finding it feel like anything? That is the whole bet of the project
+and I cannot judge it myself any more.
+
+Fair warnings: it is an alpha, the art is placeholder in places, and there is more game
+past the machine (a cathedral, a slot machine I built to a real par sheet) that you can
+ignore for this.
+
+I built it with Claude. Happy to talk about what that was actually like if anyone cares —
+including the parts where it was worse than doing it myself.
+
+---
+
+**After a pass through the feedback subs** — and only then — the plan's later rings still
+apply: r/IndieDev with the best GIF, then the AI ring, then Show HN as the one big swing.
+Do not spend Show HN before the feedback subs have found the obvious problems.
+
 ## The cadence (sustainable for one person + one agent)
 
 - **Weekly**: one small post somewhere (a GIF, a hand of poker, a shrine
