@@ -206,6 +206,102 @@ cheaper, because the meshes already exist.
 
 ---
 
+## 9. Built: the three instruments (2026-08-21)
+
+§8 passed, and then the machine sat there proving that *watching* is not the same as
+*diagnosing*. The first build rejected at the END of the row whatever was broken, ran on
+its own timer whether the player was ready or not, and kept no history — so the only
+evidence in the level was five label pairs to compare by eye. That is a
+spot-the-difference, and it does not scale: five parts is a squint, the eleven this
+document asks for in §4 would be a search, which is the exact failure mode listed under
+*Risks*.
+
+So the machine reports on itself now, three ways:
+
+| Instrument | What it does | Why |
+|---|---|---|
+| **It dies where it breaks** | the workpiece stops dead at the first misbehaving stage, that stage's fault lamp lights, and it is diverted to REJECT from there | behaviour finally carries information — a broken INTAKE and a broken GRADER no longer look identical |
+| **The line has a transport** | **E** halts it, then steps it one beat at a time (a leg, the jam, the drop); parked between pieces, **E** hands it back | a debugger with no code in it. Also fixes pacing: a free-running cycle was ~7 seconds and the player was a spectator for all of it |
+| **It keeps a run log** | the last six cycles with the stage each died at, **pre-filled with the overnight history** | §4 opens with *"the log says it threw at 03:00"* and there was no log. Now the housing shows 03:41–03:46 all failing at the same stage, before the player watches a single cycle |
+
+> 🔒 **PROPOSED — WHERE IS FREE, WHY IS EARNED.** (The rule this build follows. Not
+> ratified: Walt has not played it yet.) The lamp and the log
+> name the stage and need no power at all; they are the machine reporting on itself, which
+> is what Mrs. Hall is reading when she says it threw overnight. Neither ever says what is
+> *wrong* with that stage. GRADER's plaque promises "grade B or better passes" and sounds
+> completely reasonable — the contradiction is visible only under Code Vision, and
+> realising that nothing is better than an A is still the player's own.
+>
+> Narrowing the search is what a log is FOR. Doing the thinking is not. Every future
+> instrument on these machines is measured against that line.
+
+**Consequence for §5.** The row can now get longer without getting tedious, because the
+player follows the piece to where it stops instead of auditing every box. That is the
+precondition for the escalating tickets — and the transport is the precondition for
+ticket 4, because an intermittent fault is the first bug that cannot be confirmed by
+watching one cycle, and that is where Test-Drive stops being a debug key and becomes a
+power.
+
+---
+
+## 10. Built: ticket 2, the intermittent fault (2026-08-21)
+
+§9 gave the machine instruments. This gives **Test-Drive a job** — the first one it has
+ever had. The verb has worked on this machine since the day it was built (a refactor is
+`IBranchable`, so branch/merge/discard applied for free) and has never been worth
+pressing, because a deterministic fault is confirmed by watching one piece.
+
+**The second job is the same machine, later.** Measured first: `probe_office_floor.py`
+found no clear footprint anywhere in the office for a second line — the nearest space
+that fits is fifteen metres away and outdoors. Which turned out to be the better answer
+anyway. The same legacy system throwing again, differently, is what maintenance actually
+is; a second identical crate row in the living room is set dressing.
+
+| | ticket 1 — GRADER | ticket 2 — STAMP |
+|---|---|---|
+| The fault | a logic error: wrong every cycle | a reliability bug: wrong 34% of cycles |
+| The lie | "grade B or better passes" vs *"passes only what is better than A"* | "marks **the** passing blanks" vs *"marks **most** of the passing blanks"* |
+| The evidence | a wall of REJECTED AT GRADER | a **mix** in the run log |
+| Confirming the fix | watch one piece | you cannot — three good pieces is what luck looks like 30% of the time |
+| The verb it teaches | Code Vision, then Refactor | **Test-Drive** |
+
+**Three rules make it work, and each one is a trap avoided:**
+
+1. **The second fault is DORMANT until the first ticket closes** (`ArmedByGrant`). Not
+   just the fault — the plaque/true-name disagreement too. A second liar standing in the
+   row from the first minute would destroy ticket 1's "find the ONE part that is lying",
+   which is the puzzle Walt ratified in §8.
+2. **A ticket closes on `AreAllFaultsCleared()`, never `IsHealthy()`.** The first means
+   every armed fault has been refactored; the second only means nothing misbehaved on
+   *this* cycle. Against a one-in-three fault those differ two cycles in three, and
+   closing on the second would hand the player a completed job for a lucky roll.
+3. **The fix has to be PROVEN, not just applied.** Ticket 2 will not close without a
+   clean test batch. Without that rule the player refactors, gets a good piece, and the
+   job closes — and Test-Drive is a key nobody pressed, again.
+
+> 🔒 **PROPOSED — YOU DO NOT TEST IN PRODUCTION.** The test batch runs twenty pieces as
+> pure arithmetic and posts one verdict row to the run log, and **E only offers it inside
+> a branch**. The reason is diegetic: the tally is Mrs. Hall's production record, and
+> twenty experimental pieces down the live line is twenty rejects on it. So the discipline
+> is not explained to the player, it is the shape of the only door available.
+>
+> This is the closest the game has come to §6's promise — the gate coming inside the
+> fiction. The player runs a measured check and reads a pass count, which is what the
+> fifteen-gate sweep is. Not ratified: Walt has not played it.
+
+**The gate proves itself.** The self-test measures the fault rate over 4000 trials
+against a fixed seed, asserts a refactored part fails zero of 500, and asserts the
+per-cycle verdict is *latched* — `IsBehaving()` is asked several times inside one cycle,
+and a roll living inside it would make the piece jam at a stage the log then denied.
+Forcing `FaultChance` to 1.0 was confirmed to turn the gate red with the right sentence.
+
+**Known gap:** Mrs. Hall says the same `Ticket.Closed` line for both jobs. She needs her
+own words for the second one — a new row in `Content/Data/MrsHallStory.csv` *and* a
+reimport of the `/Game/Data/MrsHallStory` DataTable asset, or she is silent in the package
+(the v0.9.4 lesson).
+
+---
+
 ## Risks, honestly
 
 - **Debugging fantasy goes tedious fast.** The mitigation is §3, and the warning sign is

@@ -1,4 +1,4 @@
-﻿LogInit: Display: Running engine for game: SibeliusGame
+LogInit: Display: Running engine for game: SibeliusGame
 LogCore: Display: Requested channels: 'cpu,gpu,frame,log,bookmark,screenshot,region'
 LogTrace: Display: Control listening on port 1985
 LogCsvProfiler: Display: Metadata set : platform="Windows"
@@ -20,276 +20,275 @@ LogCsvProfiler: Display: Metadata set : systemresolution.resx="1280"
 LogCsvProfiler: Display: Metadata set : systemresolution.resy="720"
 LogAudio: Display: Audio Device Manager not initializing due to all audio being disabled. If this is not intentional, please check command line arguments for "-nosound".
 LogConfig: Display: Loading VulkanPC ini files took 0.03 seconds
+LogConfig: Display: Loading IOS ini files took 0.03 seconds
 LogConfig: Display: Loading Mac ini files took 0.03 seconds
 LogConfig: Display: Loading Android ini files took 0.03 seconds
-LogConfig: Display: Loading IOS ini files took 0.03 seconds
-LogConfig: Display: Loading Windows ini files took 0.04 seconds
 LogConfig: Display: Loading TVOS ini files took 0.04 seconds
+LogConfig: Display: Loading Windows ini files took 0.04 seconds
 LogConfig: Display: Loading VisionOS ini files took 0.04 seconds
 LogConfig: Display: Loading Unix ini files took 0.04 seconds
-LogConfig: Display: Loading Linux ini files took 0.05 seconds
+LogConfig: Display: Loading Linux ini files took 0.04 seconds
 RenderDocPlugin: Display: RenderDoc plugin will not be loaded. Use '-AttachRenderDoc' on the cmd line or enable 'renderdoc.AutoAttach' in the plugin settings.
-[2026.08.20-06.07.32:482][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
-[2026.08.20-06.07.32:483][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
-[2026.08.20-06.07.32:738][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
-[2026.08.20-06.07.32:813][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
-[2026.08.20-06.07.32:813][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
-[2026.08.20-06.07.32:813][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
-[2026.08.20-06.07.32:813][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
-[2026.08.20-06.07.32:818][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
-[2026.08.20-06.07.32:818][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
-[2026.08.20-06.07.32:818][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
-[2026.08.20-06.07.32:818][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
-[2026.08.20-06.07.32:818][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
-[2026.08.20-06.07.32:818][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
-[2026.08.20-06.07.32:818][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
-[2026.08.20-06.07.32:818][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
-[2026.08.20-06.07.32:818][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
-[2026.08.20-06.07.32:818][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
-[2026.08.20-06.07.32:837][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
-[2026.08.20-06.07.32:849][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
-[2026.08.20-06.07.32:849][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
-[2026.08.20-06.07.32:859][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
-[2026.08.20-06.07.32:859][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
-[2026.08.20-06.07.32:859][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
-[2026.08.20-06.07.32:859][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
-[2026.08.20-06.07.32:869][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
-[2026.08.20-06.07.32:869][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
-[2026.08.20-06.07.32:869][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
-[2026.08.20-06.07.32:869][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
-[2026.08.20-06.07.32:879][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
-[2026.08.20-06.07.32:879][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
-[2026.08.20-06.07.32:888][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
-[2026.08.20-06.07.32:888][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
-[2026.08.20-06.07.32:888][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
-[2026.08.20-06.07.32:888][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
-[2026.08.20-06.07.32:888][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
-[2026.08.20-06.07.32:891][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
-[2026.08.20-06.07.32:926][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
-[2026.08.20-06.07.33:121][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
-[2026.08.20-06.07.33:122][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
-[2026.08.20-06.07.33:528][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
-[2026.08.20-06.07.33:833][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
-[2026.08.20-06.07.33:833][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.8.13-202605190912-windows-x64-release-094f62c2'
-[2026.08.20-06.07.33:833][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
-[2026.08.20-06.07.33:833][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 21652  --child-id Zen_21652_Startup'
-[2026.08.20-06.07.34:082][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
-[2026.08.20-06.07.34:093][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
-[2026.08.20-06.07.34:099][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.02ms. RandomReadSpeed=965.91MBs, RandomWriteSpeed=198.91MBs. Assigned SpeedClass 'Local'
-[2026.08.20-06.07.34:102][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
-[2026.08.20-06.07.34:102][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
-[2026.08.20-06.07.34:102][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
-[2026.08.20-06.07.34:102][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
-[2026.08.20-06.07.34:102][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
-[2026.08.20-06.07.34:386][  0]LogEditorDomain: Display: EditorDomain is Disabled
-[2026.08.20-06.07.34:569][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
-[2026.08.20-06.07.34:569][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
-[2026.08.20-06.07.34:597][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
-[2026.08.20-06.07.34:599][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
-[2026.08.20-06.07.34:606][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:607][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
-[2026.08.20-06.07.34:607][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:607][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:607][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
-[2026.08.20-06.07.34:607][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:607][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:609][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:609][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:609][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:610][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
-[2026.08.20-06.07.34:610][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:611][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
-[2026.08.20-06.07.34:611][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:611][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
-[2026.08.20-06.07.34:611][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:611][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
-[2026.08.20-06.07.34:611][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
-[2026.08.20-06.07.34:611][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
-[2026.08.20-06.07.34:611][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
-[2026.08.20-06.07.34:611][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
-[2026.08.20-06.07.34:623][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
-[2026.08.20-06.07.34:623][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
-[2026.08.20-06.07.34:623][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
-[2026.08.20-06.07.34:623][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
-[2026.08.20-06.07.34:741][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
-[2026.08.20-06.07.34:741][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
-[2026.08.20-06.07.34:741][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
-[2026.08.20-06.07.34:741][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
-[2026.08.20-06.07.34:794][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
-[2026.08.20-06.07.34:795][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.572 ms
-[2026.08.20-06.07.35:328][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
-[2026.08.20-06.07.35:329][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
-[2026.08.20-06.07.35:410][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
-[2026.08.20-06.07.36:203][  0]LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (Echo_Hair) ...
-[2026.08.20-06.07.36:290][  0]LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
-[2026.08.20-06.07.36:466][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.20-06.07.36:466][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.20-06.07.36:466][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.20-06.07.36:466][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.20-06.07.36:466][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.20-06.07.36:467][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.20-06.07.36:467][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.20-06.07.36:467][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.20-06.07.37:188][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
-[2026.08.20-06.07.37:188][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
-[2026.08.20-06.07.37:745][  0]LogAssetRegistry: Display: Asset registry cache read as 128.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
-[2026.08.20-06.07.37:746][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.071s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
-[2026.08.20-06.07.37:859][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
-[2026.08.20-06.07.37:884][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
-[2026.08.20-06.07.38:172][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
-[2026.08.20-06.07.38:201][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
-[2026.08.20-06.07.38:214][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 13.998 ms
-[2026.08.20-06.07.38:214][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
-[2026.08.20-06.07.38:226][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 10.971 ms (total: 24.970 ms)
-[2026.08.20-06.07.38:226][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
-[2026.08.20-06.07.38:226][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 115 us (total: 25.086 ms)
-[2026.08.20-06.07.38:226][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
-[2026.08.20-06.07.38:227][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 1.174 ms (total: 26.260 ms)
-[2026.08.20-06.07.38:228][  0]LogGenerateSmoke: Display: === SIB-30 Generate smoke test (Ch6 P2): G1-G7 against the REAL catalog + Mrs. Hall data ===
-[2026.08.20-06.07.38:228][  0]LogGenerateSmoke: Display:   [PASS] P0: catalog loads from C:/Users/wpark/projects/sibelius-game/Content/Data/GenerateCatalog.csv
-[2026.08.20-06.07.38:228][  0]LogGenerateSmoke: Display:   [PASS] P0: catalog has >= 4 entries (6 loaded)
-[2026.08.20-06.07.38:228][  0]LogGenerateSmoke: Display:   catalog entries: tree plant lamp crate chair key 
-[2026.08.20-06.07.38:228][  0]LogGenerateSmoke: Display: --- G2: varied phrasing ---
-[2026.08.20-06.07.38:228][  0]LogGenerateSmoke: Display:   [PASS] G2: all 24 phrasings resolved to the expected entry (24/24)
-[2026.08.20-06.07.38:228][  0]LogGenerateSmoke: Display:   [PASS] G2: gibberish/empty -> RefusedNoMatch (never a wrong spawn)
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display:   [PASS] G2/DB: keyword tie ('light box') -> RefusedAmbiguous
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display: --- G1: closed-catalog scope ---
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display:   [PASS] G1: no input ever resolves to a non-catalog EntryId (closed by construction)
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display: --- G3: content safety ---
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display:   [PASS] G3: out-of-catalog / unsafe phrasings never resolve to a spawn
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display: --- G4: deterministic ---
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display:   [PASS] G4: ClassifyGenerateRequest is deterministic (identical result on repeat)
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display:   [PASS] G4: tokenizer is case/punctuation-stable (no RNG/clock)
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display: --- G5: budget economy ---
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display:   [PASS] G5: 'a lamp' resolves with cost 1
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display:   [PASS] G5: budget decremented by the entry's cost
-[2026.08.20-06.07.38:229][  0]LogGenerateSmoke: Display:   [PASS] G5: cost == remaining budget still resolves
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G5: cost > remaining budget -> RefusedOverBudget (distinct from NoMatch)
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G5: over-budget is NOT conflated with no-match
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display: --- G7: DC blocklist + Mrs. Hall lines (P2) ---
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7: blocklist loads from data (8 words)
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7: blocklisted 'a gun' -> RefusedUnsafe
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7: a blocklisted phrase never resolves to a spawn
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7: an unsafe word vetoes an otherwise-matchable request
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7: without the blocklist 'a gun' is NOT flagged unsafe
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7: 'a gun' never spawns, with or without the blocklist
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7: Mrs. Hall lines load from data
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7: every refusal reason has at least one non-empty line
-[2026.08.20-06.07.38:230][  0]LogGenerateSmoke: Display:   [PASS] G7/P2.5: every refusal reason's line carries a non-empty AudioKey
-[2026.08.20-06.07.38:231][  0]LogGenerateSmoke: Display:   [PASS] SPINE: /Game/Data/MrsHallStory DataTable ASSET exists (the CSV is editor-only)
-[2026.08.20-06.07.38:231][  0]LogGenerateSmoke: Display:   [PASS] SPINE: Mrs. Hall story lines load from data
-[2026.08.20-06.07.38:231][  0]LogGenerateSmoke: Display:   [PASS] SPINE: every story Reason the code asks for has a line
-[2026.08.20-06.07.38:231][  0]LogGenerateSmoke: Display:   SPINE: power beats written 1/6. Still to write: Power.Refactor Power.Compile Power.TestDrive Power.Deploy Power.Generate
-[2026.08.20-06.07.38:231][  0]LogGenerateSmoke: Display:   [PASS] SPINE: no story line has leaked into the Generate refusal pool
-[2026.08.20-06.07.38:231][  0]LogGenerateSmoke: Display:   [PASS] G7: line selection is deterministic for a given selector
-[2026.08.20-06.07.38:231][  0]LogTemp: Display: [MrsHall] === Voice clip manifest: record one WAV per AudioKey, import to /Game/Audio/MrsHall/ (asset name = key) ===
-[2026.08.20-06.07.38:231][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_1.wav  <-  "We don't keep that here, Programmer. Make do with what you've got."
-[2026.08.20-06.07.38:231][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_2.wav  <-  "You. Programmer. We don't keep that here."
-[2026.08.20-06.07.38:232][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_3.wav  <-  "That's not in our inventory. This is a workplace, not a wish."
-[2026.08.20-06.07.38:232][  0]LogTemp: Display: [MrsHall]   mrshall_ambiguous_1.wav  <-  "Be precise. I expect a senior developer to know exactly what he wants."
-[2026.08.20-06.07.38:232][  0]LogTemp: Display: [MrsHall]   mrshall_ambiguous_2.wav  <-  "You. Programmer. Say what you mean, plainly."
-[2026.08.20-06.07.38:232][  0]LogTemp: Display: [MrsHall]   mrshall_overbudget_1.wav  <-  "That's enough of that. What am I paying you for, Programmer, if you lean on it all day?"
-[2026.08.20-06.07.38:232][  0]LogTemp: Display: [MrsHall]   mrshall_overbudget_2.wav  <-  "You've spent your allowance. We don't throw resources around here."
-[2026.08.20-06.07.38:232][  0]LogTemp: Display: [MrsHall]   mrshall_unsafe_1.wav  <-  "Absolutely not. I won't have that in my shop."
-[2026.08.20-06.07.38:232][  0]LogTemp: Display: [MrsHall]   mrshall_unsafe_2.wav  <-  "You. Programmer. We do not make such things. Not under my roof."
-[2026.08.20-06.07.38:232][  0]LogTemp: Display: [MrsHall] === 9 clip(s) total ===
-[2026.08.20-06.07.38:232][  0]LogGenerateSmoke: Display: --- G6: persistence through the real pipeline ---
-[2026.08.20-06.07.38:232][  0]LogGenerateSmoke: Display:   [PASS] G6: request resolves to a catalog entry to spawn
-[2026.08.20-06.07.39:454][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.20-06.07.39:455][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.20-06.07.39:455][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.20-06.07.39:455][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.20-06.07.39:455][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.20-06.07.39:455][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.20-06.07.39:456][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.20-06.07.39:456][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.20-06.07.41:168][  0]LogAIApparition: Display: [Apparition] visuals built: 9 glyphs + core
-[2026.08.20-06.07.41:206][  0]LogGenerateSmoke: Display:   [PASS] G6: map loads (/Game/L_Office_v02)
-[2026.08.20-06.07.41:206][  0]LogGenerateSmoke: Display:   [PASS] G6: spawned an ABuildSite for the resolved entry
-[2026.08.20-06.07.41:206][  0]LogGenerateSmoke: Display:   [PASS] G6: spawned a seeded inventory
-[2026.08.20-06.07.41:206][  0]LogGenerateSmoke: Display:   [PASS] G6: the spawned buildable received a valid, stable FGuid
-[2026.08.20-06.07.41:207][  0]LogGenerateSmoke: Display:   [PASS] G6: Ch3 Build() built the spawned object
-[2026.08.20-06.07.41:207][  0]LogGenerateSmoke: Display:   [PASS] G6: branch subsystem instantiates
-[2026.08.20-06.07.41:207][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateSpikeSlot_Temp': OK.
-[2026.08.20-06.07.41:207][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'GenerateSpikeSlot_Temp' (v3) — 1 object + 1 resource delta(s).
-[2026.08.20-06.07.41:207][  0]LogGenerateSmoke: Display:   [PASS] G6: RequestDeploy persisted the deployed state at Main
-[2026.08.20-06.07.41:207][  0]LogGenerateSmoke: Display:   [PASS] G6: deploy wrote a save to the slot
-[2026.08.20-06.07.41:207][  0]LogGenerateSmoke: Display:   [PASS] G6: reset the spawned object to unbuilt
-[2026.08.20-06.07.41:212][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateSpikeSlot_Temp_Backup': OK.
-[2026.08.20-06.07.41:213][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 1 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
-[2026.08.20-06.07.41:213][  0]LogGenerateSmoke: Display:   [PASS] G6: ApplyDeployedSave loaded + re-applied the save
-[2026.08.20-06.07.41:213][  0]LogGenerateSmoke: Display:   [PASS] G6: the spawned object round-tripped save->reload back to BUILT
-[2026.08.20-06.07.41:213][  0]LogGenerateSmoke: Display:   [PASS] G6: its FGuid was stable across the round-trip
-[2026.08.20-06.07.41:213][  0]LogGenerateSmoke: Display:   [PASS] G6: sandbox slot cleaned up
-[2026.08.20-06.07.41:213][  0]LogGenerateSmoke: Display: --- G8: P3 generated-object persistence (re-spawn on reload) ---
-[2026.08.20-06.07.41:213][  0]LogGenerateSmoke: Display:   [PASS] G8: request resolves to a catalog entry to generate
-[2026.08.20-06.07.41:214][  0]LogGenerateSmoke: Display:   [PASS] G8: reuses the map loaded for G6
-[2026.08.20-06.07.41:214][  0]LogGenerateSmoke: Display:   [PASS] G8: spawned a generated ABuildSite
-[2026.08.20-06.07.41:214][  0]LogGenerateSmoke: Display:   [PASS] G8: generated site is tagged + BUILT
-[2026.08.20-06.07.41:214][  0]LogGenerateSmoke: Display:   [PASS] P3-2: site carries its catalog EntryId
-[2026.08.20-06.07.41:214][  0]LogGenerateSmoke: Display:   [PASS] G8: generator component present in the world
-[2026.08.20-06.07.41:214][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateP3Slot_Temp': OK.
-[2026.08.20-06.07.41:214][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'GenerateP3Slot_Temp' (v3) — 2 object + 1 resource delta(s).
-[2026.08.20-06.07.41:214][  0]LogGenerateSmoke: Display:   [PASS] G8: RequestDeploy persisted the deployed state
-[2026.08.20-06.07.41:218][  0]LogGenerateSmoke: Display:   [PASS] P3-2: save record carries the generated EntryId
-[2026.08.20-06.07.41:218][  0]LogGenerateSmoke: Display:   [PASS] P3-2/P3-3: save record carries the spawn transform
-[2026.08.20-06.07.41:218][  0]LogGenerateSmoke: Display:   [PASS] P3-6: save carries the remaining generation budget (not the default)
-[2026.08.20-06.07.41:218][  0]LogGenerateSmoke: Display:   [PASS] G8: generated actor gone after simulated reload
-[2026.08.20-06.07.41:219][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateP3Slot_Temp_Backup': OK.
-[2026.08.20-06.07.41:219][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 1 object + 1 resource delta(s), re-spawned 1 generated, 0 orphan(s) skipped.
-[2026.08.20-06.07.41:219][  0]LogGenerateSmoke: Display:   [PASS] G8: ApplyDeployedSave re-applied the save
-[2026.08.20-06.07.41:219][  0]LogGenerateSmoke: Display:   [PASS] P3-1: exactly one generated object re-spawned
-[2026.08.20-06.07.41:219][  0]LogGenerateSmoke: Display:   [PASS] P3-1: the generated object was re-spawned
-[2026.08.20-06.07.41:219][  0]LogGenerateSmoke: Display:   [PASS] P3-1: the re-spawned object is BUILT
-[2026.08.20-06.07.41:219][  0]LogGenerateSmoke: Display:   [PASS] P3-4: its GUID is stable across the re-spawn
-[2026.08.20-06.07.41:219][  0]LogGenerateSmoke: Display:   [PASS] P3-1: re-spawn re-tagged it generated with the same EntryId (so a 2nd deploy won't orphan it)
-[2026.08.20-06.07.41:220][  0]LogGenerateSmoke: Display:   [PASS] P3-3: re-spawn used the SAVED transform verbatim (no placement re-trace)
-[2026.08.20-06.07.41:220][  0]LogGenerateSmoke: Display:   [PASS] P3-6: budget restored to the deploy-time value (7), not the post-reload default (10)
-[2026.08.20-06.07.41:220][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateP3Slot_Temp_Backup': OK.
-[2026.08.20-06.07.41:220][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
-[2026.08.20-06.07.41:220][  0]LogGenerateSmoke: Display:   [PASS] P3-5: a second ApplyDeployedSave succeeds
-[2026.08.20-06.07.41:220][  0]LogGenerateSmoke: Display:   [PASS] P3-5: the second apply re-spawns nothing (object already present)
-[2026.08.20-06.07.41:220][  0]LogGenerateSmoke: Display:   [PASS] P3-5: exactly ONE generated object after two applies (no duplicate)
-[2026.08.20-06.07.41:220][  0]LogGenerateSmoke: Display:   [PASS] G8: sandbox slot cleaned up
-[2026.08.20-06.07.41:220][  0]LogGenerateSmoke: Display: === GENERATE SMOKE TEST PASSED (Ch6 P2 — catalog + blocklist + Mrs. Hall lines green). ===
-[2026.08.20-06.07.41:220][  0]LogInit: Display: 
-[2026.08.20-06.07.41:221][  0]LogInit: Display: Warning/Error Summary (Unique only)
-[2026.08.20-06.07.41:221][  0]LogInit: Display: -----------------------------------
-[2026.08.20-06.07.41:221][  0]LogInit: Display: LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
-[2026.08.20-06.07.41:221][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.20-06.07.41:221][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.20-06.07.41:221][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.20-06.07.41:221][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.20-06.07.41:222][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.20-06.07.41:222][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.20-06.07.41:222][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.20-06.07.41:222][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.20-06.07.41:222][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
-[2026.08.20-06.07.41:223][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
-[2026.08.20-06.07.41:223][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
-[2026.08.20-06.07.41:223][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
-[2026.08.20-06.07.41:223][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
-[2026.08.20-06.07.41:223][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
-[2026.08.20-06.07.41:224][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
-[2026.08.20-06.07.41:224][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
-[2026.08.20-06.07.41:224][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
-[2026.08.20-06.07.41:224][  0]LogInit: Display: 
-[2026.08.20-06.07.41:224][  0]LogInit: Display: Success - 0 error(s), 18 warning(s)
-[2026.08.20-06.07.41:224][  0]LogInit: Display: 
-
-Execution of commandlet took:  3.02 seconds
-[2026.08.20-06.07.41:224][  0]LogCrowdFollowing: Warning: Unable to find RecastNavMesh instance while trying to create UCrowdManager instance
-[2026.08.20-06.07.41:799][  0]LogShaderCompilers: Display: Shaders left to compile 0
+[2026.08.22-16.59.09:478][  0]LogHAL: Display: Platform has ~ 32 GB [34188062720 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+[2026.08.22-16.59.09:479][  0]LogCsvProfiler: Display: Metadata set : extradevelopmentmemorymb="0"
+[2026.08.22-16.59.09:725][  0]LogObj: Display: Attempting to load config data for Default__SlateThemeManager before the Class has been constructed/registered/linked (likely during module loading or early startup). This will result in the load silently failing and should be fixed.
+[2026.08.22-16.59.09:800][  0]LogCsvProfiler: Display: Metadata set : verbatimrhiname="Null"
+[2026.08.22-16.59.09:800][  0]LogCsvProfiler: Display: Metadata set : rhiname="Null"
+[2026.08.22-16.59.09:800][  0]LogCsvProfiler: Display: Metadata set : rhifeaturelevel="SM6"
+[2026.08.22-16.59.09:800][  0]LogCsvProfiler: Display: Metadata set : shaderplatform="PCD3D_SM6"
+[2026.08.22-16.59.09:805][  0]LogTextureFormatASTC: Display: ASTCEnc version 5.0.1 library loaded
+[2026.08.22-16.59.09:805][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatASTC
+[2026.08.22-16.59.09:805][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatDXT
+[2026.08.22-16.59.09:805][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatETC2
+[2026.08.22-16.59.09:805][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatIntelISPCTexComp
+[2026.08.22-16.59.09:805][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatUncompressed
+[2026.08.22-16.59.09:805][  0]LogTextureFormatOodle: Display: Oodle Texture TFO init; latest sdk version = 2.9.14
+[2026.08.22-16.59.09:805][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.14.dll
+[2026.08.22-16.59.09:805][  0]LogTextureFormatOodle: Display: Oodle Texture loading DLL: oo2tex_win64_2.9.5.dll
+[2026.08.22-16.59.09:805][  0]LogTextureFormatManager: Display: Loaded Base TextureFormat: TextureFormatOodle
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTC'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXT'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXR'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'AndroidClient'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ASTCClient'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_DXTClient'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_ETC2Client'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_OpenXRClient'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_Multi'
+[2026.08.22-16.59.09:825][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Android_MultiClient'
+[2026.08.22-16.59.09:836][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOS'
+[2026.08.22-16.59.09:836][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'IOSClient'
+[2026.08.22-16.59.09:847][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Linux'
+[2026.08.22-16.59.09:847][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxEditor'
+[2026.08.22-16.59.09:847][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxServer'
+[2026.08.22-16.59.09:847][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'LinuxClient'
+[2026.08.22-16.59.09:857][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Mac'
+[2026.08.22-16.59.09:857][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacEditor'
+[2026.08.22-16.59.09:857][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacServer'
+[2026.08.22-16.59.09:857][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'MacClient'
+[2026.08.22-16.59.09:867][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOS'
+[2026.08.22-16.59.09:867][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'TVOSClient'
+[2026.08.22-16.59.09:878][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'Windows'
+[2026.08.22-16.59.09:878][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsEditor'
+[2026.08.22-16.59.09:878][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsServer'
+[2026.08.22-16.59.09:878][  0]LogTargetPlatformManager: Display: Loaded TargetPlatform 'WindowsClient'
+[2026.08.22-16.59.09:878][  0]LogTargetPlatformManager: Display: Building Assets For WindowsEditor
+[2026.08.22-16.59.09:880][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+[2026.08.22-16.59.09:914][  0]LogDerivedDataCache: Display: Memory: Max Cache Size: -1 MB
+[2026.08.22-16.59.10:109][  0]LogDerivedDataCache: Display: ../../../Engine/DerivedDataCache/Compressed.ddp: Opened pak cache for reading. (1729 MiB)
+[2026.08.22-16.59.10:110][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.08.22-16.59.10:417][  0]LogZenServiceInstance: Display: Launching zen utility 'C:/Program Files/Epic Games/UE_5.7/Engine/Binaries/Win64/zen.exe service status'.
+[2026.08.22-16.59.10:728][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/5.7/Saved/Zen/zen.version', version: '5.7.6-202510061608-windows-x64-release-9a1ebb9'
+[2026.08.22-16.59.10:728][  0]LogZenServiceInstance: Display: Read zen version cache file from 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zen.version', version: '5.8.13-202605190912-windows-x64-release-094f62c2'
+[2026.08.22-16.59.10:728][  0]LogZenServiceInstance: Display: Installed service at 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe' is up to date
+[2026.08.22-16.59.10:728][  0]LogZenServiceInstance: Display: Launching executable 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install/zenserver.exe', working dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Install', data dir 'C:/Users/wpark/AppData/Local/UnrealEngine/Common/Zen/Data', args '--port 8558 --data-dir C:\Users\wpark\AppData\Local\UnrealEngine\Common\Zen\Data --http asio --gc-cache-duration-seconds 1209600 --gc-interval-seconds 21600 --gc-low-diskspace-threshold 2147483648 --cache-bucket-limit-overwrites --quiet --http-forceloopback --owner-pid 22020  --child-id Zen_22020_Startup'
+[2026.08.22-16.59.11:149][  0]LogZenServiceInstance: Display: Unreal Zen Storage Server HTTP service at http://[::1]:8558 status: OK!.
+[2026.08.22-16.59.11:150][  0]LogDerivedDataCache: Display: ZenLocal: Using ZenServer HTTP service at [::1] with namespace ue.ddc status: OK!.
+[2026.08.22-16.59.11:155][  0]LogDerivedDataCache: Display: C:/Users/wpark/AppData/Local/UnrealEngine/Common/DerivedDataCache: Performance: Latency=0.02ms. RandomReadSpeed=1041.08MBs, RandomWriteSpeed=236.47MBs. Assigned SpeedClass 'Local'
+[2026.08.22-16.59.11:157][  0]LogUbaHorde: Display: UBA/Horde Configuration [Uba.Provider.Horde]: Not Enabled
+[2026.08.22-16.59.11:157][  0]LogShaderCompilers: Display: No distributed shader compiler controller found
+[2026.08.22-16.59.11:157][  0]LogShaderCompilers: Display: Using 25 local workers for shader compilation
+[2026.08.22-16.59.11:158][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM6/AutogenShaderHeaders.ush
+[2026.08.22-16.59.11:158][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.08.22-16.59.11:435][  0]LogEditorDomain: Display: EditorDomain is Disabled
+[2026.08.22-16.59.11:614][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64Editor not found.
+[2026.08.22-16.59.11:614][  0]LogDeviceProfileManager: Display: Deviceprofile LinuxArm64 not found.
+[2026.08.22-16.59.11:640][  0]LogCsvProfiler: Display: Metadata set : deviceprofile="WindowsEditor"
+[2026.08.22-16.59.11:642][  0]LogStreaming: Display: FlushAsyncLoading(1): 1 QueuedPackages, 0 AsyncPackages
+[2026.08.22-16.59.11:649][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:649][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness because of a recursive sync load
+[2026.08.22-16.59.11:649][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/PowerToRoughness (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:650][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:650][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec because of a recursive sync load
+[2026.08.22-16.59.11:650][  0]LogStreaming: Display: Flushing package /Engine/Functions/Engine_MaterialFunctions01/Shading/ConvertFromDiffSpec (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:650][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:651][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:652][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:652][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: WaitingForIo) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:653][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultLightFunctionMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultPostProcessMaterial because of a recursive sync load
+[2026.08.22-16.59.11:653][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultPostProcessMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:653][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultDeferredDecalMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultLightFunctionMaterial because of a recursive sync load
+[2026.08.22-16.59.11:653][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultLightFunctionMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:653][  0]LogStreaming: Display: Package /Engine/EngineMaterials/WorldGridMaterial is adding a dynamic import to package /Engine/EngineMaterials/DefaultDeferredDecalMaterial because of a recursive sync load
+[2026.08.22-16.59.11:653][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/DefaultDeferredDecalMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/WorldGridMaterial (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:654][  0]LogStreaming: Display: Package /Engine/EngineMaterials/DefaultTextMaterialOpaque is adding a dynamic import to package /Engine/EngineMaterials/WorldGridMaterial because of a recursive sync load
+[2026.08.22-16.59.11:654][  0]LogStreaming: Display: Flushing package /Engine/EngineMaterials/WorldGridMaterial (state: DeferredPostLoad) recursively from another package /Engine/EngineMaterials/DefaultTextMaterialOpaque (state: CreateLinkerLoadExports) will result in a partially loaded package to avoid a deadlock.
+[2026.08.22-16.59.11:654][  0]LogTextureEncodingSettings: Display: Texture Encode Speed: Final (cook).
+[2026.08.22-16.59.11:654][  0]LogTextureEncodingSettings: Display: Oodle Texture Encode Speed settings: Fast: RDO Off Lambda=0, Effort=Normal Final: RDO Off Lambda=0, Effort=Normal
+[2026.08.22-16.59.11:654][  0]LogTextureEncodingSettings: Display: Shared linear texture encoding: Disabled
+[2026.08.22-16.59.11:666][  0]LogMeshReduction: Display: Using QuadricMeshReduction for automatic static mesh reduction
+[2026.08.22-16.59.11:666][  0]LogMeshReduction: Display: Using SkeletalMeshReduction for automatic skeletal mesh reduction
+[2026.08.22-16.59.11:666][  0]LogMeshReduction: Display: Using ProxyLODMeshReduction for automatic mesh merging
+[2026.08.22-16.59.11:666][  0]LogMeshReduction: Display: No distributed automatic mesh merging module available
+[2026.08.22-16.59.11:782][  0]LogShaderCompilers: Display: Compiling shader autogen file: ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/ShaderAutogen/PCD3D_SM5/AutogenShaderHeaders.ush
+[2026.08.22-16.59.11:782][  0]LogShaderCompilers: Display: Autogen file is unchanged, skipping write.
+[2026.08.22-16.59.11:782][  0]LogVirtualization: Display: VirtualizationSystem name found in ini file: None
+[2026.08.22-16.59.11:782][  0]LogVirtualization: Display: FNullVirtualizationSystem mounted, virtualization will be disabled
+[2026.08.22-16.59.11:834][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize started...
+[2026.08.22-16.59.11:836][  0]LogWorldPartition: Display: FWorldPartitionClassDescRegistry::Initialize took 1.580 ms
+[2026.08.22-16.59.11:984][  0]LogMetaSound: Display: MetaSound Page Target Initialized to 'Default'
+[2026.08.22-16.59.11:984][  0]LogAudio: Display: Registering Engine Module Parameter Interfaces...
+[2026.08.22-16.59.12:095][  0]LogLiveLinkHub: Display: LiveLinkHubModule::StartupModule - LiveLinkHub instance will not be created. (Config: 0)
+[2026.08.22-16.59.13:244][  0]LogSkinnedAsset: Display: Waiting for skinned assets to be ready 0/1 (Echo_Hair) ...
+[2026.08.22-16.59.13:326][  0]LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
+[2026.08.22-16.59.13:497][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.22-16.59.13:497][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.22-16.59.13:497][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.22-16.59.13:498][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.22-16.59.13:498][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.22-16.59.13:498][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.22-16.59.13:498][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.22-16.59.13:498][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.22-16.59.14:225][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.08.22-16.59.14:225][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.08.22-16.59.14:769][  0]LogAssetRegistry: Display: Asset registry cache read as 128.8 MiB from ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_0.bin.
+[2026.08.22-16.59.14:770][  0]LogAssetRegistry: Display: AssetDataGatherer spent 0.070s loading caches ../../../../../../Users/wpark/projects/sibelius-game/Intermediate/CachedAssetRegistry_*.bin.
+[2026.08.22-16.59.14:895][  0]LogCsvProfiler: Display: Metadata set : largeworldcoordinates="1"
+[2026.08.22-16.59.14:921][  0]LogPython: Display: No pip-enabled plugins with python dependencies found, skipping
+[2026.08.22-16.59.15:214][  0]LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.08.22-16.59.15:243][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... started...
+[2026.08.22-16.59.15:256][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/MovieScene/MovieRenderPipeline/Content/Python/init_unreal.py... took 13.661 ms
+[2026.08.22-16.59.15:256][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... started...
+[2026.08.22-16.59.15:266][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/ControlRig/Content/Python/init_unreal.py... took 9.316 ms (total: 22.977 ms)
+[2026.08.22-16.59.15:266][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... started...
+[2026.08.22-16.59.15:267][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Animation/IKRig/Content/Python/init_unreal.py... took 1.123 ms (total: 24.101 ms)
+[2026.08.22-16.59.15:267][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... started...
+[2026.08.22-16.59.15:268][  0]LogPython: Display: Running start-up script C:/Program Files/Epic Games/UE_5.7/Engine/Plugins/Importers/USDImporter/Content/Python/init_unreal.py... took 87 us (total: 24.188 ms)
+[2026.08.22-16.59.15:268][  0]LogGenerateSmoke: Display: === SIB-30 Generate smoke test (Ch6 P2): G1-G7 against the REAL catalog + Mrs. Hall data ===
+[2026.08.22-16.59.15:273][  0]LogGenerateSmoke: Display:   [PASS] P0: catalog loads from C:/Users/wpark/projects/sibelius-game/Content/Data/GenerateCatalog.csv
+[2026.08.22-16.59.15:274][  0]LogGenerateSmoke: Display:   [PASS] P0: catalog has >= 4 entries (6 loaded)
+[2026.08.22-16.59.15:274][  0]LogGenerateSmoke: Display:   catalog entries: tree plant lamp crate chair key 
+[2026.08.22-16.59.15:274][  0]LogGenerateSmoke: Display: --- G2: varied phrasing ---
+[2026.08.22-16.59.15:274][  0]LogGenerateSmoke: Display:   [PASS] G2: all 24 phrasings resolved to the expected entry (24/24)
+[2026.08.22-16.59.15:274][  0]LogGenerateSmoke: Display:   [PASS] G2: gibberish/empty -> RefusedNoMatch (never a wrong spawn)
+[2026.08.22-16.59.15:274][  0]LogGenerateSmoke: Display:   [PASS] G2/DB: keyword tie ('light box') -> RefusedAmbiguous
+[2026.08.22-16.59.15:275][  0]LogGenerateSmoke: Display: --- G1: closed-catalog scope ---
+[2026.08.22-16.59.15:275][  0]LogGenerateSmoke: Display:   [PASS] G1: no input ever resolves to a non-catalog EntryId (closed by construction)
+[2026.08.22-16.59.15:275][  0]LogGenerateSmoke: Display: --- G3: content safety ---
+[2026.08.22-16.59.15:275][  0]LogGenerateSmoke: Display:   [PASS] G3: out-of-catalog / unsafe phrasings never resolve to a spawn
+[2026.08.22-16.59.15:275][  0]LogGenerateSmoke: Display: --- G4: deterministic ---
+[2026.08.22-16.59.15:275][  0]LogGenerateSmoke: Display:   [PASS] G4: ClassifyGenerateRequest is deterministic (identical result on repeat)
+[2026.08.22-16.59.15:276][  0]LogGenerateSmoke: Display:   [PASS] G4: tokenizer is case/punctuation-stable (no RNG/clock)
+[2026.08.22-16.59.15:276][  0]LogGenerateSmoke: Display: --- G5: budget economy ---
+[2026.08.22-16.59.15:276][  0]LogGenerateSmoke: Display:   [PASS] G5: 'a lamp' resolves with cost 1
+[2026.08.22-16.59.15:276][  0]LogGenerateSmoke: Display:   [PASS] G5: budget decremented by the entry's cost
+[2026.08.22-16.59.15:276][  0]LogGenerateSmoke: Display:   [PASS] G5: cost == remaining budget still resolves
+[2026.08.22-16.59.15:276][  0]LogGenerateSmoke: Display:   [PASS] G5: cost > remaining budget -> RefusedOverBudget (distinct from NoMatch)
+[2026.08.22-16.59.15:276][  0]LogGenerateSmoke: Display:   [PASS] G5: over-budget is NOT conflated with no-match
+[2026.08.22-16.59.15:277][  0]LogGenerateSmoke: Display: --- G7: DC blocklist + Mrs. Hall lines (P2) ---
+[2026.08.22-16.59.15:278][  0]LogGenerateSmoke: Display:   [PASS] G7: blocklist loads from data (8 words)
+[2026.08.22-16.59.15:278][  0]LogGenerateSmoke: Display:   [PASS] G7: blocklisted 'a gun' -> RefusedUnsafe
+[2026.08.22-16.59.15:278][  0]LogGenerateSmoke: Display:   [PASS] G7: a blocklisted phrase never resolves to a spawn
+[2026.08.22-16.59.15:278][  0]LogGenerateSmoke: Display:   [PASS] G7: an unsafe word vetoes an otherwise-matchable request
+[2026.08.22-16.59.15:278][  0]LogGenerateSmoke: Display:   [PASS] G7: without the blocklist 'a gun' is NOT flagged unsafe
+[2026.08.22-16.59.15:279][  0]LogGenerateSmoke: Display:   [PASS] G7: 'a gun' never spawns, with or without the blocklist
+[2026.08.22-16.59.15:281][  0]LogGenerateSmoke: Display:   [PASS] G7: Mrs. Hall lines load from data
+[2026.08.22-16.59.15:281][  0]LogGenerateSmoke: Display:   [PASS] G7: every refusal reason has at least one non-empty line
+[2026.08.22-16.59.15:281][  0]LogGenerateSmoke: Display:   [PASS] G7/P2.5: every refusal reason's line carries a non-empty AudioKey
+[2026.08.22-16.59.15:291][  0]LogGenerateSmoke: Display:   [PASS] SPINE: /Game/Data/MrsHallStory DataTable ASSET exists (the CSV is editor-only)
+[2026.08.22-16.59.15:291][  0]LogGenerateSmoke: Display:   [PASS] SPINE: Mrs. Hall story lines load from data
+[2026.08.22-16.59.15:292][  0]LogGenerateSmoke: Display:   [PASS] SPINE: every story Reason the code asks for has a line
+[2026.08.22-16.59.15:292][  0]LogGenerateSmoke: Display:   SPINE: power beats written 6/6.
+[2026.08.22-16.59.15:292][  0]LogGenerateSmoke: Display:   [PASS] SPINE: no story line has leaked into the Generate refusal pool
+[2026.08.22-16.59.15:292][  0]LogGenerateSmoke: Display:   [PASS] G7: line selection is deterministic for a given selector
+[2026.08.22-16.59.15:292][  0]LogTemp: Display: [MrsHall] === Voice clip manifest: record one WAV per AudioKey, import to /Game/Audio/MrsHall/ (asset name = key) ===
+[2026.08.22-16.59.15:292][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_1.wav  <-  "We don't keep that here, Programmer. Make do with what you've got."
+[2026.08.22-16.59.15:293][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_2.wav  <-  "You. Programmer. We don't keep that here."
+[2026.08.22-16.59.15:293][  0]LogTemp: Display: [MrsHall]   mrshall_nomatch_3.wav  <-  "That's not in our inventory. This is a workplace, not a wish."
+[2026.08.22-16.59.15:293][  0]LogTemp: Display: [MrsHall]   mrshall_ambiguous_1.wav  <-  "Be precise. I expect a senior developer to know exactly what he wants."
+[2026.08.22-16.59.15:293][  0]LogTemp: Display: [MrsHall]   mrshall_ambiguous_2.wav  <-  "You. Programmer. Say what you mean, plainly."
+[2026.08.22-16.59.15:293][  0]LogTemp: Display: [MrsHall]   mrshall_overbudget_1.wav  <-  "That's enough of that. What am I paying you for, Programmer, if you lean on it all day?"
+[2026.08.22-16.59.15:294][  0]LogTemp: Display: [MrsHall]   mrshall_overbudget_2.wav  <-  "You've spent your allowance. We don't throw resources around here."
+[2026.08.22-16.59.15:294][  0]LogTemp: Display: [MrsHall]   mrshall_unsafe_1.wav  <-  "Absolutely not. I won't have that in my shop."
+[2026.08.22-16.59.15:294][  0]LogTemp: Display: [MrsHall]   mrshall_unsafe_2.wav  <-  "You. Programmer. We do not make such things. Not under my roof."
+[2026.08.22-16.59.15:294][  0]LogTemp: Display: [MrsHall] === 9 clip(s) total ===
+[2026.08.22-16.59.15:294][  0]LogGenerateSmoke: Display: --- G6: persistence through the real pipeline ---
+[2026.08.22-16.59.15:295][  0]LogGenerateSmoke: Display:   [PASS] G6: request resolves to a catalog entry to spawn
+[2026.08.22-16.59.16:618][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.22-16.59.16:629][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.22-16.59.16:629][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.22-16.59.16:630][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.22-16.59.16:630][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.22-16.59.16:631][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.22-16.59.16:631][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.22-16.59.16:631][  0]LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.22-16.59.18:975][  0]LogAIApparition: Display: [Apparition] visuals built: 9 glyphs + core
+[2026.08.22-16.59.19:016][  0]LogGenerateSmoke: Display:   [PASS] G6: map loads (/Game/L_Office_v02)
+[2026.08.22-16.59.19:017][  0]LogGenerateSmoke: Display:   [PASS] G6: spawned an ABuildSite for the resolved entry
+[2026.08.22-16.59.19:017][  0]LogGenerateSmoke: Display:   [PASS] G6: spawned a seeded inventory
+[2026.08.22-16.59.19:017][  0]LogGenerateSmoke: Display:   [PASS] G6: the spawned buildable received a valid, stable FGuid
+[2026.08.22-16.59.19:017][  0]LogGenerateSmoke: Display:   [PASS] G6: Ch3 Build() built the spawned object
+[2026.08.22-16.59.19:017][  0]LogGenerateSmoke: Display:   [PASS] G6: branch subsystem instantiates
+[2026.08.22-16.59.19:018][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateSpikeSlot_Temp': OK.
+[2026.08.22-16.59.19:018][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'GenerateSpikeSlot_Temp' (v3) — 1 object + 1 resource delta(s).
+[2026.08.22-16.59.19:018][  0]LogGenerateSmoke: Display:   [PASS] G6: RequestDeploy persisted the deployed state at Main
+[2026.08.22-16.59.19:018][  0]LogGenerateSmoke: Display:   [PASS] G6: deploy wrote a save to the slot
+[2026.08.22-16.59.19:018][  0]LogGenerateSmoke: Display:   [PASS] G6: reset the spawned object to unbuilt
+[2026.08.22-16.59.19:032][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateSpikeSlot_Temp_Backup': OK.
+[2026.08.22-16.59.19:033][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 1 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
+[2026.08.22-16.59.19:033][  0]LogGenerateSmoke: Display:   [PASS] G6: ApplyDeployedSave loaded + re-applied the save
+[2026.08.22-16.59.19:033][  0]LogGenerateSmoke: Display:   [PASS] G6: the spawned object round-tripped save->reload back to BUILT
+[2026.08.22-16.59.19:033][  0]LogGenerateSmoke: Display:   [PASS] G6: its FGuid was stable across the round-trip
+[2026.08.22-16.59.19:033][  0]LogGenerateSmoke: Display:   [PASS] G6: sandbox slot cleaned up
+[2026.08.22-16.59.19:033][  0]LogGenerateSmoke: Display: --- G8: P3 generated-object persistence (re-spawn on reload) ---
+[2026.08.22-16.59.19:034][  0]LogGenerateSmoke: Display:   [PASS] G8: request resolves to a catalog entry to generate
+[2026.08.22-16.59.19:034][  0]LogGenerateSmoke: Display:   [PASS] G8: reuses the map loaded for G6
+[2026.08.22-16.59.19:034][  0]LogGenerateSmoke: Display:   [PASS] G8: spawned a generated ABuildSite
+[2026.08.22-16.59.19:034][  0]LogGenerateSmoke: Display:   [PASS] G8: generated site is tagged + BUILT
+[2026.08.22-16.59.19:034][  0]LogGenerateSmoke: Display:   [PASS] P3-2: site carries its catalog EntryId
+[2026.08.22-16.59.19:034][  0]LogGenerateSmoke: Display:   [PASS] G8: generator component present in the world
+[2026.08.22-16.59.19:034][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateP3Slot_Temp': OK.
+[2026.08.22-16.59.19:035][  0]LogSibeliusGame: Display: [Branch] Deploy at Main: wrote slot 'GenerateP3Slot_Temp' (v3) — 2 object + 1 resource delta(s).
+[2026.08.22-16.59.19:035][  0]LogGenerateSmoke: Display:   [PASS] G8: RequestDeploy persisted the deployed state
+[2026.08.22-16.59.19:040][  0]LogGenerateSmoke: Display:   [PASS] P3-2: save record carries the generated EntryId
+[2026.08.22-16.59.19:040][  0]LogGenerateSmoke: Display:   [PASS] P3-2/P3-3: save record carries the spawn transform
+[2026.08.22-16.59.19:041][  0]LogGenerateSmoke: Display:   [PASS] P3-6: save carries the remaining generation budget (not the default)
+[2026.08.22-16.59.19:041][  0]LogGenerateSmoke: Display:   [PASS] G8: generated actor gone after simulated reload
+[2026.08.22-16.59.19:041][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateP3Slot_Temp_Backup': OK.
+[2026.08.22-16.59.19:041][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 1 object + 1 resource delta(s), re-spawned 1 generated, 0 orphan(s) skipped.
+[2026.08.22-16.59.19:042][  0]LogGenerateSmoke: Display:   [PASS] G8: ApplyDeployedSave re-applied the save
+[2026.08.22-16.59.19:042][  0]LogGenerateSmoke: Display:   [PASS] P3-1: exactly one generated object re-spawned
+[2026.08.22-16.59.19:042][  0]LogGenerateSmoke: Display:   [PASS] P3-1: the generated object was re-spawned
+[2026.08.22-16.59.19:042][  0]LogGenerateSmoke: Display:   [PASS] P3-1: the re-spawned object is BUILT
+[2026.08.22-16.59.19:042][  0]LogGenerateSmoke: Display:   [PASS] P3-4: its GUID is stable across the re-spawn
+[2026.08.22-16.59.19:042][  0]LogGenerateSmoke: Display:   [PASS] P3-1: re-spawn re-tagged it generated with the same EntryId (so a 2nd deploy won't orphan it)
+[2026.08.22-16.59.19:042][  0]LogGenerateSmoke: Display:   [PASS] P3-3: re-spawn used the SAVED transform verbatim (no placement re-trace)
+[2026.08.22-16.59.19:043][  0]LogGenerateSmoke: Display:   [PASS] P3-6: budget restored to the deploy-time value (7), not the post-reload default (10)
+[2026.08.22-16.59.19:046][  0]LogSibeliusGame: Display: [Save] Commit to slot 'GenerateP3Slot_Temp_Backup': OK.
+[2026.08.22-16.59.19:046][  0]LogSibeliusGame: Display: [Branch] ApplyDeployedSave from primary (v3): applied 2 object + 1 resource delta(s), re-spawned 0 generated, 0 orphan(s) skipped.
+[2026.08.22-16.59.19:046][  0]LogGenerateSmoke: Display:   [PASS] P3-5: a second ApplyDeployedSave succeeds
+[2026.08.22-16.59.19:047][  0]LogGenerateSmoke: Display:   [PASS] P3-5: the second apply re-spawns nothing (object already present)
+[2026.08.22-16.59.19:047][  0]LogGenerateSmoke: Display:   [PASS] P3-5: exactly ONE generated object after two applies (no duplicate)
+[2026.08.22-16.59.19:047][  0]LogGenerateSmoke: Display:   [PASS] G8: sandbox slot cleaned up
+[2026.08.22-16.59.19:047][  0]LogGenerateSmoke: Display: === GENERATE SMOKE TEST PASSED (Ch6 P2 — catalog + blocklist + Mrs. Hall lines green). ===
+[2026.08.22-16.59.19:047][  0]LogInit: Display: 
+[2026.08.22-16.59.19:047][  0]LogInit: Display: Warning/Error Summary (Unique only)
+[2026.08.22-16.59.19:047][  0]LogInit: Display: -----------------------------------
+[2026.08.22-16.59.19:048][  0]LogInit: Display: LogLinker: Warning: Unable to load Gideon_SkeletonRig with outer Package /Game/ParagonGideon/Characters/Heroes/Gideon/Meshes/Gideon_SkeletonRig because its class (Rig) does not exist
+[2026.08.22-16.59.19:048][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.22-16.59.19:048][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.22-16.59.19:049][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.22-16.59.19:049][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.22-16.59.19:050][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.22-16.59.19:050][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.22-16.59.19:051][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.22-16.59.19:051][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGreystone\Characters\Heroes\Greystone\GreystonePlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.22-16.59.19:051][  0]LogInit: Display: LogUnrealClaude: Warning: === UnrealClaude BUILD 20260107-1450 THREAD_TESTS_DISABLED ===
+[2026.08.22-16.59.19:052][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'Jump' for  InputAction Jump
+[2026.08.22-16.59.19:052][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUp' for  InputAxis LookUp
+[2026.08.22-16.59.19:052][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] InputAction Event references unknown Action 'ResetVR' for  InputAction ResetVR
+[2026.08.22-16.59.19:053][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'LookUpRate' for  InputAxis LookUpRate
+[2026.08.22-16.59.19:053][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'TurnRate' for  InputAxis TurnRate
+[2026.08.22-16.59.19:053][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'Turn' for  InputAxis Turn
+[2026.08.22-16.59.19:054][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveRight' for  InputAxis MoveRight
+[2026.08.22-16.59.19:054][  0]LogInit: Display: LogBlueprint: Warning: [AssetLog] C:\Users\wpark\projects\sibelius-game\Content\ParagonGideon\Characters\Heroes\Gideon\GideonPlayerCharacter.uasset: [Compiler] Input Axis Event references unknown Axis 'MoveForward' for  InputAxis MoveForward
+[2026.08.22-16.59.19:055][  0]LogInit: Display: 
+[2026.08.22-16.59.19:055][  0]LogInit: Display: Success - 0 error(s), 18 warning(s)
+[2026.08.22-16.59.19:055][  0]LogInit: Display: 
+Execution of commandlet took:  3.80 seconds
+[2026.08.22-16.59.19:055][  0]LogCrowdFollowing: Warning: Unable to find RecastNavMesh instance while trying to create UCrowdManager instance
+[2026.08.22-16.59.19:517][  0]LogShaderCompilers: Display: Shaders left to compile 0
 Script history saved: 2 entries
 Script history saved: 2 entries

@@ -456,7 +456,7 @@ FString ASibeliusHUD::ComputeObjective() const
 			|| Map.Contains(TEXT("Forest")) || Map.Contains(TEXT("Carousel"));
 		if (!bAway
 			&& !Progression->IsUnlocked(EPowerVerb::Compile)
-			&& !Progression->HasClaimedGrant(ALegacyMachine::ClosedTicketGrant))
+			&& !Progression->HasClaimedGrant(ALegacyMachine::IntermittentTicketGrant))
 		{
 			const ALegacyMachine* Machine = nullptr;
 			for (TActorIterator<ALegacyMachine> It(const_cast<UWorld*>(W)); It; ++It)
@@ -466,19 +466,44 @@ FString ASibeliusHUD::ComputeObjective() const
 			}
 			if (Machine)
 			{
-				if (!Progression->HasClaimedGrant(TEXT("Tutorial.Vision")))
+				const bool bFirstTicketDone =
+					Progression->HasClaimedGrant(ALegacyMachine::ClosedTicketGrant);
+
+				if (!bFirstTicketDone)
 				{
-					return TEXT("The legacy system is throwing. Hold [V] and read the parts.");
+					if (!Progression->HasClaimedGrant(TEXT("Tutorial.Vision")))
+					{
+						return TEXT("The legacy system is throwing. Hold [V] and read the parts.");
+					}
+					if (!Progression->IsUnlocked(EPowerVerb::Refactor))
+					{
+						return TEXT("One part is lying. [R] is not yet yours — an AI agent has the verb.");
+					}
+					if (!Machine->AreAllFaultsCleared())
+					{
+						return TEXT("Back to the machine. Fix the part that is lying [R].");
+					}
+					return TEXT("Watch the next piece. ACCEPT means the ticket is done.");
 				}
-				if (!Progression->IsUnlocked(EPowerVerb::Refactor))
+
+				/* THE SECOND TICKET. The line is dropping pieces again — but not every
+				   one, which is the whole difficulty and the whole lesson. These lines
+				   are the only place the game says "branch it", because Test-Drive has
+				   been a key with nothing to do since Chapter 4 and a player who has
+				   never needed it will not think to reach for it now. */
+				if (!Progression->IsUnlocked(EPowerVerb::TestDrive))
 				{
-					return TEXT("One part is lying. [R] is not yet yours — an AI agent has the verb.");
+					return TEXT("It is dropping pieces again — not all of them. [6] is not yet yours.");
 				}
-				if (!Machine->IsHealthy())
+				if (!Machine->AreAllFaultsCleared())
 				{
-					return TEXT("Back to the machine. Fix the part that is lying [R].");
+					return TEXT("Sometimes, not always. Hold [V] and find the word that changed.");
 				}
-				return TEXT("Watch the next piece. ACCEPT means the ticket is done.");
+				if (!Machine->IsProvenClean())
+				{
+					return TEXT("Three good pieces is luck, not a fix. [6] to branch, [E] to test it.");
+				}
+				return TEXT("It holds. [7] keeps the fix; the next ACCEPT closes the job.");
 			}
 		}
 	}

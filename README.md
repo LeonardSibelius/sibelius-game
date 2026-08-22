@@ -54,7 +54,7 @@ The Many Worlds forests were built on **Unreal Engine 5's PCG framework** via th
 
 Gameplay logic is **C++-first** (`Source/SibeliusGame/`). Blueprints and the level carry data and placement, not behavior.
 
-- **Interaction** — one `IInteractable` interface (`Interactable.h`), dispatched by `UInteractorComponent`'s camera trace on **E**. Book pickups, the hatch lock, build sites, the corkboard, the cathedral door, and the Sauce Door / curio all implement it; there is no per-actor input wiring.
+- **Interaction** — one `IInteractable` interface (`Interactable.h`), dispatched by `UInteractorComponent`'s camera trace on **E**. Book pickups, the hatch lock, build sites, the corkboard, the cathedral door, the legacy machine (and every stage of it, which forwards E to the line), and the Sauce Door / curio all implement it; there is no per-actor input wiring.
 - **Inventory & building** — `UInventoryComponent` is the single resource authority (counts never go negative). `UBuildComponent` is the player-side build driver; `ABuildSite` owns its own ghost/final meshes and flips a pre-placed `NavLinkProxy` at build time so AI can traverse what you construct. Supporting types: `ABookPickup`, `AHatchLock`, `CompileTypes`.
 - **AI** — `ARefuserController` (an `AAIController`) chases the player with `MoveToActor`, re-issuing only when path-following is idle so it never aborts a NavLink traversal mid-staircase. `ARefuserSpawner` spawns waves.
 - **Branch & persistence** — `IBranchable` + `UBranchSubsystem` (`EnterBranch`/`Merge`/`Discard`, single-resolution latch) implement Ch4's branch realities; the `FBranchManifest` doubles as Ch5's deploy save payload, keyed by serialized, level-baked `FGuid` identity.
@@ -103,10 +103,11 @@ Without the Fab packs the levels show missing-asset placeholders. See **Credits*
 |-------|--------|
 | **WASD / Mouse** | Move / look |
 | **Space** | Jump |
-| **E** | Interact — collect a book, unlock the hatch, dismantle a built site, read the corkboard, enter the cathedral, use the Sauce, step through the Many Worlds door |
+| **E** | Interact — collect a book, unlock the hatch, dismantle a built site, read the corkboard, enter the cathedral, use the Sauce, step through the Many Worlds door, halt and single-step the legacy line |
 | **F** | Slap — knock a Refuser back and ragdoll it |
 | **B** | Build at the nearest affordable site |
 | **R** (hold) | Refactor the targeted object |
+| **6 / 7 / 8** | Test-Drive — branch reality, keep it, undo it. Required for the legacy machine's second ticket: a clean test batch is the only proof an intermittent fix held |
 | **V** (hold) | Code Vision — reveal hidden structure (and the hidden Sauce Door) |
 | **G** | Generate — type a request to spawn a catalog object |
 | **J** | Journal — read the in-game narrative / company doctrine |

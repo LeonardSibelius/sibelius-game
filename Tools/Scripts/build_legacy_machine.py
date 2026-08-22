@@ -7,9 +7,9 @@ and a code comment.
 
 WHAT IT BUILDS
 
-    LegacyMachine        the bed, the workpiece, two bins, and the tally on the housing
-    LegacyPart_01..05    five stages, each with a plaque (the docs) and a true name
-                         (the source, Code Vision only)
+    LegacyMachine        the bed, the workpiece, two bins, the tally and the RUN LOG
+    LegacyPart_01..05    five stages, each with a plaque (the docs), a true name
+                         (the source, Code Vision only) and a fault lamp
 
 LOOK: Crebotoly crate meshes (SciFiBoxes_A), already in DirectoriesToAlwaysCook.
 An ugly production line on a QuadArt rug is the job. Engine cubes were the sketch.
@@ -90,17 +90,41 @@ WORKPIECE_MESH = "/Game/SciFiBoxes_A/Meshes/Box1/Box1_Closed_v0"
 FIXED_MAT = "/Game/SciFiBoxes_A/Materials/Grey"   # the corrected GRADER: cooler, not shrunk
 
 PART_TARGET_HEIGHT = 70.0     # cm, after scale — plaque-readable, not furniture-tall
+#
+# THE CLAIMS WRAP, and that is a plate constraint, not a writing one.
+#
+# Measured (dump_legacy_machine_geometry.py): a crate is 43.8cm wide and stands 75cm from
+# its neighbour. "grade B or better passes" on one line at a readable size is 78cm of
+# plate, and "passes only what is better than A" is 105cm — so the five plates merged
+# into a single black strip across the row and hid the workpiece travelling behind it.
+#
+# Wrapped at a sensible word, the widest plate is ~57cm and they separate cleanly. The
+# words are untouched: GetPlaqueClaim now returns everything after the heading, and
+# FlattenLabel collapses line breaks before any claim is compared to a true name, so the
+# word-for-word pairing that IS the puzzle survives the layout change intact.
+# (short, plaque, true_name, faulty, fault_chance, armed_by_grant)
+#
+# TICKET 1 is GRADER: a logic error, wrong every single cycle. "grade B or better passes"
+# against "passes only what is better than A" — nothing is better than an A, which is a
+# thing you realise rather than read, and realising it is what the first job is for.
+#
+# TICKET 2 is STAMP, and it is dormant until Ticket.Legacy.Closed lands, so it cannot
+# muddy the opening puzzle. Its lie is one word: the housing says it marks THE passing
+# blanks, the source says it marks MOST of them. That is a reliability bug rather than a
+# logic bug, it shows up in the run log as a mix rather than a wall of rejections, and it
+# is the first fault on this machine you cannot confirm you have fixed by watching —
+# which is precisely why it is the one that teaches Test-Drive.
 PARTS = [
-    ("INTAKE",   "INTAKE\ntakes one blank per cycle",
-                 "takes one blank per cycle", False),
-    ("COUNTER",  "COUNTER\nlogs every blank it sees",
-                 "logs every blank it sees", False),
-    ("GRADER",   "GRADER\ngrade B or better passes",
-                 "passes only what is better than A", True),
-    ("STAMP",    "STAMP\nmarks the passing blanks",
-                 "marks the passing blanks", False),
-    ("OUTFEED",  "OUTFEED\ndelivers to the accept bin",
-                 "delivers to the accept bin", False),
+    ("INTAKE",   "INTAKE\ntakes one blank\nper cycle",
+                 "takes one blank\nper cycle", False, 0.0, ""),
+    ("COUNTER",  "COUNTER\nlogs every blank\nit sees",
+                 "logs every blank\nit sees", False, 0.0, ""),
+    ("GRADER",   "GRADER\ngrade B or better\npasses",
+                 "passes only what is\nbetter than A", True, 0.0, ""),
+    ("STAMP",    "STAMP\nmarks the passing\nblanks",
+                 "marks most of the\npassing blanks", True, 0.34, "Ticket.Legacy.Closed"),
+    ("OUTFEED",  "OUTFEED\ndelivers to the\naccept bin",
+                 "delivers to the\naccept bin", False, 0.0, ""),
 ]
 
 notes = []
@@ -157,6 +181,80 @@ def unlit_text(actor):
         c.set_material(0, label_mat)
 
 
+# ---------------------------------------------------------------- the plate material
+#
+# DARK, UNLIT, and built from scratch -- unlike M_LabelUnlit above, which MUST be a
+# duplicate because the font keeps its glyphs in an atlas the engine material samples
+# into opacity mask. A plate has no glyphs. It is a flat dark rectangle, so a two-node
+# material is the whole thing and there is no atlas to lose.
+PLATE_MAT_PATH = "/Game/SlotFactory/M_LabelPlate"
+if unreal.EditorAssetLibrary.does_asset_exist(PLATE_MAT_PATH):
+    unreal.EditorAssetLibrary.delete_asset(PLATE_MAT_PATH)
+plate_mat = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
+    "M_LabelPlate", "/Game/SlotFactory", unreal.Material, unreal.MaterialFactoryNew())
+if plate_mat:
+    plate_mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    # Not pure black: a dead-black rectangle in a warm room reads as a hole punched in
+    # the world. A very dark warm grey reads as a painted panel.
+    dark = mel.create_material_expression(plate_mat, unreal.MaterialExpressionConstant3Vector, -350, 0)
+    dark.set_editor_property("constant", unreal.LinearColor(0.020, 0.019, 0.017, 1.0))
+    mel.connect_material_property(dark, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    mel.recompile_material(plate_mat)
+    unreal.EditorAssetLibrary.save_asset(PLATE_MAT_PATH)
+    notes.append("M_LabelPlate ready (unlit, near-black)")
+else:
+    notes.append("could not create the plate material -- labels stay on bare wood")
+
+PLATE_MESH = "/Engine/BasicShapes/Cube"   # 100 uu; a slab has no facing to get wrong
+
+# Glyph metrics for the default (Roboto) font, as fractions of the text's world size.
+# These are estimates, deliberately EXPOSED as constants rather than measured: Unreal's
+# GetTextLocalSize has an axis convention this file would have to guess at, and a guess
+# in code is harder to nudge than a guess named at the top of a script. If a plate is a
+# little tight or a little loose, change these two numbers and re-run.
+GLYPH_W = 0.60
+LINE_H = 1.28
+PLATE_PAD = 0.45     # extra glyph-widths of margin around the text block. Tight, because
+                     # the signs have to clear the workpiece lane -- see the Z fractions
+                     # in place_labels_on_minus_x_face.
+PLATE_THICK = 1.2    # uu, in the part's / machine's own local units
+
+
+def text_block_size(content, world_size):
+    """(width, height) of a multi-line string at a given text world size, in the same
+    units that world size is expressed in."""
+    lines = content.split("\n")
+    longest = max((len(l) for l in lines), default=0)
+    w = longest * world_size * GLYPH_W + 2.0 * PLATE_PAD * world_size * GLYPH_W
+    h = len(lines) * world_size * LINE_H + 2.0 * PLATE_PAD * world_size * GLYPH_W
+    return w, h
+
+
+def fit_plate(plate, content, world_size, anchor, left_aligned, back_offset_x):
+    """Size and place a slab behind a text block.
+
+    anchor is the text component's own relative location. Text is vertically CENTRED on
+    it, so the plate shares its Z. Horizontally: a centred text block shares the anchor's
+    Y; a LEFT-aligned block runs from the anchor toward +Y (verified in the level -- the
+    run log's rows all began at the head and ran along the row into INTAKE), so its plate
+    sits half a width further along."""
+    if plate is None:
+        return None
+    mesh = unreal.EditorAssetLibrary.load_asset(PLATE_MESH)
+    if mesh is None:
+        notes.append("missing %s -- no plate" % PLATE_MESH)
+        return None
+    plate.set_editor_property("static_mesh", mesh)
+    if plate_mat:
+        plate.set_material(0, plate_mat)
+    w, h = text_block_size(content, world_size)
+    plate.set_editor_property("relative_scale3d",
+                              unreal.Vector(PLATE_THICK / 100.0, w / 100.0, h / 100.0))
+    y = anchor.y + (w / 2.0 if left_aligned else 0.0)
+    plate.set_editor_property("relative_location",
+                              unreal.Vector(anchor.x + back_offset_x, y, anchor.z))
+    return w, h
+
 def load_mesh(path):
     asset = unreal.EditorAssetLibrary.load_asset(path)
     if asset is None:
@@ -191,32 +289,105 @@ def assign_mesh(comp, path):
     return asset
 
 
-def place_labels_on_minus_x_face(part, static_mesh):
-    """THE PAIRING IS THE PUZZLE. Plaque above, true name below, on the -X face.
-    Offsets were tuned for a 100cm cube; new meshes put them in the air unless
-    they are placed from the mesh's own bounds."""
+def place_labels_on_minus_x_face(part, static_mesh, plaque_text, true_text):
+    """THE PAIRING IS THE PUZZLE. Plaque above, true name below, on the -X face, each on
+    its own dark plate.
+
+    Offsets come from the mesh's own bounds -- they were tuned for a 100cm cube once and
+    every new mesh put them in the air.
+
+    The labels now stand FURTHER off the face than they used to (8uu, was 2). These
+    crates are not flat boxes: they have raised panels, straps and handles, and a plate
+    laid flush against the bounding-box front would push through them. 8uu clears the
+    detail and reads as a placard bolted on, which is what it is."""
     mn, mx = mesh_local_box(static_mesh)
     height = mx.z - mn.z
-    front = mn.x - 2.0
+    front = mn.x - 8.0
     mid_z = (mx.z + mn.z) * 0.5
+    size = 9.0
+    # ---- WHERE THE SIGNS SIT, and why these exact fractions
+    #
+    # Measured, not reasoned (dump_legacy_machine_geometry.py -- these offsets have been
+    # wrong three times from arguing about mesh bounds):
+    #
+    #     crate        world z 90 .. 160
+    #     workpiece    world z 130 .. 148   (CarryHeight 40; the mesh is base-at-origin
+    #                                        and 18cm tall, so it sits ON 130, not around it)
+    #
+    # That leaves 40cm of crate face BELOW the travelling piece and 12cm above it. The
+    # plaque and the true name go below, together -- the pairing is the puzzle and they
+    # have to stay one surface, one directly under the other. The fault lamp goes above,
+    # where a fault light belongs and where it sits directly over a jammed piece.
+    #
+    #     plaque plate  z 106.0 .. 128.0    2cm under the piece
+    #     true plate    z  88.9 .. 104.5    1.5cm under the plaque
+    #     lamp plate    z 149.4 .. 158.6    1.4cm over the piece, inside the crate top
+    #
+    # It fits with centimetres to spare, which is why PLATE_PAD is 0.45 rather than 0.6.
+    PLAQUE_Z = -0.113
+    TRUE_Z = -0.404
+    LAMP_Z = 0.415
+
     plaque = None
     true_label = None
+    fault_lamp = None
     for c in part.get_components_by_class(unreal.TextRenderComponent):
         name = c.get_name()
         if "Plaque" in name:
             plaque = c
         elif "True" in name:
             true_label = c
+        elif "Fault" in name:
+            fault_lamp = c
+
+    plaque_plate = None
+    true_plate = None
+    lamp_plate = None
+    for c in part.get_components_by_class(unreal.StaticMeshComponent):
+        name = c.get_name()
+        if "PlaquePlate" in name:
+            plaque_plate = c
+        elif "TruePlate" in name:
+            true_plate = c
+        elif "LampPlate" in name:
+            lamp_plate = c
+
+    # Plate sits BEHIND its text: the player is at -X, so "behind" is +X of the glyphs.
+    BACK = 3.0
+
     if plaque:
-        plaque.set_editor_property(
-            "relative_location", unreal.Vector(front, 0.0, mid_z + height * 0.22))
+        anchor = unreal.Vector(front, 0.0, mid_z + height * PLAQUE_Z)
+        plaque.set_editor_property("relative_location", anchor)
         plaque.set_editor_property("relative_rotation", FACE_PLAYER)
-        plaque.set_world_size(9.0)
+        plaque.set_world_size(size)
+        fit_plate(plaque_plate, plaque_text, size, anchor, False, BACK)
+
     if true_label:
-        true_label.set_editor_property(
-            "relative_location", unreal.Vector(front - 2.0, 0.0, mid_z - height * 0.18))
+        anchor = unreal.Vector(front - 2.0, 0.0, mid_z + height * TRUE_Z)
+        true_label.set_editor_property("relative_location", anchor)
         true_label.set_editor_property("relative_rotation", FACE_PLAYER)
-        true_label.set_world_size(9.0)
+        true_label.set_world_size(size)
+        # Sized for the LONGER of the two things this label can ever say: the authored
+        # lie, or the plaque's claim once the part has been refactored. A plate that
+        # changed width the moment the player pressed R would look like the fix broke
+        # something. Both are multi-line now, so compare by widest LINE.
+        claim = "\n".join(plaque_text.split("\n")[1:]).strip()
+
+        def widest_line(s):
+            return max((len(l) for l in s.split("\n")), default=0)
+
+        widest = true_text if widest_line(true_text) >= widest_line(claim) else claim
+        fit_plate(true_plate, widest, size, anchor, False, BACK)
+
+    if fault_lamp:
+        # ABOVE THE PLAQUE, near the top edge -- where a fault light goes on real
+        # equipment, and out of the way of the plaque/true-name pair below, which has to
+        # stay a clean doubling for the puzzle to read at a glance.
+        anchor = unreal.Vector(front, 0.0, mid_z + height * LAMP_Z)
+        fault_lamp.set_editor_property("relative_location", anchor)
+        fault_lamp.set_editor_property("relative_rotation", FACE_PLAYER)
+        fault_lamp.set_world_size(size)
+        fit_plate(lamp_plate, "REJECTED HERE", size, anchor, False, BACK)
 
 if machine_cls is None or part_cls is None:
     notes.append("LegacyMachine/LegacyMachinePart classes not found — build the editor "
@@ -241,7 +412,7 @@ else:
         notes.append("missing corrected material %s — GRADER will have no visible fix" % FIXED_MAT)
 
     placed = []
-    for i, (short, plaque, true_name, faulty) in enumerate(PARTS):
+    for i, (short, plaque, true_name, faulty, fault_chance, armed_by) in enumerate(PARTS):
         loc = unreal.Vector(ORIGIN.x, ORIGIN.y + i * PART_SPACING, ORIGIN.z + 90.0)
         p = eas.spawn_actor_from_class(part_cls, loc, unreal.Rotator(0.0, 0.0, YAW))
         if p is None:
@@ -267,6 +438,16 @@ else:
         if not set_fault:
             notes.append("COULD NOT SET the fault flag on %s — no puzzle" % short)
 
+        # Ticket 2: an intermittent fault, and the grant that brings it to life. Both are
+        # plain UPROPERTYs, so a missing one fails loudly here rather than quietly turning
+        # the second job into a clone of the first.
+        try:
+            p.set_editor_property("fault_chance", float(fault_chance))
+            p.set_editor_property("armed_by_grant",
+                                  unreal.Name(armed_by) if armed_by else unreal.Name("None"))
+        except Exception as e:
+            notes.append("could not set the intermittent fault on %s: %s" % (short, e))
+
         mesh_comp = p.get_editor_property("mesh")
         mesh_path = PART_MESHES[i] if i < len(PART_MESHES) else PART_MESHES[-1]
         sm = assign_mesh(mesh_comp, mesh_path)
@@ -274,7 +455,7 @@ else:
             mn, mx = mesh_local_box(sm)
             s = scale_to_height(mx.z - mn.z, PART_TARGET_HEIGHT)
             p.set_actor_scale3d(unreal.Vector(s, s, s))
-            place_labels_on_minus_x_face(p, sm)
+            place_labels_on_minus_x_face(p, sm, plaque, true_name)
             notes.append("%s mesh %s scale %.3f bounds_z %.1f" % (
                 short, mesh_path.split("/")[-1], s, mx.z - mn.z))
 
@@ -291,11 +472,13 @@ else:
                 notes.append("could not set the refactor edit on %s: %s" % (short, e))
         else:
             notes.append("%s has no RefactorableComponent — it cannot be fixed" % short)
-        unlit_text(p)   # plaque + true name, readable at any lighting
+        unlit_text(p)   # plaque, true name + fault lamp, readable at any lighting
         placed.append(p)
 
-    notes.append("placed %d parts, faulty = %s"
-                 % (len(placed), [s for s, _, _, f in PARTS if f]))
+    notes.append("placed %d parts; ticket 1 = %s, ticket 2 = %s"
+                 % (len(placed),
+                    [s for s, _, _, f, c, g in PARTS if f and not g],
+                    [("%s @ %.0f%%" % (s, c * 100)) for s, _, _, f, c, g in PARTS if f and g]))
 
     # ---- the machine
     mid_y = ORIGIN.y + (len(PARTS) - 1) * PART_SPACING / 2.0
@@ -352,12 +535,61 @@ else:
         place_child("accept_label", unreal.Vector(-70.0, 235.0, 52.0), unreal.Vector(1.0, 1.0, 1.0))
         place_child("reject_label", unreal.Vector(-165.0, 235.0, 52.0), unreal.Vector(1.0, 1.0, 1.0))
 
+        # ---- the two readouts, and why they are this size
+        #
+        # A TextRenderComponent's world size is multiplied by its component's scale. The
+        # PARTS are scaled 0.558 to stand 70cm tall, so their plaques -- authored at 9 --
+        # actually render at 5.0cm. The machine is scale 1, so the tally at 10 and the log
+        # at 7 rendered at 10cm and 7cm: the tally was TWICE the size of the plaques it
+        # exists to support, and the log sprawled back across INTAKE and COUNTER. The two
+        # quiet instrument readouts were the loudest thing in the room.
+        #
+        # Sized against the plaques' effective 5.0cm now: the tally slightly above it (it
+        # is the headline gauge), the log below it (it is reference text you lean in for).
+        PLAQUE_EFFECTIVE = 9.0 * 0.558
+        TALLY_SIZE = 6.0
+        LOG_SIZE = 4.0
+        BACK = 3.0          # plate sits behind the glyphs; the player is at -X
+        notes.append("plaques render at %.1fcm; tally %.1f, log %.1f"
+                     % (PLAQUE_EFFECTIVE, TALLY_SIZE, LOG_SIZE))
+
+        # Worst-case strings, so each plate is cut once for the widest thing its readout
+        # can ever say and never breathes in and out while the machine runs.
+        widest_tally = "SINCE 03:00\nACCEPTED 000   REJECTED 000\nLINE HALTED"
+        widest_log = "RUN LOG"
+        for _ in range(6):                       # RunLogRows, the C++ default
+            widest_log += "\n03:46  REJECTED AT GRADER"
+
         tally = m.get_editor_property("tally")
         if tally:
-            tally.set_editor_property("relative_location", unreal.Vector(-75.0, -190.0, 45.0))
+            anchor = unreal.Vector(-75.0, -205.0, 55.0)
+            tally.set_editor_property("relative_location", anchor)
             tally.set_editor_property("relative_rotation", unreal.Rotator(0.0, 0.0, 180.0))
+            tally.set_world_size(TALLY_SIZE)
+            fit_plate(m.get_editor_property("tally_plate"),
+                      widest_tally, TALLY_SIZE, anchor, False, BACK)
 
-        unlit_text(m)   # tally + ACCEPT/REJECT labels
+        # THE RUN LOG, stacked above the tally so the housing has ONE instrument cluster
+        # instead of captions scattered round the room. Left aligned (the tally is
+        # centred) because it is a table and the timestamps have to form a column the eye
+        # can run down.
+        #
+        # LEFT-ALIGNED TEXT RUNS TOWARD +Y here -- verified in the level, not assumed: the
+        # first build anchored the log at -150 and its rows marched off along the row and
+        # straight through INTAKE and COUNTER. Anchored past the head instead, so the
+        # block ends before the first crate.
+        run_log = m.get_editor_property("run_log")
+        if run_log:
+            anchor = unreal.Vector(-75.0, -225.0, 98.0)
+            run_log.set_editor_property("relative_location", anchor)
+            run_log.set_editor_property("relative_rotation", unreal.Rotator(0.0, 0.0, 180.0))
+            run_log.set_world_size(LOG_SIZE)
+            fit_plate(m.get_editor_property("run_log_plate"),
+                      widest_log, LOG_SIZE, anchor, True, BACK)
+        else:
+            notes.append("no RunLog component -- the overnight history has nowhere to show")
+
+        unlit_text(m)   # tally, run log + ACCEPT/REJECT labels
         notes.append("machine wired to %d parts" % len(placed))
         les.save_current_level()
         notes.append("level saved")
@@ -370,10 +602,19 @@ payload = {
                   "'grade B or better passes' and the source passes only what is "
                   "better than A. Nothing is better than A. Nothing in the level "
                   "points at it.",
-    "how_to_play": "walk up, watch a cycle reject, read the five plaques, hold V to see "
-                   "the true names. R is locked — ask Kaia upstairs, come back, R the "
-                   "GRADER, watch the next piece land in ACCEPT. The ticket closes. "
-                   "Reload keeps it producing without Deploy.",
+    "ticket_2": "STAMP, dormant until Ticket.Legacy.Closed. Its plaque says it marks "
+                "THE passing blanks; its source says MOST of them, and it drops one in "
+                "three. The run log shows a mix instead of a wall. You cannot confirm a "
+                "fix by watching, so: [6] to branch, E on the machine to run a 20-piece "
+                "test batch off the record, [7] to keep it. The job will not close on a "
+                "lucky cycle -- it needs a clean batch AND the fix.",
+    "how_to_play": "walk up, watch a piece die AT the broken stage (its fault lamp "
+                   "lights and the run log names it), read that stage's plaque -- it "
+                   "sounds fine -- then hold V to see what it really does. E halts the "
+                   "line and steps it one beat at a time if you want a closer look. R "
+                   "is locked: ask Kaia upstairs, come back, R the GRADER, watch the "
+                   "next piece land in ACCEPT. The ticket closes -- and the second one "
+                   "arms. Reload keeps closed jobs done without Deploy.",
 }
 text = json.dumps(payload, indent=2)
 out = unreal.Paths.project_saved_dir() + "build_legacy_machine.json"
