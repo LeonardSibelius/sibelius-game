@@ -30,7 +30,8 @@ public class SibeliusGameEditor : ModuleRules
 			// (UInputAction/UInputMappingContext smoke checks, NavMesh bounds).
 			"EnhancedInput",
 			"NavigationSystem",
-			"AIModule"
+			"AIModule",
+			"Niagara"
 		});
 
 		// Same FormatStringSan workaround as the game module (PK11).

@@ -2,8 +2,12 @@
 //
 // THE DANCING GIRLS ARE AI AGENTS (Walt, 2026-08-03).
 //
-//   E on a dancer -> she introduces herself AND pauses the dance (or plays
-//        GreetingAnim if one is assigned), then resumes the same dance:
+//   E on a dancer who still has a power -> the slot trial (SPINE). She is the way in.
+//   E on a dancer with nothing left to give -> talk close-up:
+//        camera zooms her MetaHuman face, the dance pauses, she faces you,
+//        HUD line is up. The Face mesh is left as MetaHuman assembled it
+//        (Leader Pose + ABP_Face_PostProcess). Driving it from C++ wrecked
+//        the portrait. Actor yaw is restored when the shot ends.
 //        "Hi. I am AI Agent Kaia. Wanna Fight? (I don't really fight, I just dance)"
 //   F on a dancer -> she switches to a different Morro dance, at random.
 //
@@ -49,6 +53,7 @@
 #include "ProgressionTypes.h"   // EPowerVerb — she can be the way a power is obtained
 #include "DancerAgentComponent.generated.h"
 
+class ACameraActor;
 class UAnimSequence;
 class USkeletalMeshComponent;
 
@@ -76,16 +81,30 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
 	TArray<TObjectPtr<UAnimSequence>> Dances;
 
-	/** How long her greeting stays on screen (seconds). Also how long a paused dance holds. */
+	/** How long her greeting stays on screen (seconds). Also how long the talk close-up holds. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.5"))
-	float GreetingSeconds = 6.0f;
+	float GreetingSeconds = 7.0f;
 
 	/**
-	 * One-shot she plays on E instead of freezing. The CDO hard-refs
-	 * Anim_Celebration_2_Manny_MH (Morro Gestures, UE4 → Manny → MetaHuman).
+	 * Kept cooked (CDO hard-ref) but talk-E no longer plays it. A victory wave
+	 * reads as "she scored", not "she is speaking to you".
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
 	TObjectPtr<UAnimSequence> GreetingAnim;
+
+	/** Distance from her face to the talk camera, centimetres. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="20.0"))
+	float TalkCameraDistance = 48.0f;
+
+	/** Portrait FOV for the talk close-up. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="20.0"))
+	float TalkCameraFOV = 38.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0"))
+	float TalkCameraBlendIn = 0.45f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0"))
+	float TalkCameraBlendOut = 0.35f;
 
 	/**
 	 * Minimum time between dance changes. F repeats EVERY FRAME while held, so without
@@ -95,7 +114,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0"))
 	float ShuffleCooldown = 0.4f;
 
-	/** E — she introduces herself on the HUD's subtitle channel, and pauses (or waves). */
+	/** E — she introduces herself; talk-E also zooms her face. */
 	UFUNCTION(BlueprintCallable, Category="Dancer")
 	void Greet();
 
@@ -140,6 +159,8 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+		FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
 	/** The power she hands over, if any — set by APowerGrant::BindToAgent, never in the
@@ -152,7 +173,32 @@ private:
 	/** The skeletal mesh actually playing the dance (a MetaHuman's "Body"). */
 	USkeletalMeshComponent* FindDanceMesh() const;
 
-	/** Pause the dance, or play GreetingAnim once. ResumeAfterGreeting puts her back. */
+	/** MetaHuman Face mesh (Leader Pose follower). Morphs live here, not on Body. */
+	USkeletalMeshComponent* FindFaceMesh() const;
+
+	/** Horizontal facing of the face: flattened (nose − eyes). */
+	FVector GetFaceForward() const;
+
+	/** Midpoint of the eyes, else the Face bounds. */
+	FVector GetEyeCenter() const;
+
+	/** Eyes with a little mouth so the shot is a talking portrait, not a forehead. */
+	FVector GetTalkLookAt() const;
+
+	/** Horizontal direction from her eyes toward where the player was standing. */
+	FVector GetTalkCamDir() const;
+
+	void FaceThePlayer();
+	void TeleportOwnerYaw(const FRotator& Rotation);
+	void FreezeGrooms(bool bFreeze);
+
+	/** Zoom a camera onto her face. Skipped when E is opening the slot trial. */
+	void BeginTalkShot();
+	void UpdateTalkShot();
+	void EndTalkShot();
+	void LockTalkInput(bool bLock);
+
+	/** Pause the dance while she talks. ResumeAfterGreeting puts her back. */
 	void BeginGreetingMotion();
 	void ResumeAfterGreeting();
 
@@ -171,7 +217,7 @@ private:
 	/** World time of the last accepted shuffle. Starts far in the past so the first press always lands. */
 	double LastShuffleTime = -1000.0;
 
-	/** True while she is paused or waving — extra E refreshes the line, F cancels. */
+	/** True while the talk/greet hold is up — extra E refreshes the line, F cancels. */
 	bool bGreeting = false;
 
 	/** The dance she was on when E was pressed, so resume is the same move. */
@@ -181,4 +227,19 @@ private:
 	float SavedDanceTime = 0.0f;
 
 	FTimerHandle GreetingTimer;
+
+	/** Spawned for the talk close-up; destroyed when the greeting ends. */
+	UPROPERTY(Transient)
+	TObjectPtr<ACameraActor> TalkCamera;
+
+	TWeakObjectPtr<AActor> SavedViewTarget;
+
+	/** Player-camera location at the moment E was pressed. The close-up stands here, not on a bone axis. */
+	FVector TalkPlayerEye = FVector::ZeroVector;
+
+	FRotator SavedActorRotation = FRotator::ZeroRotator;
+	bool bSavedActorRotation = false;
+
+	bool bTalkShotActive = false;
+	bool bTalkInputLocked = false;
 };

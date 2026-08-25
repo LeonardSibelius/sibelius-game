@@ -21,6 +21,7 @@
 #include "SauceBowl.generated.h"
 
 class UStaticMeshComponent;
+class USauceFluidComponent;
 
 UCLASS()
 class SIBELIUSGAME_API ASauceBowl : public AActor, public IInteractable
@@ -38,6 +39,12 @@ public:
 	// state — a raw BindKey lost the argument with Enhanced Input and never
 	// fired). Claims if filled and the claimer is within ClaimRadius.
 	bool TryClaim(APawn* Claimer);
+
+	USauceFluidComponent* GetFluid() const { return Fluid; }
+	bool IsPouring() const { return bPouring; }
+	bool IsFilled() const { return bFilled; }
+	bool TryStartPour();   // Interact and the smoke test share this
+	void FinishPourForTest() { OnPourComplete(); }
 
 	UPROPERTY(EditAnywhere, Category = "SauceBowl", meta = (ClampMin = "0"))
 	int32 SaucePerBowl = 40;
@@ -62,16 +69,24 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<USceneComponent> SceneRoot;
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> TableMesh;
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> BowlMesh;
 	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> SauceMesh;  // the green glow; hidden until filled
-	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> StreamMesh; // the visible drip while recharging
+	UPROPERTY(VisibleAnywhere, Category = "SauceBowl") TObjectPtr<UStaticMeshComponent> StreamMesh; // fallback drip if Niagara pour is missing
+
+	UPROPERTY(VisibleAnywhere, Category = "SauceBowl")
+	TObjectPtr<USauceFluidComponent> Fluid;
+
+	UPROPERTY(VisibleAnywhere, Category = "SauceBowl")
+	TArray<TObjectPtr<UStaticMeshComponent>> Bubbles;
 
 private:
 	bool IsLadleReady() const;
 	void OnPourComplete();            // stream stops, sauce appears
+	void SetBubblesVisible(bool bVis);
 
 	bool bPouring = false;
 	bool bFilled = false;

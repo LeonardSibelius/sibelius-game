@@ -427,5 +427,16 @@ void APowerGrant::ClaimNow(APawn* Pawn)
 		UGameplayStatics::PlaySoundAtLocation(this, GrantSound, GetActorLocation());
 	}
 
+	// Drop the dancer's pointer NOW. Destroy() leaves a pending-kill UObject;
+	// `PowerGrant != nullptr` stayed true, so her prompt still offered the power
+	// and a second E froze her instead of talking.
+	if (GrantedByAgent)
+	{
+		if (UDancerAgentComponent* Agent = GrantedByAgent->FindComponentByClass<UDancerAgentComponent>())
+		{
+			Agent->SetPowerGrant(nullptr, Power);
+		}
+	}
+
 	Destroy();
 }

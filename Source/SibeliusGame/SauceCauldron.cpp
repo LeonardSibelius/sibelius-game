@@ -3,17 +3,22 @@
 #include "SauceCauldron.h"
 #include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "SauceShopWidget.h"
+#include "SauceFluidComponent.h"
 #include "ProgressionSubsystem.h"   // the temple blend's one-time bounty
 #include "Engine/Engine.h"          // GEngine screen messages (the blend ceremony)
 #include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
+#include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 
 ASauceCauldron::ASauceCauldron()
 {
-	PrimaryActorTick.bCanEverTick = false;   // pure state holder; no tick needed
+	PrimaryActorTick.bCanEverTick = false;
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
@@ -28,12 +33,83 @@ ASauceCauldron::ASauceCauldron()
 	InteractZone->SetGenerateOverlapEvents(false);
 	InteractZone->SetCanEverAffectNavigation(false);
 
+	FocusCatcher = CreateDefaultSubobject<USphereComponent>(TEXT("FocusCatcher"));
+	FocusCatcher->SetupAttachment(SceneRoot);
+	FocusCatcher->InitSphereRadius(1.f);
+	FocusCatcher->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FocusCatcher->SetGenerateOverlapEvents(false);
+	FocusCatcher->SetCanEverAffectNavigation(false);
+
 	CauldronMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CauldronMesh"));
 	CauldronMesh->SetupAttachment(SceneRoot);
 
 	ContentsMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ContentsMesh"));
 	ContentsMesh->SetupAttachment(SceneRoot);
 	ContentsMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	Fluid = CreateDefaultSubobject<USauceFluidComponent>(TEXT("SauceFluid"));
+	Fluid->SetupAttachment(SceneRoot);
+	Fluid->SetRelativeLocation(FVector(0.f, 0.f, 40.f));
+	Fluid->Role = ESauceFluidRole::Cauldron;
+	Fluid->SimmerScale = 0.08f;
+}
+
+void ASauceCauldron::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (FocusCatcher)
+	{
+		FocusCatcher->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	const FString Label = GetActorNameOrLabel();
+	const bool bKitchen = Label.Contains(TEXT("Kitchen"));
+
+	if (bKitchen)
+	{
+		// 0.9.7 kitchen: stove furniture is the shop. Do not leave a hero pot
+		// in the aisle. Temple cauldrons must NOT take this path.
+		if (CauldronMesh)
+		{
+			CauldronMesh->SetStaticMesh(nullptr);
+			CauldronMesh->SetVisibility(false);
+			CauldronMesh->SetHiddenInGame(true);
+			CauldronMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+		if (ContentsMesh)
+		{
+			ContentsMesh->SetStaticMesh(nullptr);
+			ContentsMesh->SetVisibility(false);
+			ContentsMesh->SetHiddenInGame(true);
+		}
+		return;
+	}
+
+	// Temple (and any other) cauldron: keep / restore the pot. An earlier
+	// BeginPlay stripped EVERY cauldron and left fire-looking Niagara on the floor.
+	if (CauldronMesh && !CauldronMesh->GetStaticMesh())
+	{
+		if (UStaticMesh* Pot = LoadObject<UStaticMesh>(nullptr,
+			TEXT("/Game/MagicianLabatory/Source/Props/Pot/SM_Pot.SM_Pot")))
+		{
+			CauldronMesh->SetStaticMesh(Pot);
+			CauldronMesh->SetVisibility(true);
+			CauldronMesh->SetHiddenInGame(false);
+			CauldronMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			CauldronMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		}
+	}
+	if (ContentsMesh)
+	{
+		ContentsMesh->SetVisibility(false);
+		ContentsMesh->SetHiddenInGame(true);
+	}
+}
+
+void ASauceCauldron::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
 }
 
 bool ASauceCauldron::FeedSauce(float Delta)
@@ -44,6 +120,10 @@ bool ASauceCauldron::FeedSauce(float Delta)
 	}
 
 	BlendProgress = FMath::Clamp(BlendProgress + Delta, 0.f, 1.f);
+	if (Fluid)
+	{
+		Fluid->SetBlendHeat(BlendProgress);
+	}
 
 	if (BlendProgress >= CompleteThreshold)
 	{
@@ -87,6 +167,10 @@ void ASauceCauldron::HandleComplete()
 	}
 
 	OnSauceComplete.Broadcast();
+	if (Fluid)
+	{
+		Fluid->NotifyBoilOver();
+	}
 }
 
 void ASauceCauldron::Interact_Implementation(AActor* Interactor)
@@ -117,6 +201,11 @@ void ASauceCauldron::Interact_Implementation(AActor* Interactor)
 		PC->SetShowMouseCursor(true);
 		ShopWidget->SetFocus();
 	}
+}
+
+bool ASauceCauldron::IsShopOpen() const
+{
+	return ShopWidget && ShopWidget->IsInViewport();
 }
 
 FText ASauceCauldron::GetInteractionPrompt_Implementation() const

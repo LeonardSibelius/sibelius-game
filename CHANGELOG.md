@@ -7,6 +7,70 @@ Versions are `x.y.z` for a release and `x.y.z.N` for a fix to an already-shipped
 (no new content) — see `docs/sib-42-packaging-notes.md`. A `.N` fix is a line under its
 parent release heading, never a heading of its own.
 
+The seven Unreal-capability experiments are the exception: they occupy
+`0.9.7.1` through `0.9.7.7` as their own headings. They add content. 0.9.7
+stays the last shipped itch build until one of them is cooked.
+
+## v0.9.7.2 — Dancers talk with their faces (experiment 2 of 7)
+
+- **[E] talk to a dancer** (the prompt after she has given her power, or if
+  she has none) **zooms a close-up onto her MetaHuman face** while the HUD
+  line is up. Movement and look are held for the shot. No NVIDIA ACE, no
+  Echo. Echo is the temple Presence statue; this is Kaia / Nyra / Isla /
+  Aisling / Elise.
+- She **faces you** using the Body mesh forward (MetaHumans sit at yaw −90;
+  actor +X turned her to the right, away from you).
+- She does **not** play the victory-wave. The dance pauses, then resumes.
+- First E while she still has a power still opens the slot trial. The trial
+  keeps the camera; the talk close-up waits for the talk prompt.
+- MetaHuman `ABP_Face_PostProcess` / RigLogic still owns the Face mesh.
+  Leave it alone: C++ Control Rig and Flite TTS wrecked the portrait.
+- **Fix: the close-up is a portrait, not a chin / ear / chest interior.**
+  `nose − skull` on a MetaHuman points *down the face*, which put the
+  camera under Kaia's chin, on Isla's ear, and inside Aisling's chest.
+  The shot now sits at the eyes, at eye height, in front of where you were
+  standing, and looks at eyes+mouth. She yaws to face that point.
+- **Fix: when the close-up ends she faces the way she did before.** The talk
+  yaw is restored so the dance does not resume with her back to you.
+- Repeat E only refreshes the line.
+- Flite TTS and a live Face Control Rig were tried and **reverted** — they
+  wrecked the portrait (male robot voice, broken face). The MetaHuman Face
+  stays as assembled. The subtitle is back.
+- **Fix: Elise's hair no longer explodes after talk-E.** The yaw to face you
+  was simulated as motion; grooms treated it as a spin. Talk now freezes
+  hair sim, teleports the turn, then resets the grooms when the dance
+  resumes.
+- **Fix: winning her slot no longer leaves her offering the power.** The
+  grant used to `Destroy()` without clearing her pointer, so the prompt
+  still said refactor and a second E froze her. Claim now drops the bind;
+  trial E no longer pauses the dance.
+
+## v0.9.7.1 — Sauce is a fluid (experiment 1 of 7)
+
+- **The stove simmers.** The kitchen cauldron — still the shop, still the invisible
+  box over the pots — now runs a Niagara Fluids 3D gas. Steam rises sauce-green.
+  The more sauce you hold, the harder it rolls. Open the shop, or blend a purchase,
+  and it boils over for a few seconds. Walk far enough away and the sim sleeps so
+  the box does not pay for a 3D grid in the attic.
+- **The temple pours.** [E] on the sauce bowl used to reveal a green cylinder
+  pretending to be a stream. It now fires a Niagara Fluids 2D FLIP hose into the
+  pot for the pour, then a shallow-water ripple on the filled surface until you
+  Compile it. (The 3D hose needs a Chaos plugin that logs Error in a commandlet;
+  2D is still a real liquid sim and kinder to the box.) The cylinder stays as a
+  fallback if the plugin did not load.
+- **Escape hatch.** Console `sib.SauceFluids 0` turns the sims off. Meshes and the
+  glow light remain. Hardware that already struggled with MetaHumans can keep the
+  ceremony without the grid.
+- **Saves from 0.9.7 load.** No new save fields.
+- **Fix: the temple pot is not a swimming pool.** The first drop used Niagara's
+  2D shallow-water *pool* template as the filled surface. That template is a
+  room-sized blue water volume; it sat under the rim, bloomed the meniscus
+  white, and overflowed the virtual shadow map. The pool no longer runs.
+  Filled = green meniscus + a small 3D gas simmer. Pour = the green stream
+  cylinder (always visible) plus steam, not a 2D water sheet. Kitchen E
+  toasts THE SAUCE SIMMERS and boils the 3D gas. `sib.SauceFluids 0` still
+  kills the sims.
+
 ## v0.9.7 — The machine shows you where it broke
 
 - **The legacy system tells you where it failed.** The piece used to travel the whole

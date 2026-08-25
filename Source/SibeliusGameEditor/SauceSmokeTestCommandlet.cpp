@@ -16,11 +16,16 @@
 
 #include "SauceSmokeTestCommandlet.h"
 #include "SauceCauldron.h"
+#include "SauceBowl.h"
+#include "SauceFluidComponent.h"
 #include "BookRain.h"
+
 
 #include "Engine/World.h"
 #include "Engine/StaticMesh.h"
 #include "EngineUtils.h"
+#include "GameFramework/DefaultPawn.h"
+#include "NiagaraSystem.h"
 #include "UObject/Package.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSauceSmokeTest, Log, All);
@@ -166,12 +171,82 @@ int32 USauceSmokeTestCommandlet::Main(const FString& Params)
 	R.Check(ASauceCauldron::StaticClass() != nullptr && ABookRain::StaticClass() != nullptr,
 		TEXT("ASauceCauldron + ABookRain StaticClass() resolve"));
 
+	// =====================================================================
+	//  ASSERT 4 — v0.9.7.1 Niagara Fluids plugin templates resolve, and the
+	//  cauldron CDO actually wired them onto its fluid component (the cook belt).
+	//  GPU sim is NOT run (commandlet has no RHI). Visuals are a PIE check.
+	// =====================================================================
+	UE_LOG(LogSauceSmokeTest, Display, TEXT("--- ASSERT 4: Niagara Fluids sauce systems ---"));
+	{
+		UNiagaraSystem* Simmer = LoadObject<UNiagaraSystem>(nullptr,
+			TEXT("/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_ColoredSmoke.Grid3D_Gas_ColoredSmoke"));
+		UNiagaraSystem* Pour = LoadObject<UNiagaraSystem>(nullptr,
+			TEXT("/NiagaraFluids/Templates/Liquid/2D/Systems/Grid2D_FLIP_Hose.Grid2D_FLIP_Hose"));
+		UNiagaraSystem* Pool = LoadObject<UNiagaraSystem>(nullptr,
+			TEXT("/NiagaraFluids/Templates/Liquid/2D/Systems/ShallowWater/Grid2D_SW_Pool.Grid2D_SW_Pool"));
+		R.Check(Simmer != nullptr, TEXT("Grid3D_Gas_ColoredSmoke resolves (NiagaraFluids plugin)"));
+		R.Check(Pour != nullptr, TEXT("Grid2D_FLIP_Hose resolves (NiagaraFluids plugin)"));
+		R.Check(Pool != nullptr, TEXT("Grid2D_SW_Pool resolves (NiagaraFluids plugin)"));
+
+		R.Check(Cauldron != nullptr && Cauldron->GetFluid() != nullptr,
+			TEXT("ASauceCauldron owns a USauceFluidComponent"));
+		if (Cauldron && Cauldron->GetFluid())
+		{
+			USauceFluidComponent* Fluid = Cauldron->GetFluid();
+			R.Check(Fluid->HasSimmerSystem(), TEXT("cauldron simmer Niagara system is assigned"));
+			R.Check(Fluid->HasPourSystem(), TEXT("cauldron pour Niagara system is assigned (shared CDO)"));
+			R.Check(Fluid->HasPoolSystem(), TEXT("cauldron pool Niagara system is assigned (kept, never activated)"));
+			Fluid->SetFilled(true);
+			Fluid->SetFilled(false);
+			Fluid->SetBlendHeat(0.8f);
+			Fluid->NotifyBoilOver();
+			Fluid->SetShopOpen(true);
+			Fluid->SetShopOpen(false);
+			R.Check(true, TEXT("cauldron fluid drivers do not crash headless"));
+		}
+	}
+
+	// =====================================================================
+	//  ASSERT 5 — temple bowl pour state machine (meshes + fluid flags).
+	// =====================================================================
+	UE_LOG(LogSauceSmokeTest, Display, TEXT("--- ASSERT 5: sauce bowl pour / claim ---"));
+	ASauceBowl* Bowl = World->SpawnActor<ASauceBowl>(ASauceBowl::StaticClass(), SpawnParams);
+	R.Check(Bowl != nullptr, TEXT("ASauceBowl spawns"));
+	if (Bowl)
+	{
+		Bowl->DispatchBeginPlay();
+		R.Check(Bowl->GetFluid() != nullptr, TEXT("ASauceBowl owns a USauceFluidComponent"));
+		R.Check(!Bowl->IsPouring() && !Bowl->IsFilled(), TEXT("bowl starts empty and not pouring"));
+
+		R.Check(Bowl->TryStartPour(), TEXT("E starts the pour"));
+		R.Check(Bowl->IsPouring(), TEXT("pour flag is set after TryStartPour"));
+		R.Check(!Bowl->IsFilled(), TEXT("still empty while the stream is falling"));
+
+		Bowl->FinishPourForTest();
+		R.Check(!Bowl->IsPouring() && Bowl->IsFilled(), TEXT("pour complete -> filled pot"));
+		if (Bowl->GetFluid())
+		{
+			R.Check(Bowl->GetFluid()->IsFilledForTest(), TEXT("fluid component tracks filled"));
+			R.Check(!Bowl->GetFluid()->IsPouringForTest(), TEXT("fluid pour stops when the stream does"));
+		}
+
+		ADefaultPawn* Pawn = World->SpawnActor<ADefaultPawn>(Bowl->GetActorLocation(), FRotator::ZeroRotator, SpawnParams);
+		R.Check(Pawn != nullptr, TEXT("claim pawn spawns at the bowl"));
+		const bool bClaimed = Bowl->TryClaim(Pawn);
+		R.Check(bClaimed, TEXT("TryClaim on a filled bowl at zero distance succeeds"));
+		R.Check(!Bowl->IsFilled(), TEXT("claim empties the pot"));
+		if (Bowl->GetFluid())
+		{
+			R.Check(!Bowl->GetFluid()->IsFilledForTest(), TEXT("fluid filled flag clears on claim"));
+		}
+	}
+
 	// Tear down the hand-initialised world (the exit-3 lesson: no implicit counterpart to InitWorld).
 	World->CleanupWorld();
 
 	if (R.Failures == 0)
 	{
-		UE_LOG(LogSauceSmokeTest, Display, TEXT("=== SAUCE SMOKE TEST PASSED (World3 P0 — cauldron + book-rain stubs green). ==="));
+		UE_LOG(LogSauceSmokeTest, Display, TEXT("=== SAUCE SMOKE TEST PASSED (cauldron + book-rain + Niagara Fluids + bowl). ==="));
 		return 0;
 	}
 

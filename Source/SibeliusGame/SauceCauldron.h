@@ -14,6 +14,8 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSauceComplete);
 
+class USauceFluidComponent;
+
 UCLASS()
 class SIBELIUSGAME_API ASauceCauldron : public AActor, public IInteractable
 {
@@ -21,6 +23,9 @@ class SIBELIUSGAME_API ASauceCauldron : public AActor, public IInteractable
 
 public:
 	ASauceCauldron();
+
+	USauceFluidComponent* GetFluid() const { return Fluid; }
+	bool IsShopOpen() const;
 
 	// --- Sauce state ---
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sauce")
@@ -46,6 +51,9 @@ public:
 	virtual FText GetInteractionPrompt_Implementation() const override;
 
 protected:
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+
 	UPROPERTY(VisibleAnywhere, Category = "Sauce")
 	TObjectPtr<USceneComponent> SceneRoot;
 
@@ -57,6 +65,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Sauce")
 	TObjectPtr<class UBoxComponent> InteractZone;
 
+	// Furniture pots steal the camera sweep. This sphere is on OUR actor, blocks
+	// visibility, and is large enough that looking at the stove hits the cauldron.
+	UPROPERTY(VisibleAnywhere, Category = "Sauce")
+	TObjectPtr<class USphereComponent> FocusCatcher;
+
 	// Optional dress meshes — leave empty when real props (the stove) play the
 	// part; assign only if the cauldron ever gets its own hero mesh.
 	UPROPERTY(VisibleAnywhere, Category = "Sauce")
@@ -64,6 +77,11 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Sauce")
 	TObjectPtr<UStaticMeshComponent> ContentsMesh;   // glowing sauce surface; optional, hide if unused
+
+	// v0.9.7.1: Niagara Fluids simmer. Invisible kitchen box still works — the
+	// steam sits on this component (nudge in Details if the stove is offset).
+	UPROPERTY(VisibleAnywhere, Category = "Sauce")
+	TObjectPtr<USauceFluidComponent> Fluid;
 
 	UPROPERTY(EditAnywhere, Category = "Sauce")
 	FText PromptText = FText::FromString(TEXT("Blend the Sauce [E]"));

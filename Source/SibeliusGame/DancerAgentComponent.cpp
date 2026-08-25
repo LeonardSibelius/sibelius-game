@@ -9,9 +9,15 @@
 
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
+#include "GroomComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -96,11 +102,48 @@ namespace
 
 		return Name.IsEmpty() ? TEXT("Anonymous") : Name;
 	}
+
+	int32 FindBoneExact(const USkeletalMeshComponent& Mesh, const TCHAR* const* Names, int32 NameCount)
+	{
+		for (int32 n = 0; n < NameCount; ++n)
+		{
+			const int32 Index = Mesh.GetBoneIndex(FName(Names[n]));
+			if (Index != INDEX_NONE)
+			{
+				return Index;
+			}
+		}
+		return INDEX_NONE;
+	}
+
+	bool BoneWorldLoc(const USkeletalMeshComponent* Mesh, const TCHAR* const* Names, int32 NameCount, FVector& Out)
+	{
+		if (!Mesh)
+		{
+			return false;
+		}
+		const int32 Index = FindBoneExact(*Mesh, Names, NameCount);
+		if (Index == INDEX_NONE)
+		{
+			return false;
+		}
+		Out = Mesh->GetBoneLocation(Mesh->GetBoneName(Index));
+		return true;
+	}
+
+	FVector Flatten(FVector V)
+	{
+		V.Z = 0.f;
+		return V;
+	}
+
 }
 
 UDancerAgentComponent::UDancerAgentComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
 
 	// Hard references on the CDO — this is what drags the gitignored animations into
 	// the pak. See the header. A loop of FObjectFinders is legal inside a constructor.
@@ -250,6 +293,348 @@ USkeletalMeshComponent* UDancerAgentComponent::FindDanceMesh() const
 	return Meshes.Num() > 0 ? Meshes[0] : nullptr;
 }
 
+USkeletalMeshComponent* UDancerAgentComponent::FindFaceMesh() const
+{
+	const AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return nullptr;
+	}
+
+	TArray<USkeletalMeshComponent*> Meshes;
+	Owner->GetComponents<USkeletalMeshComponent>(Meshes);
+	for (USkeletalMeshComponent* Mesh : Meshes)
+	{
+		if (!Mesh)
+		{
+			continue;
+		}
+		const FString Name = Mesh->GetName();
+		if (Name.Contains(TEXT("Face")) && !Name.Contains(TEXT("PostProcess")))
+		{
+			return Mesh;
+		}
+	}
+	return nullptr;
+}
+
+void UDancerAgentComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	if (bGreeting && bTalkShotActive)
+	{
+		UpdateTalkShot();
+	}
+}
+
+FVector UDancerAgentComponent::GetEyeCenter() const
+{
+	const USkeletalMeshComponent* Face = FindFaceMesh();
+	static const TCHAR* const LEye[] = { TEXT("FACIAL_L_Eye"), TEXT("FACIAL_L_EyeParallel") };
+	static const TCHAR* const REye[] = { TEXT("FACIAL_R_Eye"), TEXT("FACIAL_R_EyeParallel") };
+	FVector L = FVector::ZeroVector;
+	FVector R = FVector::ZeroVector;
+	const bool bL = BoneWorldLoc(Face, LEye, UE_ARRAY_COUNT(LEye), L);
+	const bool bR = BoneWorldLoc(Face, REye, UE_ARRAY_COUNT(REye), R);
+	if (bL && bR)
+	{
+		return (L + R) * 0.5f;
+	}
+	if (bL)
+	{
+		return L;
+	}
+	if (bR)
+	{
+		return R;
+	}
+	if (Face)
+	{
+		return Face->Bounds.Origin;
+	}
+	if (const USkeletalMeshComponent* Body = FindDanceMesh())
+	{
+		if (Body->GetBoneIndex(FName(TEXT("head"))) != INDEX_NONE)
+		{
+			return Body->GetBoneLocation(FName(TEXT("head")));
+		}
+	}
+	const AActor* Owner = GetOwner();
+	return Owner ? Owner->GetActorLocation() + FVector(0.f, 0.f, 155.f) : FVector::ZeroVector;
+}
+
+FVector UDancerAgentComponent::GetFaceForward() const
+{
+	const USkeletalMeshComponent* Face = FindFaceMesh();
+	static const TCHAR* const NoseNames[] = {
+		TEXT("FACIAL_C_NoseTip"), TEXT("FACIAL_C_Nose"), TEXT("FACIAL_C_NoseLower")
+	};
+	FVector Nose = FVector::ZeroVector;
+	if (BoneWorldLoc(Face, NoseNames, UE_ARRAY_COUNT(NoseNames), Nose))
+	{
+		FVector Fwd = Flatten(Nose - GetEyeCenter());
+		if (Fwd.Normalize())
+		{
+			return Fwd;
+		}
+	}
+	return GetTalkCamDir();
+}
+
+FVector UDancerAgentComponent::GetTalkLookAt() const
+{
+	const FVector Eyes = GetEyeCenter();
+	const USkeletalMeshComponent* Face = FindFaceMesh();
+	static const TCHAR* const MouthNames[] = {
+		TEXT("FACIAL_C_LipUpper"), TEXT("FACIAL_C_MouthUpper"), TEXT("FACIAL_C_Jaw")
+	};
+	FVector Mouth = FVector::ZeroVector;
+	if (BoneWorldLoc(Face, MouthNames, UE_ARRAY_COUNT(MouthNames), Mouth))
+	{
+		return Eyes * 0.62f + Mouth * 0.38f;
+	}
+	return Eyes;
+}
+
+FVector UDancerAgentComponent::GetTalkCamDir() const
+{
+	FVector To = Flatten(TalkPlayerEye - GetEyeCenter());
+	if (To.Normalize())
+	{
+		return To;
+	}
+	if (const AActor* Owner = GetOwner())
+	{
+		FVector Fwd = Flatten(Owner->GetActorForwardVector());
+		if (Fwd.Normalize())
+		{
+			return Fwd;
+		}
+	}
+	return FVector::ForwardVector;
+}
+
+void UDancerAgentComponent::FaceThePlayer()
+{
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return;
+	}
+
+	FVector ToPlayer = GetTalkCamDir();
+	FVector FaceFwd = Flatten(GetFaceForward());
+	if (!FaceFwd.Normalize())
+	{
+		FaceFwd = ToPlayer;
+	}
+	if (ToPlayer.IsNearlyZero() || FaceFwd.IsNearlyZero())
+	{
+		return;
+	}
+
+	const float DeltaYaw = FMath::FindDeltaAngleDegrees(FaceFwd.Rotation().Yaw, ToPlayer.Rotation().Yaw);
+	FRotator R = Owner->GetActorRotation();
+	R.Yaw += DeltaYaw;
+	TeleportOwnerYaw(R);
+}
+
+void UDancerAgentComponent::TeleportOwnerYaw(const FRotator& Rotation)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return;
+	}
+	Owner->SetActorLocationAndRotation(Owner->GetActorLocation(), Rotation,
+		/*bSweep=*/false, nullptr, ETeleportType::TeleportPhysics);
+}
+
+void UDancerAgentComponent::FreezeGrooms(bool bFreeze)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return;
+	}
+	TArray<UGroomComponent*> Grooms;
+	Owner->GetComponents<UGroomComponent>(Grooms);
+	for (UGroomComponent* Groom : Grooms)
+	{
+		if (!Groom)
+		{
+			continue;
+		}
+		if (bFreeze)
+		{
+			Groom->SetEnableSimulation(false);
+		}
+		else
+		{
+			Groom->ResetSimulation();
+			Groom->SetEnableSimulation(true);
+		}
+	}
+}
+
+void UDancerAgentComponent::BeginTalkShot()
+{
+	UWorld* World = GetWorld();
+	AActor* Owner = GetOwner();
+	if (!World || !Owner)
+	{
+		return;
+	}
+	APlayerController* PC = World->GetFirstPlayerController();
+	if (!PC)
+	{
+		return;
+	}
+
+	if (!TalkCamera)
+	{
+		FActorSpawnParameters Params;
+		Params.Owner = Owner;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		TalkCamera = World->SpawnActor<ACameraActor>(ACameraActor::StaticClass(),
+			Owner->GetActorLocation(), FRotator::ZeroRotator, Params);
+		if (TalkCamera)
+		{
+			if (UCameraComponent* Cam = TalkCamera->GetCameraComponent())
+			{
+				Cam->bConstrainAspectRatio = false;
+				Cam->SetFieldOfView(TalkCameraFOV);
+			}
+			TalkCamera->SetActorTickEnabled(true);
+		}
+	}
+	if (!TalkCamera)
+	{
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Dancer] %s talk camera failed to spawn"), *AgentName);
+		return;
+	}
+
+	if (!bTalkShotActive)
+	{
+		SavedViewTarget = PC->GetViewTarget();
+		TalkPlayerEye = PC->PlayerCameraManager
+			? PC->PlayerCameraManager->GetCameraLocation()
+			: (PC->GetPawn() ? PC->GetPawn()->GetActorLocation() : Owner->GetActorLocation());
+		bTalkShotActive = true;
+		LockTalkInput(true);
+		SavedActorRotation = Owner->GetActorRotation();
+		bSavedActorRotation = true;
+		FreezeGrooms(true);
+		FaceThePlayer();
+		UpdateTalkShot();
+		PC->SetViewTargetWithBlend(TalkCamera, TalkCameraBlendIn, VTBlend_Cubic);
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Dancer] %s talk close-up  lookat=%s  camdir=%s"),
+			*AgentName,
+			*GetTalkLookAt().ToCompactString(),
+			*GetTalkCamDir().ToCompactString());
+	}
+	else
+	{
+		UpdateTalkShot();
+	}
+}
+
+void UDancerAgentComponent::UpdateTalkShot()
+{
+	if (!TalkCamera)
+	{
+		return;
+	}
+
+	const FVector LookAt = GetTalkLookAt();
+	const FVector Dir = GetTalkCamDir();
+
+	// Stay at eye height and in front of her — never slide down the face into
+	// the chin, an ear, or the chest (nose−skull on a MetaHuman points down).
+	FVector CamLoc = LookAt + Dir * TalkCameraDistance + FVector(0.f, 0.f, 4.0f);
+
+	if (const AActor* Owner = GetOwner())
+	{
+		const FVector Torso = Owner->GetActorLocation() + FVector(0.f, 0.f, 90.f);
+		FVector Away = Flatten(CamLoc - Torso);
+		if (Away.Size() < 28.f)
+		{
+			Away = Dir.IsNearlyZero() ? FVector::ForwardVector : Dir;
+			CamLoc = Torso + Away * 40.f;
+			CamLoc.Z = LookAt.Z + 4.0f;
+		}
+	}
+
+	const FRotator CamRot = (LookAt - CamLoc).Rotation();
+	TalkCamera->SetActorLocationAndRotation(CamLoc, CamRot);
+	if (UCameraComponent* Cam = TalkCamera->GetCameraComponent())
+	{
+		Cam->SetFieldOfView(TalkCameraFOV);
+	}
+}
+
+void UDancerAgentComponent::EndTalkShot()
+{
+	LockTalkInput(false);
+	if (bSavedActorRotation)
+	{
+		TeleportOwnerYaw(SavedActorRotation);
+		bSavedActorRotation = false;
+		FreezeGrooms(false);
+	}
+	if (!bTalkShotActive && !TalkCamera)
+	{
+		return;
+	}
+	bTalkShotActive = false;
+
+	if (UWorld* World = GetWorld())
+	{
+		if (APlayerController* PC = World->GetFirstPlayerController())
+		{
+			AActor* Restore = SavedViewTarget.Get();
+			if (!Restore)
+			{
+				Restore = PC->GetPawn();
+			}
+					if (Restore)
+			{
+				PC->SetViewTargetWithBlend(Restore, TalkCameraBlendOut, VTBlend_Cubic);
+			}
+		}
+	}
+	SavedViewTarget = nullptr;
+	if (TalkCamera)
+	{
+		TalkCamera->Destroy();
+		TalkCamera = nullptr;
+	}
+}
+
+void UDancerAgentComponent::LockTalkInput(bool bLock)
+{
+	APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	if (!PC)
+	{
+		bTalkInputLocked = bLock;
+		return;
+	}
+	if (bLock && !bTalkInputLocked)
+	{
+		PC->SetIgnoreMoveInput(true);
+		PC->SetIgnoreLookInput(true);
+		bTalkInputLocked = true;
+	}
+	else if (!bLock && bTalkInputLocked)
+	{
+		PC->SetIgnoreMoveInput(false);
+		PC->SetIgnoreLookInput(false);
+		bTalkInputLocked = false;
+	}
+}
+
 FVector UDancerAgentComponent::GetAimPoint() const
 {
 	if (const USkeletalMeshComponent* Mesh = FindDanceMesh())
@@ -271,9 +656,9 @@ void UDancerAgentComponent::SetPowerGrant(APowerGrant* InGrant, EPowerVerb InVer
 
 bool UDancerAgentComponent::HasPowerToGive() const
 {
-	// The grant destroys itself on BeginPlay when its key is already claimed, so a live
-	// pointer IS an unclaimed power. Nothing else to ask.
-	return PowerGrant != nullptr;
+	// Destroy() leaves a pending-kill actor; != nullptr would still be true and the
+	// prompt would keep offering a power she already handed over.
+	return IsValid(PowerGrant);
 }
 
 FText UDancerAgentComponent::GetPrompt() const
@@ -304,7 +689,8 @@ void UDancerAgentComponent::Greet()
 	   one of them is not a reskin of the floating shrine — it is the premise of the game
 	   happening in front of the player.
 
-	   She still greets: the celebration plays underneath, and the trial opens over it. */
+	   The slot trial takes the camera. Talk close-up only happens when she has
+	   nothing left to give — the "[E] talk to Kaia" prompt. */
 	if (HasPowerToGive())
 	{
 		const AActor* Owner = GetOwner();
@@ -313,6 +699,8 @@ void UDancerAgentComponent::Greet()
 		{
 			PowerGrant->RequestTrial(PC);
 		}
+		// Slot takes the camera. Do not pause her or start a close-up underneath it.
+		return;
 	}
 
 	const UWorld* World = GetWorld();
@@ -325,9 +713,6 @@ void UDancerAgentComponent::Greet()
 		TEXT("Hi.  I am AI Agent %s.  Wanna Fight?  (I don't really fight, I just dance)"),
 		*AgentName);
 
-	// The HUD's subtitle channel, NOT AddOnScreenDebugMessage — screen debug messages
-	// are suppressed in Shipping builds, so a debug-message greeting would be invisible
-	// to every actual player.
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0))
 	{
 		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
@@ -336,15 +721,20 @@ void UDancerAgentComponent::Greet()
 		}
 		else
 		{
-			// The Elsewhere and the Carousel run their own HUD classes, which have no
-			// subtitle channel. Rather than say nothing, log it — and this is why the
-			// office/temple/cathedral, where the dancers actually live, all use ASibeliusHUD.
 			UE_LOG(LogSibeliusGame, Display,
 				TEXT("[Dancer] %s greeted, but this level's HUD has no subtitle channel"), *AgentName);
 		}
 	}
 
+	if (bGreeting)
+	{
+		BeginGreetingMotion();
+		return;
+	}
+
 	BeginGreetingMotion();
+	SetComponentTickEnabled(true);
+	BeginTalkShot();
 }
 
 void UDancerAgentComponent::BeginGreetingMotion()
@@ -361,8 +751,7 @@ void UDancerAgentComponent::BeginGreetingMotion()
 		return;
 	}
 
-	// Already mid-greeting: keep the pose (or the wave), just hold a bit longer.
-	// Restarting a wave mid-swing looks like a glitch.
+	// Already mid-talk: keep the pause, just hold a bit longer.
 	if (bGreeting)
 	{
 		World->GetTimerManager().SetTimer(
@@ -377,21 +766,13 @@ void UDancerAgentComponent::BeginGreetingMotion()
 
 	float HoldSeconds = GreetingSeconds;
 
-	EnsureGreetingAnim();
-
-	if (GreetingAnim)
+	// Talk is a close-up, not a celebration. Freeze the dance so her head stays
+	// in frame; the Face mesh does the talking.
+	if (UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance())
 	{
-		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-		Mesh->PlayAnimation(GreetingAnim, /*bLooping=*/false);
-		HoldSeconds = FMath::Max(GreetingAnim->GetPlayLength(), 0.5f);
-		UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s greets with %s (%.2fs)"),
-			*AgentName, *GreetingAnim->GetName(), HoldSeconds);
-	}
-	else if (UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance())
-	{
-		// No wave in the project — freeze the dance pose while she talks.
 		Node->SetPlaying(false);
-		UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s paused dance to greet"), *AgentName);
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s paused dance to talk (%.2fs)"),
+			*AgentName, HoldSeconds);
 	}
 	else
 	{
@@ -417,6 +798,8 @@ void UDancerAgentComponent::CancelGreeting(bool bResumeDance)
 
 	const bool bWasGreeting = bGreeting;
 	bGreeting = false;
+	SetComponentTickEnabled(false);
+	EndTalkShot();
 
 	USkeletalMeshComponent* Mesh = FindDanceMesh();
 	if (!Mesh)

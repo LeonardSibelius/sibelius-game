@@ -1,9 +1,8 @@
 // SauceSmokeTestCommandlet.h
 //
-// World Three P0 — headless smoke test for ASauceCauldron + ABookRain. Modeled on
-// the sibling gates (URefuserSmokeTestCommandlet / UGenerateSmokeTestCommandlet).
-// Editor-only module (PK12: commandlets never in the runtime module). Asserts
-// STATE/LOGIC only — the actual rain + feed visuals are a PIE check (SS8).
+// Headless smoke test for ASauceCauldron + ABookRain + v0.9.7.1 Niagara Fluids
+// + ASauceBowl pour/claim. Editor-only module (PK12). Asserts STATE/LOGIC and
+// that the NiagaraFluids template systems resolve — GPU sim is a PIE check.
 
 #pragma once
 

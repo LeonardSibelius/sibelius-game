@@ -31,7 +31,9 @@ public class SibeliusGame : ModuleRules
 			"Slate",
 			"SlateCore",
 			// SIB-47 PCG spike: real UPCGComponent in the Elsewhere builder (runtime module).
-			"PCG"
+			"PCG",
+			// v0.9.7.1: Niagara Fluids sauce (simmer / pour / pool).
+			"Niagara"
 		});
 
 		// SIB-34 Path A: the cathedral slot cabinet embeds the real Celestial
@@ -43,7 +45,9 @@ public class SibeliusGame : ModuleRules
 			// (registered on PreLoadMap in SibeliusGame.cpp).
 			"MoviePlayer",
 			// APPEAL-R wild refactor: the Menagerie auto-scans animal-pack folders.
-			"AssetRegistry"
+			"AssetRegistry",
+			// MetaHuman grooms (Elise's hair blew out when talk-E yawed her).
+			"HairStrandsCore"
 		});
 
 // SIB-19 smoke-test commandlet uses UEditorLoadingAndSavingUtils (editor-only)

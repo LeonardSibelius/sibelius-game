@@ -34,7 +34,9 @@ distilled. You earn it by playing:
 
 You spend it at THE CAULDRON — the stove in the kitchen. Press E on the
 pots. Prices are honest: what you see is what you get. Locked powers can
-be bought there if you'd rather pay than search.
+be bought there if you'd rather pay than search. The stove SIMMERS with
+the sauce you hold; spend there and it boils. In the AI temple, [E] pours
+living sauce into the pot and [C] compiles it.
 
 You risk it at THE CAROUSEL OF FATES. Where? The kitchen keeps more than
 one secret, and secrets in this house reveal themselves to those who
