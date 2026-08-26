@@ -2,6 +2,36 @@
 
 Paste-ready text for the itch.io page. Walt owns the final words — edit freely.
 
+## LIVE PAGE (Walt, 2026-08-21 — v0.9.6)
+
+Posted at https://leonardsibelius.itch.io/leonard-sibelius. Do not replace
+this with a draft without asking; this is what is actually on the store.
+
+> **Leonard Sibelius — the anything machine** (v0.9.6 alpha) in development, free)
+>
+> I'm Walt Parkman, 71 years old, able to now make games because of AI. I'm
+> liking Grok 4.6 and expect 5.0 soon. For more than 40 years, I sat at over
+> a dozen desks in drab office cubicles while building archaic, conventional
+> data processing software systems by hand. Thanks to AI, I will never have
+> to build like that again.
+>
+> This game depicts my transformation. I built it using AI. Leonard Sibelius
+> is the story of an old programmer, employed by a tyrannical Mrs. Hall. To
+> merge with Artificial Intelligence (first Claude, now Grok) the player
+> gathers six AI powers from AI agents.
+>
+> **Version 0.9.6** Mrs. Hall demands that you fix the machine in the living
+> room by hand, but why do that when you have AI? This game is filling up
+> with attractive dancing AI agents. Click "E" at them to get powers. You
+> can now open the slot machine cabinet and tweak its parameters once you
+> reach the cathedral. To get to the cathedral, buy powers with sauce or
+> earn them at the slot machine (appears when you approach the agents).
+> Refactor objects into animals, slap them, refactor them back. A new Video
+> Poker hidden door is in the living room. You can buy powers in the kitchen
+> when you have collected enough sauce (AI is the Sauce of All Knowledge).
+>
+> A decent Windows gaming machine is required. Itch download is about 10 minutes.
+
 ---
 
 ## The short pitch (top of page)
