@@ -231,6 +231,17 @@ soft-ref lesson, again.
 
 ## Mouth movement — settled, and why
 
+> **UPDATE, same evening.** The runtime verdict below still stands — but the *offline*
+> route was tried and **works**. MetaHuman Animator solved `kaia_intro` into a face
+> animation with `CTRL_expressions_jawOpen` moving across 766 keys and 79 of 162 speech
+> curves animated, tongue included. The difference is exactly the one this section
+> describes: RigLogic replaces its **outputs** (what we were writing) and consumes its
+> **inputs** (what MetaHuman Animator writes). See `docs/CINEMATICS.md`.
+>
+> That also means runtime lip sync is **no longer ruled out** — the same Anim Sequence is
+> what RigLogic wants, and these Face components are `leaderpose=no`, so they can evaluate
+> their own animation. Unproven, but the door is open.
+
 **She does not move her mouth, and `bTalkMouthMotion` ships `false`.** This was chased
 to the end; the result is a mechanism, not a mystery.
 

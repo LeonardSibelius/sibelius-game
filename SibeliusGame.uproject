@@ -45,6 +45,10 @@
 			"Enabled": true
 		},
 		{
+			"Name": "MetaHuman",
+			"Enabled": true
+		},
+		{
 			"Name": "MovieRenderPipeline",
 			"Enabled": true
 		},
