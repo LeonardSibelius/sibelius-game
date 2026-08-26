@@ -118,11 +118,39 @@ URefactorableComponent* URefactorComponent::TraceForRefactorable() const
 	return nullptr;
 }
 
+namespace
+{
+	/* OPTED IN BY TAG, and the tag means two things at once: this actor may be
+	   transmuted even though it is interactable (see the candidate test further down),
+	   and it keeps its labels while transmuted. Both are wanted in exactly the same
+	   place -- the legacy machine's stages -- so one tag carries both rather than two
+	   that could drift apart.
+
+	   It lives up here rather than in the namespace below because TriggerRefactor is
+	   its first caller and C++ will not look ahead. */
+	bool KeepsLabelsWhenWild(const AActor* A)
+	{
+		return A && A->ActorHasTag(TEXT("WildRefactorOK"));
+	}
+}
+
 void URefactorComponent::TriggerRefactor()
 {
-	// Pre-authored refactorables always win — the office puzzle objects keep
-	// their two hand-built states and never roll the menagerie dice.
-	if (CurrentTarget)
+	/* Pre-authored refactorables normally win: the office puzzle objects keep their two
+	   hand-built states and never roll the menagerie dice.
+
+	   THE ONE EXCEPTION IS EARNED. A legacy machine stage carries a refactorable too --
+	   that authored edit IS the GRADER fix, the whole first ticket. So while the job is
+	   open, R on a stage must repair it and nothing else. Once the machine tags its
+	   stages WildRefactorOK (ALegacyMachine does that when ticket 1 closes), R starts
+	   rolling the menagerie on them instead, and the line keeps running with an animal
+	   standing in it -- because the machine drives the workpiece to each part's world
+	   LOCATION and never asks what the part looks like.
+
+	   The tag is all-or-nothing across the five stages on purpose. Gate it per stage --
+	   say, only the ones that are behaving -- and the stage that refuses to become a
+	   goat is the answer to the puzzle. */
+	if (CurrentTarget && !KeepsLabelsWhenWild(CurrentTarget->GetOwner()))
 	{
 		CurrentTarget->ToggleRefactor();
 		return;
@@ -137,6 +165,42 @@ namespace
 	// Refuser his mind back. Shared by the pawn sweep AND the visibility ray —
 	// a ragdolled animal sprawled on the floor is exactly what a thin ray
 	// misses (Walt's downed fox refused to become the couch again).
+	/* HIDE THE BODY, NOT EVERY MESH. A machine stage carries four static meshes: the
+	   crate, and the three dark backing plates behind its plaque, true name and fault
+	   lamp. Hiding all of them would leave the plaque's text floating over nothing.
+
+	   So the body is named explicitly with a WildBody component tag, and only that is
+	   hidden. The fallback to the first mesh keeps this working for anything that opts
+	   in without tagging a body -- FindComponentByClass is what the transmutation
+	   already uses to size and vet a target, so it is the same component either way. */
+	void SetWildBodyHidden(AActor* A, bool bHidden)
+	{
+		if (!A)
+		{
+			return;
+		}
+		TArray<UStaticMeshComponent*> Meshes;
+		A->GetComponents<UStaticMeshComponent>(Meshes);
+
+		TArray<UStaticMeshComponent*> Bodies;
+		for (UStaticMeshComponent* M : Meshes)
+		{
+			if (M && M->ComponentHasTag(TEXT("WildBody")))
+			{
+				Bodies.Add(M);
+			}
+		}
+		if (Bodies.Num() == 0 && Meshes.Num() > 0)
+		{
+			Bodies.Add(Meshes[0]);
+		}
+		for (UStaticMeshComponent* M : Bodies)
+		{
+			M->SetHiddenInGame(bHidden);
+			M->SetVisibility(!bHidden);
+		}
+	}
+
 	bool RestoreWildDraft(AActor* CreatureActor)
 	{
 		if (!CreatureActor)
@@ -150,7 +214,16 @@ namespace
 		}
 		if (AActor* Original = State->OriginalActor)
 		{
-			Original->SetActorHiddenInGame(false);
+			// Undo it the way it was done, or a stage comes back with its crate still
+			// invisible and a plaque hanging in mid-air.
+			if (State->bHidMeshesOnly)
+			{
+				SetWildBodyHidden(Original, false);
+			}
+			else
+			{
+				Original->SetActorHiddenInGame(false);
+			}
 			Original->SetActorEnableCollision(true);
 			if (ACharacter* Char = Cast<ACharacter>(Original))
 			{
@@ -331,7 +404,15 @@ bool URefactorComponent::TryWildRefactor()
 	UWildRefactorState* State = NewObject<UWildRefactorState>(Creature);
 	State->RegisterComponent();
 	State->OriginalActor = Target;
-	Target->SetActorHiddenInGame(true);
+	State->bHidMeshesOnly = KeepsLabelsWhenWild(Target);
+	if (State->bHidMeshesOnly)
+	{
+		SetWildBodyHidden(Target, true);   // the plaque stays; that is the joke
+	}
+	else
+	{
+		Target->SetActorHiddenInGame(true);
+	}
 	Target->SetActorEnableCollision(false);
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s transmuted."), *Target->GetName());

@@ -865,6 +865,17 @@ void ALegacyMachine::UpdateRunLog()
 
 /* ------------------------------------------------------------ ticket + the housing */
 
+void ALegacyMachine::ArmTheMenagerie()
+{
+	for (const TObjectPtr<ALegacyMachinePart>& Part : Parts)
+	{
+		if (Part && !Part->ActorHasTag(TEXT("WildRefactorOK")))
+		{
+			Part->Tags.Add(TEXT("WildRefactorOK"));
+		}
+	}
+}
+
 void ALegacyMachine::TryCloseTicket()
 {
 	// Editor commandlets load this map without a player. Do not write the
@@ -904,6 +915,10 @@ void ALegacyMachine::TryCloseTicket()
 				Part->SyncLabelsToState();
 			}
 		}
+		// THE JOB IS DONE, SO THE LINE BECOMES A TOY. From here R on a stage rolls
+		// the menagerie instead of repairing it.
+		ArmTheMenagerie();
+
 		if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
 		{
 			Hall->Say(TEXT("Ticket.Closed"));
@@ -950,6 +965,13 @@ void ALegacyMachine::MaybeRestoreClosedTicket()
 		{
 			Part->Refactorable->ApplyRefactor();
 		}
+	}
+
+	// The menagerie survives a reload for the same reason the fix does: the ticket is
+	// closed, and it stays closed whether or not the player owns Deploy yet.
+	if (bTicketOne)
+	{
+		ArmTheMenagerie();
 	}
 
 	// Arming is a display change too: re-read every label once the grants are known.
@@ -1042,6 +1064,31 @@ void ALegacyMachine::TickPresentation(float DeltaSeconds)
 
 void ALegacyMachine::Tick(float DeltaSeconds)
 {
+	/* MRS. HALL DOES NOT NOTICE. A stage has been replaced by an animal, the line is
+	   still producing, and she comments approvingly on throughput. That is the whole
+	   reframe in one line -- she oversees comically bad projects and cannot tell a goat
+	   from a machine -- and the player performed it rather than being told it.
+
+	   POLLED, NOT PUSHED. URefactorComponent is a generic power and has no business
+	   knowing this machine exists; the alternative was a delegate threaded from the
+	   transmutation back into a specific actor, which is more plumbing than a gag is
+	   worth. This costs five null checks a frame, and only until she has said it. */
+	if (!bSaidTheLivestockLine)
+	{
+		for (const TObjectPtr<ALegacyMachinePart>& Part : Parts)
+		{
+			if (Part && Part->IsBodyHidden())
+			{
+				bSaidTheLivestockLine = true;
+				if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+				{
+					Hall->Say(TEXT("Ticket.Livestock"));
+				}
+				break;
+			}
+		}
+	}
+
 	Super::Tick(DeltaSeconds);
 
 	TickPresentation(DeltaSeconds);

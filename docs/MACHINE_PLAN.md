@@ -336,7 +336,7 @@ crooked over the official brass plate, with both ends of the real name
 except somebody made it: a programmer sat in this chair before you, felt what you are
 about to feel, and defaced the sign.
 
-**DEFERRED, DELIBERATELY: the machines are not animals.** Walt also proposed each
+**DEFERRED, THEN BUILT THE OTHER WAY UP (section 12).** The machines are not animals. Walt also proposed each
 stage being an animal, the workpiece entering the front and leaving the rear. Held
 back for two reasons. It spends Refactor's punchline as wallpaper — turning objects
 into animals is the signature power, and if the line is *already* animals then the
@@ -351,6 +351,49 @@ front, out the back, into ACCEPT. Same joke, performed instead of shown, arrivin
 after the power is earned — and it makes the point about Mrs. Hall's projects far
 harder than a sign can. It needs a real answer first for what the run log and the
 fault lamp say about a stage that is now a goat.
+
+## 12. Built: a goat can do this job (2026-08-26)
+
+Section 11 parked the animals and named the version worth building: leave them
+machines, and let the **player** refactor a stage into a goat with the line still
+running. Built that day, once the sign proved the tone worked. Walt chose all three
+defaults: gated on ticket 1, random menagerie, and yes she reacts.
+
+**MOST OF IT WAS ALREADY TRUE.** `ALegacyMachine` drives the workpiece to each part's
+world LOCATION and never asks what the part looks like. Hide the crate, stand a goat
+in its place, and the box travels to the goat, takes its beat and carries on. Nothing
+in the machine changed. That is the second time these systems have composed onto a new
+subject without modification — section 8 said the same about Test-Drive and Deploy —
+and it is worth noticing as a property of the design rather than luck.
+
+**THE GATE IS ONE ACTOR TAG, AND IT ALREADY EXISTED.** `URefactorComponent` skips
+interactables when picking a wild target unless they carry `WildRefactorOK`. So closing
+ticket 1 tags all five stages, and from then on R rolls the menagerie on them instead
+of applying the authored edit. Before that it must not: a stage's authored refactor IS
+the GRADER fix, the whole first job. Arm it early and the player can turn the broken
+stage into a goat before diagnosing it, leaving the puzzle standing behind an animal.
+
+**ALL FIVE OR NONE.** Gate it per stage — say, only the ones behaving — and the stage
+that refuses to become a goat is the answer. That is the same failure section 8 warns
+about from the other direction: any signal that separates the faulty stage from the
+rest, other than watching it fail, deletes the puzzle.
+
+**THE PLAQUE HAS TO SURVIVE, and that was the only fiddly part.** A stage carries four
+static meshes: the crate, plus the three dark plates behind its plaque, true name and
+fault lamp. Hiding "the meshes" leaves text floating over nothing. So the crate is
+tagged `WildBody` and the transmutation hides only that. *GRADER — grade B or better
+passes*, on a brass plate, hanging in front of a goat. Without the plaque there is no
+joke, only livestock in the living room.
+
+**THE PAYOFF IS MRS. HALL.** The line keeps producing and she comments on throughput:
+*"Something about the line looks different, and I have decided that I do not need to
+know what."* Incurious rather than fooled — deliberately. A boss who cannot tell a goat
+from a machine is stupid, and a stupid antagonist is not a threat; a boss who declines
+to look is the one people have actually worked for. It is her thesis stated by her own
+mouth, and the player performed it rather than being told.
+
+Polled from the machine's Tick rather than pushed from the refactor power: R is a
+generic verb and has no business knowing this machine exists.
 
 ## Risks, honestly
 

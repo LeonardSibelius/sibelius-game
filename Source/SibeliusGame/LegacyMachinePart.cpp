@@ -16,6 +16,10 @@ ALegacyMachinePart::ALegacyMachinePart()
 	PrimaryActorTick.bCanEverTick = false;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	// NAME THE BODY. When this stage is transmuted into an animal the crate has to go
+	// and the three plaque plates have to stay, so the transmutation cannot just hide
+	// every static mesh on the actor -- it hides what carries this tag.
+	Mesh->ComponentTags.Add(TEXT("WildBody"));
 	SetRootComponent(Mesh);
 	// BlockAll so the Refactor line trace (ECC_Visibility) lands on this part -- if it
 	// did not, R would sail through and hit whatever is behind the machine. The same
@@ -386,4 +390,11 @@ void ALegacyMachinePart::SetLampTextVisible(bool bVisible)
 	{
 		FaultLamp->SetVisibility(bVisible);
 	}
+}
+
+bool ALegacyMachinePart::IsBodyHidden() const
+{
+	// True while an animal is standing in for this stage. The machine polls it to know
+	// when Mrs. Hall should fail to notice.
+	return Mesh && Mesh->bHiddenInGame;
 }

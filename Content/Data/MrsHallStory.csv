@@ -8,3 +8,4 @@ power_testdrive_1,Power.TestDrive,"A senior developer does not try it both ways 
 power_deploy_1,Power.Deploy,"You put that into the world without my approval. Nothing goes live under my roof unless I say it does, Programmer. Do it again and there is no position to come back to.",mrshall_power_deploy_1
 power_generate_1,Power.Generate,"You asked out loud and the world answered. Things do not come from nothing, Programmer — somebody makes them, and somebody is paid for it, and that was supposed to be you.",mrshall_power_generate_1
 final_1,Final,"You. Programmer. I said it would never replace a senior developer. I did not say what it would do for one. There is no ticket today. Build whatever you like.",mrshall_final_1
+ticket_livestock,Ticket.Livestock,"You. Programmer. Throughput is up. Something about the line looks different, and I have decided that I do not need to know what. Whatever you did, do it to the rest of them.",

@@ -33,6 +33,13 @@ class SIBELIUSGAME_API UWildRefactorState : public UActorComponent
 
 public:
 	UPROPERTY() TObjectPtr<AActor> OriginalActor;
+
+	/** The original was hidden BODY ONLY rather than as a whole actor, so the rest of
+	 *  what it renders kept going. A machine stage turned into a goat has to keep its
+	 *  brass plaque hanging in front of it -- "GRADER / grade B or better passes"
+	 *  bolted to an animal IS the joke, and without it there is only livestock in the
+	 *  living room. Restore has to undo it the same way it was done, hence the flag. */
+	UPROPERTY() bool bHidMeshesOnly = false;
 };
 
 UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))

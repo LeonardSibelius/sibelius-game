@@ -416,6 +416,29 @@ protected:
 	 *  has been caught three times by things that were only true in the editor. */
 	void DressTheVerdict();
 
+	/* ---- THE MENAGERIE, ONCE THE JOB IS DONE ---------------------------------------
+	   Tag every stage WildRefactorOK. URefactorComponent reads that tag two ways: the
+	   stage becomes a legal transmutation target despite being interactable, and its
+	   plaques keep rendering while an animal stands in its place.
+
+	   WHY AFTER THE TICKET AND NOT BEFORE. A stage's authored refactor IS the GRADER
+	   fix -- the whole first job. Arm this early and a player can turn the broken stage
+	   into a goat before diagnosing it, leaving the puzzle standing behind an animal.
+	   Arming it on the close makes it a reward, landing exactly when the player has just
+	   learned that this machine matters.
+
+	   AND IT IS ALL FIVE, NEVER A SUBSET. Gate it per stage -- say, only ones that are
+	   behaving -- and the stage that refuses to become a goat is the answer.
+
+	   Nothing else has to change for the line to keep running: ALegacyMachine drives the
+	   workpiece to each part's world LOCATION and never asks what the part looks like.
+	   The box goes in the front of the goat and out the back on its own. */
+	void ArmTheMenagerie();
+
+	/** She says it once. Latched rather than checked against a grant because it is a
+	 *  gag, not progression -- nothing else should ever branch on it. */
+	bool bSaidTheLivestockLine = false;
+
 private:
 	/** One subscription for the whole machine, forwarded to every part. */
 	void TryBindCodeVision();

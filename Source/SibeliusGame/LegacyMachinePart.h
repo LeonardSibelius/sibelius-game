@@ -186,6 +186,10 @@ public:
 	 *  cannot drift from the state the machine is actually running. */
 	void SyncLabelsToState();
 
+	/** True while an animal has been refactored in over this stage: the crate is hidden
+	 *  and the plaques are not. The line goes on running either way. */
+	bool IsBodyHidden() const;
+
 	/** The line this stage belongs to. Set by ALegacyMachine::BeginPlay, which already
 	 *  holds the authoritative Parts array — a part that searched for its own machine
 	 *  could find the wrong one the day there are two on the floor. */
