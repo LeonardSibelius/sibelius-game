@@ -57,6 +57,24 @@ public:
 	 */
 	void ShowMemoir(const FString& Text, float Seconds = 12.0f);
 
+	/**
+	 * BLANK THE WHOLE HUD while a close-up owns the screen (2026-08-25).
+	 *
+	 * Talk-E frames a dancer's face at 38 degrees of FOV, and the HUD then drew the
+	 * crosshair through her eye, the objective across her forehead, and her own
+	 * greeting over her mouth. A portrait that is half text is not a portrait. For
+	 * the length of the shot the HUD says nothing at all — she speaks instead.
+	 *
+	 * A LEASE, not a flag (the AP2 lesson from the apparition: never two restore
+	 * paths that can disagree). ReleaseCinematic ends it early; the lease ends it
+	 * anyway if the release never comes because she was destroyed, the level was
+	 * torn down, or PIE stopped mid-shot. A HUD that can get stuck blank is a far
+	 * worse bug than one that comes back a second late.
+	 */
+	void HoldCinematic(float Seconds);
+	void ReleaseCinematic();
+	bool IsCinematicHeld() const;
+
 	// SIB-39 dev overlay visibility. Static so the toggle key (character) and the
 	// ScanForSite log gate (UBuildComponent) share one flag without a HUD lookup.
 	// Default ON (Walt likes seeing it).
@@ -213,4 +231,7 @@ private:
 	// exact moment the player is rewarded. Slower fade than the banner.
 	FString MemoirText;
 	double MemoirUntil = 0.0;
+
+	/** World seconds until the HUD un-blanks itself, or 0. See HoldCinematic. */
+	double CinematicUntil = 0.0;
 };

@@ -11,6 +11,46 @@ The seven Unreal-capability experiments are the exception: they occupy
 `0.9.7.1` through `0.9.7.7` as their own headings. They add content. 0.9.7
 stays the last shipped itch build until one of them is cooked.
 
+## v0.9.7.3 — The agents speak
+
+Every AI agent now says who she is, out loud, in her own voice — and the screen
+finally gets out of the way of her face.
+
+- **Five agents, five voices, each with her own name.** Kaia, Nyra, Isla,
+  Aisling and Elise each say *"I am AI agent `<name>`. I have granted you a
+  power. Use it wisely."* Five **Ivanna** voices from the ElevenLabs Voice
+  Library — one actress, five reads, which is what an agent lineage should
+  sound like. Soft-loaded per agent from `/Game/Audio/Dancers/dancer_power_<name>`,
+  falling back to a deliberately **nameless** shared clip for any dancer without
+  her own take (including the one the finale altar summons). Missing clip =
+  silent close-up plus one warning naming the file, never a soft-lock.
+- **The HUD goes dark for the shot.** The greeting subtitle is gone, and with it
+  the crosshair through her eye, the objective across her forehead, the sauce
+  counter, the Test-Drive hint — all of it. `ASibeliusHUD::HoldCinematic` blanks
+  the canvas. It is a lease, not a flag: it expires on its own if the release
+  never comes, because a HUD stuck blank is far worse than one that returns a
+  beat late.
+- **The portrait holds still.** `TalkDanceSpeed` is 0 — she stops dancing for
+  the close-up — and the face is pinned to LOD0.
+- **The camera actually follows her now.** `UpdateTalkShot` rode a component
+  tick that never fired; a runtime-attached component's `TickComponent` simply
+  never runs on these actors, and three separate fixes could not make it. The
+  shot now runs on a 60 Hz timer (`TalkTick`), which is the real reason heads
+  used to drift out of frame.
+- The hold follows the recording — `GreetingSeconds`, or clip length plus a
+  1.4 s tail if longer. Re-pressing E restarts the line rather than stacking a
+  second copy of her voice.
+- **No lip movement, and now we know exactly why.** The lip-blend-shape driver
+  works — measured at 563 updates and a peak of 0.67 driven by the real audio
+  envelope — but `PostAnimEvaluation` calls RigLogic's
+  `UpdateCurvesPostEvaluation()` *after* our morph weights land, and RigLogic
+  replaces the whole array rather than merging. Overwritten every frame.
+  `bTalkMouthMotion` ships **false**. `docs/DANCER_VOICE.md` records the
+  mechanism, the three dead ends, and the MetaHuman Animator route that would
+  actually work.
+- Voice recipe, cast list and the `-AllowCommandletAudio` headless-import trap:
+  `docs/DANCER_VOICE.md`.
+
 ## v0.9.7.2 — Dancers talk with their faces (experiment 2 of 7)
 
 - **[E] talk to a dancer** (the prompt after she has given her power, or if

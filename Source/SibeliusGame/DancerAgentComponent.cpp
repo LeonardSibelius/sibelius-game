@@ -12,6 +12,7 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Components/AudioComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "GroomComponent.h"
@@ -20,6 +21,9 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/App.h"                     // FApp::CanEverRenderAudio - the gates run silent
+#include "Sound/SoundBase.h"
+#include "Sound/SoundWave.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -103,6 +107,66 @@ namespace
 		return Name.IsEmpty() ? TEXT("Anonymous") : Name;
 	}
 
+	/**
+	 * Where the ElevenLabs takes live. Two names are looked for, in this order:
+	 *
+	 *   dancer_power_<agent>   her own take   (dancer_power_kaia, dancer_power_elise, ...)
+	 *   dancer_power           the take every agent shares
+	 *
+	 * So ONE recording gives all of them a voice today, and dropping in a per-agent file
+	 * tomorrow overrides her without a line of code changing. Same trick as MrsHall's
+	 * AudioKey lookup, and the same reason: the audio lands after the code, by hand.
+	 */
+	/**
+	 * THE LIP LAYER OF A METAHUMAN FACE.
+	 *
+	 * Probed on SKM_MHC_Kaia_FaceMesh: 858 morph targets, and NOT ONE of them is named
+	 * for the jaw. That is not an oversight — the jaw is a joint, rotated by RigLogic
+	 * from a control curve, and control curves are unreachable from C++ at runtime. The
+	 * mouth cannot be dropped open from here and never will be.
+	 *
+	 * The LIPS are a different story: these are genuine blend shapes on the mesh, and
+	 * a Leader Pose follower applies its own MorphTargetCurves (SkeletalMeshComponent.cpp,
+	 * UpdateFollowerComponent: "if follower also has it, add it here"). So SetMorphTarget
+	 * moves them, without touching animation mode, leader pose, or the post-process ABP.
+	 *
+	 * lod0 names only. The talk shot pins the face to LOD0 anyway (ForceFaceLOD), both
+	 * for these names and because a face filling the screen deserves the top LOD.
+	 */
+	const TCHAR* const LipPartShapes[] = {
+		TEXT("head_lod0_mesh__mouth_lowerLipDepress_left"),
+		TEXT("head_lod0_mesh__mouth_lowerLipDepress_right"),
+	};
+	const TCHAR* const LipRaiseShapes[] = {
+		TEXT("head_lod0_mesh__mouth_upperLipRaise_left"),
+		TEXT("head_lod0_mesh__mouth_upperLipRaise_right"),
+	};
+	/** Rounded vowels — "oo", "oh". */
+	const TCHAR* const LipFunnelShapes[] = {
+		TEXT("head_lod0_mesh__mouth_funnel_UL"),
+		TEXT("head_lod0_mesh__mouth_funnel_UR"),
+		TEXT("head_lod0_mesh__mouth_funnel_DL"),
+		TEXT("head_lod0_mesh__mouth_funnel_DR"),
+	};
+	/** Wide vowels — "ee", "ah". */
+	const TCHAR* const LipStretchShapes[] = {
+		TEXT("head_lod0_mesh__mouth_stretch_left"),
+		TEXT("head_lod0_mesh__mouth_stretch_right"),
+	};
+
+	void ApplyShapes(USkeletalMeshComponent& Face, const TCHAR* const* Names, int32 Count, float Value)
+	{
+		for (int32 i = 0; i < Count; ++i)
+		{
+			// bRemoveZeroWeight: a shape driven to 0 leaves the curve map entirely,
+			// so nothing of ours is still sitting on her face after the shot.
+			Face.SetMorphTarget(FName(Names[i]), Value, /*bRemoveZeroWeight=*/true);
+		}
+	}
+
+	const TCHAR* const VoiceFolder = TEXT("/Game/Audio/Dancers");
+	const TCHAR* const SharedVoiceName = TEXT("dancer_power");
+
 	int32 FindBoneExact(const USkeletalMeshComponent& Mesh, const TCHAR* const* Names, int32 NameCount)
 	{
 		for (int32 n = 0; n < NameCount; ++n)
@@ -141,9 +205,42 @@ namespace
 
 UDancerAgentComponent::UDancerAgentComponent()
 {
+	/* TICKS FROM THE START, ALWAYS (Walt's log, 2026-08-25).
+
+	   This used to start with tick DISABLED and flip it on in Greet. It never came on.
+	   The diagnostic caught it exactly: "tickEnabled=yes ... 0 mouth tick(s)" — the flag
+	   said enabled and the tick function never fired once in nine seconds.
+
+	   The reason is that this component is added at RUNTIME by UDancerAgentSubsystem's
+	   scan, not placed in the level. SetComponentTickEnabled only moves a flag on the
+	   tick function; the function itself is registered with the level during component
+	   registration, and with bStartWithTickEnabled false at that moment there is nothing
+	   live to enable afterwards. IsComponentTickEnabled() then cheerfully reports true
+	   for a tick that will never run — which is why this survived two rounds of
+	   "the lips do not move".
+
+	   So: tick always, and let TickComponent early-out. It is a bool test per dancer per
+	   frame, and five dancers cost nothing. It also fixes the camera, which tracks her
+	   face on this same tick — the original "their heads move out of view". */
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
 	PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
+
+	/* bAutoActivate IS THE ONE THAT MATTERS. Everything above it was necessary and none
+	   of it was sufficient.
+
+	   UActorComponent's OWN constructor ends with SetTickFunctionEnable(false)
+	   (ActorComponent.cpp), and the tick only ever comes back through Activate(), which
+	   OnRegister calls ONLY when bAutoActivate is true. It defaults to FALSE. A component
+	   placed in a Blueprint is usually activated by other machinery; one created by
+	   NewObject in a runtime scan, like this one, is not — it registers inert.
+
+	   That is why the first two attempts failed in opposite directions and both logged
+	   "0 mouth tick(s)": with bStartWithTickEnabled false the flag read enabled and the
+	   function was dead, and with it true the activation path came along afterwards and
+	   switched it off. IsComponentTickEnabled() is not evidence that anything ticks. The
+	   tick COUNTER was. */
+	bAutoActivate = true;
 
 	// Hard references on the CDO — this is what drags the gitignored animations into
 	// the pak. See the header. A loop of FObjectFinders is legal inside a constructor.
@@ -198,6 +295,11 @@ void UDancerAgentComponent::EnsureGreetingAnim()
 void UDancerAgentComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Belt and braces. bAutoActivate handles the normal path; this covers a component
+	// that got registered before its owner finished initialising, where OnRegister skips
+	// the Activate call entirely. Cheap, idempotent, and this bug cost three playtests.
+	SetComponentTickEnabled(true);
 
 	EnsureGreetingAnim();
 
@@ -322,9 +424,16 @@ void UDancerAgentComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (bGreeting && bTalkShotActive)
+	/* THE WORK MOVED TO TalkTick (a timer) — see the header. This override stays purely
+	   as an observer: if the component tick ever does start firing, say so once, and the
+	   timer becomes deletable. Doing the work in BOTH places would drive the mouth twice
+	   per frame. */
+	if (!bComponentTickObserved)
 	{
-		UpdateTalkShot();
+		bComponentTickObserved = true;
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Dancer] %s component tick FIRED — TalkTick's timer is now redundant."),
+			*AgentName);
 	}
 }
 
@@ -526,9 +635,17 @@ void UDancerAgentComponent::BeginTalkShot()
 		SavedActorRotation = Owner->GetActorRotation();
 		bSavedActorRotation = true;
 		FreezeGrooms(true);
+		ForceFaceLOD(true);
 		FaceThePlayer();
 		UpdateTalkShot();
 		PC->SetViewTargetWithBlend(TalkCamera, TalkCameraBlendIn, VTBlend_Cubic);
+		// The heartbeat. 60 Hz, looping, cleared in EndTalkShot.
+		LastTalkTickTime = 0.0;
+		World->GetTimerManager().SetTimer(
+			TalkTickTimer, this, &UDancerAgentComponent::TalkTick,
+			1.0f / 60.0f, /*bLoop=*/true);
+
+		LogMouthDiag();
 		UE_LOG(LogSibeliusGame, Display,
 			TEXT("[Dancer] %s talk close-up  lookat=%s  camdir=%s"),
 			*AgentName,
@@ -577,7 +694,32 @@ void UDancerAgentComponent::UpdateTalkShot()
 
 void UDancerAgentComponent::EndTalkShot()
 {
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(TalkTickTimer);
+	}
+	LastTalkTickTime = 0.0;
+
 	LockTalkInput(false);
+
+	/* GIVE THE HUD BACK - but not this instant. The camera spends TalkCameraBlendOut
+	   flying home, and popping the crosshair and the objective back on while it is still
+	   on her face undoes the whole point of hiding them. Re-leasing for exactly the
+	   blend keeps the screen clean until she is out of frame, and (unlike simply letting
+	   the original lease run out) it is also the EARLY exit: F cancels her mid-sentence
+	   and the HUD is back a third of a second later, not six seconds later. */
+	//
+	// Guarded on bTalkShotActive: CancelGreeting reaches here on EVERY F press, and a
+	// dancer who was not talking must not blank the HUD for a third of a second.
+	if (bTalkShotActive)
+	{
+		if (ASibeliusHUD* HUD = GetSibeliusHUD())
+		{
+			HUD->ReleaseCinematic();
+			HUD->HoldCinematic(TalkCameraBlendOut);
+		}
+	}
+	ForceFaceLOD(false);
 	if (bSavedActorRotation)
 	{
 		TeleportOwnerYaw(SavedActorRotation);
@@ -709,21 +851,30 @@ void UDancerAgentComponent::Greet()
 		return;
 	}
 
-	const FString Line = FString::Printf(
-		TEXT("Hi.  I am AI Agent %s.  Wanna Fight?  (I don't really fight, I just dance)"),
-		*AgentName);
+	/* SHE SPEAKS; THE HUD SHUTS UP (Walt, 2026-08-25).
 
-	if (APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0))
+	   This used to post the greeting to the Presence subtitle channel - a line of text
+	   across the middle of the screen. Which is where her mouth is, in a portrait framed
+	   at 38 degrees. Walt's screenshot of Kaia has four separate HUD layers on her face
+	   and a crosshair in her eye.
+
+	   So: no subtitle, and no HUD at all for the length of the shot (ASibeliusHUD::
+	   HoldCinematic). The line is a RECORDING now. If the recording is not on this
+	   machine yet the shot still runs, silent, with one Warning naming the file. */
+
+	// Re-pressing E on a dancer who is already talking makes her say it again from the
+	// top, rather than layering a second copy of her own voice over the first.
+	StopTalkVoice();
+	bMouthDiagLogged = false;
+	const float VoiceSeconds = PlayTalkVoice();
+
+	TalkHoldSeconds = FMath::Max(GreetingSeconds, VoiceSeconds + TalkTailSeconds);
+
+	if (ASibeliusHUD* HUD = GetSibeliusHUD())
 	{
-		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
-		{
-			HUD->ShowPresenceLine(Line, GreetingSeconds);
-		}
-		else
-		{
-			UE_LOG(LogSibeliusGame, Display,
-				TEXT("[Dancer] %s greeted, but this level's HUD has no subtitle channel"), *AgentName);
-		}
+		// The lease covers the blend IN as well: the HUD should already be gone by the
+		// time the camera arrives on her face, not blink out once it gets there.
+		HUD->HoldCinematic(TalkHoldSeconds + TalkCameraBlendIn);
 	}
 
 	if (bGreeting)
@@ -733,8 +884,286 @@ void UDancerAgentComponent::Greet()
 	}
 
 	BeginGreetingMotion();
-	SetComponentTickEnabled(true);
 	BeginTalkShot();
+}
+
+FString UDancerAgentComponent::GetSpokenLine() const
+{
+	/* HER NAME IS IN THE LINE (Walt, 2026-08-25). "I am AI agent Kaia. I have granted
+	   you a power. Use it wisely." — which only works because the recording is per
+	   agent. The SHARED dancer_power clip stays nameless on purpose: it is what any
+	   dancer without her own take falls back to, including the one AFinaleAltar summons
+	   at the cathedral, and a fallback that confidently announces the wrong name is
+	   worse than one that announces none. */
+	FString Line = TalkLine;
+	Line.ReplaceInline(TEXT("{0}"), *AgentName);
+	return Line;
+}
+
+USoundBase* UDancerAgentComponent::FindTalkVoice() const
+{
+	// LOAD_NoWarn|LOAD_Quiet: "not recorded yet" is an expected state, not a fault, and
+	// it must not spray the log every time the player talks to somebody.
+	const FString Own = AgentName.ToLower();
+	if (!Own.IsEmpty())
+	{
+		const FString Path = FString::Printf(TEXT("%s/%s_%s.%s_%s"),
+			VoiceFolder, SharedVoiceName, *Own, SharedVoiceName, *Own);
+		if (USoundBase* Mine = LoadObject<USoundBase>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet))
+		{
+			return Mine;
+		}
+	}
+
+	const FString Shared = FString::Printf(TEXT("%s/%s.%s"),
+		VoiceFolder, SharedVoiceName, SharedVoiceName);
+	return LoadObject<USoundBase>(nullptr, *Shared, nullptr, LOAD_NoWarn | LOAD_Quiet);
+}
+
+float UDancerAgentComponent::PlayTalkVoice()
+{
+	UWorld* World = GetWorld();
+	if (!World || !World->IsGameWorld())
+	{
+		return 0.0f;
+	}
+
+	// The smoke-test commandlets run headless with no audio device. They stay green and
+	// silent - the MrsHall guard, for the same reason.
+	if (IsRunningCommandlet() || !FApp::CanEverRenderAudio())
+	{
+		return 0.0f;
+	}
+
+	USoundBase* Clip = FindTalkVoice();
+	if (!Clip)
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Dancer] %s has no voice clip - close-up runs silent. Import the recording of ")
+			TEXT("\"%s\" as %s/%s (or %s/%s_%s for her own take). See docs/DANCER_VOICE.md"),
+			*AgentName, *GetSpokenLine(), VoiceFolder, SharedVoiceName,
+			VoiceFolder, SharedVoiceName, *AgentName.ToLower());
+		return 0.0f;
+	}
+
+	/* 2D, NOT ATTACHED TO HER HEAD. She fills the screen from 48 cm away, so there is no
+	   spatial information a pan could carry - only the chance of her voice arriving from
+	   slightly off-camera-left. The apparition AP7 lesson: for a voice that IS the scene,
+	   2D is immune to every "spawned behind your head" volume bug.
+
+	   CREATED THEN PLAYED, not SpawnSound2D, because the mouth rides the audio envelope
+	   and the audio component only bothers computing one if the delegate is ALREADY
+	   bound when the sound starts:
+
+	       NewActiveSound.bUpdateSingleEnvelopeValue = OnAudioSingleEnvelopeValue.IsBound()
+
+	   SpawnSound2D plays on creation, so binding afterwards is one frame too late and
+	   the envelope never arrives. */
+	TalkAudio = UGameplayStatics::CreateSound2D(World, Clip);
+	if (TalkAudio)
+	{
+		VoiceEnvelope = 0.0f;
+		bVoiceEnvelopeSeen = false;
+		MouthTime = 0.0f;
+		TalkAudio->OnAudioSingleEnvelopeValue.AddDynamic(this, &UDancerAgentComponent::HandleVoiceEnvelope);
+		TalkAudio->Play();
+	}
+	else
+	{
+		// No component, no envelope, no mouth - but the line still has to be heard.
+		UGameplayStatics::PlaySound2D(World, Clip);
+	}
+
+	const float Seconds = Clip->GetDuration();
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s speaks (%s, %.2fs)"),
+		*AgentName, *Clip->GetName(), Seconds);
+
+	// A looping sound reports an absurd duration and would hold the camera forever.
+	return (Seconds > 0.0f && Seconds < 60.0f) ? Seconds : 0.0f;
+}
+
+void UDancerAgentComponent::StopTalkVoice()
+{
+	if (IsValid(TalkAudio))
+	{
+		TalkAudio->OnAudioSingleEnvelopeValue.RemoveDynamic(this, &UDancerAgentComponent::HandleVoiceEnvelope);
+		TalkAudio->Stop();
+		TalkAudio->DestroyComponent();
+	}
+	TalkAudio = nullptr;
+
+	// Close her mouth on the way out. Skipping this leaves her lips parted for the rest
+	// of the level, because morph curves persist until something zeroes them.
+	SetMouthShapes(0.0f, 0.0f);
+	MouthOpen = 0.0f;
+	MouthTime = 0.0f;
+	VoiceEnvelope = 0.0f;
+	bVoiceEnvelopeSeen = false;
+}
+
+void UDancerAgentComponent::HandleVoiceEnvelope(const USoundWave* /*PlayingSoundWave*/, const float EnvelopeValue)
+{
+	VoiceEnvelope = EnvelopeValue;
+	bVoiceEnvelopeSeen = true;
+}
+
+void UDancerAgentComponent::TalkTick()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	// A real delta, not the nominal rate: FInterpTo on the mouth wants the time that
+	// actually passed, and a hitching frame would otherwise snap her lips.
+	const double Now = World->GetTimeSeconds();
+	const float Delta = (LastTalkTickTime > 0.0)
+		? FMath::Clamp(static_cast<float>(Now - LastTalkTickTime), 0.001f, 0.25f)
+		: 1.0f / 60.0f;
+	LastTalkTickTime = Now;
+
+	if (!bGreeting || !bTalkShotActive)
+	{
+		return;
+	}
+
+	++MouthTickCount;
+	UpdateTalkShot();
+	UpdateMouth(Delta);
+}
+
+void UDancerAgentComponent::UpdateMouth(float DeltaTime)
+{
+	if (!bTalkMouthMotion)
+	{
+		return;
+	}
+
+	USkeletalMeshComponent* Face = FindFaceMesh();
+	if (!Face)
+	{
+		return;
+	}
+
+	const bool bSpeaking = IsValid(TalkAudio) && TalkAudio->IsPlaying();
+
+	float Target = 0.0f;
+	if (bSpeaking)
+	{
+		MouthTime += DeltaTime;
+
+		if (bVoiceEnvelopeSeen)
+		{
+			/* THE REAL WAVEFORM. The envelope is a linear amplitude, and speech spends
+			   most of its time well below full scale, so it is lifted with a square root
+			   before driving the lips - otherwise she barely moves except on the loudest
+			   syllable. */
+			Target = FMath::Clamp(FMath::Sqrt(FMath::Clamp(VoiceEnvelope, 0.0f, 1.0f)) * 1.35f, 0.0f, 1.0f);
+		}
+		else
+		{
+			// Fallback: a syllable oscillator, so a build where the delegate never fires
+			// still moves her lips instead of leaving her mouthing silence.
+			const float Fast = 0.5f + 0.5f * FMath::Sin(MouthTime * 2.0f * PI * 5.5f);
+			const float Phrase = 0.65f + 0.35f * FMath::Sin(MouthTime * 2.0f * PI * 1.3f + 0.9f);
+			Target = Fast * Phrase;
+		}
+	}
+
+	// Lips have mass. Interpolated in both directions so nothing snaps, and fast enough
+	// (22) that consonants still read at four or five syllables a second.
+	MouthOpen = FMath::FInterpTo(MouthOpen, Target, DeltaTime, 22.0f);
+	MouthPeak = FMath::Max(MouthPeak, MouthOpen);
+
+	// Vowel colour drifts slowly between wide and rounded. Nobody speaks one vowel for
+	// three seconds, and a mouth that only opens and shuts is a nutcracker.
+	const float Shape = 0.5f + 0.5f * FMath::Sin(MouthTime * 2.0f * PI * 0.8f + 0.4f);
+
+	SetMouthShapes(MouthOpen * FMath::Clamp(MouthOpenScale, 0.0f, 1.0f), Shape);
+}
+
+void UDancerAgentComponent::SetMouthShapes(float Open, float Shape)
+{
+	USkeletalMeshComponent* Face = FindFaceMesh();
+	if (!Face)
+	{
+		return;
+	}
+
+	Open = FMath::Clamp(Open, 0.0f, 1.0f);
+	Shape = FMath::Clamp(Shape, 0.0f, 1.0f);
+
+	ApplyShapes(*Face, LipPartShapes,    UE_ARRAY_COUNT(LipPartShapes),    Open);
+	ApplyShapes(*Face, LipRaiseShapes,   UE_ARRAY_COUNT(LipRaiseShapes),   Open * 0.45f);
+	ApplyShapes(*Face, LipFunnelShapes,  UE_ARRAY_COUNT(LipFunnelShapes),  Open * Shape * 0.60f);
+	ApplyShapes(*Face, LipStretchShapes, UE_ARRAY_COUNT(LipStretchShapes), Open * (1.0f - Shape) * 0.45f);
+}
+
+void UDancerAgentComponent::LogMouthDiag()
+{
+	if (bMouthDiagLogged)
+	{
+		return;
+	}
+	bMouthDiagLogged = true;
+
+	USkeletalMeshComponent* Face = FindFaceMesh();
+	if (!Face)
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Dancer] %s MOUTH DIAG: no Face mesh component on this actor — lips cannot move."),
+			*AgentName);
+		return;
+	}
+
+	const USkeletalMesh* FaceAsset = Face->GetSkeletalMeshAsset();
+	const int32 MorphCount = FaceAsset ? FaceAsset->GetMorphTargets().Num() : 0;
+	const bool bShapeFound = FaceAsset && FaceAsset->FindMorphTarget(FName(LipPartShapes[0])) != nullptr;
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Dancer] %s MOUTH DIAG: mouthMotion=%s tickEnabled=%s active=%s face='%s' mesh='%s' ")
+		TEXT("morphs=%d shape=%s leaderpose=%s audio=%s scale=%.2f"),
+		*AgentName,
+		bTalkMouthMotion ? TEXT("ON") : TEXT("**OFF**"),
+		IsComponentTickEnabled() ? TEXT("yes") : TEXT("**no**"),
+		IsActive() ? TEXT("yes") : TEXT("**no**"),
+		*Face->GetName(),
+		FaceAsset ? *FaceAsset->GetName() : TEXT("NONE"),
+		MorphCount,
+		bShapeFound ? TEXT("FOUND") : TEXT("**MISSING**"),
+		Face->LeaderPoseComponent.IsValid() ? TEXT("yes") : TEXT("no"),
+		IsValid(TalkAudio) ? TEXT("yes") : TEXT("**none**"),
+		MouthOpenScale);
+}
+
+void UDancerAgentComponent::ForceFaceLOD(bool bForce)
+{
+	USkeletalMeshComponent* Face = FindFaceMesh();
+	if (!Face)
+	{
+		return;
+	}
+
+	if (bForce && !bFaceLODForced)
+	{
+		// 1 means LOD0 (0 means "auto"). The lip morphs are lod0-named, and a face
+		// filling the screen should be on the top LOD regardless.
+		Face->SetForcedLOD(1);
+		bFaceLODForced = true;
+	}
+	else if (!bForce && bFaceLODForced)
+	{
+		Face->SetForcedLOD(0);
+		bFaceLODForced = false;
+	}
+}
+
+ASibeliusHUD* UDancerAgentComponent::GetSibeliusHUD() const
+{
+	const UWorld* World = GetWorld();
+	APlayerController* PC = World ? UGameplayStatics::GetPlayerController(World, 0) : nullptr;
+	return PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr;
 }
 
 void UDancerAgentComponent::BeginGreetingMotion()
@@ -751,12 +1180,13 @@ void UDancerAgentComponent::BeginGreetingMotion()
 		return;
 	}
 
-	// Already mid-talk: keep the pause, just hold a bit longer.
+	// Already mid-talk: keep the crawl, just hold a bit longer. She has been restarted
+	// from the top of the line, so the hold is the whole clip again, not what was left.
 	if (bGreeting)
 	{
 		World->GetTimerManager().SetTimer(
 			GreetingTimer, this, &UDancerAgentComponent::ResumeAfterGreeting,
-			GreetingSeconds, /*bLoop=*/false);
+			TalkHoldSeconds > 0.0f ? TalkHoldSeconds : GreetingSeconds, /*bLoop=*/false);
 		return;
 	}
 
@@ -764,15 +1194,25 @@ void UDancerAgentComponent::BeginGreetingMotion()
 	SavedDanceTime = Mesh->GetPosition();
 	bGreeting = true;
 
-	float HoldSeconds = GreetingSeconds;
+	// However long the voice clip needs, as set by Greet. Falls back to GreetingSeconds
+	// when nobody has spoken (a direct BeginGreetingMotion, or no clip on disk).
+	const float HoldSeconds = TalkHoldSeconds > 0.0f ? TalkHoldSeconds : GreetingSeconds;
 
-	// Talk is a close-up, not a celebration. Freeze the dance so her head stays
-	// in frame; the Face mesh does the talking.
+	// Talk is a close-up, not a celebration: the dance drops to TalkDanceSpeed so her
+	// head stays in frame. Not a hard freeze - see the property comment.
 	if (UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance())
 	{
-		Node->SetPlaying(false);
-		UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s paused dance to talk (%.2fs)"),
-			*AgentName, HoldSeconds);
+		if (TalkDanceSpeed > 0.0f)
+		{
+			Node->SetPlayRate(TalkDanceSpeed);
+			Node->SetPlaying(true);
+		}
+		else
+		{
+			Node->SetPlaying(false);
+		}
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s talking for %.2fs (dance at %.0f%%)"),
+			*AgentName, HoldSeconds, TalkDanceSpeed * 100.0f);
 	}
 	else
 	{
@@ -796,9 +1236,24 @@ void UDancerAgentComponent::CancelGreeting(bool bResumeDance)
 		World->GetTimerManager().ClearTimer(GreetingTimer);
 	}
 
+	// Cut her off mid-word. F on a talking dancer means "stop talking and dance",
+	// and a voice that kept playing over the resumed dance would be a ghost.
+	if (bTalkShotActive)
+	{
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Dancer] %s shot ended: %d update(s), peak mouth %.2f"),
+			*AgentName, MouthTickCount, MouthPeak);
+	}
+	MouthTickCount = 0;
+	MouthPeak = 0.0f;
+
+	StopTalkVoice();
+	TalkHoldSeconds = 0.0f;
+
 	const bool bWasGreeting = bGreeting;
 	bGreeting = false;
-	SetComponentTickEnabled(false);
+	// Tick stays ON — see the constructor. Disabling it here is what made it
+	// unrecoverable last time.
 	EndTalkShot();
 
 	USkeletalMeshComponent* Mesh = FindDanceMesh();
@@ -810,6 +1265,15 @@ void UDancerAgentComponent::CancelGreeting(bool bResumeDance)
 	}
 
 	Mesh->bPauseAnims = false;
+
+	// Unconditional, and BEFORE the early-out: the talk crawl (TalkDanceSpeed) must not
+	// survive into the dance she goes back to, whichever way this was reached. A dancer
+	// stuck at 10% speed for the rest of the level is the bug this line exists to prevent.
+	UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance();
+	if (Node)
+	{
+		Node->SetPlayRate(1.0f);
+	}
 
 	if (!bWasGreeting)
 	{
@@ -823,13 +1287,24 @@ void UDancerAgentComponent::CancelGreeting(bool bResumeDance)
 		return;
 	}
 
-	if (SavedDance)
+	if (SavedDance && Cast<UAnimSequence>(Mesh->AnimationData.AnimToPlay) == SavedDance)
+	{
+		/* SHE NEVER LEFT THIS DANCE - the talk only slowed it down. Re-playing it and
+		   seeking back to SavedDanceTime would rewind the few seconds she crawled
+		   through while speaking, which reads as a hitch the moment the camera lets go.
+		   Restoring the rate (above) is the whole job. */
+		if (Node)
+		{
+			Node->SetPlaying(true);
+		}
+	}
+	else if (SavedDance)
 	{
 		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
 		Mesh->PlayAnimation(SavedDance, /*bLooping=*/true);
 		Mesh->SetPosition(SavedDanceTime, /*bFireNotifies=*/false);
 	}
-	else if (UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance())
+	else if (Node)
 	{
 		Node->SetPlaying(true);
 	}

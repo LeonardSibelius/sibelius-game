@@ -97,6 +97,13 @@ void ASibeliusHUD::DrawHUD()
 {
 	Super::DrawHUD();
 
+	// A close-up owns the screen: draw NOTHING. Not the crosshair through her eye,
+	// not the objective across her forehead. See HoldCinematic in the header.
+	if (IsCinematicHeld())
+	{
+		return;
+	}
+
 	DrawCrosshair();
 	DrawBackToOfficeHint();   // independent of the dev overlay toggle — a player affordance
 	DrawMachineHint();        // "[E] play the machine" — the plinth needs to say it does something
@@ -112,6 +119,32 @@ void ASibeliusHUD::DrawHUD()
 	{
 		DrawDevOverlay();
 	}
+}
+
+void ASibeliusHUD::HoldCinematic(float Seconds)
+{
+	const UWorld* World = GetWorld();
+	const double Now = World ? World->GetTimeSeconds() : 0.0;
+
+	// Take the LONGER lease. Two shots overlapping (E on a second dancer before the
+	// first hold lapses) must not have the shorter one un-blank the screen underneath
+	// the longer one.
+	CinematicUntil = FMath::Max(CinematicUntil, Now + FMath::Max(0.0f, Seconds));
+}
+
+void ASibeliusHUD::ReleaseCinematic()
+{
+	CinematicUntil = 0.0;
+}
+
+bool ASibeliusHUD::IsCinematicHeld() const
+{
+	if (CinematicUntil <= 0.0)
+	{
+		return false;
+	}
+	const UWorld* World = GetWorld();
+	return World && World->GetTimeSeconds() < CinematicUntil;
 }
 
 void ASibeliusHUD::ShowPresenceLine(const FString& Text, float Seconds)

@@ -86,8 +86,10 @@ void USlapComponent::DoSlap()
 	}
 
 	// Walt (2026-08-03): F on a dancing girl does not fight her — it reshuffles her
-	// dance. That is the joke her greeting sets up ("Wanna Fight? I don't really
-	// fight, I just dance"). Reuse the interactor's focus so E and F agree about who
+	// dance. That was the joke her greeting set up ("Wanna Fight? I don't really
+	// fight, I just dance") — the greeting is now the spoken power line instead
+	// (2026-08-25, docs/DANCER_VOICE.md), so F reshuffling her dance is the whole
+	// gag on its own now. Reuse the interactor's focus so E and F agree about who
 	// the player is looking at; a separate sweep here could disagree with the prompt
 	// on screen, which reads as a bug.
 	if (const UInteractorComponent* Interactor = OwnerPawn->FindComponentByClass<UInteractorComponent>())

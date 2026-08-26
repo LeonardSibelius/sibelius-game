@@ -147,6 +147,10 @@ Content/Cinematics/Generated/
 # back up manually. Regenerable from the Line->AudioKey manifest. Clear the synthetic-voice
 # commercial license before any shipped build.
 Content/Audio/MrsHall/
+# Dancer agent voice (2026-08-25) - the line every AI agent speaks at the talk close-up.
+# Same policy as MrsHall: AI-generated (ElevenLabs), local-only, back up manually,
+# regenerable from docs/DANCER_VOICE.md. Reaches the pak via DirectoriesToAlwaysCook.
+Content/Audio/Dancers/
 # AI Apparition clue voice (World 3) — AI-generated (ElevenLabs etc.); same policy as
 # MrsHall: local-only + Drive backup, regenerable. Keep AI audio out of the public repo.
 Content/AIApparition/S_ai_*

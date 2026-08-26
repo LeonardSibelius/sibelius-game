@@ -4,11 +4,17 @@
 //
 //   E on a dancer who still has a power -> the slot trial (SPINE). She is the way in.
 //   E on a dancer with nothing left to give -> talk close-up:
-//        camera zooms her MetaHuman face, the dance pauses, she faces you,
-//        HUD line is up. The Face mesh is left as MetaHuman assembled it
-//        (Leader Pose + ABP_Face_PostProcess). Driving it from C++ wrecked
-//        the portrait. Actor yaw is restored when the shot ends.
-//        "Hi. I am AI Agent Kaia. Wanna Fight? (I don't really fight, I just dance)"
+//        camera zooms her MetaHuman face, she faces you, the dance drops to a
+//        crawl, and THE WHOLE HUD GOES DARK while she SPEAKS the line aloud.
+//        The Face mesh is left as MetaHuman assembled it. Driving it from C++
+//        wrecked the portrait once; leave the rig alone.
+//        NOTE (2026-08-25): it is NOT a Leader Pose follower — measured, not
+//        assumed: "leaderpose=no" on Kaia. MetaHuman nulls the leader pose when
+//        it runs the instance post-process AnimBP, and syncs with Copy Pose From
+//        Mesh instead. That is the ANIMATED-face configuration, which means a
+//        facial anim sequence could be played on it. See docs/DANCER_VOICE.md.
+//        Actor yaw is restored when the shot ends.
+//        "I have granted you a power.  Use it wisely."
 //   F on a dancer -> she switches to a different Morro dance, at random.
 //
 // F is the FIGHT key. Pointing it at a dancer does not fight her — it reshuffles her
@@ -55,6 +61,7 @@
 
 class ACameraActor;
 class UAnimSequence;
+class USoundWave;
 class USkeletalMeshComponent;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -84,6 +91,92 @@ public:
 	/** How long her greeting stays on screen (seconds). Also how long the talk close-up holds. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.5"))
 	float GreetingSeconds = 7.0f;
+
+	/**
+	 * WHAT SHE SAYS (Walt, 2026-08-25). Every agent says the same line, because every
+	 * agent hands over the same kind of thing: a capability the player was not supposed
+	 * to have. It is the premise of the game said out loud, once, by the one who did it.
+	 *
+	 * SPOKEN, NOT WRITTEN. The old greeting was a HUD subtitle across the middle of the
+	 * screen — which, in a 38-degree portrait, sat exactly on her mouth. The text is
+	 * gone; this string now only names the recording and shows up in the log when the
+	 * recording is missing.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	FString TalkLine = TEXT("I am AI agent {0}.  I have granted you a power.  Use it wisely.");
+
+	/** Beat of silence held on her face after the voice clip ends, before the camera lets go. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0"))
+	float TalkTailSeconds = 1.4f;
+
+	/**
+	 * Dance speed while she talks, as a fraction of normal. 0 freezes her outright.
+	 *
+	 * ZERO, AND IT SHOULD STAY ZERO (Walt, 2026-08-25). This shipped at 0.1 for one
+	 * afternoon on the theory that a frozen dancer reads as a waxwork. She does — but a
+	 * dancer who keeps dancing swings her head clean out of a 38-degree frame, and no
+	 * amount of camera tracking saves a portrait whose subject is mid-pirouette. Walt:
+	 * "I was hoping to keep a steady focus on their faces."
+	 *
+	 * The life in the shot comes from her MOUTH now (bTalkMouthMotion), which is where
+	 * it belongs while she is speaking. Raise this only if you want the old wander back.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float TalkDanceSpeed = 0.0f;
+
+	/**
+	 * Move her lips while the voice clip plays.
+	 *
+	 * WHAT IS AND IS NOT REACHABLE ON A METAHUMAN FACE. Her jaw is a JOINT, driven by
+	 * RigLogic inside ABP_Face_PostProcess from control curves that C++ cannot write at
+	 * runtime — SetMorphTarget feeds MorphTargetCurves (blend shapes only) and
+	 * OverrideCurveValue writes the post-evaluation map, which is discarded next frame.
+	 * Both verified in UE 5.7 engine source. So there is no jaw drop, and there is no
+	 * true phoneme lip sync, without the MetaHuman Animator route (docs/DANCER_VOICE.md).
+	 *
+	 * What IS reachable is the LIP layer. SKM_MHC_Kaia_FaceMesh carries 858 morph
+	 * targets, among them mouth_lowerLipDepress, mouth_upperLipRaise, mouth_funnel and
+	 * mouth_stretch — real blend shapes, and USkeletalMeshComponent::UpdateFollowerComponent
+	 * explicitly appends a FOLLOWER's own MorphTargetCurves ("if follower also has it,
+	 * add it here"), so these apply even though the Face is a Leader Pose follower.
+	 * Nothing here touches the animation mode, the leader pose, or the post-process ABP,
+	 * which is exactly why it cannot wreck the portrait the way earlier attempts did.
+	 *
+	 * Her lips part and purse in time with the actual audio envelope. It is a puppet
+	 * mouth, not a phoneme solve — but at 48 cm it reads as speech.
+	 */
+	/**
+	 * OFF, AND IT SHOULD STAY OFF UNTIL THE RIG CHANGES (2026-08-25).
+	 *
+	 * The code below works. Measured, on Kaia: 563 updates across one close-up, mouth
+	 * driven to a peak of 0.67 by the real audio envelope, on a face whose morph target
+	 * resolves (shape=FOUND, 858 morphs). Her mouth did not move a millimetre.
+	 *
+	 * The reason is in USkeletalMeshComponent::PostAnimEvaluation, in this order:
+	 *
+	 *     UpdateMorphTargetOverrideCurves();              // our SetMorphTarget lands here
+	 *     if (PostProcessAnimInstance) { ...
+	 *         PostProcessAnimInstance->UpdateCurvesPostEvaluation();   // RigLogic writes
+	 *
+	 * RigLogic owns every blendshape weight on that mesh and REPLACES the array rather
+	 * than merging with it. Our value is applied and overwritten one line later, every
+	 * frame. No amount of scaling, smoothing or curve-picking changes that; the write
+	 * simply happens after ours.
+	 *
+	 * Layering on top of RigLogic means being INSIDE the anim graph, after its node —
+	 * editing ABP_Face_PostProcess, which is the rig this project deliberately does not
+	 * touch (v0.9.7.2: "C++ Control Rig and Flite TTS wrecked the portrait").
+	 *
+	 * Kept, not deleted, because it costs nothing switched off and it is the working half
+	 * of a feature whose other half is a rig change. The real route to a moving mouth is
+	 * MetaHuman Animator's audio-driven animation — see docs/DANCER_VOICE.md.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	bool bTalkMouthMotion = false;
+
+	/** How far the lips open at the loudest part of the line. 1 = the full blend shape. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float MouthOpenScale = 0.85f;
 
 	/**
 	 * Kept cooked (CDO hard-ref) but talk-E no longer plays it. A victory wave
@@ -192,6 +285,76 @@ private:
 	void TeleportOwnerYaw(const FRotator& Rotation);
 	void FreezeGrooms(bool bFreeze);
 
+	/**
+	 * Speak TalkLine. Returns the clip's length in seconds, or 0 if there is no clip yet.
+	 *
+	 * SOFT-LOADED BY PATH, exactly like Mrs. Hall's refusals: the voice is AI-generated
+	 * (ElevenLabs), so it is gitignored and local-only, and a machine that has not got
+	 * the file yet must still run the close-up rather than fail. Silence plus one
+	 * Warning naming the file it wanted — never a soft-lock (the apparition's AP3).
+	 *
+	 * Gitignored content reaches a shipped pak ONLY via DirectoriesToAlwaysCook —
+	 * /Game/Audio/Dancers is listed in DefaultGame.ini for the same reason MrsHall is.
+	 * See docs/DANCER_VOICE.md.
+	 */
+	float PlayTalkVoice();
+	void StopTalkVoice();
+
+	/** Per-agent take if she has one, else the take every agent shares. */
+	class USoundBase* FindTalkVoice() const;
+
+	/** TalkLine with {0} replaced by her name — what the per-agent recording says. */
+	FString GetSpokenLine() const;
+
+	/** The local HUD, when it is ours. Null in a level with a different HUD class. */
+	class ASibeliusHUD* GetSibeliusHUD() const;
+
+	/**
+	 * THE SHOT'S HEARTBEAT — a looping TIMER, not the component tick.
+	 *
+	 * TickComponent never runs on this component and three separate fixes failed to make
+	 * it: bStartWithTickEnabled, always-on ticking, and bAutoActivate. The last attempt
+	 * logged "tickEnabled=yes active=yes ... 0 mouth tick(s)" — registered, enabled,
+	 * active, and never called. Something about a component NewObject'd onto an already
+	 * live MetaHuman actor keeps it out of the level's tick list.
+	 *
+	 * So stop fighting it. FTimerManager is already proven in this class — GreetingTimer
+	 * has always fired correctly — and a 60 Hz timer is entirely adequate for following a
+	 * head with a camera and opening a mouth. Started in BeginTalkShot, cleared in
+	 * EndTalkShot, so it only runs during a close-up.
+	 */
+	void TalkTick();
+
+	/** Drive the lip blend shapes from the voice. Called from TalkTick during the shot. */
+	void UpdateMouth(float DeltaTime);
+
+	/**
+	 * Open = how far the lips part, Shape = 0 wide/stretched .. 1 rounded/funnelled.
+	 * Passing Open = 0 clears every shape back off her face.
+	 */
+	void SetMouthShapes(float Open, float Shape);
+
+	/**
+	 * Envelope of the voice, straight from the audio renderer, so the mouth is driven by
+	 * the ACTUAL waveform rather than a blind oscillator. Bound BEFORE Play() — the
+	 * audio component only computes an envelope if the delegate is already bound when
+	 * the sound starts (AudioComponent.cpp: bUpdateSingleEnvelopeValue), which is why
+	 * the voice is created with CreateSound2D and played by hand.
+	 */
+	UFUNCTION()
+	void HandleVoiceEnvelope(const USoundWave* PlayingSoundWave, const float EnvelopeValue);
+
+	/** Pin the face to LOD0 for the close-up: best face, and the lod0 morph names apply. */
+	void ForceFaceLOD(bool bForce);
+
+	/**
+	 * One line naming every link in the mouth chain. Called from BeginTalkShot, NOT from
+	 * UpdateMouth — the first attempt logged from inside UpdateMouth and produced no
+	 * output at all, which told us nothing except that the function had not run. A
+	 * diagnostic that only fires on the path you are trying to prove is worthless.
+	 */
+	void LogMouthDiag();
+
 	/** Zoom a camera onto her face. Skipped when E is opening the slot trial. */
 	void BeginTalkShot();
 	void UpdateTalkShot();
@@ -231,6 +394,58 @@ private:
 	/** Spawned for the talk close-up; destroyed when the greeting ends. */
 	UPROPERTY(Transient)
 	TObjectPtr<ACameraActor> TalkCamera;
+
+	/** Her voice, while it is playing. Stopped when the shot ends so F cuts her off mid-word. */
+	UPROPERTY(Transient)
+	TObjectPtr<class UAudioComponent> TalkAudio;
+
+	/**
+	 * How long THIS close-up holds — GreetingSeconds, or the voice clip plus its tail if
+	 * that is longer. A three-second line and a nine-second line should not both get
+	 * seven seconds of camera.
+	 */
+	float TalkHoldSeconds = 0.0f;
+
+	/** Seconds since the line started; drives the syllable and vowel oscillators. */
+	float MouthTime = 0.0f;
+
+	/** Smoothed lip opening, 0..1. Interpolated so the mouth never snaps. */
+	float MouthOpen = 0.0f;
+
+	/** Latest envelope value from the audio renderer, 0..1. */
+	float VoiceEnvelope = 0.0f;
+
+	/**
+	 * True once a single envelope value has arrived. Until then the mouth runs on the
+	 * fallback oscillator, so a build where the delegate never fires still moves her
+	 * lips rather than leaving her mouthing nothing.
+	 */
+	bool bVoiceEnvelopeSeen = false;
+
+	bool bFaceLODForced = false;
+
+	/**
+	 * One mouth report per close-up. The lips are driven through a chain with four
+	 * places to fail silently (no Face component, no morph target of that name on her
+	 * mesh, no audio playing, no envelope), and every one of them looks identical from
+	 * the player's chair: a still mouth. This logs which link is broken.
+	 */
+	bool bMouthDiagLogged = false;
+
+	/** Ticks counted during this shot, and the loudest the mouth got. Both reported when
+	 *  the shot ends: 0 ticks means the component never ticked, which is a different bug
+	 *  from a mouth that ticked and stayed shut. */
+	int32 MouthTickCount = 0;
+	float MouthPeak = 0.0f;
+
+	/** The close-up heartbeat. See TalkTick. */
+	FTimerHandle TalkTickTimer;
+
+	/** World time of the previous TalkTick, for a real delta rather than the nominal rate. */
+	double LastTalkTickTime = 0.0;
+
+	/** Set if TickComponent ever fires. If this turns true, the timer can go away. */
+	bool bComponentTickObserved = false;
 
 	TWeakObjectPtr<AActor> SavedViewTarget;
 
