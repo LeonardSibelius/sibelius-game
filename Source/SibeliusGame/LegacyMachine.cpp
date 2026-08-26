@@ -111,22 +111,32 @@ ALegacyMachine::ALegacyMachine()
 	   The card and its text share ONE rotator on purpose. Tilt them separately and the
 	   yaw of 180 flips the roll axis on the text only, so the card leans one way and
 	   the writing leans the other. Same FRotator for both, and they lean together. */
-	/* SIZE THE CARD FROM THE TEXT, NOT BY EYE. The first pass hung a 24-character
-	   title at world size 14 on a 118cm card. This project's own build script measures
-	   the default font at GLYPH_W = 0.60 of the world size, so that title was
-	   24 * 14 * 0.60 = 202cm of writing on a 118cm card: it overflowed both ends and
-	   landed on top of the official name underneath, which is what Walt saw. Text
-	   width is chars * WorldSize * 0.60, and every number below comes from it:
+	/* THE CARD IS TAPED OVER THE TOP, NOT ACROSS THE MIDDLE.
 
-	     official  44 chars * 8.5 * 0.60 = 224cm   <- must be WIDER than the card, or
-	     card                              196cm      no real name shows past it
-	     title     24 chars * 12  * 0.60 = 173cm   <- must be NARROWER than the card
-	     plate                             250cm   <- must be widest of all
+	   First attempt hid the official name behind the card and relied on the name being
+	   WIDER than the card so its two ends would show past the edges. That needs the
+	   text width to be known, and it is not: width is chars * WorldSize * GLYPH_W, and
+	   build_legacy_machine.py names GLYPH_W = 0.60 while saying in its own comment that
+	   it is an estimate, deliberately exposed because Unreal's GetTextLocalSize has an
+	   axis convention the script would have to guess at. The real font is narrower, the
+	   official name came out under the card's 196cm, and the card ate all of it. Walt
+	   got a sign with nothing to deface.
 
-	   So 14cm of the official name survives at each end, and the title sits clear
-	   inside the card. Retype either string and redo this arithmetic, or the sign goes
-	   back to being a pile-up. */
-	const FVector SignAnchor(-45.0f, 0.0f, 150.0f);
+	   So the two are separated in Z instead, where the only number involved is one I
+	   set. The plate is tall; the official name sits on the bottom strip; the card
+	   covers the top. The name is visible because nothing is in front of it, not
+	   because of an arithmetic race it might lose against a font.
+
+	     plate   250 x 46, centred on the anchor        (bottom edge at -23)
+	     name    on the bottom strip at -15, size 8     (nothing above it but plate)
+	     card    196 x 26, at +8                        (spans -5 .. +21)
+	     title   on the card at +8, size 12
+
+	   Widths still need to not overflow -- 24 chars at 12 is ~173cm on a 196 card, 44
+	   at 8 is ~211cm on a 250 plate, both with room to spare even if GLYPH_W is off by
+	   a fifth in either direction. That is the difference between using the estimate
+	   for headroom and depending on it for the joke. */
+	const FVector SignAnchor(-45.0f, 0.0f, 158.0f);
 	const FRotator SignFacing(0.0f, 180.0f, 0.0f);
 	const FRotator CardFacing(0.0f, 180.0f, 4.0f);   // taped on crooked
 
@@ -138,13 +148,13 @@ ALegacyMachine::ALegacyMachine()
 		SignPlate->SetStaticMesh(CubeMesh);
 	}
 	SignPlate->SetRelativeLocation(SignAnchor);
-	SignPlate->SetRelativeScale3D(FVector(0.02f, 2.50f, 0.30f));
+	SignPlate->SetRelativeScale3D(FVector(0.02f, 2.50f, 0.46f));
 
 	SignOfficialText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("SignOfficialText"));
 	SignOfficialText->SetupAttachment(Root);
-	SignOfficialText->SetRelativeLocation(SignAnchor + FVector(-1.6f, 0.0f, 0.0f));
+	SignOfficialText->SetRelativeLocation(SignAnchor + FVector(-1.6f, 0.0f, -15.0f));
 	SignOfficialText->SetRelativeRotation(SignFacing);
-	SignOfficialText->SetWorldSize(8.5f);
+	SignOfficialText->SetWorldSize(8.0f);
 	SignOfficialText->SetHorizontalAlignment(EHTA_Center);
 	SignOfficialText->SetVerticalAlignment(EVRTA_TextCenter);
 	SignOfficialText->SetTextRenderColor(SignBrass);
@@ -158,13 +168,13 @@ ALegacyMachine::ALegacyMachine()
 	{
 		SignCard->SetStaticMesh(CubeMesh);
 	}
-	SignCard->SetRelativeLocation(SignAnchor + FVector(-3.0f, 4.0f, 0.0f));
+	SignCard->SetRelativeLocation(SignAnchor + FVector(-3.0f, 4.0f, 8.0f));
 	SignCard->SetRelativeRotation(CardFacing);
-	SignCard->SetRelativeScale3D(FVector(0.01f, 1.96f, 0.24f));
+	SignCard->SetRelativeScale3D(FVector(0.01f, 1.96f, 0.26f));
 
 	SignText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("SignText"));
 	SignText->SetupAttachment(Root);
-	SignText->SetRelativeLocation(SignAnchor + FVector(-4.4f, 4.0f, 0.0f));
+	SignText->SetRelativeLocation(SignAnchor + FVector(-4.4f, 4.0f, 8.0f));
 	SignText->SetRelativeRotation(CardFacing);
 	SignText->SetWorldSize(12.0f);
 	SignText->SetHorizontalAlignment(EHTA_Center);
