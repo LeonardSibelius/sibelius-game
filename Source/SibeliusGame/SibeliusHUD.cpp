@@ -101,6 +101,8 @@ void ASibeliusHUD::DrawHUD()
 	// not the objective across her forehead. See HoldCinematic in the header.
 	if (IsCinematicHeld())
 	{
+		// A cutscene still gets drawn - it IS the screen. Everything else stays off.
+		DrawCinematicVideo();
 		return;
 	}
 
@@ -119,6 +121,60 @@ void ASibeliusHUD::DrawHUD()
 	{
 		DrawDevOverlay();
 	}
+}
+
+void ASibeliusHUD::SetCinematicVideo(UTexture* InVideo)
+{
+	CinematicVideo = InVideo;
+	bCinematicVideoLogged = false;
+}
+
+void ASibeliusHUD::DrawCinematicVideo()
+{
+	if (!CinematicVideo || !Canvas)
+	{
+		return;
+	}
+
+	const float TexW = CinematicVideo->GetSurfaceWidth();
+	const float TexH = CinematicVideo->GetSurfaceHeight();
+	const float ScreenW = Canvas->ClipX;
+	const float ScreenH = Canvas->ClipY;
+
+	// Black FIRST, always. A cutscene owns the screen whether or not a frame has
+	// arrived yet, and painting it unconditionally means "no frame" looks like a
+	// deliberate fade rather than the game showing through.
+	DrawRect(FLinearColor::Black, 0.0f, 0.0f, ScreenW, ScreenH);
+
+	if (!bCinematicVideoLogged)
+	{
+		bCinematicVideoLogged = true;
+		UE_LOG(LogTemp, Warning,
+			TEXT("[HUD] CINEMATIC VIDEO DIAG: texture='%s' class=%s surface=%.0fx%.0f "
+			     "resource=%s screen=%.0fx%.0f"),
+			*CinematicVideo->GetName(),
+			*CinematicVideo->GetClass()->GetName(),
+			TexW, TexH,
+			CinematicVideo->GetResource() ? TEXT("yes") : TEXT("**null**"),
+			ScreenW, ScreenH);
+	}
+
+	if (TexW <= 0.0f || TexH <= 0.0f)
+	{
+		return;
+	}
+
+	/* LETTERBOX, NEVER STRETCH. The render is 16:9; the player's window might not be.
+	   Fit inside and fill the remainder with black, so a 16:10 or ultrawide monitor gets
+	   bars instead of a subtly fat Kaia. */
+	const float Scale = FMath::Min(ScreenW / TexW, ScreenH / TexH);
+	const float DrawW = TexW * Scale;
+	const float DrawH = TexH * Scale;
+
+	DrawTexture(CinematicVideo,
+		(ScreenW - DrawW) * 0.5f, (ScreenH - DrawH) * 0.5f,
+		DrawW, DrawH,
+		0.0f, 0.0f, 1.0f, 1.0f);
 }
 
 void ASibeliusHUD::HoldCinematic(float Seconds)

@@ -75,6 +75,15 @@ public:
 	void ReleaseCinematic();
 	bool IsCinematicHeld() const;
 
+	/**
+	 * Draw this texture full-screen while the cinematic hold is up. Null clears it.
+	 *
+	 * Takes a UTexture, which means a UMediaTexture goes straight in - that is the
+	 * whole reason AVideoCue needs no material and no UMG widget to show video. The
+	 * HUD was already blanking itself for close-ups; drawing the film is the same job.
+	 */
+	void SetCinematicVideo(class UTexture* InVideo);
+
 	// SIB-39 dev overlay visibility. Static so the toggle key (character) and the
 	// ScanForSite log gate (UBuildComponent) share one flag without a HUD lookup.
 	// Default ON (Walt likes seeing it).
@@ -234,4 +243,13 @@ private:
 
 	/** World seconds until the HUD un-blanks itself, or 0. See HoldCinematic. */
 	double CinematicUntil = 0.0;
+
+	/** Full-screen video for the duration of a cutscene, or null. See SetCinematicVideo. */
+	UPROPERTY(Transient)
+	TObjectPtr<class UTexture> CinematicVideo;
+
+	void DrawCinematicVideo();
+
+	/** One diagnostic line per cutscene, not per frame. */
+	bool bCinematicVideoLogged = false;
 };

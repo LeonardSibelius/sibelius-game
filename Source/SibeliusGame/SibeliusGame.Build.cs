@@ -47,7 +47,13 @@ public class SibeliusGame : ModuleRules
 			// APPEAL-R wild refactor: the Menagerie auto-scans animal-pack folders.
 			"AssetRegistry",
 			// MetaHuman grooms (Elise's hair blew out when talk-E yawed her).
-			"HairStrandsCore"
+			"HairStrandsCore",
+			// AVideoCue: UMediaPlayer / UMediaTexture / UMediaSoundComponent for the
+			// pre-rendered cutscenes (docs/CINEMATICS.md).
+			"MediaAssets",
+			// ASequenceCue: plays a Level Sequence live instead of a pre-rendered file.
+			"LevelSequence",
+			"MovieScene"
 		});
 
 // SIB-19 smoke-test commandlet uses UEditorLoadingAndSavingUtils (editor-only)

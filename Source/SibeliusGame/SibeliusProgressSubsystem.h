@@ -26,4 +26,15 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Progress")
 	bool bSlotPlayed = false;
+
+	/**
+	 * AVideoCue ids already shown this session (docs/CINEMATICS.md).
+	 *
+	 * A SET, not a bool, because there will be more than one cutscene and each needs
+	 * its own memory. Session-only like everything else here - travelling back to the
+	 * office must not replay Kaia's introduction, but a fresh run of the game should
+	 * show it again.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Progress")
+	TSet<FName> PlayedVideoCues;
 };
