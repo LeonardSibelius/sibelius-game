@@ -63,45 +63,40 @@ void ASauceCauldron::BeginPlay()
 		FocusCatcher->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 
-	const FString Label = GetActorNameOrLabel();
-	const bool bKitchen = Label.Contains(TEXT("Kitchen"));
+	// ------------------------------------------------------------------
+	// THE LEVEL OWNS THE DRESS MESH. BeginPlay must not add or strip one.
+	//
+	// This used to branch on GetActorNameOrLabel().Contains(TEXT("Kitchen")) —
+	// the exact trap BookPickup.h documents. ActorLabel is WITH_EDITORONLY_DATA:
+	// the cook strips it, so in a packaged build GetActorNameOrLabel() falls
+	// back to the internal object name, which the placement script never set
+	// (it only calls set_actor_label). The test was therefore ALWAYS FALSE in
+	// the shipped game — so every cauldron took the temple branch below and
+	// LOADED a pot. PIE hid the kitchen pot; the packaged build spawned one,
+	// floating at the actor's counter height in the middle of the kitchen,
+	// with nothing in any log. Map data survives cooking; editor labels do not.
+	//
+	// No test is needed, because the map data is already right and it cooks:
+	//   L_Office_v02  CauldronMesh empty      (the stove furniture is the shop)
+	//   L_AI_Temple   CauldronMesh = SM_Pot   (saved on the instance)
+	// which is what the header already promises — "leave empty when real props
+	// (the stove) play the part". Assign a mesh in the level or get nothing.
+	//
+	// The fire-looking Niagara that made the old strip necessary is gone too:
+	// USauceFluidComponent gates the gas on Role, not on a name.
+	// ------------------------------------------------------------------
 
-	if (bKitchen)
+	if (CauldronMesh && CauldronMesh->GetStaticMesh())
 	{
-		// 0.9.7 kitchen: stove furniture is the shop. Do not leave a hero pot
-		// in the aisle. Temple cauldrons must NOT take this path.
-		if (CauldronMesh)
-		{
-			CauldronMesh->SetStaticMesh(nullptr);
-			CauldronMesh->SetVisibility(false);
-			CauldronMesh->SetHiddenInGame(true);
-			CauldronMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		}
-		if (ContentsMesh)
-		{
-			ContentsMesh->SetStaticMesh(nullptr);
-			ContentsMesh->SetVisibility(false);
-			ContentsMesh->SetHiddenInGame(true);
-		}
-		return;
+		// A level-assigned pot has to block the camera trace or E never finds it
+		// (the temple cauldron relied on the old branch for exactly this).
+		CauldronMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		CauldronMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	}
 
-	// Temple (and any other) cauldron: keep / restore the pot. An earlier
-	// BeginPlay stripped EVERY cauldron and left fire-looking Niagara on the floor.
-	if (CauldronMesh && !CauldronMesh->GetStaticMesh())
-	{
-		if (UStaticMesh* Pot = LoadObject<UStaticMesh>(nullptr,
-			TEXT("/Game/MagicianLabatory/Source/Props/Pot/SM_Pot.SM_Pot")))
-		{
-			CauldronMesh->SetStaticMesh(Pot);
-			CauldronMesh->SetVisibility(true);
-			CauldronMesh->SetHiddenInGame(false);
-			CauldronMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			CauldronMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-		}
-	}
 	if (ContentsMesh)
 	{
+		// The sauce surface is revealed by the blend, never shown at rest.
 		ContentsMesh->SetVisibility(false);
 		ContentsMesh->SetHiddenInGame(true);
 	}
