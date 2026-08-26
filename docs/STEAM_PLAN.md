@@ -58,6 +58,32 @@ someone else to type them.
 
 Everything else on this page is fair game to hand off.
 
+### "If the game is free, why do they need my bank details?"
+
+Walt asked, and it is the right question to ask before typing bank details anywhere.
+The answer is that it is **mandatory and there is no free-game exemption** — Valve
+will not let anything release without valid banking and tax information, paid or free.
+
+Three reasons, and only one is about money:
+
+- **Identity verification, which is the real one.** The 30-day wait exists so Valve can
+  "confirm we know who we are doing business with." They are a US company distributing
+  software worldwide; sanctions and anti-money-laundering rules mean they have to know
+  who the publisher is. A bank account in your name is strong evidence you are real.
+- **The $100 has to be able to come back.** It is recouped from the first payment after
+  $1,000 revenue, so the channel has to exist even if it is never used.
+- **Free is not permanent.** A price, DLC or in-app purchases can be added later.
+
+**What they ask for is a routing number and an account number** — the two numbers along
+the bottom of a cheque. That is deposit-only: it lets money in, not out. It is a
+different thing from a bank LOGIN, and Steamworks never asks for one. Anything that
+does is phishing.
+
+**The gotcha that stalls people:** the account holder name must match the legal name
+entered at onboarding. Onboarding as an individual with a personal account in the same
+name is the clean path; a company-flavoured legal name against a personal account
+bounces and costs days.
+
 ---
 
 ## 3. Store page text
