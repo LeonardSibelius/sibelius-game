@@ -27,6 +27,12 @@ namespace
 	const FColor MachineGood(120, 235, 140, 255);
 	const FColor MachineBad(255, 120, 90, 255);
 
+	/** The sign. Brass for the official plate, marker pen for the card taped over it.
+	 *  Both deliberately dull: this is the one thing in the room that must NOT glow,
+	 *  or it competes with the fault lamps the player is supposed to be reading. */
+	const FColor SignBrass(198, 172, 112, 255);
+	const FColor SignMarker(26, 26, 30, 255);
+
 	/** The hour Mrs. Hall's ticket names. The run log counts minutes from here. */
 	constexpr int32 ThrowHour = 3;
 }
@@ -74,6 +80,81 @@ ALegacyMachine::ALegacyMachine()
 	{
 		RejectBin->SetStaticMesh(CubeMesh);
 	}
+
+	// ---- the verdict, as furniture (see header) ---------------------------------
+	// Meshes and transforms are filled in by DressTheVerdict(), which copies them off
+	// the Workpiece; all the constructor owes these is existence and a parent.
+	AcceptDust = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AcceptDust"));
+	AcceptDust->SetupAttachment(Root);
+	AcceptDust->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (CubeMesh)
+	{
+		AcceptDust->SetStaticMesh(CubeMesh);
+	}
+
+	RejectSpill.Reserve(MaxRejectSpill);
+	for (int32 i = 0; i < MaxRejectSpill; ++i)
+	{
+		UStaticMeshComponent* Piece = CreateDefaultSubobject<UStaticMeshComponent>(
+			FName(*FString::Printf(TEXT("RejectSpill%02d"), i)));
+		Piece->SetupAttachment(Root);
+		Piece->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		RejectSpill.Add(Piece);
+	}
+
+	/* ---- the sign ----------------------------------------------------------------
+	   The machine runs along Y and the player walks the -X side, which is why every
+	   label in this file is yawed 180. So the sign is a slab that is THIN IN X: 2cm
+	   thick, 170cm along the line, 26cm tall, hung above the parts where a gantry sign
+	   goes.
+
+	   The card and its text share ONE rotator on purpose. Tilt them separately and the
+	   yaw of 180 flips the roll axis on the text only, so the card leans one way and
+	   the writing leans the other. Same FRotator for both, and they lean together. */
+	const FVector SignAnchor(-45.0f, 0.0f, 150.0f);
+	const FRotator SignFacing(0.0f, 180.0f, 0.0f);
+	const FRotator CardFacing(0.0f, 180.0f, 4.0f);   // taped on crooked
+
+	SignPlate = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SignPlate"));
+	SignPlate->SetupAttachment(Root);
+	SignPlate->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (CubeMesh)
+	{
+		SignPlate->SetStaticMesh(CubeMesh);
+	}
+	SignPlate->SetRelativeLocation(SignAnchor);
+	SignPlate->SetRelativeScale3D(FVector(0.02f, 1.70f, 0.26f));
+
+	SignOfficialText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("SignOfficialText"));
+	SignOfficialText->SetupAttachment(Root);
+	SignOfficialText->SetRelativeLocation(SignAnchor + FVector(-1.6f, 0.0f, 0.0f));
+	SignOfficialText->SetRelativeRotation(SignFacing);
+	SignOfficialText->SetWorldSize(9.0f);
+	SignOfficialText->SetHorizontalAlignment(EHTA_Center);
+	SignOfficialText->SetVerticalAlignment(EVRTA_TextCenter);
+	SignOfficialText->SetTextRenderColor(SignBrass);
+
+	// SHORTER THAN THE PLATE and pushed off centre, so the real name survives at both
+	// ends. A card that covers the plate completely is just a different sign.
+	SignCard = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SignCard"));
+	SignCard->SetupAttachment(Root);
+	SignCard->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (CubeMesh)
+	{
+		SignCard->SetStaticMesh(CubeMesh);
+	}
+	SignCard->SetRelativeLocation(SignAnchor + FVector(-3.0f, 8.0f, 0.0f));
+	SignCard->SetRelativeRotation(CardFacing);
+	SignCard->SetRelativeScale3D(FVector(0.01f, 1.18f, 0.22f));
+
+	SignText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("SignText"));
+	SignText->SetupAttachment(Root);
+	SignText->SetRelativeLocation(SignAnchor + FVector(-4.4f, 8.0f, 0.0f));
+	SignText->SetRelativeRotation(CardFacing);
+	SignText->SetWorldSize(14.0f);
+	SignText->SetHorizontalAlignment(EHTA_Center);
+	SignText->SetVerticalAlignment(EVRTA_TextCenter);
+	SignText->SetTextRenderColor(SignMarker);
 
 	// THE EVIDENCE, at reading height. Offsets here are real centimetres now that these
 	// hang off a bare root instead of the stretched bed.
@@ -142,9 +223,102 @@ ALegacyMachine::ALegacyMachine()
 	RejectLabel->SetTextRenderColor(MachineBad);
 }
 
+void ALegacyMachine::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	DressTheVerdict();
+}
+
+void ALegacyMachine::DressTheVerdict()
+{
+	/* THE SPILL IS THE WORKPIECE. Read the mesh and the scale off the component that
+	   already carries them instead of naming an asset here: the heap is then literally
+	   the thing this machine rejects, it needs no entry in build_legacy_machine.py, and
+	   it keeps matching if WORKPIECE_MESH is ever swapped. */
+	UStaticMesh* PieceMesh = Workpiece ? Workpiece->GetStaticMesh() : nullptr;
+	const FVector PieceScale = Workpiece ? Workpiece->GetRelativeScale3D() : FVector::OneVector;
+
+	/* Offsets are relative to the REJECT bin, so the heap follows if the build script
+	   moves it. HAND PLACED, not seeded: a random scatter reads as noise, and twelve
+	   boxes is few enough that where each one lies is a decision. The crate is 55 wide,
+	   its rim is +14 from centre, and the carpet is -9. */
+	static const FVector SpillOffset[MaxRejectSpill] = {
+		FVector( -6.0f,   4.0f,  23.0f),   // heaped on the crate
+		FVector(  8.0f,  -7.0f,  23.0f),
+		FVector(  0.0f,   9.0f,  40.0f),
+		FVector(-24.0f,  18.0f,  14.0f),   // going over the rim
+		FVector( 26.0f, -14.0f,  12.0f),
+		FVector(-41.0f,  34.0f,  -9.0f),   // on the carpet
+		FVector(-14.0f,  47.0f,  -9.0f),
+		FVector( 23.0f,  42.0f,  -9.0f),
+		FVector(-47.0f, -21.0f,  -9.0f),
+		FVector( 11.0f, -45.0f,  -9.0f),
+		FVector( 45.0f,  23.0f,  -9.0f),
+		FVector(-31.0f, -47.0f,  -9.0f),
+	};
+	static const FRotator SpillRot[MaxRejectSpill] = {
+		FRotator( 0.0f,  15.0f,   6.0f),
+		FRotator( 0.0f, -40.0f,  -4.0f),
+		FRotator( 8.0f,  70.0f,  12.0f),
+		FRotator( 0.0f,  30.0f,  34.0f),   // tipped, caught going over the rim
+		FRotator( 0.0f, -20.0f, -28.0f),
+		FRotator( 0.0f,  12.0f,   0.0f),
+		FRotator( 0.0f, -55.0f,   0.0f),
+		FRotator( 0.0f,  78.0f,   0.0f),
+		FRotator( 0.0f,  34.0f,   0.0f),
+		FRotator( 0.0f, -12.0f,   0.0f),
+		FRotator( 0.0f,  51.0f,   0.0f),
+		FRotator( 0.0f, -70.0f,   0.0f),
+	};
+
+	const FVector BinAt = RejectBin ? RejectBin->GetRelativeLocation() : FVector::ZeroVector;
+	const int32 Shown = FMath::Clamp(RejectSpillCount, 0, MaxRejectSpill);
+
+	for (int32 i = 0; i < RejectSpill.Num() && i < MaxRejectSpill; ++i)
+	{
+		UStaticMeshComponent* Piece = RejectSpill[i];
+		if (!Piece)
+		{
+			continue;
+		}
+		// No workpiece mesh means the build script has not run yet: hide, rather than
+		// litter the carpet with engine cubes.
+		const bool bShow = (i < Shown) && (PieceMesh != nullptr);
+		Piece->SetVisibility(bShow);
+		Piece->SetHiddenInGame(!bShow);
+		if (!bShow)
+		{
+			continue;
+		}
+		Piece->SetStaticMesh(PieceMesh);
+		Piece->SetRelativeScale3D(PieceScale);
+		Piece->SetRelativeLocation(BinAt + SpillOffset[i]);
+		Piece->SetRelativeRotation(SpillRot[i]);
+	}
+
+	// The grime in ACCEPT, just inside the open crate. The emptiness around it is what
+	// actually reads; this only denies it the look of a bin that is ready for work.
+	if (AcceptDust && AcceptBin)
+	{
+		AcceptDust->SetRelativeLocation(AcceptBin->GetRelativeLocation() + FVector(0.0f, 0.0f, -11.0f));
+		AcceptDust->SetRelativeScale3D(FVector(0.42f, 0.42f, 0.02f));
+	}
+
+	if (SignOfficialText)
+	{
+		SignOfficialText->SetText(FText::FromString(OfficialName));
+	}
+	if (SignText)
+	{
+		SignText->SetText(FText::FromString(HandLetteredName));
+	}
+}
+
 void ALegacyMachine::BeginPlay()
 {
 	Super::BeginPlay();
+
+	DressTheVerdict();
 
 	/* THE OVERNIGHT THROW, AS A NUMBER. Mrs. Hall says it threw again overnight; the
 	   machine says how badly. Starting the tally at 47 rejects means the player walks up

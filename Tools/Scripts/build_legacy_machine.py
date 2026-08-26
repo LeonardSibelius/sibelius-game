@@ -205,6 +205,39 @@ if plate_mat:
 else:
     notes.append("could not create the plate material -- labels stay on bare wood")
 
+# --------------------------------------------------------------- the sign materials
+#
+# THE SIGN IS BUILT IN C++, NOT HERE. ALegacyMachine's constructor owns the plate, the
+# card and their two strings, so the geometry has exactly one owner and this script
+# cannot drift from it. All that is left for the script is the two surfaces, because a
+# material is an asset and an asset needs the editor.
+#
+# Same recipe as M_LabelPlate: unlit constant colour. Unlit matters more here than
+# anywhere else on the machine -- the office is dim, and a LIT sign hung above the line
+# either disappears or picks up the fault lamps' red and looks like part of the alarm.
+def flat_unlit(name, rgb, why):
+    path = "/Game/SlotFactory/" + name
+    if unreal.EditorAssetLibrary.does_asset_exist(path):
+        unreal.EditorAssetLibrary.delete_asset(path)
+    mat = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
+        name, "/Game/SlotFactory", unreal.Material, unreal.MaterialFactoryNew())
+    if not mat:
+        notes.append("could not create %s -- %s stays default grey" % (name, why))
+        return None
+    mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    c = mel.create_material_expression(mat, unreal.MaterialExpressionConstant3Vector, -350, 0)
+    c.set_editor_property("constant", unreal.LinearColor(rgb[0], rgb[1], rgb[2], 1.0))
+    mel.connect_material_property(c, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    mel.recompile_material(mat)
+    unreal.EditorAssetLibrary.save_asset(path)
+    notes.append("%s ready (%s)" % (name, why))
+    return mat
+
+# Dull. The plate is old brass nobody has polished since the line was commissioned, and
+# the card is a torn-down box. Neither should out-shout the fault lamps.
+brass_mat = flat_unlit("M_SignBrass", (0.085, 0.068, 0.030), "the official plate")
+card_mat  = flat_unlit("M_SignCard",  (0.205, 0.150, 0.095), "the taped-on card")
+
 PLATE_MESH = "/Engine/BasicShapes/Cube"   # 100 uu; a slab has no facing to get wrong
 
 # Glyph metrics for the default (Roboto) font, as fractions of the text's world size.
@@ -590,6 +623,24 @@ else:
             notes.append("no RunLog component -- the overnight history has nowhere to show")
 
         unlit_text(m)   # tally, run log + ACCEPT/REJECT labels
+
+        # THE SIGN'S TWO SURFACES. unlit_text(m) above already caught SignOfficialText
+        # and SignText, because it walks every TextRenderComponent on the actor -- the
+        # sign needed no new line for its writing. Only the slabs do.
+        #
+        # Everything else about the sign (where it hangs, how far the card is pushed off
+        # centre so both ends of the real name still show, the 4-degree lean) lives in
+        # ALegacyMachine's constructor. Do not add it here as well.
+        for prop, mat in (("sign_plate", brass_mat), ("sign_card", card_mat)):
+            c = m.get_editor_property(prop)
+            if c and mat:
+                c.set_material(0, mat)
+                notes.append("%s surfaced" % prop)
+
+        # THE REJECT SPILL NEEDS NOTHING HERE ON PURPOSE. DressTheVerdict() copies the
+        # mesh and the scale straight off the workpiece component, so the heap is always
+        # the box this machine actually throws out, and swapping WORKPIECE_MESH above
+        # re-dresses the carpet for free.
         notes.append("machine wired to %d parts" % len(placed))
         les.save_current_level()
         notes.append("level saved")

@@ -302,6 +302,56 @@ reimport of the `/Game/Data/MrsHallStory` DataTable asset, or she is silent in t
 
 ---
 
+## 11. Built: the line is a joke, the labels are not (2026-08-26)
+
+Walt's note, and it is a tone correction to this whole document: *"I want those
+machines to look like a joke, to look like a failure. Mrs. Hall is an archaic failure
+who oversees projects that are comically bad."* He is right, and the living room was
+the last place in the game still playing her straight — Gideon, her demonic enforcer,
+already goes down to one slap.
+
+**THE RULE THIS SETTLES.** The machine is a joke. The labels are not in on it. Duct
+tape, an overflowing reject crate, a stage that is visibly the wrong equipment — and
+bolted to it, a perfectly straight-faced plate reading `GRADER / grade B or better
+passes`. Deadpan labels on absurd hardware is funnier than comic labels, and it is the
+only version that survives §8: the plaque has to read as *reasonable* or Code Vision
+exposing it as a lie is not a discovery. A plaque that is already winking cannot be
+caught lying.
+
+**THE BINS ARE THE VERDICT AT A GLANCE.** The tally and the run log are text on a
+housing; you have to walk up and read them. Two identical empty crates said nothing.
+Now REJECT overflows — heaped on the crate and scattered across the carpet — and
+ACCEPT holds a film of grime and nothing else. That is `ACCEPTED 0 / REJECTED 47`
+readable from the doorway, and it invents no fiction: the pile IS the overnight throw
+Mrs. Hall's ticket is about. The spilled boxes copy their mesh and scale off the
+Workpiece component at dress time, so the heap is literally what the machine rejects
+and re-dresses itself if `WORKPIECE_MESH` ever changes.
+
+**THE TITLE, AND WHOSE VOICE IT IS.** Walt wanted a big demeaning title —
+*Mrs. Hall's Crap Factory*. The trap is voice: Mrs. Hall would never call her own line
+that, so a title card saying so is the *game* editorialising over her, and this room
+already has one narrator too many. So it is a sheet of card, hand-lettered and taped
+crooked over the official brass plate, with both ends of the real name
+(`HALL DIVISION - MATERIALS RECLAMATION LINE 4`) still showing past it. Same joke,
+except somebody made it: a programmer sat in this chair before you, felt what you are
+about to feel, and defaced the sign.
+
+**DEFERRED, DELIBERATELY: the machines are not animals.** Walt also proposed each
+stage being an animal, the workpiece entering the front and leaving the rear. Held
+back for two reasons. It spends Refactor's punchline as wallpaper — turning objects
+into animals is the signature power, and if the line is *already* animals then the
+goat is not a surprise when the player finally earns it. And the five plaques are the
+puzzle: they need a fixed readable height and a fault lamp in a fixed place, which a
+row of animals does not have, and §8 warns specifically against the diagnosis becoming
+a search.
+
+The version worth building later is the inverse: leave them machines, and let the
+*player* refactor a stage into a goat and have **the line keep running**. Box in the
+front, out the back, into ACCEPT. Same joke, performed instead of shown, arriving
+after the power is earned — and it makes the point about Mrs. Hall's projects far
+harder than a sign can. It needs a real answer first for what the run log and the
+fault lamp say about a stage that is now a goat.
+
 ## Risks, honestly
 
 - **Debugging fantasy goes tedious fast.** The mitigation is §3, and the warning sign is

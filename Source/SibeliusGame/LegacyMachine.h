@@ -225,6 +225,82 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine")
 	TObjectPtr<UStaticMeshComponent> RejectBin;
 
+	/* ---- THE VERDICT, AS FURNITURE ------------------------------------------------
+	   The tally reads ACCEPTED 0 / REJECTED 47 and the run log lists the overnight
+	   throws, but both of those are text on a housing: you have to walk up to the
+	   machine and read them. The bins are the same evidence at a glance, and until now
+	   they were two identical empty crates that said nothing at all.
+
+	   So REJECT overflows -- a heap on the crate and boxes scattered on the carpet
+	   around it -- and ACCEPT holds nothing but a film of grime. One look from the
+	   doorway and you know how this machine's career has gone, before Mrs. Hall has
+	   said a word about it. It also costs no new mechanic: the pile IS the 47 pieces
+	   the tally already claims were thrown overnight.
+
+	   THE SPILL IS MADE OF THE WORKPIECE. DressTheVerdict() reads the mesh and the
+	   scale off the Workpiece component rather than naming an asset here, so the heap
+	   is literally the thing this machine rejects, and it keeps matching if
+	   build_legacy_machine.py ever swaps WORKPIECE_MESH. */
+
+	/** How many spilled pieces are shown. Components past this are hidden rather than
+	 *  destroyed, so the heap can be thinned in the Details panel without a rebuild. */
+	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Verdict", meta = (ClampMin = "0", ClampMax = "12"))
+	int32 RejectSpillCount = 12;
+
+	/** A FIXED heap, not a growing one. It is already there when the player walks in,
+	 *  which is the whole point -- and set dressing that animates is set dressing that
+	 *  can be caught mid-animation looking wrong. */
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine|Verdict")
+	TArray<TObjectPtr<UStaticMeshComponent>> RejectSpill;
+
+	/** The film in the bottom of an untouched crate. ACCEPT's emptiness does the real
+	 *  work; this only stops it reading as "clean and ready" instead of "never used". */
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine|Verdict")
+	TObjectPtr<UStaticMeshComponent> AcceptDust;
+
+	/* ---- THE SIGN ------------------------------------------------------------------
+	   Walt's note: the line should read as a joke and a failure, under a big demeaning
+	   title. The trap in that is VOICE. Mrs. Hall would never call her own line a crap
+	   factory, so a title that says so is the GAME editorialising over her, and this
+	   room already has one narrator too many.
+
+	   So the demeaning title is not the game's. It is a sheet of card, hand-lettered
+	   and taped crooked over the official brass plate, with both ends of the real name
+	   still showing past it. Same joke, except now somebody MADE it: a programmer sat
+	   in this chair before you, felt exactly what you are about to feel, and defaced
+	   the sign. That is characterisation of the job rather than commentary on it, and
+	   it is the cheapest storytelling in the level -- two slabs and two strings.
+
+	   THE PLATE STAYS STRAIGHT-FACED, exactly like the part plaques. The comedy is the
+	   hardware and the card; the official language never winks, because a plaque that
+	   is in on the joke cannot also be the thing Code Vision catches lying. */
+
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine|Sign")
+	TObjectPtr<UStaticMeshComponent> SignPlate;
+
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine|Sign")
+	TObjectPtr<UTextRenderComponent> SignOfficialText;
+
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine|Sign")
+	TObjectPtr<UStaticMeshComponent> SignCard;
+
+	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine|Sign")
+	TObjectPtr<UTextRenderComponent> SignText;
+
+	/** The line's real name. Bureaucratically reasonable on purpose: it is funnier read
+	 *  straight, and it has to survive being the thing the card is mocking. */
+	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Sign")
+	FString OfficialName = TEXT("HALL DIVISION  -  MATERIALS RECLAMATION LINE 4");
+
+	/** What the last programmer wrote on the card. */
+	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Sign")
+	FString HandLetteredName = TEXT("MRS. HALL'S CRAP FACTORY");
+
+	/** Components are made in the constructor, which runs before any instance value is
+	 *  applied, so the count cannot come from RejectSpillCount. Twelve is made; the
+	 *  property decides how many are shown. */
+	static constexpr int32 MaxRejectSpill = 12;
+
 	/** THE EVIDENCE. "SINCE 03:00 — ACCEPTED 0 / REJECTED 47". The overnight throw Mrs.
 	 *  Hall is complaining about, stated as numbers the player can watch change. Also
 	 *  says LINE HALTED, so a machine stopped by the player is never mistaken for a
@@ -310,6 +386,13 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+	/** Meshes, scales, rotations and visibility for the reject heap, the grime in
+	 *  ACCEPT, and the two lines of text on the sign. Runs from OnConstruction so the
+	 *  editor shows it while dressing the room, and again at BeginPlay -- this project
+	 *  has been caught three times by things that were only true in the editor. */
+	void DressTheVerdict();
 
 private:
 	/** One subscription for the whole machine, forwarded to every part. */
