@@ -8,6 +8,19 @@ later) and play start to finish: office bang → powers → cathedral → slot c
 - **GameDefaultMap → L_Office_v02** (was the Lvl_FirstPerson template map).
   The shipped game opens on the AI apparition, as designed. Editor startup
   map unchanged.
+
+  > **SUPERSEDED 2026-08-26 — both halves of that sentence are now false.**
+  > GameDefaultMap is `/Game/Cinematics/L_Cine_KaiaIntro` as of v0.9.7.4: the
+  > game opens on Kaia's cutscene, which travels to the office when she
+  > finishes. And the apparition does not auto-fire at all — the instance
+  > placed in L_Office_v02 overrides `bAutoStart` to **false**, so it runs
+  > only through `TriggerApparition()` from `AIClueTerminal`. Note the trap:
+  > the C++ default is still `true`, so the header reads as though it fires
+  > on arrival. It does not. Walt played the shipped build and never saw it.
+  > A placed actor's behaviour lives in the map, never in the class default —
+  > and UE serialises a property into the map only when it differs from that
+  > default, so `grep -a -c bAutoStart Content/L_Office_v02.umap` returning 1
+  > while its neighbours return 0 is the proof.
 - **SlotCabinet::ResolveWebGameURL()** — staged-first, dev-fallback:
   `Content/WebGame/index.html` if present, else the EditAnywhere dev URL.
 - **DefaultGame.ini**: `DirectoriesToAlwaysStageAsNonUFS=(Path="WebGame")`
