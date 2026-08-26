@@ -11,6 +11,25 @@ The seven Unreal-capability experiments are the exception: they occupy
 `0.9.7.1` through `0.9.7.7` as their own headings. They add content. 0.9.7
 stays the last shipped itch build until one of them is cooked.
 
+## v0.9.7.6 — the pot leaves the kitchen
+
+A giant cauldron had been floating at counter height in the middle of the
+kitchen, in every packaged build since 0.9.7.1. Nobody playing in the editor
+could see it.
+
+- **It only ever vanished in PIE.** The cauldron chose whether to show its
+  pot by reading its own actor label and looking for "Kitchen". Actor labels
+  are editor-only data — the cook throws them away — so in the shipped game
+  the test was always false, and the branch it fell into does not merely fail
+  to hide the pot: it loads one and switches it on. Map data survives
+  cooking; editor labels do not.
+- **The level owns the prop now.** No name test at all. The office map has no
+  mesh on the cauldron (the stove furniture plays the shop) and the temple map
+  has the pot saved on its instance, which is what the code always claimed to
+  want.
+- Shipped wrong in 0.9.7.3, 0.9.7.4 and 0.9.7.5. If you downloaded any of
+  those and wondered about the levitating cauldron: it was not a secret.
+
 ## v0.9.7.5 — Kaia, properly lit
 
 The opening cutscene, with the lighting fixed. Same words, same performance;
