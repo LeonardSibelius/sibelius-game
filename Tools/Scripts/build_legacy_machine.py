@@ -38,6 +38,7 @@ Editor-CLOSED:
         -script="C:/Users/wpark/projects/sibelius-game/Tools/Scripts/build_legacy_machine.py"
 """
 import json
+import math
 import unreal
 
 MAP = "/Game/L_Office_v02"
@@ -49,7 +50,33 @@ PART_PREFIX = "LegacyPart_"
 ORIGIN = unreal.Vector(-1900.0, 9500.0, 0.0)
 PART_SPACING = 75.0           # cm between stages, along +Y (was 120: the row ran 480cm
                               # and its far end reached the bathroom doorway)
-YAW = 0.0
+# YAW ROTATES THE WHOLE ASSEMBLY, pivoting on ORIGIN -- which is the INTAKE end, so
+# the far end (OUTFEED, and the two bins past it) is what swings.
+#
+# WHY IT IS NOT ZERO. The line ran straight along +Y, which put ACCEPT and REJECT past
+# OUTFEED and into the seating: from anywhere the five plaques were readable, the bins
+# were off in peripheral vision behind the couch. The overflowing reject crate is meant
+# to tell you this machine's whole career at a glance and it was telling nobody.
+# Positive yaw swings that end toward the player, into the open floor.
+#
+# 25 degrees moves the far end about 300 * sin(25) = 127cm across the room. If the bins
+# still do not read, change this number and re-run -- that is the entire loop, because
+# the script clears and re-spawns every actor it owns.
+#
+# BEFORE THIS EXISTED, yaw only spun each crate on the spot: the part offsets below were
+# hard-coded along +Y and never rotated with it, so a non-zero YAW gave a straight row
+# of crates all facing off at an angle. rotate_xy fixes that, and it has to be applied
+# anywhere an offset from ORIGIN is turned into a world position.
+YAW = 25.0
+
+
+def rotate_xy(x, y, yaw_deg):
+    """An ORIGIN-relative offset, turned by YAW about Z. Standard rotation: the plaques
+    and labels are RELATIVE rotations on components, so they follow their actor for
+    free and only the positions need this."""
+    a = math.radians(yaw_deg)
+    return (x * math.cos(a) - y * math.sin(a),
+            x * math.sin(a) + y * math.cos(a))
 
 # Unreal Python Rotator positional args are (roll, pitch, yaw) — not C++
 # FRotator(pitch, yaw, roll). Rotator(0, 180, 0) is PITCH 180: the plaques
@@ -454,7 +481,8 @@ else:
 
     placed = []
     for i, (short, plaque, true_name, faulty, fault_chance, armed_by) in enumerate(PARTS):
-        loc = unreal.Vector(ORIGIN.x, ORIGIN.y + i * PART_SPACING, ORIGIN.z + 90.0)
+        pdx, pdy = rotate_xy(0.0, i * PART_SPACING, YAW)
+        loc = unreal.Vector(ORIGIN.x + pdx, ORIGIN.y + pdy, ORIGIN.z + 90.0)
         p = eas.spawn_actor_from_class(part_cls, loc, unreal.Rotator(0.0, 0.0, YAW))
         if p is None:
             notes.append("could not spawn part %s" % short)
@@ -522,9 +550,12 @@ else:
                     [("%s @ %.0f%%" % (s, c * 100)) for s, _, _, f, c, g in PARTS if f and g]))
 
     # ---- the machine
-    mid_y = ORIGIN.y + (len(PARTS) - 1) * PART_SPACING / 2.0
+    # The midpoint of the row, turned by the same yaw -- the bed, the bins and the sign
+    # all hang off this actor, so if it lands anywhere but the centre of the parts the
+    # whole thing separates.
+    mdx, mdy = rotate_xy(0.0, (len(PARTS) - 1) * PART_SPACING / 2.0, YAW)
     m = eas.spawn_actor_from_class(
-        machine_cls, unreal.Vector(ORIGIN.x, mid_y, ORIGIN.z + 40.0),
+        machine_cls, unreal.Vector(ORIGIN.x + mdx, ORIGIN.y + mdy, ORIGIN.z + 40.0),
         unreal.Rotator(0.0, 0.0, YAW))
     if m is None:
         notes.append("could not spawn the machine")
