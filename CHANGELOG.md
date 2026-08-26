@@ -11,6 +11,27 @@ The seven Unreal-capability experiments are the exception: they occupy
 `0.9.7.1` through `0.9.7.7` as their own headings. They add content. 0.9.7
 stays the last shipped itch build until one of them is cooked.
 
+## v0.9.7.5 — Kaia, properly lit
+
+The opening cutscene, with the lighting fixed. Same words, same performance;
+she now looks like a person instead of a light fixture.
+
+- **The key light is in front of her.** It had been at a fixed world
+  position written before anyone knew where the camera would end up — and
+  the camera was later flown to the opposite side, leaving the key BEHIND
+  her head. What looked like a hot rim on her hair was the key itself; her
+  face was lit by spill. Lights are now placed on the camera-to-subject
+  axis, so they follow the camera.
+- **The intensities were roughly a thousand times too high.** 18000 on a
+  rect light whose engine default is about 8. Auto-exposure had been quietly
+  absorbing the error, which is why it never looked simply "too bright" —
+  it came out as subsurface scatter: glowing nostrils, then a glowing chin,
+  then a face you could barely find. Key is now 17.
+- **Camera exposure is locked**, so it no longer meters off a frame that is
+  99% black and re-brightens whatever you just turned down.
+- `Tools/Scripts/relight_kaia_front.py` rebuilds the whole rig from the
+  camera position — re-run it after any reframe.
+
 ## v0.9.7.4 — Kaia opens the game
 
 The game no longer starts in a frumpy office. It starts on a face.
