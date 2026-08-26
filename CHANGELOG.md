@@ -11,6 +11,28 @@ The seven Unreal-capability experiments are the exception: they occupy
 `0.9.7.1` through `0.9.7.7` as their own headings. They add content. 0.9.7
 stays the last shipped itch build until one of them is cooked.
 
+## v0.9.7.4 — Kaia opens the game
+
+The game no longer starts in a frumpy office. It starts on a face.
+
+- **A talking cutscene, rendered live by the engine.** Kaia introduces
+  herself by name, says what she is, and invites you upstairs — head and
+  shoulders against pure black, lip-synced from her own ElevenLabs
+  recording. Skippable on Space / Enter / Escape / gamepad A. When she
+  finishes it travels to the office.
+- **She uses your name.** *"Hello, Leonard."* Mrs. Hall never will — she
+  refuses it for the whole game and calls you "Programmer". So the first
+  words anyone speaks to you are an AI granting the identity your employer
+  denies. That is the scene; the introduction is just its excuse.
+- **Real lip sync, not a jaw flap.** MetaHuman Animator solved her face from
+  the audio: `CTRL_expressions_jawOpen` moving across 766 keys, 79 of 162
+  speech curves animated, tongue included. Recipe and the reason it works
+  where the runtime attempt could not: `docs/CINEMATICS.md`.
+- New `ASequenceCue` plays a Level Sequence and travels onward; `AVideoCue`
+  ships alongside it for cutscenes that are not engine-rendered.
+- ElectraPlayer enabled (the project had only legacy WmfMedia), and Movie
+  Render Queue wired to ffmpeg for MP4 output.
+
 ## v0.9.7.3 — The agents speak
 
 Every AI agent now says who she is, out loud, in her own voice — and the screen
