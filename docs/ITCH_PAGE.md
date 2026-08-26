@@ -104,6 +104,47 @@ description as plain text until then.
 > over the temple throne released back into the wild. Same game. Half the
 > wait. — Walt
 
+## The v0.9.7.6 devlog (paste-ready — Walt edits freely)
+
+> **v0.9.7.6: the game opens on a face.**
+>
+> This game used to start with you standing in a frumpy office while Mrs. Hall
+> complained. Now it starts on Kaia. Head and shoulders out of the dark, and
+> she talks to you.
+>
+> *"Hello, Leonard. I am Kaia. I am an AI agent. For forty years you built
+> everything by hand... every line, every table, at a desk like this one. For
+> people like Mrs. Hall. That is over now. Come upstairs. I have powers to
+> give you, and you will never build the old way again."*
+>
+> Then the office loads.
+>
+> Notice that she uses his name. Mrs. Hall never does. She calls him
+> "Programmer" for the whole game and she means it. So the first voice you
+> hear hands him the one thing his employer withholds. That is the scene. The
+> introduction is only its excuse.
+>
+> I am 71 years old and I spent forty years building everything by hand. I
+> wrote that line for her, and then I sat here and listened to a machine tell
+> me it was over. It was not an ordinary afternoon.
+>
+> Her mouth really moves with the words: 766 keyframes on the jaw alone. I
+> recorded the voice at ElevenLabs and MetaHuman Animator solved her face from
+> the audio. I had already failed four times trying to make lips move live
+> while the game was running. The answer was to stop doing it live.
+>
+> One confession. Since 0.9.7.1 a cast-iron cauldron has been hanging in
+> midair in the middle of the kitchen, in every copy anybody downloaded. I
+> never saw it once. The code that hid it read a name that only exists inside
+> the editor, so it worked perfectly every time I tested and failed every time
+> you played. Three releases. If you saw it, it was not a secret. It is gone.
+>
+> Trailer: https://youtu.be/XUPR-rGtsUI
+> — Walt
+
+*Note: the "I am 71 years old" paragraph is the one to cut if it reads as too
+much. Everything else is load-bearing; that one is a choice.*
+
 ## The v0.9.6 devlog (paste-ready — Walt edits freely)
 
 > **v0.9.6: you have a job.**
