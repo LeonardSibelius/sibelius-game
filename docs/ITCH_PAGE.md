@@ -2,12 +2,14 @@
 
 Paste-ready text for the itch.io page. Walt owns the final words — edit freely.
 
-## LIVE PAGE (Walt, 2026-08-21 — v0.9.6)
+## LIVE PAGE (Walt, 2026-08-26 — v0.9.7.6)
 
 Posted at https://leonardsibelius.itch.io/leonard-sibelius. Do not replace
 this with a draft without asking; this is what is actually on the store.
+Walt writes this copy himself — transcribed here so the repo stops
+disagreeing with the page.
 
-> **Leonard Sibelius — the anything machine** (v0.9.6 alpha) in development, free)
+> **Leonard Sibelius — the anything machine** (v0.9.7.6 alpha) in development, free)
 >
 > I'm Walt Parkman, 71 years old, able to now make games because of AI. I'm
 > liking Grok 4.6 and expect 5.0 soon. For more than 40 years, I sat at over
@@ -20,17 +22,44 @@ this with a draft without asking; this is what is actually on the store.
 > merge with Artificial Intelligence (first Claude, now Grok) the player
 > gathers six AI powers from AI agents.
 >
-> **Version 0.9.6** Mrs. Hall demands that you fix the machine in the living
-> room by hand, but why do that when you have AI? This game is filling up
-> with attractive dancing AI agents. Click "E" at them to get powers. You
-> can now open the slot machine cabinet and tweak its parameters once you
-> reach the cathedral. To get to the cathedral, buy powers with sauce or
-> earn them at the slot machine (appears when you approach the agents).
-> Refactor objects into animals, slap them, refactor them back. A new Video
-> Poker hidden door is in the living room. You can buy powers in the kitchen
-> when you have collected enough sauce (AI is the Sauce of All Knowledge).
+> **Version 0.9.7.6** Game begins with an Unreal Engine Metahuman Animation
+> of AI Agent Kaia. Mrs. Hall demands that you fix the machine in the living
+> room by hand, but you can fix it with AI powers. This game is filling up
+> with attractive dancing AI agents. Click "E" at them to get powers. After
+> you get the power, you can talk to them. You can now open the slot machine
+> cabinet and tweak its parameters once you reach the cathedral. To get to
+> the cathedral, buy powers with sauce or earn them at the slot machine
+> (appears when you approach the agents). Refactor objects into animals,
+> slap them, refactor them back. A new Video Poker hidden door is in the
+> living room. You can buy powers in the kitchen when you have collected
+> enough sauce (AI is the Sauce of All Knowledge).
 >
 > A decent Windows gaming machine is required. Itch download is about 10 minutes.
+
+## PAGE MEDIA (2026-08-26)
+
+**Trailer:** https://youtu.be/XUPR-rGtsUI — "Leonard Sibelius - the opening
+cutscene", 0:27, public, in itch's *Gameplay video or trailer* field, so it
+sits above the screenshots.
+
+Cut from the MRQ render with fades up and out (free, the background is already
+black). Its audio is the ElevenLabs original muxed on, NOT MRQ's captured wav
+— that wav contains the same take twice about 0.28 s apart and sounds like a
+bad echo. An earlier upload shipped with it and is now PRIVATE at
+https://youtu.be/AnP2XG7Ara0. See CINEMATICS.md; the rebuild is:
+
+    ffmpeg -i render.mp4 -i Tools/Audio/kaia_intro.mp3 -map 0:v:0 -map 1:a:0 ...
+
+**Screenshots:** four stills. `Saved/MovieRenders/kaia_intro.gif` (420x560,
+4.6 s, 2.9 MB) is cut and ready to go in the first slot — animated GIFs play
+on the itch page. Cropped to portrait so it fills itch's 347x500 image box
+instead of letterboxing a 16:9 frame. Uploading it is a manual step: itch
+builds its file input only on click, so it needs the Windows file dialog (or
+drag the file onto the screenshots area).
+
+**Channel note:** description links are not clickable until the YouTube
+channel completes its one-time verification. The itch URL is in the
+description as plain text until then.
 
 ---
 
@@ -100,7 +129,14 @@ this with a draft without asking; this is what is actually on the store.
 > (the pack's piano is dead), the machine wears black marble, and the rules
 > are printed in type a 71-year-old can read. — Walt
 
-## GIF capture list (point 4 — Walt records, any tool: Xbox Game Bar Win+Alt+R, or ScreenToGif)
+## GIF capture list (point 4 — Walt records with OBS Studio)
+
+OBS is already installed and configured (Window Capture + desktop audio +
+mic, 1920x1080 60fps, output to `C:\Users\wpark\Videos`). If Window
+Capture gives a black rectangle on a fullscreen game, switch the source to
+Game Capture. Mute the mic track for anything promotional. Hand the file to
+Claude for trimming/cropping/GIF conversion — ffmpeg is installed and its
+path is in DefaultEngine.ini under MoviePipelineCommandLineEncoderSettings.
 
 1. **The slap**: stand near a road battle in Forest 01, slap a Gideon as he
    arrives — capture the rigid cartwheel into the trees (~6 seconds).
@@ -108,11 +144,14 @@ this with a draft without asking; this is what is actually on the store.
    first spin (~8 seconds).
 3. **The jackpot**: Celestial Fortune mid-spin ending in a win, cabinet
    glowing in the cathedral (~8 seconds).
-Post all three at the TOP of the itch page, above the fold.
+These three are still unrecorded. The trailer now occupies the top of the
+page, so they belong in the screenshot row rather than "above the fold".
 
 ## Page housekeeping (while editing the page)
 
-- Fix the "seven powers" line in the existing description — the game has six
-  (Generate covers ask + create).
-- Screenshot order: Celestial Fortune first, cathedral second, forest battle
-  third, carousel fourth.
+- DONE — the "seven powers" line is gone; the live copy says six AI powers.
+- DONE — the description matches the shipped build (Walt updated it himself
+  for 0.9.7.6; the transcription above is the current text).
+- Screenshot order: `kaia_intro.gif` FIRST — it is the only one that moves,
+  and a page of four stills gives a visitor nothing to catch on. Then
+  Celestial Fortune, the cathedral, the forest battle.
