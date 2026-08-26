@@ -51,23 +51,32 @@ ORIGIN = unreal.Vector(-1900.0, 9500.0, 0.0)
 PART_SPACING = 75.0           # cm between stages, along +Y (was 120: the row ran 480cm
                               # and its far end reached the bathroom doorway)
 # YAW ROTATES THE WHOLE ASSEMBLY, pivoting on ORIGIN -- which is the INTAKE end, so
-# the far end (OUTFEED, and the two bins past it) is what swings.
+# the far end (OUTFEED, and the two bins past it) is what swings. It is applied through
+# rotate_xy() below to every ORIGIN-relative offset.
 #
-# WHY IT IS NOT ZERO. The line ran straight along +Y, which put ACCEPT and REJECT past
-# OUTFEED and into the seating: from anywhere the five plaques were readable, the bins
-# were off in peripheral vision behind the couch. The overflowing reject crate is meant
-# to tell you this machine's whole career at a glance and it was telling nobody.
-# Positive yaw swings that end toward the player, into the open floor.
+# IT IS ZERO, AND 25 IS THE WRONG ANSWER. Recorded because it looks like an obvious
+# knob to reach for.
 #
-# 25 degrees moves the far end about 300 * sin(25) = 127cm across the room. If the bins
-# still do not read, change this number and re-run -- that is the entire loop, because
-# the script clears and re-spawns every actor it owns.
+# The reasoning that led there: the overflowing reject crate is meant to read at a
+# glance and it sits past OUTFEED, near the seating, so from where the plaques are
+# readable the bins are in peripheral vision. True. But rotating the LINE to reposition
+# the BINS moves 3.6 metres of machine to fix 55cm of crate, and the living room has no
+# spare 3.6 metres. At 25 degrees the far end swung 127cm across the floor, blocked the
+# player's way out of the room, and put the bins inside the couch -- workpieces then
+# flew into the upholstery on every reject.
 #
-# BEFORE THIS EXISTED, yaw only spun each crate on the spot: the part offsets below were
-# hard-coded along +Y and never rotated with it, so a non-zero YAW gave a straight row
-# of crates all facing off at an angle. rotate_xy fixes that, and it has to be applied
-# anywhere an offset from ORIGIN is turned into a world position.
-YAW = 25.0
+# Note also that Walt never asked for this. The bins reading poorly was an observation
+# offered to him, not a complaint from him, and it cost a room that already worked. If
+# it is worth revisiting, move the BINS (place_child on accept_bin / reject_bin, below)
+# and leave the line where it stands -- and get real coordinates for the couch and the
+# doorway first rather than judging from a screenshot, which is how this went wrong.
+#
+# BEFORE rotate_xy EXISTED, yaw only spun each crate on the spot: the part offsets were
+# hard-coded along +Y and never turned with it, so a non-zero YAW gave a straight row of
+# crates all facing off at an angle. That is fixed and worth keeping -- the knob now
+# does what its name says, which is exactly why the value has to be argued rather than
+# assumed safe.
+YAW = 0.0
 
 
 def rotate_xy(x, y, yaw_deg):
