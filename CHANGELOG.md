@@ -11,6 +11,32 @@ The seven Unreal-capability experiments are the exception: they occupy
 `0.9.7.1` through `0.9.7.7` as their own headings. They add content. 0.9.7
 stays the last shipped itch build until one of them is cooked.
 
+## v0.9.7.7 — Mrs. Hall's Crap Factory
+
+The living room stops playing her straight. Her legacy system now looks like what
+it is, and once you have fixed it you can put a goat in it.
+
+- **The line has a name, and somebody defaced it.** A hand-lettered card taped
+  crooked over the official brass plate: *MRS. HALL'S CRAP FACTORY*, with
+  *HALL DIVISION - MATERIALS RECLAMATION LINE 4* still legible underneath. The
+  title is not the game's opinion — a programmer sat in your chair before you,
+  felt what you are about to feel, and wrote on the sign.
+- **The bins tell you the whole story from the doorway.** REJECT overflows, heaped
+  on the crate and spilled across the carpet. ACCEPT holds a film of grime and
+  nothing else. Those are the 47 pieces the machine threw overnight, which the
+  ticket was always about — now furniture instead of a caption. The spilled boxes
+  are copies of the workpiece itself, read off the machine at runtime.
+- **A goat can do this job.** Once ticket 1 closes, R on any stage replaces it
+  with an animal from the menagerie — and the line keeps running. The box goes in
+  the front and out the back, into ACCEPT. The brass plaque stays, hanging in
+  front of the goat, still promising *grade B or better passes*.
+- **Mrs. Hall compliments the throughput.** *"Something about the line looks
+  different, and I have decided that I do not need to know what."* She is
+  incurious rather than fooled; that is the joke, and it is worse for her.
+- **The two housing readouts are gone** — RUN LOG and the ACCEPTED/REJECTED tally.
+  The machine still reports where it broke through the piece dying at the failing
+  stage and that stage's fault lamp.
+
 ## v0.9.7.6 — the pot leaves the kitchen
 
 A giant cauldron had been floating at counter height in the middle of the
