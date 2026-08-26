@@ -233,10 +233,18 @@ def flat_unlit(name, rgb, why):
     notes.append("%s ready (%s)" % (name, why))
     return mat
 
-# Dull. The plate is old brass nobody has polished since the line was commissioned, and
-# the card is a torn-down box. Neither should out-shout the fault lamps.
-brass_mat = flat_unlit("M_SignBrass", (0.085, 0.068, 0.030), "the official plate")
-card_mat  = flat_unlit("M_SignCard",  (0.205, 0.150, 0.095), "the taped-on card")
+# THE CARD HAS TO BE LIGHT, because the writing on it is a marker pen. The first pass
+# set it to 0.205 emissive, reasoning "dull cardboard, must not out-shout the fault
+# lamps" -- and 0.205 unlit in a warm room is very nearly black, so a near-black card
+# got near-black marker text written on it and the title simply disappeared. Walt saw a
+# black bar across his living room. Contrast between the card and its OWN text is the
+# constraint here; not competing with the lamps is a distant second, and a card at 0.52
+# still does not glow.
+#
+# The plate stays dark on purpose: its text is light brass (198,172,112 in C++), so the
+# plate is the dark half of that pair, exactly like M_LabelPlate under the plaques.
+brass_mat = flat_unlit("M_SignBrass", (0.130, 0.100, 0.045), "the official plate, dark under light brass text")
+card_mat  = flat_unlit("M_SignCard",  (0.520, 0.340, 0.170), "the taped-on card, light under dark marker")
 
 PLATE_MESH = "/Engine/BasicShapes/Cube"   # 100 uu; a slab has no facing to get wrong
 

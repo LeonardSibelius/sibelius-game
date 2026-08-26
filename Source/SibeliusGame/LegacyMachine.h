@@ -292,6 +292,28 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Sign")
 	FString OfficialName = TEXT("HALL DIVISION  -  MATERIALS RECLAMATION LINE 4");
 
+	/* ---- THE HOUSING READOUTS ARE OFF -----------------------------------------------
+	   Walt, 2026-08-26, looking at the room: *"the two signs RUN LOG and ACCEPTED 0
+	   REJECTED 73 are really not very interesting to me and I would like them removed."*
+	   His call, and he is the one who has to look at it.
+
+	   WHAT IT COSTS, stated so the trade is on the record rather than rediscovered. The
+	   run log was one of the three instruments added in MACHINE_PLAN section 9, and it
+	   was the one that named the failing stage in words -- "03:56 REJECTED AT GRADER",
+	   six rows of it, pre-seeded with the overnight history Mrs. Hall's ticket refers
+	   to. Without it the diagnosis rests entirely on WATCHING: the piece dies at the
+	   broken stage and that stage's fault lamp lights. That is still sufficient, and it
+	   is more diegetic than a caption -- but it is one channel, not two, and section 9
+	   added the log precisely because one channel made the puzzle a spot-the-difference.
+	   If the first ticket starts reading as opaque, this is the first thing to turn back
+	   on.
+
+	   HIDDEN, NOT DELETED. UpdateTally() and UpdateRunLog() still run and still hold
+	   correct text; only the four components are invisible. Flip this in the Details
+	   panel and the instruments come straight back, with no rebuild and no lost work. */
+	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Verdict")
+	bool bShowHousingReadouts = false;
+
 	/** What the last programmer wrote on the card. */
 	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Sign")
 	FString HandLetteredName = TEXT("MRS. HALL'S CRAP FACTORY");

@@ -111,6 +111,21 @@ ALegacyMachine::ALegacyMachine()
 	   The card and its text share ONE rotator on purpose. Tilt them separately and the
 	   yaw of 180 flips the roll axis on the text only, so the card leans one way and
 	   the writing leans the other. Same FRotator for both, and they lean together. */
+	/* SIZE THE CARD FROM THE TEXT, NOT BY EYE. The first pass hung a 24-character
+	   title at world size 14 on a 118cm card. This project's own build script measures
+	   the default font at GLYPH_W = 0.60 of the world size, so that title was
+	   24 * 14 * 0.60 = 202cm of writing on a 118cm card: it overflowed both ends and
+	   landed on top of the official name underneath, which is what Walt saw. Text
+	   width is chars * WorldSize * 0.60, and every number below comes from it:
+
+	     official  44 chars * 8.5 * 0.60 = 224cm   <- must be WIDER than the card, or
+	     card                              196cm      no real name shows past it
+	     title     24 chars * 12  * 0.60 = 173cm   <- must be NARROWER than the card
+	     plate                             250cm   <- must be widest of all
+
+	   So 14cm of the official name survives at each end, and the title sits clear
+	   inside the card. Retype either string and redo this arithmetic, or the sign goes
+	   back to being a pile-up. */
 	const FVector SignAnchor(-45.0f, 0.0f, 150.0f);
 	const FRotator SignFacing(0.0f, 180.0f, 0.0f);
 	const FRotator CardFacing(0.0f, 180.0f, 4.0f);   // taped on crooked
@@ -123,13 +138,13 @@ ALegacyMachine::ALegacyMachine()
 		SignPlate->SetStaticMesh(CubeMesh);
 	}
 	SignPlate->SetRelativeLocation(SignAnchor);
-	SignPlate->SetRelativeScale3D(FVector(0.02f, 1.70f, 0.26f));
+	SignPlate->SetRelativeScale3D(FVector(0.02f, 2.50f, 0.30f));
 
 	SignOfficialText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("SignOfficialText"));
 	SignOfficialText->SetupAttachment(Root);
 	SignOfficialText->SetRelativeLocation(SignAnchor + FVector(-1.6f, 0.0f, 0.0f));
 	SignOfficialText->SetRelativeRotation(SignFacing);
-	SignOfficialText->SetWorldSize(9.0f);
+	SignOfficialText->SetWorldSize(8.5f);
 	SignOfficialText->SetHorizontalAlignment(EHTA_Center);
 	SignOfficialText->SetVerticalAlignment(EVRTA_TextCenter);
 	SignOfficialText->SetTextRenderColor(SignBrass);
@@ -143,15 +158,15 @@ ALegacyMachine::ALegacyMachine()
 	{
 		SignCard->SetStaticMesh(CubeMesh);
 	}
-	SignCard->SetRelativeLocation(SignAnchor + FVector(-3.0f, 8.0f, 0.0f));
+	SignCard->SetRelativeLocation(SignAnchor + FVector(-3.0f, 4.0f, 0.0f));
 	SignCard->SetRelativeRotation(CardFacing);
-	SignCard->SetRelativeScale3D(FVector(0.01f, 1.18f, 0.22f));
+	SignCard->SetRelativeScale3D(FVector(0.01f, 1.96f, 0.24f));
 
 	SignText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("SignText"));
 	SignText->SetupAttachment(Root);
-	SignText->SetRelativeLocation(SignAnchor + FVector(-4.4f, 8.0f, 0.0f));
+	SignText->SetRelativeLocation(SignAnchor + FVector(-4.4f, 4.0f, 0.0f));
 	SignText->SetRelativeRotation(CardFacing);
-	SignText->SetWorldSize(14.0f);
+	SignText->SetWorldSize(12.0f);
 	SignText->SetHorizontalAlignment(EHTA_Center);
 	SignText->SetVerticalAlignment(EVRTA_TextCenter);
 	SignText->SetTextRenderColor(SignMarker);
@@ -302,6 +317,18 @@ void ALegacyMachine::DressTheVerdict()
 	{
 		AcceptDust->SetRelativeLocation(AcceptBin->GetRelativeLocation() + FVector(0.0f, 0.0f, -11.0f));
 		AcceptDust->SetRelativeScale3D(FVector(0.42f, 0.42f, 0.02f));
+	}
+
+	// The two housing readouts, off by default -- see the header for what that costs.
+	// Hidden rather than removed, so one checkbox brings them back.
+	for (USceneComponent* C : { static_cast<USceneComponent*>(Tally), static_cast<USceneComponent*>(RunLog),
+	                            static_cast<USceneComponent*>(TallyPlate), static_cast<USceneComponent*>(RunLogPlate) })
+	{
+		if (C)
+		{
+			C->SetVisibility(bShowHousingReadouts);
+			C->SetHiddenInGame(!bShowHousingReadouts);
+		}
 	}
 
 	if (SignOfficialText)
