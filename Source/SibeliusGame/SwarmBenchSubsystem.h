@@ -79,7 +79,8 @@ public:
 	 *  does an army READ from the meadow floor - and the answer depends entirely on
 	 *  arrangement, so every knob is an argument you can retype in PIE without a rebuild.
 	 */
-	int32 SpawnRidge(int32 HowMany, float RadiusMetres, float ArcDegrees, int32 Ranks);
+	int32 SpawnRidge(int32 HowMany, float RadiusMetres, float ArcDegrees, int32 Ranks,
+		bool bLetThemCharge = false);
 
 	/** Destroy everything this subsystem spawned. Never touches level-placed Refusers. */
 	void ClearAll();

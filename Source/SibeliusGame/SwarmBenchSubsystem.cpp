@@ -3,6 +3,7 @@
 #include "SwarmBenchSubsystem.h"
 
 #include "RefuserSpawner.h"
+#include "RefuserController.h"
 #include "SibeliusGame.h"
 
 #include "EngineUtils.h"
@@ -66,7 +67,7 @@ static FAutoConsoleCommandWithWorldAndArgs GSwarmSpawn(
 static FAutoConsoleCommandWithWorldAndArgs GSwarmRidge(
 	TEXT("swarm.Ridge"),
 	TEXT("Stand N Refusers on the hillside in an arc facing you. "
-		 "Args: [count=150] [radiusMetres=300] [arcDegrees=90] [ranks=6]"),
+		 "Args: [count=150] [radiusMetres=300] [arcDegrees=90] [ranks=6] [charge=0]"),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(
 		[](const TArray<FString>& Args, UWorld* World)
 		{
@@ -76,7 +77,10 @@ static FAutoConsoleCommandWithWorldAndArgs GSwarmRidge(
 				const float Radius  = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 300.0f;
 				const float Arc     = Args.Num() > 2 ? FCString::Atof(*Args[2]) : 90.0f;
 				const int32 Ranks   = Args.Num() > 3 ? FCString::Atoi(*Args[3]) : 6;
-				const int32 Landed  = S->SpawnRidge(N, Radius, Arc, Ranks);
+				// charge=0 by default: see SpawnRidge. 150 chasing invokers is what
+				// took the meadow to 3.7 fps, and an army on a ridge stands anyway.
+				const bool  bCharge = Args.Num() > 4 ? (FCString::Atoi(*Args[4]) != 0) : false;
+				const int32 Landed  = S->SpawnRidge(N, Radius, Arc, Ranks, bCharge);
 				UE_LOG(LogSibeliusGame, Display,
 					TEXT("[SwarmBench] ridge: %d of %d stood up at %.0f m over %.0f deg in %d ranks."),
 					Landed, N, Radius, Arc, Ranks);
@@ -233,7 +237,8 @@ int32 USwarmBenchSubsystem::SpawnMore(int32 HowMany)
    RADIUS changing, not a fresh random scatter. Comparing two compositions that differ in
    two ways at once tells you nothing, which is the same discipline the bench ladder uses.
 */
-int32 USwarmBenchSubsystem::SpawnRidge(int32 HowMany, float RadiusMetres, float ArcDegrees, int32 Ranks)
+int32 USwarmBenchSubsystem::SpawnRidge(int32 HowMany, float RadiusMetres, float ArcDegrees, int32 Ranks,
+	bool bLetThemCharge)
 {
 	UWorld* World = GetWorld();
 	const TSubclassOf<APawn> Class = FindRefuserClass();
@@ -295,6 +300,25 @@ int32 USwarmBenchSubsystem::SpawnRidge(int32 HowMany, float RadiusMetres, float 
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 		if (AActor* Made = World->SpawnActor<AActor>(Class, Where, Facing, Params))
 		{
+			/* HELD BY DEFAULT, and this is the difference between a composition and a
+			   seizure. Every Refuser injects a navigation invoker on possess, and this
+			   project builds navmesh invoker-only - so 150 of them on a hillside asked
+			   the navigation system for navmesh across most of a square kilometre of
+			   steep terrain at once. The bench measured 150 demons at 66 fps; the same
+			   150 up here ran at 3.7. It was never the demons.
+
+			   OnPossess has already run by the time SpawnActor returns, so the
+			   controller and its invoker both exist and can be handed back now. */
+			if (!bLetThemCharge)
+			{
+				if (const APawn* P = Cast<APawn>(Made))
+				{
+					if (ARefuserController* RC = Cast<ARefuserController>(P->GetController()))
+					{
+						RC->HoldPosition();
+					}
+				}
+			}
 			Spawned.Add(Made);
 			++Landed;
 		}

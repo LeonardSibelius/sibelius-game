@@ -33,6 +33,11 @@ public:
 	UPROPERTY(EditAnywhere, Category="Refuser")
 	float ChaseInterval = 0.5f;
 
+	/** Stop chasing, stop moving, and give the navigation invoker back. For Refusers
+	 *  that are meant to STAND somewhere - an army on a ridge - rather than close on the
+	 *  player. See the implementation for why the invoker is the expensive half. */
+	void HoldPosition();
+
 	// --- Menace -------------------------------------------------------------
 	// Assign on the Refuser's AIControllerClass defaults, or on a BP subclass.
 	// Everything here is optional: with no montage assigned the Refuser behaves

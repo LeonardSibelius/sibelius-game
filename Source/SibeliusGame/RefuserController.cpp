@@ -65,6 +65,35 @@ void ARefuserController::OnPossess(APawn* InPawn)
 		/*FirstDelay=*/0.f);
 }
 
+/* STAND THERE. An army massed on a ridge is not a workaround for a performance
+   problem - it is what an army on a ridge does. They wait, and they come when the fight
+   starts. But it is also the fix for a genuine scaling wall, so both reasons are written
+   down rather than only the flattering one.
+
+   EVERY REFUSER CARRIES A NAVIGATION INVOKER with 40 m / 60 m generation radii, injected
+   in OnPossess so no Blueprint has to be edited, and this project generates navmesh
+   INVOKER-ONLY. One Refuser in an office is free. A hundred and fifty spread across a
+   ninety-degree arc of hillside asks the navigation system to build navmesh across most
+   of a square kilometre of steep terrain, at runtime, in one frame. That is what took
+   the meadow to 3.7 fps - not the demons, which the bench had already measured at 66.
+
+   So a held Refuser gives its invoker back. It is scenery until something wants it to
+   fight, and scenery does not need to know where the floor is. */
+void ARefuserController::HoldPosition()
+{
+	GetWorldTimerManager().ClearTimer(ChaseTimerHandle);
+	StopMovement();
+
+	if (APawn* P = GetPawn())
+	{
+		if (UNavigationInvokerComponent* Invoker = P->FindComponentByClass<UNavigationInvokerComponent>())
+		{
+			Invoker->UnregisterComponent();
+			Invoker->DestroyComponent();
+		}
+	}
+}
+
 void ARefuserController::ChasePlayer()
 {
 	if (GetPawn() == nullptr)
@@ -88,8 +117,19 @@ void ARefuserController::ChasePlayer()
 			return; // move in progress — MoveToActor already tracks the goal actor
 		}
 
+		/* VERBOSE, NOT DISPLAY - this was a real shipping bug and the meadow only made
+		   it visible. A Refuser that CANNOT reach the player never enters a move, so it
+		   never takes the early-out above: it re-requests a path and writes this line
+		   every ChaseInterval, forever, in a packaged build, to the player's disk. In the
+		   office there are one or two Refusers and nobody noticed. Standing 150 of them
+		   on a hillside with no navmesh produced 43,800 lines in 145 seconds and dropped
+		   the game to 3.7 fps.
+
+		   Display survives a Shipping build. Verbose is compiled out of it, and stays
+		   quiet in the editor until somebody asks for it with
+		   `log LogSibeliusGame Verbose`. */
 		const EPathFollowingRequestResult::Type Result = MoveToActor(PlayerPawn, AcceptanceRadius);
-		UE_LOG(LogSibeliusGame, Display, TEXT("[RefuserChase] MoveToActor=%d PawnAt=%s PlayerAt=%s"),
+		UE_LOG(LogSibeliusGame, Verbose, TEXT("[RefuserChase] MoveToActor=%d PawnAt=%s PlayerAt=%s"),
 			(int32)Result, *GetPawn()->GetActorLocation().ToString(), *PlayerPawn->GetActorLocation().ToString());
 	}
 }
