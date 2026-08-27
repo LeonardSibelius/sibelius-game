@@ -52,6 +52,14 @@ place for it than the critical path.
   150 as a ceiling rather than a target.
 - **Nothing was fighting.** Those Gideons were idling. Montages, hit reactions and
   effects all cost more than standing about.
+- **A CORRECTION, 2026-08-27 (later).** The bullet below blamed the navigation
+  invokers for the 3.7 fps run. **That was wrong.** L_Meadow had no
+  NavMeshBoundsVolume at all, so the invokers were asking for nothing and cost
+  nothing — 30 chasing Refusers with invokers live measured **118 fps** once the
+  log was silenced. The whole slowdown was the `[RefuserChase]` line at `Display`
+  verbosity. Two things were changed in one build and the win was credited to the
+  wrong one, which is the mistake this file keeps writing comments about.
+  **The AI cost of a real charge is still unmeasured.**
 - **The cost is thinking, not drawing — measured 2026-08-27.** 150 demons *held*
   (no chase, no navigation invoker) run at **88 fps**: `frame 11.3 ms, game 11.3,
   render 4.9, gpu 8.2`. The same 150 chasing ran at 3.7. Every Refuser injects a
@@ -252,7 +260,33 @@ rather than left to be found in a playtest. That is the only reason it got close
    army with its back turned is scenery.
 
    This is a composition question and Walt is the only one who can answer it.
-4. **Fight logic.** Nothing above makes them fight — they idle. This is the real work,
+4. **Fight logic.** ***They charge, as of 2026-08-27.*** The meadow needed a
+   `NavMeshBoundsVolume` **and** a `RecastNavMesh` that the navigation system
+   creates itself — Build → Build Paths. Adding the volume from Python does not
+   trigger that, and a factory-spawned `RecastNavMesh` is worse than none: no agent
+   config, and its presence stops the real one being made. Symptom to recognise:
+   `LogCrowdFollowing: Unable to find RecastNavMesh instance`.
+
+   **Engulf works.** `[Engulf] overruled at pressure 30`. Walt: *"they all came
+   gliding at me like they were on skates and I slapped them all and they all went
+   down in a pile."*
+
+   Two things that leaves:
+
+   **They skate, and it is one bug with the 196 divide-by-zero warnings.**
+   `Gideon_AnimBlueprint` has full locomotion (Ground Locomotion: Idle / Run /
+   JogStart / JogStop) and a `Character` variable whose type does not resolve — it
+   is built to cast its pawn to Paragon's own character class, and
+   `BP_Gideon_Refuser` derives from plain `/Script/Engine.Character`. The cast
+   fails, `Speed` stays 0, the machine sits in Idle while the capsule slides, and
+   `YawDelta` divides by the zero. **Fix:** duplicate the AnimBP into
+   `/Game/Characters/` (ParagonGideon is git-ignored vendor content — never author
+   into it) and drive `Speed` from `TryGetPawnOwner()->GetVelocity()`.
+
+   **And one slap took the lot.** 30 Refusers went down in a pile because the slap
+   is a `SweepMultiByChannel`. That is the next real design question, not a bug.
+
+   *(the original text follows)* Nothing above makes them fight — they idle. This is the real work,
    and it is also what finally hard-references the 23 animations so they cook.
 5. *Deferred:* the Niagara/VAT horde and Actor promotion, if and only if 150 turns out
    not to be enough.
