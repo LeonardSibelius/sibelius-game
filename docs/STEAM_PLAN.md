@@ -29,6 +29,24 @@ someone who did them in sequence.
 
 ---
 
+## 1b. WHERE WE ACTUALLY ARE
+
+**Steam Direct fee paid 2026-08-26.** Steamworks Distribution Agreement signed, name
+and address entered, $100 charged. Both clocks can now be counted from a real date:
+
+| milestone | date |
+|---|---|
+| fee paid, 30-day clock starts | **2026-08-26** |
+| **Coming Soon page must be live by** | **2026-09-11** |
+| earliest possible release | **2026-09-25** |
+
+That middle row is the one to act on. The 2-week page requirement only finishes
+alongside the 30-day review if the page goes public by **11 September**. Later than
+that and the store page becomes the critical path, pushing release past the 25th by a day for every day it slips.
+
+Remaining onboarding steps at this point: tax interview, bank details, then the app
+itself.
+
 ## 2. The steps, in order
 
 1. Sign in at **partner.steamgames.com** with the existing Steam account, start Steam
