@@ -1,0 +1,131 @@
+// EngulfComponent.h — four hundred men who cannot hurt you, and the trouble that is.
+//
+// WHY THIS EXISTS, AND WHY IT IS NOT A HEALTH BAR.
+//
+// Walt, 2026-08-27, looking at 400 Refusers on the meadow: "Greystone and his five AI
+// agents can slap all of those refusers - the refusers never do any damage, right?"
+//
+// Right. There is no damage anywhere in this game and no health system at all.
+// ARefuserController::TryAttack plays a montage and a sound and returns. That is not an
+// oversight — it is the joke, and it is Walt's own: Mrs. Hall's demonic enforcer "can be
+// knocked down with one slap, so she is not so sinister after all." Her factory is
+// comically bad, her authority is hollow, and her enforcer falls over when swatted.
+//
+// Giving the Architects teeth would fix the battle by throwing away the reason the
+// battle is funny. So they keep none. The threat is not that they can hurt you.
+//
+// THE THREAT IS BEING ENGULFED. Not one of them has ever been on call. But four hundred
+// BODIES can surround a man, slow him, pin him, and push him off his own ground. Each
+// one is nothing. Together they are a wall of certainty, which is exactly what they were
+// in every office Walt ever worked in.
+//
+// ---------------------------------------------------------------------------
+// AND THE FAIL STATE IS NOT DEATH, BECAUSE DEATH IS THE WRONG WORD FOR THIS.
+//
+// Enough of them, long enough, and you are OVERRULED: the avatar drops and you are back
+// to being a pair of eyes. They do not kill Leonard Sibelius. They outnumber him and put
+// him back in his place — which is the thing that actually happened, for forty years,
+// and no health bar has ever expressed it.
+//
+// ---------------------------------------------------------------------------
+// TWO IMPLEMENTATION NOTES THAT ARE REALLY THE SAME NOTE.
+//
+// ONE SPHERE OVERLAP, NOT AN ACTOR ITERATION. With 400 Refusers in the level, walking
+// every actor every frame to measure a crowd would be the navigation-invoker mistake
+// again — a per-frame cost that scales with the army rather than with the crowd actually
+// touching you. The overlap asks the physics scene, which already has the answer.
+//
+// AND IT TICKS AT 10 Hz, not every frame. A crowd does not close on you in 16 ms, and
+// this runs in the office too, where the answer is always zero.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "EngulfComponent.generated.h"
+
+class ACharacter;
+
+/** Fired when the crowd wins: sustained pressure held past OverruleSeconds. */
+DECLARE_MULTICAST_DELEGATE(FOnOverruled);
+
+UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))
+class SIBELIUSGAME_API UEngulfComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	UEngulfComponent();
+
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+		FActorComponentTickFunction* ThisTickFunction) override;
+
+	/** How many Refusers are pressing right now. Zero everywhere but a battle. */
+	UFUNCTION(BlueprintPure, Category = "Engulf")
+	int32 GetPressure() const { return Pressure; }
+
+	/** 0..1 toward being overruled. The HUD can draw this if it ever wants to. */
+	UFUNCTION(BlueprintPure, Category = "Engulf")
+	float GetOverruleFraction() const;
+
+	/** Listeners: the HUD, and whatever ends the battle. */
+	FOnOverruled OnOverruled;
+
+	// ---- the knobs ----
+
+	/** How close counts as pressing. 300 cm is arm's length plus a step — the distance
+	 *  at which a man is in your way rather than near you. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "50"))
+	float EngulfRadius = 300.0f;
+
+	/** Below this, a crowd is scenery. One Architect in a doorway is not a siege, and
+	 *  the office has one or two Refusers in it at all times. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "1"))
+	int32 PressureFloor = 3;
+
+	/** Each Refuser past the floor takes this fraction of your speed. At 0.06, eight of
+	 *  them have you at roughly two thirds; sixteen at about a third. Wading, not glue —
+	 *  a player who cannot move at all stops making choices. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0", ClampMax = "0.5"))
+	float SlowPerRefuser = 0.06f;
+
+	/** Never fall below this fraction of normal speed, whatever the crowd. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0.05", ClampMax = "1"))
+	float MinSpeedFraction = 0.25f;
+
+	/** Shove strength, cm/s per Refuser of net imbalance. Surrounded evenly this cancels
+	 *  to nothing and you are simply pinned, which is the correct feeling; pressed from
+	 *  one side it moves you off your ground. That behaviour is not special-cased — it
+	 *  falls out of summing unit vectors, which is why it is done that way. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0"))
+	float ShovePerRefuser = 45.0f;
+
+	/** Pressure at or above this starts the clock. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "1"))
+	int32 OverrulePressure = 8;
+
+	/** How long that must hold. Generous on purpose: this should feel like losing an
+	 *  argument slowly, not like a trap closing. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0.5"))
+	float OverruleSeconds = 6.0f;
+
+	/** The clock runs down at this multiple of real time when you break free, so backing
+	 *  out of a crowd is genuinely a way out rather than a delay. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0.1"))
+	float RecoveryRate = 2.0f;
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	int32 CountAndShove(float DeltaTime);
+	void ApplySlow();
+	void Overrule();
+
+	ACharacter* GetCharacterOwner() const;
+
+	int32 Pressure = 0;
+	float OverruleClock = 0.0f;
+	float BaseWalkSpeed = -1.0f;   // < 0 until BeginPlay captures the real one
+	bool bWarnedThisSiege = false;
+};

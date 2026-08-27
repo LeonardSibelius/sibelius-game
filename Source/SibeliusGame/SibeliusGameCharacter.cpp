@@ -15,6 +15,7 @@
 #include "BuildComponent.h"
 #include "BranchPIEComponent.h"
 #include "BattleFormComponent.h"
+#include "EngulfComponent.h"
 #include "GenerateComponent.h"    // Ch6 Generate driver
 #include "SibeliusHUD.h"          // SIB-39 dev-overlay toggle
 #include "JournalWidget.h"        // SIB-41 journal panel
@@ -90,6 +91,7 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 	// boom and camera are built on first use, and Greystone is a soft pointer, so an
 	// office-only session never loads a 300 MB hero it is not going to show.
 	BattleFormComp = CreateDefaultSubobject<UBattleFormComponent>(TEXT("BattleFormComp"));
+	EngulfComp = CreateDefaultSubobject<UEngulfComponent>(TEXT("EngulfComp"));
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(true);

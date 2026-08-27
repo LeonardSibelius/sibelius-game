@@ -59,6 +59,11 @@ class ASibeliusGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UBattleFormComponent> BattleFormComp;
 
+	/** The crowd mechanic. Mrs. Hall's Architects cannot hurt you - that is the joke -
+	 *  but four hundred of them can surround, slow and pin. See EngulfComponent.h. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UEngulfComponent> EngulfComp;
+
 	/** Ch2 Refactor: camera-traces for refactorables and toggles them (SIB-26) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<URefactorComponent> RefactorComp;
