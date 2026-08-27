@@ -273,15 +273,25 @@ rather than left to be found in a playtest. That is the only reason it got close
 
    Two things that leaves:
 
-   **They skate, and it is one bug with the 196 divide-by-zero warnings.**
-   `Gideon_AnimBlueprint` has full locomotion (Ground Locomotion: Idle / Run /
-   JogStart / JogStop) and a `Character` variable whose type does not resolve — it
-   is built to cast its pawn to Paragon's own character class, and
-   `BP_Gideon_Refuser` derives from plain `/Script/Engine.Character`. The cast
-   fails, `Speed` stays 0, the machine sits in Idle while the capsule slides, and
-   `YawDelta` divides by the zero. **Fix:** duplicate the AnimBP into
-   `/Game/Characters/` (ParagonGideon is git-ignored vendor content — never author
-   into it) and drive `Speed` from `TryGetPawnOwner()->GetVelocity()`.
+   **The skating — fixed, and it was not what the paragraph here first claimed.**
+   That claim (a failed cast leaving `Speed` at zero) was wrong on both halves, and
+   reading the actual node graph killed it: `Set Speed` takes `Get Velocity` off the
+   **Actor** with no cast to fail, and `Set IsAccelerating` casts only to plain
+   `Character`, which succeeds. The `GideonPlayerCharacter` casts that do fail are
+   all in the attack-combo path and touch nothing about walking. The 196
+   divide-by-zero warnings are `DeltaTime == 0` on an actor's first frame — one per
+   spawn, harmless, unrelated.
+
+   The real cause was one node in `Event Blueprint Begin Play`: **`Montage Play`,
+   running Paragon's `LevelStart_Montage`** — a hero-arrival animation for a MOBA
+   respawn pad, carrying a `FullBody` curve that drives the AnimBP's `FullBody` bool
+   and blends the whole body off locomotion. Spawn, lock into an arrival pose, slide.
+   The 150 particle warnings naming `LevelStart_Montage` were the evidence, sitting
+   in the log, read as noise.
+
+   **Fix:** `ChasePlayer` stops any non-attack montage on the first move request —
+   not in `OnPossess`, because the montage has not started by then (the AnimBP's
+   BeginPlay runs after possession).
 
    **And one slap took the lot.** 30 Refusers went down in a pile because the slap
    is a `SweepMultiByChannel`. That is the next real design question, not a bug.

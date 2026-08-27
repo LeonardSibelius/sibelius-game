@@ -117,6 +117,35 @@ void ARefuserController::ChasePlayer()
 			return; // move in progress — MoveToActor already tracks the goal actor
 		}
 
+		/* THE SKATING, AND IT IS NOT A LOCOMOTION BUG.
+		   Gideon_AnimBlueprint's Event Blueprint Begin Play plays Paragon's
+		   LevelStart_Montage - a hero-arrival animation for a MOBA respawn pad. It
+		   carries a FullBody curve, which drives the AnimBP's FullBody bool and blends
+		   the WHOLE body off the locomotion pose. So a freshly spawned Refuser slides
+		   toward you frozen in an arrival stance with its legs still.
+
+		   Speed was never the problem: the AnimBP sets it from Get Velocity on the
+		   Actor, with no cast to fail. Checked in the graph rather than assumed, after
+		   assuming twice today and being wrong twice.
+
+		   Stopped here rather than in OnPossess because the montage has not STARTED by
+		   then - the AnimBP's BeginPlay runs after possession. This is the first moment
+		   a Refuser is about to move, which is exactly when a standing-around animation
+		   has outstayed its welcome. */
+		if (USkeletalMeshComponent* MeshComp = GetPawn() ? GetPawn()->FindComponentByClass<USkeletalMeshComponent>() : nullptr)
+		{
+			if (UAnimInstance* AnimInst = MeshComp->GetAnimInstance())
+			{
+				// Never the attack montage: TryAttack returns early while in range, so
+				// reaching here means we are closing, not swinging. Belt and braces.
+				if (AnimInst->IsAnyMontagePlaying()
+					&& AnimInst->GetCurrentActiveMontage() != AttackMontage)
+				{
+					AnimInst->Montage_Stop(0.15f);
+				}
+			}
+		}
+
 		/* VERBOSE, NOT DISPLAY - this was a real shipping bug and the meadow only made
 		   it visible. A Refuser that CANNOT reach the player never enters a move, so it
 		   never takes the early-out above: it re-requests a path and writes this line
