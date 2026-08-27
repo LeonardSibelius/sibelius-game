@@ -167,6 +167,11 @@ protected:
 	    this (the components stay ungated so smoke tests drive them directly). */
 	bool CheckPowerUnlocked(EPowerVerb Verb) const;
 
+	/** True while the avatar is worn — the camera sits three metres behind him, where
+	    every camera-traced power aims at his own shoulder blades. See
+	    BattleFormComponent.h for why battle form is a mode and not a migration. */
+	bool AreCameraPowersSuspended() const;
+
 	/** FUN-1 gated input handlers — thin wrappers: gate, then forward to the
 	    component exactly as the old direct bindings did. */
 	void OnCodeVisionStarted();

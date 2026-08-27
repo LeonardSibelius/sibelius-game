@@ -372,6 +372,14 @@ void ASibeliusGameCharacter::DoJumpEnd()
 
 void ASibeliusGameCharacter::DoInteract()
 {
+	// Silent, unlike the powers above. E is the most-pressed key in the game and a
+	// failed interact already does nothing visible in normal play — no prompt, no
+	// interaction — so a toast on every stray press in a fight would be the noise.
+	if (AreCameraPowersSuspended())
+	{
+		return;
+	}
+
 	if (InteractorComponent)
 	{
 		InteractorComponent->TryInteract();
@@ -610,8 +618,36 @@ void ASibeliusGameCharacter::CloseGenerate()
 
 // --- FUN-1: the power gate + gated input handlers -------------------------
 
+/* BATTLE FORM CLOSES THE POWERS, and this is the second half of a change whose first
+   half shipped without it. UBattleFormComponent suspends the TARGETING tick — no
+   prompt, no highlight, no refactor target — but the input bindings live here and call
+   straight through, so until now R in battle form still rolled the menagerie on
+   whatever was over his shoulder. BattleFormComponent.h said so in writing rather than
+   leaving it to be discovered. Now it is shut.
+
+   ONE CHECK, at the place three of the four powers already funnel through. Interact is
+   the fourth and never came this way (it was never gated on progression), so it makes
+   the same call by hand. */
+bool ASibeliusGameCharacter::AreCameraPowersSuspended() const
+{
+	return BattleFormComp && BattleFormComp->IsInBattleForm() && BattleFormComp->bSuspendCameraPowers;
+}
+
 bool ASibeliusGameCharacter::CheckPowerUnlocked(EPowerVerb Verb) const
 {
+	/* A DIFFERENT REFUSAL FROM THE PROGRESSION ONE, and it must not borrow its words.
+	   "REFACTOR IS NOT YET YOURS" is about what he has earned; this is about where the
+	   camera is standing. Telling a player he has not earned a power he used ten seconds
+	   ago in the office would read as exactly the bug that banner exists to prevent.
+
+	   Short and quiet, too: in a fight this fires on a mis-press, and a three-and-a-half
+	   second banner across the middle of a battle is worse than the mis-press was. */
+	if (AreCameraPowersSuspended())
+	{
+		ASibeliusHUD::Toast(this, TEXT("NOT IN THIS BODY"), 1.5f, SibeliusToast::Warn);
+		return false;
+	}
+
 	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
 	if (!Progression || Progression->IsUnlocked(Verb))
 	{

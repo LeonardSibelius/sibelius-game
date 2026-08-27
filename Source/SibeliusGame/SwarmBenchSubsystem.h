@@ -71,6 +71,16 @@ public:
 	/** Add HowMany Refusers around the player. Returns how many actually landed. */
 	int32 SpawnMore(int32 HowMany);
 
+	/** Stand HowMany Refusers on the hillside, in an arc facing the player.
+	 *
+	 *  A COMPOSITION, NOT A MEASUREMENT, and that is the whole difference from SpawnMore.
+	 *  The bench spreads demons evenly around the camera because an even spread is the
+	 *  honest COST case. It is a terrible picture. This one asks the other question -
+	 *  does an army READ from the meadow floor - and the answer depends entirely on
+	 *  arrangement, so every knob is an argument you can retype in PIE without a rebuild.
+	 */
+	int32 SpawnRidge(int32 HowMany, float RadiusMetres, float ArcDegrees, int32 Ranks);
+
 	/** Destroy everything this subsystem spawned. Never touches level-placed Refusers. */
 	void ClearAll();
 

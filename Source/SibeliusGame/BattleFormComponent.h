@@ -33,13 +33,18 @@
 // Converting the game to third person would mean re-tuning all of it, and all of it
 // currently works. So the office stays first person and the battlefield is a mode.
 //
-// WHAT THIS COMPONENT DOES ABOUT IT, HONESTLY: it suspends the tick on the camera-trace
+// WHAT THIS COMPONENT DOES ABOUT IT: it suspends the tick on the camera-trace
 // components, which kills the targeting half — no E prompt, no Code Vision highlight, no
-// refactor target. It CANNOT stop the input-driven half from here, because the R binding
-// lives on the character and calls straight through. **Gating the power inputs on
-// IsInBattleForm() is a separate change on ASibeliusGameCharacter and has not been made
-// yet.** Until it is, pressing R in battle form will still roll the menagerie on whatever
-// the camera is pointed at. Written down rather than discovered.
+// refactor target. It cannot stop the input-driven half from here, because the bindings
+// live on the character and call straight through.
+//
+// THE OTHER HALF NOW EXISTS, on the character where it has to: AreCameraPowersSuspended()
+// asks this component, and CheckPowerUnlocked() consults it before Code Vision, Refactor
+// and Compile, with DoInteract() making the same call by hand. So R in battle form no
+// longer rolls the menagerie on whatever is over his shoulder.
+//
+// It shipped in two halves on purpose, and the gap was written down here for a day rather
+// than left to be discovered in a playtest. That is the only reason it got closed.
 
 #pragma once
 

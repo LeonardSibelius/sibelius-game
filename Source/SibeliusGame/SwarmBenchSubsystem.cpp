@@ -15,6 +15,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "NavigationSystem.h"
+#include "Engine/HitResult.h"
 
 constexpr int32 USwarmBenchSubsystem::Ladder[];
 
@@ -59,6 +60,26 @@ static FAutoConsoleCommandWithWorldAndArgs GSwarmSpawn(
 				const int32 N = Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 25;
 				const int32 Landed = S->SpawnMore(N);
 				UE_LOG(LogSibeliusGame, Display, TEXT("[SwarmBench] spawned %d of %d requested."), Landed, N);
+			}
+		}));
+
+static FAutoConsoleCommandWithWorldAndArgs GSwarmRidge(
+	TEXT("swarm.Ridge"),
+	TEXT("Stand N Refusers on the hillside in an arc facing you. "
+		 "Args: [count=150] [radiusMetres=300] [arcDegrees=90] [ranks=6]"),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(
+		[](const TArray<FString>& Args, UWorld* World)
+		{
+			if (USwarmBenchSubsystem* S = Get(World))
+			{
+				const int32 N       = Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 150;
+				const float Radius  = Args.Num() > 1 ? FCString::Atof(*Args[1]) : 300.0f;
+				const float Arc     = Args.Num() > 2 ? FCString::Atof(*Args[2]) : 90.0f;
+				const int32 Ranks   = Args.Num() > 3 ? FCString::Atoi(*Args[3]) : 6;
+				const int32 Landed  = S->SpawnRidge(N, Radius, Arc, Ranks);
+				UE_LOG(LogSibeliusGame, Display,
+					TEXT("[SwarmBench] ridge: %d of %d stood up at %.0f m over %.0f deg in %d ranks."),
+					Landed, N, Radius, Arc, Ranks);
 			}
 		}));
 
@@ -179,6 +200,102 @@ int32 USwarmBenchSubsystem::SpawnMore(int32 HowMany)
 	{
 		if (SpawnOne(Base + i, Base + HowMany))
 		{
+			++Landed;
+		}
+	}
+	return Landed;
+}
+
+/* ---------------------------------------------------------------- the composition
+
+   SWARM_PLAN step 3: "put 150 Gideons on the ridge and look at it. Not a bench run; a
+   composition." This is that command, and every choice in it is about the picture.
+
+   AN ARC, NOT A RING. An army comes from somewhere. Ringing the player is a fence, and
+   a fence reads as a spawn debug rather than a threat - you are surrounded by a test.
+   Ninety degrees of horizon, centred on wherever you are already looking, is an army.
+
+   RANKS, BECAUSE DEPTH IS WHAT MAKES A CROWD. 150 in a single line at 300 metres is a
+   picket fence: evenly spaced dots with sky between them. The same 150 in six ranks
+   overlap from a low camera and become a mass. This is the knob most likely to decide
+   the answer, which is why it is an argument.
+
+   FACING THE PLAYER. An army with its back turned is scenery.
+
+   A LINE TRACE DOWN, NOT THE NAVMESH - and this is the exact opposite of the call
+   SpawnOne makes fifty lines up, so it is worth saying why. The bench spawns on the flat
+   floor and wants the navmesh, because the navmesh IS the floor there. The hills are
+   sixty metres tall and steeper than the walkable slope limit, so there is no navmesh on
+   them at all: ProjectPointToNavigation would either fail outright or snap every demon
+   back down onto the meadow, which is precisely the shot this command exists to avoid.
+
+   DETERMINISTIC JITTER. A fixed seed means re-running at a different radius shows you the
+   RADIUS changing, not a fresh random scatter. Comparing two compositions that differ in
+   two ways at once tells you nothing, which is the same discipline the bench ladder uses.
+*/
+int32 USwarmBenchSubsystem::SpawnRidge(int32 HowMany, float RadiusMetres, float ArcDegrees, int32 Ranks)
+{
+	UWorld* World = GetWorld();
+	const TSubclassOf<APawn> Class = FindRefuserClass();
+	if (!World || !Class)
+	{
+		UE_LOG(LogSibeliusGame, Error,
+			TEXT("[SwarmBench] no ARefuserSpawner with a RefuserClass in this level - nothing to stand up."));
+		return 0;
+	}
+	APawn* Player = UGameplayStatics::GetPlayerPawn(World, 0);
+	if (!Player || HowMany <= 0)
+	{
+		return 0;
+	}
+
+	const FVector Centre = Player->GetActorLocation();
+	const float Bearing = Player->GetActorRotation().Yaw;   // point, then type the command
+	Ranks = FMath::Clamp(Ranks, 1, HowMany);
+
+	const float RadiusCm = FMath::Max(RadiusMetres, 10.0f) * 100.0f;
+	const float RankStepCm = 900.0f;   // about 9 m between ranks: they overlap without merging
+
+	FRandomStream Rand(20260827);
+	int32 Landed = 0;
+
+	for (int32 i = 0; i < HowMany; ++i)
+	{
+		const int32 Rank = i % Ranks;
+		const int32 IndexInRank = i / Ranks;
+		const int32 PerRank = FMath::Max(1, FMath::DivideAndRoundUp(HowMany, Ranks));
+
+		// Spread across the arc, with each rank offset half a step so the ranks do not
+		// line up into columns. Columns read as a parade; offset ranks read as a horde.
+		const float T = PerRank > 1 ? static_cast<float>(IndexInRank) / (PerRank - 1) : 0.5f;
+		const float Offset = (Rank % 2) ? (0.5f / FMath::Max(1, PerRank - 1)) : 0.0f;
+		const float Deg = Bearing + (T + Offset - 0.5f) * ArcDegrees + Rand.FRandRange(-1.5f, 1.5f);
+		const float Rad = FMath::DegreesToRadians(Deg);
+
+		const float R = RadiusCm + Rank * RankStepCm + Rand.FRandRange(-250.0f, 250.0f);
+		FVector Where = Centre + FVector(FMath::Cos(Rad) * R, FMath::Sin(Rad) * R, 0.0f);
+
+		// Find the hillside. 200 m of headroom each way covers a 60 m rim with margin.
+		FHitResult Hit;
+		FCollisionQueryParams Q(SCENE_QUERY_STAT(SwarmRidge), false, Player);
+		const FVector From = Where + FVector(0, 0, 20000.0f);
+		const FVector To   = Where - FVector(0, 0, 20000.0f);
+		if (World->LineTraceSingleByChannel(Hit, From, To, ECC_WorldStatic, Q))
+		{
+			Where.Z = Hit.ImpactPoint.Z + SpawnZNudge;
+		}
+		else
+		{
+			continue;   // off the landscape entirely; a demon in the void helps nobody
+		}
+
+		const FRotator Facing = (Centre - Where).GetSafeNormal2D().Rotation();
+
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+		if (AActor* Made = World->SpawnActor<AActor>(Class, Where, Facing, Params))
+		{
+			Spawned.Add(Made);
 			++Landed;
 		}
 	}
