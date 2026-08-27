@@ -47,6 +47,20 @@ that and the store page becomes the critical path, pushing release past the 25th
 Remaining onboarding steps at this point: tax interview, bank details, then the app
 itself.
 
+**ONBOARDING DOES NOT COMPLETE WHEN THE FORMS ARE SUBMITTED.** After the tax
+interview and bank details are in, Steamworks still shows "Continue the Onboarding
+Process" and Continue leads to "tax info verification pending". Third-party tax
+verification is a hard gate: the app cannot be created until it clears, so the store
+page cannot be started either. Valve puts it at 2-7 business days; submitted
+2026-08-26, so 4 September is the worst case.
+
+The 30-day clock keeps running through it, so the wait is free against the release
+date — but it eats into the run-up to the 11 September page deadline. If it is still
+pending after 7 business days, THEN open a support ticket.
+
+The useful consequence: the thing actually on the critical path, capsule art, needs
+nothing from Steamworks. Do it during this gate.
+
 ## 2. The steps, in order
 
 1. Sign in at **partner.steamgames.com** with the existing Steam account, start Steam
