@@ -52,6 +52,16 @@ place for it than the critical path.
   150 as a ceiling rather than a target.
 - **Nothing was fighting.** Those Gideons were idling. Montages, hit reactions and
   effects all cost more than standing about.
+- **The cost is thinking, not drawing — measured 2026-08-27.** 150 demons *held*
+  (no chase, no navigation invoker) run at **88 fps**: `frame 11.3 ms, game 11.3,
+  render 4.9, gpu 8.2`. The same 150 chasing ran at 3.7. Every Refuser injects a
+  `UNavigationInvokerComponent` with 40/60 m radii and this project builds navmesh
+  invoker-only, so 150 of them on a hillside asked for navmesh across most of a
+  square kilometre. **Rendering an army is solved. Making one behave is the open
+  problem** — which is step 4's budget, and it is CPU.
+- It also surfaced a real shipping bug: `[RefuserChase]` logged at `Display`, so any
+  Refuser that could not path wrote to the player's disk twice a second forever.
+  43,800 lines in 145 seconds. Now `Verbose`.
 - Rung 0 reads 8.334 ms with almost no variance, which is *exactly* 120 fps — that looks
   like a 120 Hz ceiling the bench could not remove, so the empty-scene cost is probably
   lower than stated. It does not affect the useful range; 100–300 is clean.
@@ -195,8 +205,41 @@ rather than left to be found in a playtest. That is the only reason it got close
 
 1. **Retarget Greystone's melee set.** Done — §4.
 2. **Gate the power inputs.** Done — §5.
-3. **Put 150 Gideons on the ridge and look at it.** The tool exists; the looking has
-   not happened. `swarm.Ridge [count=150] [radiusMetres=300] [arcDegrees=90] [ranks=6]`
+3. **Put 150 Gideons on the ridge and look at it.** ***Done 2026-08-27, and it
+   answered three questions, two of which nobody had asked.***
+
+   **An army reads at 120 m and not at 300.** Walt: *"that is a pretty good sized
+   herd."* `swarm.Ridge 150 120 45 6` — 150 demons, a 45-degree front, six ranks,
+   3.8 m between shoulders. The hills are plainly visible behind them, so the fog
+   this was blamed on was never involved.
+
+   **The battlefield was built five times too big, and that is arithmetic rather
+   than taste.** Gideon is about 2.2 m. On a 1080p screen at 90° FOV:
+
+   | distance | pixels tall | reads as |
+   |---|---|---|
+   | 60 m | 45 | a person |
+   | 120 m | 22 | an army |
+   | 150 m | 18 | a smudge |
+   | 300 m | 9 | nothing |
+   | 450 m — the actual rim | 6 | nothing |
+
+   A figure needs roughly 30 px to read as a person. That is about **80 m**. The
+   meadow is 1008 m across, which puts its ridge line at 400–490 m. **To stand an
+   army on the rim, the landscape scale wants to be about 0.3** — no re-import
+   needed, and yesterday's world-position UVs mean the grass will not stretch when
+   it shrinks. Or leave it: 120 m on the floor with the hills as backdrop is the
+   shot in the screenshot, and it works.
+
+   **Density is a second variable and it was wrong too.** The failed 300 m run put
+   40 demons across a full circle: one every 47 m. Even at 150 over 90° it is one
+   every 19 m. That is the picket fence this file warned about and was then
+   configured as anyway. Distance AND spacing, every time.
+
+   **What this said before the looking**, kept because the guess it encoded turned out
+   to be exactly right — "150 humanoids at 300 m may read as gravel." They did.
+
+   `swarm.Ridge [count=150] [radiusMetres=300] [arcDegrees=90] [ranks=6]`
    in PIE, in `L_Meadow`. All four are arguments because **the answer is unknown** — 150
    humanoids at 300 m may read as gravel, and finding out means retyping numbers, not
    rebuilding.

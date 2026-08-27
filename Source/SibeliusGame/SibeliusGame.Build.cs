@@ -25,6 +25,11 @@ public class SibeliusGame : ModuleRules
 			"EnhancedInput",
 			"AIModule",
 			"NavigationSystem",
+			// GGameThreadTime/GRenderThreadTime/GGPUFrameTime for the swarm ridge probe -
+			// the same four numbers `stat unit` shows, logged instead of drawn.
+			"RenderCore",
+			// GGPUFrameTime is RHI, not RenderCore - the other two are RenderCore.
+			"RHI",
 			"StateTreeModule",
 			"GameplayStateTreeModule",
 			"UMG",

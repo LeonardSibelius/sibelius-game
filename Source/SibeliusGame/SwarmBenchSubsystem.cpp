@@ -4,6 +4,8 @@
 
 #include "RefuserSpawner.h"
 #include "RefuserController.h"
+#include "RenderCore.h"
+#include "RHIGlobals.h"   // GGPUFrameTime lives here, not in RenderCore
 #include "SibeliusGame.h"
 
 #include "EngineUtils.h"
@@ -316,6 +318,7 @@ int32 USwarmBenchSubsystem::SpawnRidge(int32 HowMany, float RadiusMetres, float 
 					if (ARefuserController* RC = Cast<ARefuserController>(P->GetController()))
 					{
 						RC->HoldPosition();
+						++RidgeHeld;
 					}
 				}
 			}
@@ -323,6 +326,16 @@ int32 USwarmBenchSubsystem::SpawnRidge(int32 HowMany, float RadiusMetres, float 
 			++Landed;
 		}
 	}
+
+	/* ARM THE PROBE. Held count included so the log answers "did HoldPosition even run"
+	   without a second build - the first fix could not be confirmed from the outside and
+	   that cost a whole round trip. */
+	RidgeSpawned = Landed;
+	RidgeSettle = 0.0f;
+	RidgeMeasured = 0.0f;
+	RidgeFrames = 0;
+	RidgeAccumMs = RidgeWorstMs = RidgeGameMs = RidgeRenderMs = RidgeGpuMs = 0.0;
+
 	return Landed;
 }
 
@@ -492,9 +505,56 @@ void USwarmBenchSubsystem::WriteReport(const TCHAR* Why) const
 	}
 }
 
+/* Runs alongside the bench rather than inside it: the ladder owns Phase, and a probe
+   that fought it for the same state machine would break the one measurement in this
+   project anybody has trusted. */
+void USwarmBenchSubsystem::TickRidgeProbe(float DeltaSeconds)
+{
+	if (RidgeSettle < 0.0f)
+	{
+		return;
+	}
+
+	// Two seconds for spawn hitch, streaming and animation to stop being the story.
+	if (RidgeSettle < 2.0f)
+	{
+		RidgeSettle += DeltaSeconds;
+		return;
+	}
+
+	const double Ms = DeltaSeconds * 1000.0;
+	RidgeAccumMs += Ms;
+	RidgeWorstMs = FMath::Max(RidgeWorstMs, Ms);
+
+	/* THE SAME FOUR NUMBERS `stat unit` SHOWS. Frame is wall clock; the other three say
+	   where it went. Game high = the CPU is thinking (AI, animation, ticks). Render or
+	   GPU high = the machine is drawing (shadow cascades under a 14-degree sun are the
+	   standing suspect out here). Those are different problems with different fixes, and
+	   a frame time on its own cannot tell them apart. */
+	RidgeGameMs   += FPlatformTime::ToMilliseconds(GGameThreadTime);
+	RidgeRenderMs += FPlatformTime::ToMilliseconds(GRenderThreadTime);
+	RidgeGpuMs    += FPlatformTime::ToMilliseconds(GGPUFrameTime);
+	++RidgeFrames;
+
+	RidgeMeasured += DeltaSeconds;
+	if (RidgeMeasured >= 4.0f && RidgeFrames > 0)
+	{
+		const double N = static_cast<double>(RidgeFrames);
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[RidgeProbe] spawned=%d held=%d | frame %.1f ms (%.1f fps, worst %.1f) | "
+				 "game %.1f  render %.1f  gpu %.1f | frames %d"),
+			RidgeSpawned, RidgeHeld,
+			RidgeAccumMs / N, 1000.0 / (RidgeAccumMs / N), RidgeWorstMs,
+			RidgeGameMs / N, RidgeRenderMs / N, RidgeGpuMs / N, RidgeFrames);
+		RidgeSettle = -1.0f;   // one report per ridge
+	}
+}
+
 void USwarmBenchSubsystem::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	TickRidgeProbe(DeltaSeconds);
+
 	if (Phase == ESwarmBenchPhase::Idle)
 	{
 		return;

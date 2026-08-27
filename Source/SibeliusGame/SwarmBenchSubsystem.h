@@ -91,6 +91,7 @@ private:
 	bool SpawnOne(int32 IndexForSpread, int32 TotalWanted);
 
 	TSubclassOf<APawn> FindRefuserClass() const;
+	void TickRidgeProbe(float DeltaSeconds);
 	void BeginRung();
 	void FinishRung();
 	void FinishBench(const TCHAR* Why);
@@ -102,6 +103,24 @@ private:
 
 	UPROPERTY()
 	TArray<FSwarmBenchRung> Rungs;
+
+	/* THE RIDGE PROBE - separate from the bench ladder on purpose.
+
+	   Two runs were spent guessing why 150 held demons on a hillside are slow, and
+	   guessing is what this whole project keeps paying for. A frame time alone does not
+	   say WHICH half of the machine is dying, so this records the same four numbers
+	   `stat unit` shows and writes them where they can be read without asking anyone to
+	   squint at a HUD running at two frames a second. */
+	int32 RidgeHeld = 0;
+	int32 RidgeSpawned = 0;
+	float RidgeSettle = -1.0f;   // < 0 means no probe running
+	float RidgeMeasured = 0.0f;
+	int32 RidgeFrames = 0;
+	double RidgeAccumMs = 0.0;
+	double RidgeWorstMs = 0.0;
+	double RidgeGameMs = 0.0;
+	double RidgeRenderMs = 0.0;
+	double RidgeGpuMs = 0.0;
 
 	ESwarmBenchPhase Phase = ESwarmBenchPhase::Idle;
 
