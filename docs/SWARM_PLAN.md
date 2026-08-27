@@ -112,8 +112,32 @@ between them — dances, a bow, a celebration — and no combat. But `RTG_UE4_to
 already exists in this project and has already been used, and Paragon rides the UE4
 skeleton. So:
 
-> Retarget **Greystone's** melee set through `RTG_UE4_to_MetaHuman`.
-> 174 animations: `Attack_A/B` at Fast/Med/Slow, `Ability_Q/E/R/Ultimate`.
+> **Done, 2026-08-27.** `Tools/Scripts/retarget_greystone_combat.py`.
+> **23 animations, not 174**, in `/Game/Characters/Retargeting/Combat/` — 15 MB
+> rather than roughly 110.
+
+The 151 left behind are MOBA traversal: `TravelMode_*`, `Spin_Jog_*`, `Turn_Left_90`,
+for a hero walking a lane for twenty minutes. This game has a fight in a meadow. What
+was taken is what a fight needs to *read*: idle, four jog directions, the three-swing
+combo, four hit reacts, death, four abilities, Cast, four jump states — and `LevelStart`,
+which is not combat at all. It is the hero-arrival animation, for the beat where the
+agents **grant** him the body; §5 says that beat has to be framed or the whole thing is
+a costume change, and that is the animation for it.
+
+Two things the script's header records because each cost a run:
+
+- `duplicate_and_retarget` wants **`AssetData`**, not loaded objects, and the flag is
+  `include_referenced_assets` — the `remap_` name is from an older 5.x.
+- It writes **next to the source**, inside the git-ignored 2.2 GB `ParagonGreystone`.
+  Left there they would work on this machine and vanish on a clone, silently, the way
+  missing vendor content always fails here. Every result is moved somewhere tracked.
+
+**They do not cook yet**, because nothing hard-references them. PIE will play them and a
+packaged build will not have them — the soft-reference trap this project has already been
+bitten by once. They become real at step 4.
+
+Montages were deliberately not taken: a montage belongs to its source skeleton.
+`Attack_PrimaryA_Montage` has to be rebuilt on the MetaHuman side.
 
 Greystone is a swordsman where Gideon is a caster. Five swordsmen against an army of
 casters is a better-looking fight than five casters against five hundred.
@@ -144,24 +168,48 @@ to get right. Frame the grant on screen. Skip it and it is a costume change.
 inside his head; three metres back and those rays start behind his back. The office
 stays first person.
 
-### Known gap
+### The gap, closed 2026-08-27
 
 `UBattleFormComponent` suspends the tick on the camera-trace components, which kills the
-targeting half. It **cannot** stop the input half — the R binding lives on the character
-and calls straight through. **Gating the power inputs on `IsInBattleForm()` is a separate
-change to `ASibeliusGameCharacter` and has not been made.** Until it is, R in battle form
-still rolls the menagerie on whatever the camera sees.
+targeting half but cannot touch the input half — those bindings live on the character.
+For a day, R in battle form still rolled the menagerie on whatever was over his shoulder.
+
+`AreCameraPowersSuspended()` now lives on the character, and `CheckPowerUnlocked()` asks
+it first — which covers Code Vision, Refactor **and** Compile in one edit, because all
+three already funnelled through there. `DoInteract()` makes the same call by hand; it
+never had a progression gate to hang it on.
+
+The refusal does not reuse the progression wording. *"REFACTOR IS NOT YET YOURS"* is
+about what he has earned; this is about where the camera is standing, and telling a
+player he has not earned a power he used ten seconds ago in the office would read as
+exactly the bug that banner exists to prevent. It says **NOT IN THIS BODY**, for 1.5s
+rather than 3.5 — a mis-press mid-fight should not put a banner across the battle.
+Interact stays silent, because E is the most-pressed key in the game.
+
+It shipped in two halves, and the gap was written into `BattleFormComponent.h` for a day
+rather than left to be found in a playtest. That is the only reason it got closed.
 
 ---
 
 ## 6. What is next, in order
 
-1. **Retarget Greystone's melee set** onto the MetaHumans. Independent of everything
-   else and it is what turns five bystanders into five fighters.
-2. **Gate the power inputs** on `IsInBattleForm()` — the known gap above.
-3. **Put 150 Gideons on the ridge and look at it.** Not a bench run; a composition. Does
-   an army read from the meadow floor? That answers whether anything else is needed.
-4. **Fight logic.** Nothing above makes them fight — they idle. This is the real work
-   and none of the measurement above touches it.
+1. **Retarget Greystone's melee set.** Done — §4.
+2. **Gate the power inputs.** Done — §5.
+3. **Put 150 Gideons on the ridge and look at it.** The tool exists; the looking has
+   not happened. `swarm.Ridge [count=150] [radiusMetres=300] [arcDegrees=90] [ranks=6]`
+   in PIE, in `L_Meadow`. All four are arguments because **the answer is unknown** — 150
+   humanoids at 300 m may read as gravel, and finding out means retyping numbers, not
+   rebuilding.
+
+   The defaults encode guesses worth naming, so a bad result can be blamed on the right
+   one. An **arc, not a ring**: ringing the player is a fence, and a fence reads as a
+   spawn debug rather than a threat. **Six ranks**, because 150 in a single line is a
+   picket fence with sky between the dots, and depth is what makes a crowd overlap into
+   a mass — this is the knob most likely to decide the answer. **Facing you**, since an
+   army with its back turned is scenery.
+
+   This is a composition question and Walt is the only one who can answer it.
+4. **Fight logic.** Nothing above makes them fight — they idle. This is the real work,
+   and it is also what finally hard-references the 23 animations so they cook.
 5. *Deferred:* the Niagara/VAT horde and Actor promotion, if and only if 150 turns out
    not to be enough.
