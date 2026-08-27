@@ -53,6 +53,12 @@ class ASibeliusGameCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCodeVisionComponent> CodeVisionComp;
 
+	/** The meadow fight: third-person camera, visible body, the avatar the agents
+	 *  grant. Owns its own boom and camera, built on first entry rather than carried
+	 *  around the office. Console: battle.Toggle */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UBattleFormComponent> BattleFormComp;
+
 	/** Ch2 Refactor: camera-traces for refactorables and toggles them (SIB-26) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<URefactorComponent> RefactorComp;

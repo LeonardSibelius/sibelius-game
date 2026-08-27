@@ -14,6 +14,7 @@
 #include "InventoryComponent.h"
 #include "BuildComponent.h"
 #include "BranchPIEComponent.h"
+#include "BattleFormComponent.h"
 #include "GenerateComponent.h"    // Ch6 Generate driver
 #include "SibeliusHUD.h"          // SIB-39 dev-overlay toggle
 #include "JournalWidget.h"        // SIB-41 journal panel
@@ -84,6 +85,11 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 
 	// Ch6 Generate (SIB-30): typed-request budget + catalog + resolve-and-spawn.
 	GenerateComp = CreateDefaultSubobject<UGenerateComponent>(TEXT("GenerateComp"));
+
+	// Battle form: the avatar for the meadow fight. Costs nothing until entered - the
+	// boom and camera are built on first use, and Greystone is a soft pointer, so an
+	// office-only session never loads a 300 MB hero it is not going to show.
+	BattleFormComp = CreateDefaultSubobject<UBattleFormComponent>(TEXT("BattleFormComp"));
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(true);
