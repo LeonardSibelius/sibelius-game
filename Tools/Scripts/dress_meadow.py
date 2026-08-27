@@ -58,35 +58,29 @@ try:
         "extent": [round(extent.x, 1), round(extent.y, 1), round(extent.z, 1)],
     }
 
-    # Trace down for the floor rather than assuming it. The heightmap puts the meadow at
-    # the landscape's own zero, but it also wobbles it by up to 45cm, and a PlayerStart
-    # buried in the ground is a fall through the world on Play.
-    top = origin.z + extent.z + 2000.0
-    hit = unreal.SystemLibrary.line_trace_single(
-        world,
-        unreal.Vector(centre_x, centre_y, top),
-        unreal.Vector(centre_x, centre_y, origin.z - extent.z - 2000.0),
-        unreal.TraceTypeQuery.TRACE_TYPE_QUERY1,
-        True, [], unreal.DrawDebugTrace.NONE, True)
-
-    if hit:
-        ground_z = hit.impact_point.z
-        r["ground_from"] = "trace"
-    else:
-        ground_z = origin.z
-        r["ground_from"] = "landscape origin (trace missed)"
+    # THE FLOOR IS THE LANDSCAPE'S OWN ZERO, and no trace is needed to find it.
+    # make_meadow_heightmap.py writes the meadow floor at the 16-bit mid value, which is
+    # by definition the landscape actor's Z.
+    #
+    # A line trace was tried first and cost a whole run: SystemLibrary.line_trace_single
+    # returns a TUPLE, not a HitResult, so `hit` was truthy and `hit.impact_point` threw
+    # - after the bounds had been read but BEFORE the spawner and the sun, so neither
+    # happened and swarm.Bench had nothing to read. Reaching for a trace to find a height
+    # this script already knows was the mistake; the exception was just the bill.
+    ground_z = landscape.get_actor_location().z
     r["ground_z"] = round(ground_z, 1)
+    r["ground_from"] = "landscape actor Z - the heightmap's mid value IS the floor"
 
     # ---- the player, standing on it ----------------------------------------
     start = next((a for a in actors if isinstance(a, unreal.PlayerStart)), None)
     if not start:
         start = eas.spawn_actor_from_class(
-            unreal.PlayerStart, unreal.Vector(centre_x, centre_y, ground_z + 120.0))
+            unreal.PlayerStart, unreal.Vector(centre_x, centre_y, ground_z + 200.0))
         r["player_start"] = "spawned"
     else:
         r["player_start"] = "moved"
-    # 120cm up: a capsule half-height plus room, so Play does not begin inside the floor.
-    start.set_actor_location(unreal.Vector(centre_x, centre_y, ground_z + 120.0), False, False)
+    # 200cm up: capsule half-height plus room, and the floor wobbles +/-45cm by design.
+    start.set_actor_location(unreal.Vector(centre_x, centre_y, ground_z + 200.0), False, False)
     start.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=0.0, yaw=SUN_YAW + 180.0), False)
 
     # ---- something for the bench to spawn -----------------------------------
