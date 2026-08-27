@@ -178,6 +178,29 @@ struct SIBELIUSGAME_API FProgressionState
 	 */
 	UPROPERTY(SaveGame)
 	FSlotMeters SlotLifetimeMeters;
+
+	/* ---------------- THE TOLL ----------------
+
+	   Mrs. Hall's Refuser Army of Arrogant Architects is not something you walk up to.
+	   The Cathedral machine is the toll, and this is the one place the price lives.
+
+	   IT IS COINOUT - what the machine has PAID OUT over its life - and the choice
+	   matters more than the number does.
+
+	   Net profit was the obvious reading and it is unreachable by design: the shipped
+	   sheet measures 95.43% RTP, so play trends DOWN about seven credits a spin. A gate
+	   on being ahead is a jackpot lottery, not a goal, and most players would never see
+	   the battle. CoinOut accrues whether you are winning or losing - at 150 a spin it
+	   is roughly 203 spins - so the door is a matter of sitting there, which is the
+	   correct thing to ask of a man who spent forty years doing exactly that.
+
+	   And it can never be laundered. Locked decision 2 already says nothing clears these
+	   meters, ever. That decision was made for a different reason and it is what makes a
+	   door hung on this number honest. */
+	static constexpr int64 BattleQualifyingCoinOut = 29000;
+
+	int64 BattleCreditsPaid() const { return SlotLifetimeMeters.CoinOut; }
+	bool IsBattleQualified() const { return SlotLifetimeMeters.CoinOut >= BattleQualifyingCoinOut; }
 };
 
 // Headless self-test (ProgressionSmokeTest). True when every assert passes.

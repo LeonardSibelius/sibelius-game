@@ -9,6 +9,7 @@
 #include "GameFramework/Pawn.h"
 #include "Misc/DateTime.h"
 #include "Misc/Paths.h"
+#include "MrsHallSubsystem.h"
 #include "ProgressionSubsystem.h"   // lifetime hard meters — NOT SibeliusProgressSubsystem
 #include "SibeliusProgressSubsystem.h"
 #include "SlotGameModel.h"
@@ -212,7 +213,22 @@ void ASlotCabinet::CloseScreen()
 		{
 			if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
 			{
+				/* THE TOLL IS PAID ON THE WAY OUT, and that is the right beat rather
+				   than a convenient one. The meters only bank on close, so mid-session
+				   there is nothing to cross; and being told you have earned your way to
+				   a war WHILE staring at a reel is the wrong moment for it. You stand
+				   up, you turn round, and she is there. */
+				const bool bWasShort = !Prog->GetStateForRead().IsBattleQualified();
 				Prog->CommitSlotMeters(M->TakePendingMeters());
+
+				if (bWasShort && Prog->GetStateForRead().IsBattleQualified()
+					&& Prog->ClaimOneTimeGrant(TEXT("Battle.Qualified")))
+				{
+					if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+					{
+						Hall->Say(TEXT("Battle.Open"));
+					}
+				}
 			}
 		}
 	}

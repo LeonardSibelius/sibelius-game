@@ -252,6 +252,24 @@ void UGameMenuWidget::BuildRecordsTab(TSharedRef<SVerticalBox> Box)
 	Row(TEXT("biggest single spin (chips)"),
 		FString::FromInt(Stat(SibeliusStats::CarouselBestSpin)), Body);
 
+	/* The toll, on the page where every other lifetime number already lives. Reads the
+	   slot meters rather than a LifetimeStats key, because the meters are the authority
+	   and a mirrored stat would be a second number free to disagree with the first. */
+	{
+		const FProgressionState& St = P ? P->GetStateForRead() : FProgressionState();
+		Section(NSLOCTEXT("Sibelius", "RecArchitects", "THE ARCHITECTS"));
+		Row(TEXT("credits the cathedral machine has paid out"),
+			FString::Printf(TEXT("%lld"), St.BattleCreditsPaid()), Body);
+		Row(St.IsBattleQualified()
+				? TEXT("the toll is paid - the field is waiting")
+				: TEXT("still owed before Mrs. Hall's army will have you"),
+			St.IsBattleQualified()
+				? FString(TEXT("PAID"))
+				: FString::Printf(TEXT("%lld"),
+					FProgressionState::BattleQualifyingCoinOut - St.BattleCreditsPaid()),
+			St.IsBattleQualified() ? SauceGreen : Body);
+	}
+
 	Box->AddSlot().AutoHeight().Padding(0, 14, 0, 0)
 	[
 		SNew(STextBlock)

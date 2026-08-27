@@ -98,7 +98,57 @@ void UJournalWidget::RefreshFromNarrative()
 	}
 
 	JournalText += ComposeMemoirRecord();
+	JournalText += ComposeArchitects();
 	ApplyText();
+}
+
+/* THE ARCHITECTS - the standing invitation, and the toll.
+
+   Walt, 2026-08-27: "I always resented the Arrogant Architects at all of my many coding
+   jobs." That is the whole reason this enemy has a name instead of a health bar. The
+   Refusers were already refusing; calling them Architects is what tells the player WHY -
+   the men who drew the system on a whiteboard and were never once there at 2 a.m. when
+   it threw.
+
+   NO NEW SAVE FIELD, for the same reason ComposeMemoirRecord adds none: the number is
+   already in FProgressionState::SlotLifetimeMeters, which locked decision 2 says can
+   never be cleared. A second copy could only ever disagree with the first.
+*/
+FString UJournalWidget::ComposeArchitects() const
+{
+	const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this);
+	if (!Prog)
+	{
+		return FString();
+	}
+	const FProgressionState& S = Prog->GetStateForRead();
+
+	FString Out = TEXT("\n\n\nTHE ARCHITECTS\n\n")
+		TEXT("    Mrs. Hall keeps an army. She calls them Refusers. They were\n")
+		TEXT("    Architects first - the ones who drew the system on a whiteboard\n")
+		TEXT("    and went to lunch, and were never once there at two in the morning\n")
+		TEXT("    when it threw. Forty years of them. Every job. Every one of them\n")
+		TEXT("    certain, and none of them on call.\n\n")
+		TEXT("    The cathedral machine is the toll.\n\n");
+
+	if (S.IsBattleQualified())
+	{
+		Out += FString::Printf(
+			TEXT("    It has paid out %lld credits. The toll was %lld. It is paid, and\n")
+			TEXT("    the field is waiting.\n"),
+			S.BattleCreditsPaid(), FProgressionState::BattleQualifyingCoinOut);
+	}
+	else
+	{
+		// The remainder, not just the total. "You have 14,850" is a fact; "you are
+		// 14,150 short" is a reason to sit back down.
+		const int64 Short = FProgressionState::BattleQualifyingCoinOut - S.BattleCreditsPaid();
+		Out += FString::Printf(
+			TEXT("    It has paid out %lld credits of the %lld that buys a way in.\n")
+			TEXT("    %lld to go. Keep pulling.\n"),
+			S.BattleCreditsPaid(), FProgressionState::BattleQualifyingCoinOut, Short);
+	}
+	return Out;
 }
 
 FString UJournalWidget::ComposeMemoirRecord() const

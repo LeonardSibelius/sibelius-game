@@ -24,6 +24,7 @@
 #include "Styling/CoreStyle.h"
 #include "InputCoreTypes.h"
 #include "SlotGameModel.h"
+#include "ProgressionSubsystem.h"
 #include "SlotParSheetMath.h"   // the licence check that refuses an unlicensed spin
 
 DEFINE_LOG_CATEGORY_STATIC(LogSlotScreen, Log, All);
@@ -427,9 +428,39 @@ void USlotScreenWidget::TrySpin()
 	{
 		if (HintText)
 		{
-			HintText->SetText(FText::FromString(TrialTarget > 0
-				? TEXT("The shrine keeps its power — Esc, then step in again for a fresh stake")
-				: TEXT("Out of credits — Esc to leave (it resets next visit)")));
+			/* THE TOLL, ON THE MACHINE ITSELF - and this is the readout that matters most,
+		   because it is the only one the player sees WHILE they are paying it. A number
+		   in a menu is a fact you go and look up; a number under the reels turns every
+		   spin into progress toward something.
+
+		   LIVE, NOT COMMITTED. FProgressionState only banks on close, so reading the
+		   lifetime meter alone would sit frozen for a whole session and read as broken.
+		   GetPendingMeters() is the non-consuming peek at the uncommitted delta - the
+		   consuming TakePendingMeters() belongs to the close path and must not be called
+		   from a HUD refresh.
+
+		   IT DISAPPEARS ONCE PAID. The machine's part in this is the toll; a permanent
+		   "PAID" banner is clutter on a cabinet somebody may still want to play for its
+		   own sake. The Journal and the records page carry it from there. */
+		FString Hint = TrialTarget > 0
+			? FString::Printf(TEXT("REACH %lld CREDITS TO CLAIM THE POWER        SPACE - spin        Esc - retreat"), TrialTarget)
+			: FString(TEXT("SPACE - spin        T - service panel        Esc - leave"));
+
+		if (TrialTarget <= 0)
+		{
+			if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+			{
+				const FProgressionState& St = Prog->GetStateForRead();
+				const int64 Pending = Model ? Model->GetPendingMeters().CoinOut : 0;
+				const int64 Paid = St.BattleCreditsPaid() + Pending;
+				if (Paid > 0 && Paid < FProgressionState::BattleQualifyingCoinOut)
+				{
+					Hint += FString::Printf(TEXT("\nTHE ARCHITECTS   %lld OF %lld PAID"),
+						Paid, FProgressionState::BattleQualifyingCoinOut);
+				}
+			}
+		}
+		HintText->SetText(FText::FromString(Hint));
 		}
 		return;
 	}

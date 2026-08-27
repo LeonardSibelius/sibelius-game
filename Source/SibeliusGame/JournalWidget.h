@@ -49,6 +49,10 @@ private:
 	 *  deliberately adds no new save field. */
 	FString ComposeMemoirRecord() const;
 
+	/** The standing invitation to the battle, and the toll still owed for it. Reads the
+	 *  Cathedral machine's lifetime CoinOut - see FProgressionState::IsBattleQualified. */
+	FString ComposeArchitects() const;
+
 	UPROPERTY()
 	TObjectPtr<UScrollBox> ScrollBox;
 
