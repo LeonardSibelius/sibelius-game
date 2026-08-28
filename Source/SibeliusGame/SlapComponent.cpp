@@ -1,7 +1,10 @@
 #include "SlapComponent.h"
+#include "BattleFormComponent.h"
 
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Character.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "Components/CapsuleComponent.h"
@@ -106,9 +109,66 @@ void USlapComponent::DoSlap()
 	FVector ViewStart = OwnerPawn->GetActorLocation();
 	FRotator ViewRot = OwnerPawn->GetActorRotation();
 
-	if (AController* Controller = OwnerPawn->GetController())
+	/* WHERE THE SWING STARTS, AND WHY IT MOVES IN BATTLE FORM.
+
+	   In first person the camera IS his head, so tracing from the view point is tracing
+	   from his hand and 250 cm is arm's length. In battle form the camera sits 350 cm
+	   behind his shoulder — so a 250 cm trace from there ends a metre SHORT of his own
+	   back. Every swing would fire, cost nothing, and hit empty air behind him.
+
+	   BattleFormComponent.h names this exact hazard for the camera-traced powers, and
+	   those got gated. The slap was never gated, because unlike Code Vision or Refactor
+	   it is the one verb the battle actually needs — so instead of turning it off, it
+	   moves to where a sword would be: his chest, pointing where he faces.
+
+	   250 cm stays right either way. It is arm's length in first person and about a
+	   greatsword's reach in third, which is a coincidence worth taking. */
+	// ASKED, NOT MIRRORED. A second bool here would be a copy of state that already has
+	// an owner, and the copy is the one that goes stale. Same rule the engulf component
+	// follows, and the same one that made "is this a Refuser" a single test.
+	const UBattleFormComponent* Battle = OwnerPawn->FindComponentByClass<UBattleFormComponent>();
+	const bool bBattle = Battle && Battle->IsInBattleForm();
+	if (bBattle)
+	{
+		ViewStart = OwnerPawn->GetActorLocation() + FVector(0.0f, 0.0f, BattleSwingHeight);
+		ViewRot = OwnerPawn->GetActorRotation();
+	}
+	else if (AController* Controller = OwnerPawn->GetController())
 	{
 		Controller->GetPlayerViewPoint(ViewStart, ViewRot);
+	}
+
+	/* THE SWORD YOU CAN SEE. Greystone's own attack montages ship with the pack and his
+	   AnimBlueprint is already driving the avatar, so this needs no retarget and no
+	   authoring — just play the next one in the chain. A, then B, then C, so repeated
+	   presses read as a combo rather than the same swing three times.
+
+	   Cosmetic ONLY, on purpose: the hit is still decided by the sweep below, on the
+	   frame of the press. Waiting for an anim notify to land the blow would be more
+	   honest and would also make the verb feel late, and this game's slap has always
+	   been instant. If the swing ever needs to connect on the beat, that is an anim
+	   notify and a deliberate decision, not something to drift into. */
+	if (bBattle)
+	{
+		if (const ACharacter* AsChar = Cast<ACharacter>(OwnerPawn))
+		{
+			if (USkeletalMeshComponent* M = AsChar->GetMesh())
+			{
+				if (UAnimInstance* AI = M->GetAnimInstance())
+				{
+					static const TCHAR* Chain[] = {
+						TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Animations/Attack_PrimaryA_Montage.Attack_PrimaryA_Montage"),
+						TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Animations/Attack_PrimaryB_Montage.Attack_PrimaryB_Montage"),
+						TEXT("/Game/ParagonGreystone/Characters/Heroes/Greystone/Animations/Attack_PrimaryC_Montage.Attack_PrimaryC_Montage"),
+					};
+					if (UAnimMontage* Swing = LoadObject<UAnimMontage>(nullptr, Chain[SwingIndex % 3]))
+					{
+						AI->Montage_Play(Swing);
+					}
+					++SwingIndex;
+				}
+			}
+		}
 	}
 
 	const FVector Forward = ViewRot.Vector();

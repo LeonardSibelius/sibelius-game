@@ -21,6 +21,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	float SlapRadius = 60.f;
 
+	/** How high up his body the swing starts, in battle form only. Chest height: a
+	 *  greatsword arc, not a shin kick. In first person the trace still starts at the
+	 *  camera, which IS his head, so this is unused there. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
+	float BattleSwingHeight = 90.f;
+
+	/** Which of Greystone's three primary attacks comes next. Cycles so repeated
+	 *  presses read as a combo instead of the same swing three times. Not saved and not
+	 *  reset — where the chain happens to be when a fight starts does not matter. */
+	int32 SwingIndex = 0;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	float LaunchSpeed = 1200.f;
 

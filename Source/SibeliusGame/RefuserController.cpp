@@ -4,6 +4,7 @@
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
@@ -44,6 +45,36 @@ void ARefuserController::OnPossess(APawn* InPawn)
 			NewObject<UNavigationInvokerComponent>(InPawn, TEXT("NavInvoker"));
 		Invoker->SetGenerationRadii(4000.f, 6000.f);
 		Invoker->RegisterComponent();
+	}
+
+	/* WHY THEY SKATED, measured at last:
+
+	     vel=600.0  accel=0.0  |  animSpeed=600.0  animAccel=0  |  montage=none
+
+	   Moving at full speed, and the AnimBlueprint KNEW - animSpeed tracked velocity
+	   exactly. What it did not know was that they were accelerating, because
+	   GetCurrentAcceleration() reported zero, and IsAccelerating is the bool Gideon's
+	   AnimGraph blends on and his Idle->Jog transition tests. Speed was never the
+	   problem; four earlier theories that said it was are all wrong.
+
+	   FNavMovementProperties::bUseAccelerationForPaths DEFAULTS TO FALSE. With it off,
+	   path following drives a character through RequestDirectMove - it sets a requested
+	   VELOCITY - and Acceleration is never populated at all. Acceleration is the
+	   player-input idiom, and Paragon's AnimBP was authored for a player.
+
+	   Turning it on makes path following go through AddInputVector instead, which is
+	   what every player-facing animation graph expects. One line, no edit to the
+	   git-ignored vendor AnimBP, and it fixes every Refuser everywhere rather than
+	   only the ones in the meadow.
+
+	   Injected here for the same reason the invoker above is: on possess, so no
+	   Blueprint asset has to be touched. */
+	if (ACharacter* AsChar = Cast<ACharacter>(InPawn))
+	{
+		if (UCharacterMovementComponent* Move = AsChar->GetCharacterMovement())
+		{
+			Move->GetNavMovementProperties()->bUseAccelerationForPaths = true;
+		}
 	}
 
 	// Track the player so the Refuser faces you while closing and while swinging.
@@ -101,6 +132,71 @@ void ARefuserController::ChasePlayer()
 		// We got unpossessed (e.g. the Refuser was slapped); stop chasing.
 		GetWorldTimerManager().ClearTimer(ChaseTimerHandle);
 		return;
+	}
+
+	/* WHAT THE ANIMATION ACTUALLY SEES.
+
+	   Four theories about the skating have been wrong: a failed cast, an arrival
+	   montage, "velocity is zero", and a probe that measured the wrong moment. Each
+	   was inferred from a graph or a listing rather than read out of a running game.
+	   This prints the numbers that decide it:
+
+	     vel       is the pawn moving at all, per CharacterMovement
+	     accel     what GetCurrentAcceleration reports, which feeds IsAccelerating
+	     animSpeed what the AnimBP variable ACTUALLY holds, read by reflection
+	     animAccel what its IsAccelerating ACTUALLY holds
+
+	   vel high with animSpeed matching means the AnimBP knows, and the state machine's
+	   transitions are at fault. vel high with animSpeed zero means the AnimBP is not
+	   being updated. vel zero mid-charge means they are not moving through
+	   CharacterMovement at all, and no animation work was ever going to help.
+
+	   IT SITS HERE, ABOVE THE EARLY-OUTS, and both halves of that matter. Below
+	   `if (GetMoveStatus() != Idle) return;` it sampled only at the instant a new move
+	   was requested - the one moment velocity is guaranteed to be zero - and printed
+	   three convincing vel=0.0 lines. Then a careless substring anchor put it in
+	   OnPossess entirely, where it printed one line per spawn wave for the same
+	   reason. A substring match is not a location.
+
+	   RATE-LIMITED TO TWO LINES A SECOND for the whole game, not per Refuser: this
+	   file once logged per-Refuser per-tick at Display and wrote 43,800 lines in 145
+	   seconds. */
+	{
+		static double LastDiag = 0.0;
+		const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+		if (Now - LastDiag > 0.5 || Now < LastDiag)   // Now < LastDiag: a fresh PIE clock
+		{
+			LastDiag = Now;
+			const ACharacter* C = Cast<ACharacter>(GetPawn());
+			const UCharacterMovementComponent* Mv = C ? C->GetCharacterMovement() : nullptr;
+			double AnimSpeed = -1.0;
+			int32 AnimAccel = -1;
+			FString Montage = TEXT("none");
+			if (const USkeletalMeshComponent* M = C ? C->GetMesh() : nullptr)
+			{
+				if (UAnimInstance* AI = M->GetAnimInstance())
+				{
+					if (const FDoubleProperty* Pr = FindFProperty<FDoubleProperty>(AI->GetClass(), TEXT("Speed")))
+					{
+						AnimSpeed = Pr->GetPropertyValue_InContainer(AI);
+					}
+					if (const FBoolProperty* Pr = FindFProperty<FBoolProperty>(AI->GetClass(), TEXT("IsAccelerating")))
+					{
+						AnimAccel = Pr->GetPropertyValue_InContainer(AI) ? 1 : 0;
+					}
+					if (UAnimMontage* Cur = AI->GetCurrentActiveMontage())
+					{
+						Montage = Cur->GetName();
+					}
+				}
+			}
+			UE_LOG(LogSibeliusGame, Verbose,
+				TEXT("[RefuserAnimDiag] vel=%.1f accel=%.1f maxWalk=%.0f | animSpeed=%.1f animAccel=%d | montage=%s"),
+				C ? C->GetVelocity().Size() : -1.0,
+				Mv ? Mv->GetCurrentAcceleration().Size() : -1.0,
+				Mv ? Mv->MaxWalkSpeed : -1.0,
+				AnimSpeed, AnimAccel, *Montage);
+		}
 	}
 
 	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
