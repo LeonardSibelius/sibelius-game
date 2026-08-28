@@ -192,7 +192,12 @@ void USlapComponent::DoSlap()
 	{
 		if (const ACharacter* AsChar = Cast<ACharacter>(OwnerPawn))
 		{
-			if (USkeletalMeshComponent* M = AsChar->GetMesh())
+			// THE AVATAR'S MESH, NOT GetMesh(). In battle form GetMesh() is the template
+			// body and it is hidden - the swing played there for an hour, perfectly, on
+			// something nobody could see.
+			USkeletalMeshComponent* M = Battle ? Battle->GetAvatarMesh() : nullptr;
+			if (!M) { M = AsChar->GetMesh(); }
+			if (M)
 			{
 				if (UAnimInstance* AI = M->GetAnimInstance())
 				{

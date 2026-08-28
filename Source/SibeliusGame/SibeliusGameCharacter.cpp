@@ -15,6 +15,7 @@
 #include "BuildComponent.h"
 #include "BranchPIEComponent.h"
 #include "BattleFormComponent.h"
+#include "SwarmBenchSubsystem.h"
 #include "EngulfComponent.h"
 #include "GenerateComponent.h"    // Ch6 Generate driver
 #include "SibeliusHUD.h"          // SIB-39 dev-overlay toggle
@@ -317,6 +318,11 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// ResetProgression. (N is free here; the Carousel level's N lives on a
 	// different pawn.)
 	PlayerInputComponent->BindKey(EKeys::N, IE_Pressed, this, &ASibeliusGameCharacter::RequestNewGame);
+
+	// The battle, on keys - see the header. 3/4/5 were free; 6-0 are the branch ops.
+	PlayerInputComponent->BindKey(EKeys::Five, IE_Pressed, this, &ASibeliusGameCharacter::Debug_BattleToggle);
+	PlayerInputComponent->BindKey(EKeys::Four, IE_Pressed, this, &ASibeliusGameCharacter::Debug_SpawnLegion);
+	PlayerInputComponent->BindKey(EKeys::Three, IE_Pressed, this, &ASibeliusGameCharacter::Debug_ClearLegion);
 }
 
 
@@ -841,5 +847,36 @@ void ASibeliusGameCharacter::ResetProgression()
 			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Orange,
 				TEXT("ResetProgression: back to Code Vision only, 50 sauce"));
 		}
+	}
+}
+
+// --- the battle, on keys -----------------------------------------------------
+
+void ASibeliusGameCharacter::Debug_BattleToggle()
+{
+	if (!BattleFormComp) { return; }
+	if (BattleFormComp->IsInBattleForm()) { BattleFormComp->ExitBattleForm(); }
+	else                                  { BattleFormComp->EnterBattleForm(); }
+	ASibeliusHUD::Toast(this,
+		BattleFormComp->IsInBattleForm() ? TEXT("BATTLE FORM") : TEXT("BACK TO YOURSELF"),
+		2.0f, SibeliusToast::Prize);
+}
+
+void ASibeliusGameCharacter::Debug_SpawnLegion()
+{
+	if (USwarmBenchSubsystem* S = GetWorld() ? GetWorld()->GetSubsystem<USwarmBenchSubsystem>() : nullptr)
+	{
+		// 30 at 15 m, all round, two ranks, AI ON - the arguments that made them charge.
+		const int32 N = S->SpawnRidge(30, 15.0f, 360.0f, 2, /*bLetThemCharge=*/true);
+		ASibeliusHUD::Toast(this, FString::Printf(TEXT("%d ARCHITECTS"), N), 2.0f, SibeliusToast::Bad);
+	}
+}
+
+void ASibeliusGameCharacter::Debug_ClearLegion()
+{
+	if (USwarmBenchSubsystem* S = GetWorld() ? GetWorld()->GetSubsystem<USwarmBenchSubsystem>() : nullptr)
+	{
+		S->ClearAll();
+		ASibeliusHUD::Toast(this, TEXT("DISMISSED"), 1.5f, SibeliusToast::Info);
 	}
 }

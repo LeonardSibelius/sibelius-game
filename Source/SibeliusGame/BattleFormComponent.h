@@ -76,6 +76,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Battle Form")
 	bool IsInBattleForm() const { return bInBattleForm; }
 
+	/** The avatar's own mesh, or null outside battle form.
+	 *
+	 *  ANYTHING THAT WANTS TO ANIMATE THE PLAYER MUST ASK FOR THIS, not GetMesh().
+	 *  Since the avatar became its own component, GetMesh() is the template body -
+	 *  hidden while battle form is worn. The slap played Greystone's sword montage on
+	 *  it for an hour, correctly, invisibly. */
+	UFUNCTION(BlueprintPure, Category = "Battle Form")
+	USkeletalMeshComponent* GetAvatarMesh() const { return AvatarBody; }
+
 	// ---- the camera ----
 
 	/** Boom length. 350 puts him low in frame with room to see what he is about to hit;

@@ -188,6 +188,17 @@ protected:
 	void OnBranchDiscardPressed();  //                 (key 8)
 	void OnDeployPressed();         // Deploy verb     (key 0)
 
+	/* THE BATTLE, ON KEYS. Walt, testing the meadow: "I wish you would set this up so I
+	   don't have to do the console commands." Fair - nobody should need a console to play
+	   their own game, and every console round tonight also cost a mis-typed argument
+	   (swarm..Ridge, battle.UseAvatar eaten by autocomplete) or a keystroke that went to
+	   the console box instead of the game.
+
+	   The console commands stay; they take arguments and these cannot. */
+	void Debug_BattleToggle();      // key 5: become Greystone, or stop
+	void Debug_SpawnLegion();       // key 4: thirty Architects, charging
+	void Debug_ClearLegion();       // key 3: send them home
+
 public:
 	/** FUN-6: broadcast on every successful use of an unlocked verb. */
 	FOnPowerVerbUsed OnPowerVerbUsed;

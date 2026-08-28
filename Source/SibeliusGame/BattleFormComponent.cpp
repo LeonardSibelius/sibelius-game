@@ -193,6 +193,12 @@ void UBattleFormComponent::EnterBattleForm()
 		AvatarBody->SetSkeletalMeshAsset(Avatar);
 		if (UClass* AnimClass = AvatarAnimClass.LoadSynchronous())
 		{
+			/* MODE FIRST, THEN CLASS. A runtime-created component defaults to
+			   AnimationSingleNode; handing it an AnimBlueprint class does not by itself
+			   put it into blueprint mode, so the graph never runs - the mesh stands in
+			   whatever pose it was given and slides. Which is exactly what a skating
+			   Greystone looks like. */
+			AvatarBody->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 			AvatarBody->SetAnimInstanceClass(AnimClass);
 		}
 		AvatarBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -206,6 +212,13 @@ void UBattleFormComponent::EnterBattleForm()
 		// many, and hiding it also kills the shadow that has been the only visible sign
 		// of him all evening.
 		Body->SetVisibility(false, true);
+
+		// Read it back rather than trust the setters - the lesson of the whole evening.
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[BattleForm] avatar body: mesh=%s animMode=%d animInstance=%s"),
+			*GetNameSafe(AvatarBody->GetSkeletalMeshAsset()),
+			static_cast<int32>(AvatarBody->GetAnimationMode()),
+			*GetNameSafe(AvatarBody->GetAnimInstance()));
 	}
 	else
 	{
