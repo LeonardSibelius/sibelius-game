@@ -126,6 +126,32 @@ try:
             "target": str(door.get_editor_property("TargetLevelName")),
             "location": [round(loc.x, 1), round(loc.y, 1), round(loc.z, 1)],
         }
+
+        # ---- and the thing that makes it a battle instead of a field --------
+        #
+        # Walt, having played to the meadow: "why must I press the 5 and 4?" He should
+        # not - those are debug keys, made so the fight could be iterated on without
+        # playing the whole game to reach it. ABattleArrival runs the whole beat on
+        # BeginPlay: the army appears and is LOOKED at, the agents speak, the body is
+        # granted, and only then do they come. See BattleArrival.h for why the order is
+        # slow on purpose.
+        arr_cls = unreal.load_class(None, "/Script/SibeliusGame.BattleArrival")
+        if not arr_cls:
+            r["arrival"] = "BattleArrival class not found - editor on an old build?"
+        else:
+            arr = door_labelled("TheArrival")
+            if not arr:
+                arr = eas.spawn_actor_from_class(arr_cls, start.get_actor_location())
+                arr.set_actor_label("TheArrival")
+                r["arrival"] = "spawned"
+            else:
+                r["arrival"] = "already here"
+            r["arrival_readback"] = {
+                "army": int(arr.get_editor_property("ArmyCount")),
+                "metres": float(arr.get_editor_property("ArmyDistanceMetres")),
+                "arc": float(arr.get_editor_property("ArmyArcDegrees")),
+                "ranks": int(arr.get_editor_property("ArmyRanks")),
+            }
     else:
         raise Exception("open L_Cathedral or L_Meadow first - this level is %s" % level_path)
 
