@@ -428,59 +428,9 @@ void USlotScreenWidget::TrySpin()
 	{
 		if (HintText)
 		{
-			/* THE TOLL, ON THE MACHINE ITSELF - and this is the readout that matters most,
-		   because it is the only one the player sees WHILE they are paying it. A number
-		   in a menu is a fact you go and look up; a number under the reels turns every
-		   spin into progress toward something.
-
-		   LIVE, NOT COMMITTED. FProgressionState only banks on close, so reading the
-		   lifetime meter alone would sit frozen for a whole session and read as broken.
-		   GetPendingMeters() is the non-consuming peek at the uncommitted delta - the
-		   consuming TakePendingMeters() belongs to the close path and must not be called
-		   from a HUD refresh.
-
-		   IT SAYS WHAT IT BUYS, AND IT NEVER HIDES. Both were wrong before.
-
-		   Walt, at the machine with CREDITS 29750 on screen: "i got over 29000 in the slot
-		   cathedral and was never taken to battle, it just kept on playing."
-
-		   Of course it did. CREDITS is the wallet and it starts at 25,000 every session -
-		   he was up 4,750. The toll is COINOUT, what the machine has PAID OUT over its
-		   life. Two different numbers, and the biggest thing on screen was the wrong one.
-		   The old line read "14,850 OF 29,000 PAID" - true, and explaining nothing - then
-		   hid itself the moment the toll was met, which is the one moment a player most
-		   needs to be told something.
-
-		   AND THE METER ONLY BANKS ON CLOSE. CommitSlotMeters runs from
-		   ASlotCabinet::CloseScreen, the single close path, so the door beside the machine
-		   cannot appear while he is still at the reels. That is a good beat - stand up,
-		   turn round, the way is open - but only if somebody tells him to stand up. */
-		FString Hint = TrialTarget > 0
+		HintText->SetText(FText::FromString(TrialTarget > 0
 			? FString::Printf(TEXT("REACH %lld CREDITS TO CLAIM THE POWER        SPACE - spin        Esc - retreat"), TrialTarget)
-			: FString(TEXT("SPACE - spin        T - service panel        Esc - leave"));
-
-		if (TrialTarget <= 0)
-		{
-			if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
-			{
-				const FProgressionState& St = Prog->GetStateForRead();
-				const int64 Pending = Model ? Model->GetPendingMeters().CoinOut : 0;
-				const int64 Paid = St.BattleCreditsPaid() + Pending;
-				if (Paid >= FProgressionState::BattleQualifyingCoinOut)
-				{
-					Hint += TEXT("\nTHE ARCHITECTS ARE WAITING  -  LEAVE THE MACHINE [Esc]");
-				}
-				else
-				{
-					// "PAID OUT" carries the whole distinction from the CREDITS meter above
-					// it, and the army is named so the number means something.
-					Hint += FString::Printf(
-						TEXT("\nMRS. HALL\'S ARMY OF ARROGANT ARCHITECTS OPENS AT %lld PAID OUT  -  %lld SO FAR"),
-						FProgressionState::BattleQualifyingCoinOut, Paid);
-				}
-			}
-		}
-		HintText->SetText(FText::FromString(Hint));
+			: FString(TEXT("SPACE - spin        T - service panel        Esc - leave"))));
 		}
 		return;
 	}
@@ -823,9 +773,48 @@ void USlotScreenWidget::UpdateHud()
 		// but inside the UI would be invisible to every actual player. It is deliberately
 		// absent during a trial: the shrine run is a timed test of nerve, not the moment
 		// to invite someone to go and rewrite the machine's odds.
-		HintText->SetText(FText::FromString(TrialTarget > 0
-			? FString::Printf(TEXT("REACH %lld CREDITS TO CLAIM THE POWER        SPACE — spin        Esc — retreat"), TrialTarget)
-			: FString(TEXT("SPACE — spin        T — service panel        Esc — leave"))));
+		/* THE TOLL, ON THE MACHINE ITSELF - and this readout has now been written three
+		   times, twice into a function nobody calls.
+		
+		   There are two copies of this hint block in this file. A substring anchor found the
+		   FIRST one, inside TrySpin, and put the meter there - where it compiled, passed
+		   every gate, and was never once drawn. UpdateHud is the one that runs. Walt asked
+		   for this message three times before anybody looked at which function he was
+		   actually looking at.
+		
+		   CREDITS IS NOT THE TOLL, which is the confusion this line exists to end. CREDITS
+		   is the session wallet and starts at 25,000 every time the machine is opened. The
+		   toll is COINOUT - what the machine has PAID OUT over its life - so "PAID OUT"
+		   does the distinguishing, and the army is named so the number means something.
+		
+		   LIVE, because the lifetime meter only banks on close: GetPendingMeters() is the
+		   non-consuming peek at this session. And when the toll is met it says so and tells
+		   him to stand up, because CommitSlotMeters - and therefore the door - waits for
+		   the machine to be closed. */
+		FString Hint = TrialTarget > 0
+			? FString::Printf(TEXT("REACH %lld CREDITS TO CLAIM THE POWER        SPACE - spin        Esc - retreat"), TrialTarget)
+			: FString(TEXT("SPACE - spin        T - service panel        Esc - leave"));
+		
+		if (TrialTarget <= 0)
+		{
+			if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+			{
+				const FProgressionState& St = Prog->GetStateForRead();
+				const int64 Pending = Model ? Model->GetPendingMeters().CoinOut : 0;
+				const int64 Paid = St.BattleCreditsPaid() + Pending;
+				if (Paid >= FProgressionState::BattleQualifyingCoinOut)
+				{
+					Hint += TEXT("\nTHE ARCHITECTS ARE WAITING  -  LEAVE THE MACHINE [Esc]");
+				}
+				else
+				{
+					Hint += FString::Printf(
+						TEXT("\nMRS. HALL\'S REFUSER ARMY OF ARROGANT ARCHITECTS OPENS AT %lld PAID OUT  -  %lld SO FAR"),
+						FProgressionState::BattleQualifyingCoinOut, Paid);
+				}
+			}
+		}
+		HintText->SetText(FText::FromString(Hint));
 	}
 }
 
