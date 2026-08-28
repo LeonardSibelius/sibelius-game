@@ -55,6 +55,7 @@ FText ASlotCabinet::GetInteractionPrompt_Implementation() const
 
 void ASlotCabinet::OpenScreen(APlayerController* PC)
 {
+	SayTheCathedralLine();
 	ScreenPC = PC;
 
 	// SC1: UIOnly + focus so keys go to the screen, never to WASD.
@@ -195,6 +196,25 @@ void ASlotCabinet::CloseTechPanel()
 	if (Screen)
 	{
 		Screen->SetKeyboardFocus();
+	}
+}
+
+/* THE SECOND CLUE, the first time he sits down at the reels.
+   The first named the Architects. This one points at the machine and makes it
+   interesting by telling him it is not for him - which, for a man who has spent forty
+   years being told what is not for him, is an instruction. */
+void ASlotCabinet::SayTheCathedralLine()
+{
+	if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+	{
+		if (!Prog->ClaimOneTimeGrant(TEXT("Hall.Cathedral")))
+		{
+			return;
+		}
+	}
+	if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+	{
+		Hall->Say(TEXT("Ticket.Cathedral"));
 	}
 }
 

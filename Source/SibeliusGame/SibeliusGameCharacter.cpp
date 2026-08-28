@@ -177,6 +177,27 @@ void ASibeliusGameCharacter::HandlePowerUsedForHall(EPowerVerb Verb)
 	{
 		Hall->Say(FName(*FString::Printf(TEXT("Power.%s"), Token)));
 	}
+
+	/* THE FIRST CLUE, AND IT IS HERS.
+	
+	   Walt, asked whose voice should plant the battle: "hers." Right - a warning from the
+	   antagonist is a threat, where the same information from an ally is a quest marker.
+	   She is not telling him about the Architects. She is telling him they are above him.
+	
+	   ONCE, at the second power, so it lands after the game has a shape and long before
+	   the cathedral machine means anything. The word has to be old by the time it matters:
+	   she says "Architects" here, the meter under the reels says it later, and the door
+	   says it last. None of those work if the first one is also the first time. */
+	if (Progression->GetStateForRead().NumUnlocked() >= 2)
+	{
+		if (Progression->ClaimOneTimeGrant(TEXT("Hall.Architects")))
+		{
+			if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+			{
+				Hall->Say(TEXT("Ticket.Architects"));
+			}
+		}
+	}
 }
 
 void ASibeliusGameCharacter::ScheduleOpeningTicket()

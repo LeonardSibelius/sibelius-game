@@ -73,6 +73,9 @@ public:
 
 private:
 	void OpenScreen(APlayerController* PC);
+
+	/** Mrs. Hall, once, the first time he sits at the reels. */
+	void SayTheCathedralLine();
 	void CloseScreen();   // SC1: the one place input mode is restored
 
 	/** T at the screen — the technician's panel, layered over the machine. */
