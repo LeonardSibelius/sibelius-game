@@ -439,9 +439,22 @@ void USlotScreenWidget::TrySpin()
 		   consuming TakePendingMeters() belongs to the close path and must not be called
 		   from a HUD refresh.
 
-		   IT DISAPPEARS ONCE PAID. The machine's part in this is the toll; a permanent
-		   "PAID" banner is clutter on a cabinet somebody may still want to play for its
-		   own sake. The Journal and the records page carry it from there. */
+		   IT SAYS WHAT IT BUYS, AND IT NEVER HIDES. Both were wrong before.
+
+		   Walt, at the machine with CREDITS 29750 on screen: "i got over 29000 in the slot
+		   cathedral and was never taken to battle, it just kept on playing."
+
+		   Of course it did. CREDITS is the wallet and it starts at 25,000 every session -
+		   he was up 4,750. The toll is COINOUT, what the machine has PAID OUT over its
+		   life. Two different numbers, and the biggest thing on screen was the wrong one.
+		   The old line read "14,850 OF 29,000 PAID" - true, and explaining nothing - then
+		   hid itself the moment the toll was met, which is the one moment a player most
+		   needs to be told something.
+
+		   AND THE METER ONLY BANKS ON CLOSE. CommitSlotMeters runs from
+		   ASlotCabinet::CloseScreen, the single close path, so the door beside the machine
+		   cannot appear while he is still at the reels. That is a good beat - stand up,
+		   turn round, the way is open - but only if somebody tells him to stand up. */
 		FString Hint = TrialTarget > 0
 			? FString::Printf(TEXT("REACH %lld CREDITS TO CLAIM THE POWER        SPACE - spin        Esc - retreat"), TrialTarget)
 			: FString(TEXT("SPACE - spin        T - service panel        Esc - leave"));
@@ -453,10 +466,17 @@ void USlotScreenWidget::TrySpin()
 				const FProgressionState& St = Prog->GetStateForRead();
 				const int64 Pending = Model ? Model->GetPendingMeters().CoinOut : 0;
 				const int64 Paid = St.BattleCreditsPaid() + Pending;
-				if (Paid > 0 && Paid < FProgressionState::BattleQualifyingCoinOut)
+				if (Paid >= FProgressionState::BattleQualifyingCoinOut)
 				{
-					Hint += FString::Printf(TEXT("\nTHE ARCHITECTS   %lld OF %lld PAID"),
-						Paid, FProgressionState::BattleQualifyingCoinOut);
+					Hint += TEXT("\nTHE ARCHITECTS ARE WAITING  -  LEAVE THE MACHINE [Esc]");
+				}
+				else
+				{
+					// "PAID OUT" carries the whole distinction from the CREDITS meter above
+					// it, and the army is named so the number means something.
+					Hint += FString::Printf(
+						TEXT("\nMRS. HALL\'S ARMY OF ARROGANT ARCHITECTS OPENS AT %lld PAID OUT  -  %lld SO FAR"),
+						FProgressionState::BattleQualifyingCoinOut, Paid);
 				}
 			}
 		}
