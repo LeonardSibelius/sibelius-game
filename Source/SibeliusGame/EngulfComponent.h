@@ -101,8 +101,22 @@ public:
 	 *  to nothing and you are simply pinned, which is the correct feeling; pressed from
 	 *  one side it moves you off your ground. That behaviour is not special-cased — it
 	 *  falls out of summing unit vectors, which is why it is done that way. */
-	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0"))
-	float ShovePerRefuser = 45.0f;
+	/** Shove per Refuser of net imbalance, as a FRACTION of walk speed - and the units
+	 *  matter, because the first version got them badly wrong.
+	 *
+	 *  `Away` is a SUM OF UNIT VECTORS, so with 27 Refusers on one side its magnitude is
+	 *  about 27. Times the old 45 cm/s that was 1200 cm/s of shove against a 600 cm/s
+	 *  walk: the crowd blew Greystone downfield at twice his own top speed while he stood
+	 *  in an idle pose. Walt: "he skates away from the Gideons and they keep chasing him."
+	 *
+	 *  0.04 each, capped below, is a press rather than a catapult. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0", ClampMax = "0.5"))
+	float ShovePerRefuser = 0.04f;
+
+	/** However lopsided the crowd, it can never move him faster than this fraction of his
+	 *  own walk speed. Being pressed should cost him ground he can still fight for. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0", ClampMax = "1"))
+	float MaxShoveFraction = 0.45f;
 
 	/** Pressure at or above this starts the clock. */
 	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "1"))
@@ -135,7 +149,14 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	int32 CountAndShove(float DeltaTime);
+	/** The overlap is the expensive half and runs at 10 Hz; the shove must be applied
+	 *  every frame or it stutters. Split accordingly - see TickComponent. */
+	int32 CountCrowd();
+	void ApplyShove();
+
+	FVector ShoveDir = FVector::ZeroVector;   // cached between overlaps
+	float ShoveMag = 0.0f;
+	float SinceCount = 0.0f;
 	void ApplySlow();
 	void Overrule();
 

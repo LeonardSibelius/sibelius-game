@@ -228,7 +228,8 @@ void USlapComponent::DoSlap()
 		ViewEnd,
 		FQuat::Identity,
 		ECC_Pawn,
-		FCollisionShape::MakeSphere(SlapRadius),
+		// A sword sweeps; a slap pokes. See BattleSwingRadius.
+		FCollisionShape::MakeSphere(bBattle ? BattleSwingRadius : SlapRadius),
 		Params);
 
 	if (bDebugDraw)

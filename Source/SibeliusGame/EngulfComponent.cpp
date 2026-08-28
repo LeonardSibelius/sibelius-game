@@ -19,7 +19,10 @@ UEngulfComponent::UEngulfComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	// 10 Hz. A crowd does not close on you inside 16 ms, and this ticks in the office
 	// too, where the answer is always zero.
-	PrimaryComponentTick.TickInterval = 0.1f;
+	// EVERY FRAME now, not 10 Hz. The shove has to be applied per frame through
+	// AddMovementInput or it arrives in stutters; the expensive overlap is what runs at
+	// 10 Hz, throttled inside the tick.
+	PrimaryComponentTick.TickInterval = 0.0f;
 }
 
 ACharacter* UEngulfComponent::GetCharacterOwner() const
@@ -51,7 +54,7 @@ float UEngulfComponent::GetOverruleFraction() const
 /* ONE OVERLAP, NOT AN ITERATION - see the header. The physics scene already knows who is
    within three metres; walking 400 actors to re-derive it would cost more the bigger the
    army gets, which is precisely the shape of mistake the navigation invokers just made. */
-int32 UEngulfComponent::CountAndShove(float DeltaTime)
+int32 UEngulfComponent::CountCrowd()
 {
 	ACharacter* C = GetCharacterOwner();
 	UWorld* World = GetWorld();
@@ -90,16 +93,32 @@ int32 UEngulfComponent::CountAndShove(float DeltaTime)
 		Away += Delta.GetSafeNormal2D();
 	}
 
-	if (Count > PressureFloor && !Away.IsNearlyZero())
-	{
-		const float Net = Away.Size();               // how lopsided the press is
-		const FVector Shove = Away.GetSafeNormal2D() * Net * ShovePerRefuser;
-		// AddActorWorldOffset with sweep rather than an impulse: the player is walking,
-		// not ragdolling, and launching a CharacterMovement pawn reads as a glitch.
-		C->AddActorWorldOffset(Shove * DeltaTime, /*bSweep=*/true);
-	}
+	/* Cache the direction and how lopsided it is; ApplyShove spends it every frame.
+	   Away.Size() is a COUNT of how one-sided the press is, not a speed - reading it as
+	   cm/s is what launched him downfield. */
+	ShoveDir = Away.GetSafeNormal2D();
+	ShoveMag = (Count > PressureFloor) ? Away.Size() : 0.0f;
 
 	return Count;
+}
+
+/* THROUGH THE MOVEMENT COMPONENT, not AddActorWorldOffset - and this is the half that
+   fixes the skating as well as the launching.
+
+   AddActorWorldOffset teleports a pawn a small distance every frame. It produces NO
+   velocity, so the AnimBlueprint sees Speed = 0 and plays Idle while the world slides
+   past: exactly the skating Greystone did while being blown across the meadow.
+   AddMovementInput goes through CharacterMovement, which means it accelerates him,
+   gives him real velocity, respects the ground, and ANIMATES. */
+void UEngulfComponent::ApplyShove()
+{
+	ACharacter* C = GetCharacterOwner();
+	if (!C || ShoveMag <= 0.0f || ShoveDir.IsNearlyZero())
+	{
+		return;
+	}
+	const float Scale = FMath::Min(ShoveMag * ShovePerRefuser, MaxShoveFraction);
+	C->AddMovementInput(ShoveDir, Scale);
 }
 
 void UEngulfComponent::ApplySlow()
@@ -155,8 +174,15 @@ void UEngulfComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	Pressure = CountAndShove(DeltaTime);
-	ApplySlow();
+	// The overlap at 10 Hz; the shove every frame off the cached direction.
+	SinceCount += DeltaTime;
+	if (SinceCount >= 0.1f)
+	{
+		SinceCount = 0.0f;
+		Pressure = CountCrowd();
+		ApplySlow();
+	}
+	ApplyShove();
 
 	// Swinging holds them off - see SwingHoldsThemOff. A player still fighting is not
 	// being buried, however many of them are touching him.

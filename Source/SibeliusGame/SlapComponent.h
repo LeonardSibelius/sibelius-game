@@ -27,6 +27,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	float BattleSwingHeight = 90.f;
 
+	/** The sweep radius in battle form only. A GREATSWORD ARC, not a jab.
+	 *
+	 *  Walt, after his first real fight: "I pressed A and F a million times until he
+	 *  finally cut down his chasers." The first-person slap is a 60 cm probe - right for
+	 *  swatting one Refuser at arm's length in a corridor, and it caught two or three out
+	 *  of thirty in a press. Clearing a crowd became a key-mashing exercise.
+	 *
+	 *  150 cm cuts through a front rank, so the fight is about where you stand and how
+	 *  fast they close rather than about your F key. It is deliberately a starting point:
+	 *  too wide and thirty fall to five swings, which is its own kind of boring. This is
+	 *  the number to argue with once it has been felt. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
+	float BattleSwingRadius = 150.f;
+
 	/** Which of Greystone's three primary attacks comes next. Cycles so repeated
 	 *  presses read as a combo instead of the same swing three times. Not saved and not
 	 *  reset — where the chain happens to be when a fight starts does not matter. */

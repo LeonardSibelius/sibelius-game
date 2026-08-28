@@ -1,4 +1,6 @@
 #include "CathedralDoor.h"
+#include "ProgressionSubsystem.h"
+#include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"   // player-facing messages draw on the HUD canvas (Shipping-safe)
 #include "BranchSubsystem.h"
 #include "GenerateComponent.h"
@@ -45,6 +47,29 @@ void ACathedralDoor::BeginPlay()
 		ApplyRevealed(false);
 		GetWorldTimerManager().SetTimer(GatePollHandle, this, &ACathedralDoor::PollGenerateGate,
 			0.5f, /*bLoop=*/true);
+	}
+
+	if (bRequireBattleToll)
+	{
+		ApplyRevealed(false);
+		GetWorldTimerManager().SetTimer(GatePollHandle, this, &ACathedralDoor::PollBattleTollGate,
+			0.5f, /*bLoop=*/true);
+	}
+}
+
+/* The toll is a lifetime meter that nothing clears, so this can only ever go one way -
+   no need to hide the door again if it somehow reads false later. */
+void ACathedralDoor::PollBattleTollGate()
+{
+	if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+	{
+		if (Prog->GetStateForRead().IsBattleQualified())
+		{
+			ApplyRevealed(true);
+			GetWorldTimerManager().ClearTimer(GatePollHandle);
+			UE_LOG(LogSibeliusGame, Display,
+				TEXT("[CathedralDoor] the toll is paid - the way to the meadow is open."));
+		}
 	}
 }
 

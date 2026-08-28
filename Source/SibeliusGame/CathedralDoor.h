@@ -78,6 +78,20 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
 	bool bRequireGenerateUse = false;
 
+	/** THE TOLL DOOR. Hidden and unusable until the cathedral machine has paid out
+	 *  FProgressionState::BattleQualifyingCoinOut — 29,000 credits.
+	 *
+	 *  Same shape as bRequireGenerateUse above, deliberately: hide, poll, reveal. A
+	 *  second gating mechanism would be a second thing to get wrong, and this one has
+	 *  already survived a shipped chapter.
+	 *
+	 *  The door being INVISIBLE rather than locked is the point. A locked door tells the
+	 *  player there is somewhere they cannot go; a wall that becomes a door tells them
+	 *  the machine did something. Mrs. Hall's Battle.Open line fires on the same crossing,
+	 *  so she names the Architects in the same breath the way opens. */
+	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
+	bool bRequireBattleToll = false;
+
 	UPROPERTY(VisibleAnywhere, Category = "Cathedral Door")
 	TObjectPtr<USceneComponent> SceneRoot;
 
@@ -97,6 +111,7 @@ private:
 	// Low-rate poll for the generate gate (runs only while bRequireGenerateUse
 	// keeps the door hidden; cleared on reveal).
 	void PollGenerateGate();
+	void PollBattleTollGate();
 
 	UBranchSubsystem* GetBranch() const;
 
