@@ -55,8 +55,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	USoundBase* SlapSound = nullptr;
 
+	/** The red trace line for every swing. OFF by default since 2026-08-27.
+	 *
+	 *  Walt, after the first real battle: "those red streaks have become a huge annoyance
+	 *  in the meadow. When dozens are slapped, the red streaks fill the screen."
+	 *
+	 *  Each line lingers two seconds. Aiming one slap at one Refuser down a corridor that
+	 *  is a useful aid; thirty swings into a crowd and the player is inside a red cage
+	 *  made of his own successes. It was a development aid that was never turned off, and
+	 *  the meadow is simply where it finally became visible.
+	 *
+	 *  Kept rather than deleted - it is genuinely useful for one swing at a time. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
-	bool bDebugDraw = true;
+	bool bDebugDraw = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	float RagdollLifetime = 4.0f;
