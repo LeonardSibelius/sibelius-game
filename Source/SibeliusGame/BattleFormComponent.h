@@ -139,6 +139,19 @@ private:
 
 	ACharacter* GetCharacterOwner() const;
 
+	/* THE AVATAR GETS ITS OWN MESH COMPONENT rather than borrowing the character's.
+
+	   Swapping the mesh ON GetMesh() reported perfect from every angle - Greystone
+	   assigned, 2 m bounds at the pawn, 17 materials none null, mainPass on, ownerNoSee
+	   off, visible, view 386 cm behind it - and painted nothing. A standalone
+	   SkeletalMeshActor carrying the same asset renders fine in the same level, so the
+	   asset is innocent and something about the template's own body component is not.
+
+	   Rather than keep interrogating a component that lies about itself, build a fresh
+	   one. Made on entry, destroyed on exit, so a player who never fights carries
+	   nothing extra. */
+	UPROPERTY() TObjectPtr<USkeletalMeshComponent> AvatarBody;
+
 	UPROPERTY() TObjectPtr<USpringArmComponent> Boom;
 	UPROPERTY() TObjectPtr<UCameraComponent> BattleCamera;
 

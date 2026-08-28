@@ -1,0 +1,34 @@
+Using bundled DotNet SDK version: 8.0.412 win-x64
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SibeliusGameEditor Win64 Development -project=C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject -waitmutex
+Log file: C:\Users\wpark\AppData\Local\UnrealBuildTool\Log.txt
+Using 'git status' to determine working set for adaptive non-unity build (C:\Users\wpark\projects\sibelius-game).
+Invalidating makefile for SibeliusGameEditor (DefaultEditor.ini modified)
+UHT compiled-in object format Default
+Building SibeliusGameEditor...
+Using Visual Studio 2026 14.44.35228 toolchain (C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.44.35207) and Windows 10.0.22621.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Adaptive Build] Excluded from SibeliusGame unity file: BattleFormComponent.cpp
+Determining max actions to execute in parallel (20 physical cores, 28 logical cores)
+  Executing up to 20 processes, one per physical core
+  Requested 1.5 GB memory per action, 19.74 GB available: limiting max parallel actions to 13
+Using Unreal Build Accelerator local executor to run 9 action(s)
+  Storage capacity 40Gb
+---- Starting trace: 260827_205746 ----
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+[1/9] Compile [x64] BattleFormComponent.cpp
+[2/9] Compile [x64] Module.SibeliusGame.1.cpp
+[3/9] Compile [x64] Module.SibeliusGame.6.cpp
+[4/9] Compile [x64] Module.SibeliusGame.8.cpp
+[5/9] Compile [x64] Module.SibeliusGame.9.cpp
+C:\Users\wpark\projects\sibelius-game\Source\SibeliusGame\SwarmBenchSubsystem.cpp(536,49): warning C4996: 'GGPUFrameTime': Direct use of GGPUFrameTime is deprecated. Call the global scope RHIGetGPUFrameCycles() function instead. - Please update your code to the new API before upgrading to the next release, otherwise your project will no longer compile.
+	RidgeGpuMs    += FPlatformTime::ToMilliseconds(GGPUFrameTime);
+	                                               ^
+[6/9] Compile [x64] Module.SibeliusGame.7.cpp
+[7/9] Link [x64] UnrealEditor-SibeliusGame.lib
+[8/9] Link [x64] UnrealEditor-SibeliusGame.dll
+[9/9] WriteMetadata SibeliusGameEditor.target [NoUba]
+
+Trace written to file C:/Users/wpark/AppData/Local/UnrealBuildTool/Log.uba with size 5.1kb
+Total time in Unreal Build Accelerator local executor: 9.78 seconds
+
+Result: Succeeded
+Total execution time: 12.75 seconds
