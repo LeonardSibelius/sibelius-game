@@ -1,6 +1,7 @@
 // BattleFormComponent.cpp — see header.
 
 #include "BattleFormComponent.h"
+#include "Engine/HitResult.h"
 
 #include "SibeliusGame.h"
 
@@ -283,6 +284,68 @@ namespace
 		return Pawn ? Pawn->FindComponentByClass<UBattleFormComponent>() : nullptr;
 	}
 }
+
+/* battle.Status - what the battle form ACTUALLY is right now, not what it should be.
+
+   Walt, in battle form with 30 demons converging: "I am up in the air and they run
+   under me. I see no sword." Three different things could produce that sentence - the
+   first-person camera never handed over, the avatar mesh never swapped, or 30 character
+   capsules converging on one capsule shoved him onto the top of the pile - and they
+   need completely different fixes. Guessing between them has cost this project a round
+   trip per guess all evening.
+
+   So: print all three at once. Height above the floor comes from a downward trace, not
+   from Z, because Z on a kilometre-wide landscape means nothing on its own. */
+static FAutoConsoleCommandWithWorld GBattleStatus(
+	TEXT("battle.Status"),
+	TEXT("Dump the live battle-form state: camera, avatar mesh, and height off the floor."),
+	FConsoleCommandWithWorldDelegate::CreateStatic(
+		[](UWorld* World)
+		{
+			APawn* P = World ? UGameplayStatics::GetPlayerPawn(World, 0) : nullptr;
+			ACharacter* C = Cast<ACharacter>(P);
+			if (!C) { UE_LOG(LogSibeliusGame, Warning, TEXT("[BattleStatus] no player character.")); return; }
+
+			const UBattleFormComponent* B = C->FindComponentByClass<UBattleFormComponent>();
+
+			// How far off the floor is he really?
+			float Height = -1.0f;
+			FHitResult Hit;
+			const FVector From = C->GetActorLocation();
+			if (World->LineTraceSingleByChannel(Hit, From, From - FVector(0, 0, 100000.0f),
+					ECC_WorldStatic, FCollisionQueryParams(SCENE_QUERY_STAT(BattleStatus), false, C)))
+			{
+				Height = static_cast<float>(From.Z - Hit.ImpactPoint.Z);
+			}
+
+			FString CamName = TEXT("NONE ACTIVE");
+			TArray<UCameraComponent*> Cams;
+			C->GetComponents<UCameraComponent>(Cams);
+			FString AllCams;
+			for (const UCameraComponent* Cam : Cams)
+			{
+				if (!Cam) { continue; }
+				AllCams += FString::Printf(TEXT("%s(%s) "), *Cam->GetName(), Cam->IsActive() ? TEXT("ON") : TEXT("off"));
+				if (Cam->IsActive()) { CamName = Cam->GetName(); }
+			}
+
+			FString MeshName = TEXT("none"), AnimName = TEXT("none");
+			bool bOwnerNoSee = false, bVisible = false;
+			if (USkeletalMeshComponent* M = C->GetMesh())
+			{
+				MeshName = GetNameSafe(M->GetSkeletalMeshAsset());
+				AnimName = GetNameSafe(M->GetAnimClass());
+				bOwnerNoSee = M->bOwnerNoSee;
+				bVisible = M->IsVisible();
+			}
+
+			UE_LOG(LogSibeliusGame, Display,
+				TEXT("[BattleStatus] inForm=%d | heightOffFloor=%.0f cm | activeCam=%s | cams: %s"),
+				B ? (B->IsInBattleForm() ? 1 : 0) : -1, Height, *CamName, *AllCams);
+			UE_LOG(LogSibeliusGame, Display,
+				TEXT("[BattleStatus] mesh=%s anim=%s ownerNoSee=%d visible=%d"),
+				*MeshName, *AnimName, bOwnerNoSee ? 1 : 0, bVisible ? 1 : 0);
+		}));
 
 static FAutoConsoleCommandWithWorld GBattleToggle(
 	TEXT("battle.Toggle"),

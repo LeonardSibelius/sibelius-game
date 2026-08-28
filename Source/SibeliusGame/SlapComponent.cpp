@@ -1,4 +1,5 @@
 #include "SlapComponent.h"
+#include "EngulfComponent.h"
 #include "BattleFormComponent.h"
 
 #include "GameFramework/Pawn.h"
@@ -74,6 +75,37 @@ namespace
 	}
 }
 
+
+/* DO NOT LAUNCH THE PLAYER OFF HIS OWN KILL.
+
+   Walt, in battle form: "I am up in the air and they run under me... they went under me
+   after I pressed F." A slapped Refuser goes to SetSimulatePhysics, and in a crowd it is
+   already standing inside the player's capsule when it does. The physics solver resolves
+   that overlap the only way it can - by shoving the two bodies apart - and the one with a
+   CharacterMovementComponent loses. He ends up standing on the pile.
+
+   Harmless with one Refuser in a corridor, which is why it survived this long. With
+   thirty converging it is every swing.
+
+   So a fresh corpse stops colliding with the pawn that made it. It still collides with
+   the world and with other corpses, so the pile still piles - it simply cannot use the
+   player as a launch ramp. */
+static void DontLaunchThePlayer(UPrimitiveComponent* Body, const APawn* Slapper)
+{
+	if (Body && Slapper)
+	{
+		Body->IgnoreActorWhenMoving(const_cast<AActor*>(static_cast<const AActor*>(Slapper)), true);
+		if (const ACharacter* C = Cast<ACharacter>(Slapper))
+		{
+			if (UPrimitiveComponent* Cap = C->GetCapsuleComponent())
+			{
+				Body->IgnoreComponentWhenMoving(Cap, true);
+				Cap->IgnoreComponentWhenMoving(Body, true);
+			}
+		}
+	}
+}
+
 void USlapComponent::DoSlap()
 {
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
@@ -128,6 +160,14 @@ void USlapComponent::DoSlap()
 	// follows, and the same one that made "is this a Refuser" a single test.
 	const UBattleFormComponent* Battle = OwnerPawn->FindComponentByClass<UBattleFormComponent>();
 	const bool bBattle = Battle && Battle->IsInBattleForm();
+
+	// Tell the crowd he is still fighting. See UEngulfComponent: the overrule clock only
+	// runs while he is NOT swinging, so a swing is not merely an attack - it is the act of
+	// holding his ground, and the one the whole mechanic is answered by.
+	if (UEngulfComponent* Engulf = OwnerPawn->FindComponentByClass<UEngulfComponent>())
+	{
+		Engulf->NoteSwing();
+	}
 	if (bBattle)
 	{
 		ViewStart = OwnerPawn->GetActorLocation() + FVector(0.0f, 0.0f, BattleSwingHeight);
@@ -234,6 +274,7 @@ void USlapComponent::DoSlap()
 				{
 					SkelComp->SetCollisionProfileName(TEXT("Ragdoll"));
 					SkelComp->SetSimulatePhysics(true);
+					DontLaunchThePlayer(SkelComp, OwnerPawn);
 					SkelComp->AddImpulse(CreatureImpulse, NAME_None, true);
 					// The Ragdoll profile dropped the R-trace guarantee (Walt's
 					// downed fox could never give the couch back). Re-block it.
@@ -244,6 +285,7 @@ void USlapComponent::DoSlap()
 				{
 					MeshComp->SetCollisionProfileName(TEXT("PhysicsActor"));
 					MeshComp->SetSimulatePhysics(true);
+					DontLaunchThePlayer(MeshComp, OwnerPawn);
 					MeshComp->AddImpulse(CreatureImpulse, NAME_None, true);
 					MeshComp->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 					MeshComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
@@ -352,6 +394,7 @@ void USlapComponent::DoSlap()
 				{
 					Capsule->SetCollisionProfileName(TEXT("PhysicsActor"));
 					Capsule->SetSimulatePhysics(true);
+					DontLaunchThePlayer(Capsule, OwnerPawn);
 					Capsule->AddImpulse(Impulse, NAME_None, true);
 				}
 			}
@@ -406,6 +449,7 @@ void USlapComponent::DoSlap()
 			Mesh->SuspendClothingSimulation();
 			Mesh->SetCollisionProfileName(TEXT("Ragdoll"));
 			Mesh->SetSimulatePhysics(true);
+			DontLaunchThePlayer(Mesh, OwnerPawn);
 			Mesh->AddImpulse(Impulse, NAME_None, true);
 
 			// Despawn the ragdolled victim after a delay.

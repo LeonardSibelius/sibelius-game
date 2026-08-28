@@ -120,6 +120,11 @@ void UEngulfComponent::ApplySlow()
 	Move->MaxWalkSpeed = BaseWalkSpeed * Fraction;
 }
 
+void UEngulfComponent::NoteSwing()
+{
+	LastSwingTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+}
+
 void UEngulfComponent::Overrule()
 {
 	OverruleClock = 0.0f;
@@ -153,7 +158,12 @@ void UEngulfComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	Pressure = CountAndShove(DeltaTime);
 	ApplySlow();
 
-	if (Pressure >= OverrulePressure)
+	// Swinging holds them off - see SwingHoldsThemOff. A player still fighting is not
+	// being buried, however many of them are touching him.
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	const bool bStillFighting = (Now - LastSwingTime) < SwingHoldsThemOff;
+
+	if (Pressure >= OverrulePressure && !bStillFighting)
 	{
 		if (!bWarnedThisSiege)
 		{

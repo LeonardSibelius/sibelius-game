@@ -71,6 +71,10 @@ public:
 	/** Listeners: the HUD, and whatever ends the battle. */
 	FOnOverruled OnOverruled;
 
+	/** Called by USlapComponent on every swing. See SwingHoldsThemOff. */
+	UFUNCTION(BlueprintCallable, Category = "Engulf")
+	void NoteSwing();
+
 	// ---- the knobs ----
 
 	/** How close counts as pressing. 300 cm is arm's length plus a step — the distance
@@ -102,12 +106,25 @@ public:
 
 	/** Pressure at or above this starts the clock. */
 	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "1"))
-	int32 OverrulePressure = 8;
+	int32 OverrulePressure = 12;
 
 	/** How long that must hold. Generous on purpose: this should feel like losing an
 	 *  argument slowly, not like a trap closing. */
 	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0.5"))
-	float OverruleSeconds = 6.0f;
+	float OverruleSeconds = 10.0f;
+
+	/** SWINGING IS RESISTING, and this is the whole shape of the mechanic.
+	 *
+	 *  At 8 Refusers for 6 seconds the first version overruled the player about two
+	 *  seconds into any real fight - battle form ended the moment it began, with no way
+	 *  to fight back out of it. Raising the numbers alone would only have delayed that.
+	 *
+	 *  So the clock only runs while he is NOT swinging. Hold them off and you hold your
+	 *  ground; stop, and the pile closes over you. Being surrounded becomes a fight
+	 *  rather than a timer, it is answered by the one verb the battle is built on, and
+	 *  it says the right thing: you are overruled when you stop arguing. */
+	UPROPERTY(EditAnywhere, Category = "Engulf", meta = (ClampMin = "0"))
+	float SwingHoldsThemOff = 1.5f;
 
 	/** The clock runs down at this multiple of real time when you break free, so backing
 	 *  out of a crowd is genuinely a way out rather than a delay. */
@@ -128,4 +145,5 @@ private:
 	float OverruleClock = 0.0f;
 	float BaseWalkSpeed = -1.0f;   // < 0 until BeginPlay captures the real one
 	bool bWarnedThisSiege = false;
+	double LastSwingTime = -1000.0;
 };
