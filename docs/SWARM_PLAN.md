@@ -209,6 +209,36 @@ rather than left to be found in a playtest. That is the only reason it got close
 
 ---
 
+## 5b. The battle, as it stands 2026-08-27 night
+
+Walt: *"i pressed 5 and 4 and swung - he really swings now."*
+
+Working end to end, on keys rather than the console (**5** battle form, **4** thirty
+Architects charging, **3** dismiss, **F** swing):
+
+- 400 Refusers render at **88 fps**; 150 held cost 11.3 ms
+- they **charge** — `L_Meadow` needed a NavMeshBoundsVolume *and* a RecastNavMesh the
+  navigation system makes itself (Build → Build Paths)
+- their **legs move** — `bUseAccelerationForPaths` defaults false, so AI path following
+  never populates Acceleration, and Paragon's player-authored AnimBP blends on exactly that
+- the crowd **surrounds, slows, pins and overrules** you, and swinging holds it off
+- **Greystone is visible in third person**, and his sword reaches and connects
+
+### Five things that reported success and had done nothing
+
+Every one cost a round trip, and the pattern is one pattern:
+
+| what lied | how it lied |
+|---|---|
+| `unreal_set_property` | scale 20 "succeeded", read back `1,1,1` — a "44 m Greystone that will not render" was an empty actor |
+| the console | `swarm..Ridge` from an autocompleted double dot; `battle.UseAvatar 0` with the argument eaten (`LastSetBy: Constructor`) |
+| the character's mesh component | mesh assigned, 2 m bounds, mainPass on, ownerNoSee off, visible, camera pointed at it — and painted nothing |
+| `SetAnimInstanceClass` | sets the class without leaving `AnimationSingleNode`, so the graph never runs |
+| a diagnostic probe | placed below an early-out, sampling only the instant velocity is guaranteed zero; then placed in `OnPossess` entirely by a one-tab substring anchor |
+
+**A tool that reports success without a readback is a guess in a lab coat.** Everything
+written tonight reads its values back afterwards.
+
 ## 6. What is next, in order
 
 1. **Retarget Greystone's melee set.** Done — §4.
