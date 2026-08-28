@@ -63,6 +63,55 @@ description as plain text until then.
 
 ---
 
+## Devlog — v0.9.8.0, "The Refuser Army of Arrogant Architects"
+
+*Paste-ready. Walt owns the final words.*
+
+---
+
+**The game has an ending.**
+
+Mrs. Hall has always had people above her. Now you meet them.
+
+She names them early, at your second power, and she is not warning you — she is
+telling you where you stand:
+
+> *"The Architects have reviewed the design and approved it. They will not be
+> available for questions, and they will not be here when it throws at three in the
+> morning. Neither will I. That is what you are for."*
+
+Then you find the slot machine in the cathedral, and she tells you it is not for you.
+The Architects use it. You are not an Architect.
+
+So you play it. Under the reels a line counts what the machine has **paid out**, and
+at five thousand a door appears beside it that was never there before. Through the
+door is a meadow, and on the meadow are four hundred of them.
+
+You are sixty-eight years old and you have never once been able to reach these men.
+The agents — the same ones who have spent the whole game handing you things — give
+you a body that can.
+
+**They cannot hurt you.** Not one of them has ever been on call. What four hundred
+bodies can do is surround you, slow you, and push you off your own ground, and if you
+stop swinging they close over you and put you back in your place. Keep swinging and
+they do not.
+
+Clear the field and the game says the only thing it has ever been about:
+
+> **AI has set you free.**
+
+---
+
+### Also in this build
+
+- The battlefield ships at all — it was never in the cook list before
+- Refusers walk instead of skating (AI path-following never populated acceleration,
+  and Paragon's animation graph blends on exactly that)
+- One swing was drawing a red debug line that lasted two seconds; thirty swings put
+  you inside a cage of your own successes
+- A log line was writing to your disk twice a second for every enemy that could not
+  reach you — 43,800 lines in one two-minute test
+
 ## The short pitch (top of page)
 
 > **I'm 71 years old. For about 40 years I rode desks in office cubicles,
