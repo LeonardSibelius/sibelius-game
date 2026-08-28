@@ -197,7 +197,7 @@ struct SIBELIUSGAME_API FProgressionState
 	   And it can never be laundered. Locked decision 2 already says nothing clears these
 	   meters, ever. That decision was made for a different reason and it is what makes a
 	   door hung on this number honest. */
-	static constexpr int64 BattleQualifyingCoinOut = 29000;
+	static constexpr int64 BattleQualifyingCoinOut = 5000;
 
 	int64 BattleCreditsPaid() const { return SlotLifetimeMeters.CoinOut; }
 	bool IsBattleQualified() const { return SlotLifetimeMeters.CoinOut >= BattleQualifyingCoinOut; }

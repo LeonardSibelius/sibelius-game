@@ -79,7 +79,7 @@ public:
 	bool bRequireGenerateUse = false;
 
 	/** THE TOLL DOOR. Hidden and unusable until the cathedral machine has paid out
-	 *  FProgressionState::BattleQualifyingCoinOut — 29,000 credits.
+	 *  FProgressionState::BattleQualifyingCoinOut — 5,000 credits paid out.
 	 *
 	 *  Same shape as bRequireGenerateUse above, deliberately: hide, poll, reveal. A
 	 *  second gating mechanism would be a second thing to get wrong, and this one has
