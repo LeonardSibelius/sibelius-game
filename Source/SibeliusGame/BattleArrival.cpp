@@ -6,6 +6,9 @@
 #include "SibeliusGame.h"
 #include "SibeliusHUD.h"
 #include "SwarmBenchSubsystem.h"
+#include "RefuserController.h"
+
+#include "EngineUtils.h"
 
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
@@ -85,4 +88,60 @@ void ABattleArrival::LetThemCome()
 	const int32 Landed = Swarm->SpawnRidge(ArmyCount, ArmyDistanceMetres,
 		ArmyArcDegrees, ArmyRanks, /*bLetThemCharge=*/true);
 	UE_LOG(LogSibeliusGame, Display, TEXT("[BattleArrival] %d Architects moving."), Landed);
+
+	// Only now is there a battle to win. Poll once a second from here.
+	bBattleJoined = true;
+	GetWorldTimerManager().SetTimer(VictoryPoll, this,
+		&ABattleArrival::WatchForVictory, 1.0f, /*bLoop=*/true, /*FirstDelay=*/2.0f);
+}
+
+/* WATCHING FOR AN EMPTY FIELD.
+
+   Once a second, not per frame: this is looking for a state that takes minutes to
+   arrive, and a hundred and fifty pawns do not need counting sixty times a second. The
+   same file already learned that lesson the expensive way with the chase log.
+
+   A slapped Refuser is unpossessed and then destroyed on its ragdoll lifespan, so
+   "still has an ARefuserController" is exactly "still fighting" - and it is the same
+   test the slap and the crowd both use to decide what a Refuser is. Three places, one
+   answer. */
+void ABattleArrival::WatchForVictory()
+{
+	if (bWon || !bBattleJoined)
+	{
+		return;
+	}
+	int32 Standing = 0;
+	for (TActorIterator<APawn> It(GetWorld()); It; ++It)
+	{
+		if (Cast<ARefuserController>(It->GetController()))
+		{
+			++Standing;
+			break;   // one is enough to know the fight is not over
+		}
+	}
+	if (Standing == 0)
+	{
+		bWon = true;
+		GetWorldTimerManager().ClearTimer(VictoryPoll);
+		GetWorldTimerManager().SetTimer(VictoryBeat, this,
+			&ABattleArrival::DeclareVictory, VictoryPauseSeconds, false);
+	}
+}
+
+void ABattleArrival::DeclareVictory()
+{
+	const FString Line = VictoryLine.ToString() + LINE_TERMINATOR + ComingSoonLine.ToString();
+
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			// Long, and deliberately so. This is the last thing the game says.
+			HUD->ShowBanner(Line, 12.0f);
+			UE_LOG(LogSibeliusGame, Display, TEXT("[BattleArrival] the field is empty."));
+			return;
+		}
+	}
+	ASibeliusHUD::Toast(this, Line, 12.0f, SibeliusToast::Good);
 }

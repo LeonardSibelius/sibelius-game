@@ -1,0 +1,23 @@
+Using bundled DotNet SDK version: 8.0.412 win-x64
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" SibeliusGameEditor Win64 Development -project=C:\Users\wpark\projects\sibelius-game\SibeliusGame.uproject -waitmutex
+Log file: C:\Users\wpark\AppData\Local\UnrealBuildTool\Log.txt
+Using 'git status' to determine working set for adaptive non-unity build (C:\Users\wpark\projects\sibelius-game).
+Building SibeliusGameEditor...
+Using Visual Studio 2026 14.44.35228 toolchain (C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.44.35207) and Windows 10.0.22621.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Adaptive Build] Excluded from SibeliusGame unity file: BattleArrival.cpp
+Determining max actions to execute in parallel (20 physical cores, 28 logical cores)
+  Executing up to 20 processes, one per physical core
+Using Unreal Build Accelerator local executor to run 4 action(s)
+  Storage capacity 40Gb
+---- Starting trace: 260828_094847 ----
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+[1/4] Compile [x64] BattleArrival.cpp
+[2/4] Link [x64] UnrealEditor-SibeliusGame.lib
+[3/4] Link [x64] UnrealEditor-SibeliusGame.dll
+[4/4] WriteMetadata SibeliusGameEditor.target [NoUba]
+
+Trace written to file C:/Users/wpark/AppData/Local/UnrealBuildTool/Log.uba with size 3.3kb
+Total time in Unreal Build Accelerator local executor: 1.99 seconds
+
+Result: Succeeded
+Total execution time: 2.73 seconds

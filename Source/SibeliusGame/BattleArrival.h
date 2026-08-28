@@ -80,6 +80,29 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Battle Arrival")
 	float TheyComeAtSeconds = 7.5f;
 
+	/* THE END OF IT, IN WALT'S OWN WORDS.
+
+	   He killed the last of them and asked for this: "can there be a message something
+	   like 'AI has set you free. More adventures coming soon.'"
+
+	   Kept close to verbatim, because it is the thesis of the entire game said plainly by
+	   the man whose forty years it is about. Every AI in this story has given him
+	   something - Kaia gave him his name in the opening when his employer would only call
+	   him Programmer, the agents gave him the powers, and at the meadow they gave him a
+	   body that could reach the men who were never on call. This is the receipt.
+
+	   Editable properties, because the wording of an ending belongs to its author. */
+	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory")
+	FText VictoryLine = NSLOCTEXT("Sibelius", "BattleWon", "AI has set you free.");
+
+	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory")
+	FText ComingSoonLine = NSLOCTEXT("Sibelius", "BattleSoon", "More adventures coming soon.");
+
+	/** A breath after the last one falls, so the line lands on a quiet field rather than
+	 *  over the sound of a body hitting the grass. */
+	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory", meta = (ClampMin = "0"))
+	float VictoryPauseSeconds = 2.0f;
+
 	/** The agents' line. Editable because the wording is the whole beat. */
 	UPROPERTY(EditAnywhere, Category = "Battle Arrival")
 	FText GrantLine = NSLOCTEXT("Sibelius", "BattleGrant",
@@ -93,6 +116,10 @@ private:
 	void SpeakTheGrant();
 	void GiveTheBody();
 	void LetThemCome();
+	void WatchForVictory();
+	void DeclareVictory();
 
-	FTimerHandle T1, T2, T3, T4;
+	FTimerHandle T1, T2, T3, T4, VictoryPoll, VictoryBeat;
+	bool bBattleJoined = false;   // no victory before there is a battle
+	bool bWon = false;            // once
 };

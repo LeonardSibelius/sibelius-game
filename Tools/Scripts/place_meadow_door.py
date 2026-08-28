@@ -35,6 +35,17 @@ MEADOW = "/Game/Cinematics/L_Meadow"
 CATHEDRAL = "/Game/Maps/L_Cathedral"
 OUT = "C:/Users/wpark/projects/sibelius-game/Saved/place_meadow_door.json"
 
+# HOW HIGH THE DOOR SITS. Walt, looking at the first one: "can I nudge it down a bit?"
+#
+# The door took its Z from the SLOT CABINET, which stands on a plinth at Z=100 - so the
+# door floated a metre off the floor. It now takes its Z from a door already in the
+# cathedral, which is by definition standing on the floor correctly, and this is the
+# hand-tuning knob on top of that. Negative is down.
+#
+# Editing this and re-running is the reproducible way to move it. Dragging it with the
+# gizmo works too and looks identical, right up until somebody re-runs the script.
+DOOR_Z_NUDGE = 0.0
+
 r = {}
 
 try:
@@ -58,6 +69,52 @@ try:
                 return a
         return None
 
+
+    # ------------------------------------------------------------------
+    # A DOOR WITH NO MESH IS NOT A DOOR.
+    #
+    # ACathedralDoor creates its DoorMesh component in C++ but assigns no asset - every
+    # door already in a level got its mesh by hand in the editor. So the one this script
+    # spawned revealed itself correctly on the toll (the log even said so:
+    # "[CathedralDoor] the toll is paid - the way to the meadow is open") and was an
+    # invisible, non-collidable nothing. Walt: "i see no door, even when i press V."
+    #
+    # Copied from a door already in the level rather than hard-coded, so it matches
+    # whatever the cathedral actually uses and keeps matching if that is ever changed.
+    def door_mesh_comp(a):
+        # DoorMesh is not exposed to Python under that name - ask for the component by
+        # class instead, which does not depend on how a UPROPERTY happens to be named.
+        return a.get_component_by_class(unreal.StaticMeshComponent)
+
+    def give_it_a_body(new_door, all_actors):
+        mine = door_mesh_comp(new_door)
+        if not mine:
+            return {"worked": False, "why": "the spawned door has no StaticMeshComponent"}
+
+        donor_mesh, src = None, None
+        for a in all_actors:
+            if a is new_door or a.get_class() != new_door.get_class():
+                continue
+            c = door_mesh_comp(a)
+            got = c.get_editor_property("static_mesh") if c else None
+            if got:
+                donor_mesh, src = got, a.get_actor_label()
+                new_door.set_actor_scale3d(a.get_actor_scale3d())
+                break
+
+        if not donor_mesh:
+            donor_mesh = unreal.EditorAssetLibrary.load_asset(
+                "/Game/UltimateGothicCathedralChurch/Mesh/SM_Door_Cathedral_Huge_00001__6336")
+            src = "the gothic pack (no donor door in this level)"
+
+        if donor_mesh:
+            mine.set_editor_property("static_mesh", donor_mesh)
+
+        back = mine.get_editor_property("static_mesh")
+        return {"mesh": back.get_name() if back else None,
+                "copied_from": src,
+                "worked": back is not None}
+
     # ------------------------------------------------ the cathedral half
     if level_path.endswith("L_Cathedral"):
         cab_cls = unreal.load_class(None, "/Script/SibeliusGame.SlotCabinet")
@@ -70,6 +127,17 @@ try:
         fwd = cab.get_actor_forward_vector()
         right = cab.get_actor_right_vector()
         loc = cab.get_actor_location() + right * -300.0 + fwd * 100.0
+
+        # FLOOR HEIGHT COMES FROM A DOOR, NOT THE CABINET. The cabinet is on a plinth at
+        # Z=100, so taking its Z left this one hanging a metre in the air.
+        floor_z = None
+        for a in actors:
+            if a.get_class() == door_cls and a.get_actor_label() != "Door_ToMeadow":
+                floor_z = a.get_actor_location().z
+                break
+        loc.z = (floor_z if floor_z is not None else 0.0) + DOOR_Z_NUDGE
+        r["floor_z_from"] = "an existing door" if floor_z is not None else "level zero"
+        r["door_z"] = round(loc.z, 1)
         r["slot_cabinet"] = [round(cab.get_actor_location().x, 1),
                              round(cab.get_actor_location().y, 1),
                              round(cab.get_actor_location().z, 1)]
@@ -88,6 +156,8 @@ try:
         door.set_editor_property("bInteractive", True)
         door.set_editor_property("PromptText",
             unreal.Text("The Architects are waiting [E]"))
+
+        r["body"] = give_it_a_body(door, actors)
 
         # Read it back. Setters that report success and do nothing cost this project a
         # whole evening on 2026-08-27.
@@ -121,6 +191,8 @@ try:
         door.set_editor_property("bInteractive", True)
         door.set_editor_property("PromptText",
             unreal.Text("Back to the cathedral [E]"))
+
+        r["body"] = give_it_a_body(door, actors)
 
         r["readback"] = {
             "target": str(door.get_editor_property("TargetLevelName")),
