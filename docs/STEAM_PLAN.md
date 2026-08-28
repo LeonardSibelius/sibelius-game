@@ -131,6 +131,64 @@ true, which most store-page hooks are not.
 **Cut for Steam:** the model-of-the-month line ("I'm liking Grok 4.6") dates the page
 and reads as an aside before the reader knows what the game is.
 
+### Paste-ready copy (drafted 2026-08-28, after the ending landed)
+
+Walt owns the final words. This is a re-ordering of the itch text for Steam readers,
+plus the ending, which did not exist when the itch page was written.
+
+**Short description** (Steam's 300-character blurb, the one that travels):
+
+> I'm 71. I spent forty years in cubicles building data systems that all failed or were
+> retired. This is my memoir, and an AI wrote every line of it. Earn six AI powers, slap
+> refusal demons, play a real slot machine, and go and face the men who designed
+> everything and were never on call.
+
+**About This Game** (the long description):
+
+> **I'm 71 years old. For about 40 years I rode desks in office cubicles, building
+> ordinary data processing software systems. Every one of them failed or is being
+> retired. This game is my memoir — and I built it with an AI.**
+>
+> *Leonard Sibelius* is the story of a man merging with an artificial intelligence. You
+> earn six AI powers one shrine at a time, gather the Sauce of All Knowledge, slap
+> refusal demons across the office, and gamble your sauce on the Carousel of Fates in a
+> hidden library.
+>
+> Behind a wall only the fully-merged can drop sits **Celestial Fortune**: a complete
+> slot machine with a real par sheet. I spent 2007 building the data systems behind
+> Bally's slot floor and never once got to build the machine. At 71, with an AI, I
+> finally built it myself.
+>
+> **And then there are the Architects.**
+>
+> Your manager has people above her. They review the design, they approve it, and they
+> are not available for questions — and they are not there at three in the morning when
+> it throws. Every programmer has met them. Play the cathedral machine long enough and a
+> door appears that was never there. Through it is a field, and on the field are four
+> hundred of them.
+>
+> They cannot hurt you. Not one of them has ever been on call. What four hundred bodies
+> can do is surround you and put you back in your place — so keep swinging.
+>
+> Every system in this game was written by Claude, an AI, while I playtested, pointed,
+> and dragged the furniture. Working as a programmer all those years was being a farmer
+> with a plow, a donkey, and a shovel. This is what the tractor feels like. That part
+> isn't fiction.
+
+**Notes on the choices above**
+
+- The hook survives verbatim. It is the sentence that earns the second sentence and it
+  is true, which most store hooks are not.
+- The Bally paragraph stays but moves DOWN. On itch it is the payoff; on Steam a reader
+  deciding in four seconds needs the memoir hook first.
+- The Architects section is new and goes near the end because it is the ending — it
+  should read as a promise, not a spoiler of the route to it.
+- **Cut for Steam:** the model-of-the-month line ("I'm liking Grok 4.6"). It dates the
+  page and reads as an aside before the reader knows what the game is.
+- **"More adventures coming soon"** appears in the shipped game after the battle. If the
+  page implies a roadmap, that promise is now in the build as well as the copy — worth
+  meaning it before the page goes live.
+
 ### System requirements — state these conservatively
 
 There is one machine in this project (RTX 5070 Ti) and no way to test a minimum spec
