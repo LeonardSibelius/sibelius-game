@@ -93,6 +93,16 @@ Content/PN_OpenWorldFoliage/
 Content/PN_FoliageCollection/
 Content/PN_*/
 
+# Downtown West Modular Pack (PurePolygons, free from Epic) - VENDOR, 12 GB on disk.
+# L_City is duplicated OUT of its demo map into Content/Maps and IS committed; the pack
+# itself stays out of the repo like every other vendor pack here. It reaches the player
+# through the cook, which follows references from L_City - 12 GB of source becomes about
+# 1 GB of pak. Re-install from Fab if a fresh clone needs it.
+Content/Downtown_West/
+
+# Build logs from Build.bat runs (pkg-v*.log is already covered above).
+build-*.log
+
 # --- Marketplace character / creature packs (Epic + Fab, re-downloadable from the
 #     account library). These predate the ignore policy and were tracked by accident:
 #     ~5.1 GB of LFS, the largest single block in the repo. Verified pristine — each

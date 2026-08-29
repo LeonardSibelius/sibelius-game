@@ -18,7 +18,9 @@
 #include "SwarmBenchSubsystem.h"
 #include "EngulfComponent.h"
 #include "GenerateComponent.h"    // Ch6 Generate driver
-#include "SibeliusHUD.h"          // SIB-39 dev-overlay toggle
+#include "SibeliusHUD.h"
+#include "BattleArrival.h"        // BattleWonGrant
+#include "ProgressionSubsystem.h"          // SIB-39 dev-overlay toggle
 #include "JournalWidget.h"        // SIB-41 journal panel
 #include "GameMenuWidget.h"       // FUN-8 Tab game menu
 #include "GenerateRequestWidget.h" // SIB-30 P1 typed-request panel
@@ -335,6 +337,12 @@ void ASibeliusGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// so the binding is harmless in the office / other levels.
 	PlayerInputComponent->BindKey(EKeys::O, IE_Pressed, this, &ASibeliusGameCharacter::ReturnToOffice);
 
+	// [>] to the city, bound beside O because they are the same kind of key: a world to
+	// travel to, live everywhere, harmless where it does not apply. PERIOD is the
+	// binding and ">" is the label - the same physical key, and the keycap says both,
+	// so the prompt can use the arrow that means onward while the press stays easy.
+	PlayerInputComponent->BindKey(EKeys::Period, IE_Pressed, this, &ASibeliusGameCharacter::GoToCity);
+
 	// New Game: N, double-press confirm (Q-quit pattern) — the player-facing
 	// ResetProgression. (N is free here; the Carousel level's N lives on a
 	// different pawn.)
@@ -489,6 +497,51 @@ void ASibeliusGameCharacter::ReturnToOffice()
 	{
 		UTravelTransitionSubsystem::Travel(this, OfficeLevelName);
 	}
+}
+
+/* IS THE CITY OPEN? One question, one answer, asked by both the key and the menu.
+
+   Static and world-context-based so UGameMenuWidget can ask it without a pawn - the
+   CONTROLS tab greys the [>] row using this exact call, which means the list can never
+   drift out of step with what the key actually does. */
+bool ASibeliusGameCharacter::IsCityOpen(const UObject* WorldContext)
+{
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(WorldContext);
+	return Progression && Progression->HasClaimedGrant(ABattleArrival::BattleWonGrant);
+}
+
+/* [>] - AND WHEN IT REFUSES, IT SAYS WHERE TO GO NEXT.
+
+   Walt: "I want the player to know that a city is waiting."
+
+   A locked key that says "locked" teaches nothing. This one names the obstacle AND the
+   next move, and which sentence you get depends on how far along you actually are:
+
+     never paid the toll -> the cathedral machine is the next thing to do
+     toll paid, army up  -> the Architects are the next thing to do
+
+   IsBattleQualified is the same meter the toll door hangs on, so these two sentences
+   can never disagree with the door the player is looking for. */
+void ASibeliusGameCharacter::GoToCity()
+{
+	if (IsCityOpen(this))
+	{
+		const UWorld* World = GetWorld();
+		if (World && FName(*UWorld::RemovePIEPrefix(World->GetMapName())) == CityLevelName)
+		{
+			return;   // already there; a second press should not reload the level
+		}
+		UTravelTransitionSubsystem::Travel(this, CityLevelName);
+		return;
+	}
+
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	const bool bTollPaid = Progression && Progression->GetStateForRead().IsBattleQualified();
+
+	ASibeliusHUD::Toast(this, bTollPaid
+		? TEXT("A CITY IS WAITING - THE ARCHITECTS ARE STILL STANDING")
+		: TEXT("A CITY IS WAITING BEYOND THE ARCHITECTS - THE CATHEDRAL MACHINE OPENS THE WAY"),
+		4.0f, SibeliusToast::Warn);
 }
 
 void ASibeliusGameCharacter::ToggleJournal()

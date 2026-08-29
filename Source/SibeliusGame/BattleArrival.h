@@ -103,6 +103,57 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory", meta = (ClampMin = "0"))
 	float VictoryPauseSeconds = 2.0f;
 
+	/* ---------------------------------------------------------------------
+	   THE CHOICE. "AI has set you free" is a claim; this is the proof of it.
+
+	   A victory banner that fades back to an empty field has told the player he won
+	   and then given him nowhere to go, which is the same as not being free. So the
+	   ending ends in a door: back to the desk he has earned the right to leave, or
+	   onward to somewhere the game has never taken him.
+
+	   BOTH DOORS STAY OPEN. Neither choice is the "good" one and neither ends the
+	   game - O is the same key that has taken him home from every world since the
+	   Many Worlds door, and it still works here without a line of new code. That
+	   symmetry is the point: freedom is the office being a CHOICE rather than the
+	   only room with a floor.
+
+	   It waits until the ending has been READ. Stacking a menu on top of the last
+	   sentence of the game would step on it. */
+
+	/* THE RECEIPT, AND WHY IT IS A SAVED GRANT.
+
+	   [>] is a hotkey in every level now, not a key that exists for six seconds at the
+	   end of one fight - so something outside L_Meadow has to know the Architects fell.
+	   A bool on this actor cannot: this actor only exists in the meadow, and the meadow
+	   is torn down the moment he travels.
+
+	   ClaimedGrants is already the game's "this happened once, forever" record, it is
+	   already saved, and adding a key to it is ADDITIVE - old saves default-fill to
+	   "not claimed", which reads correctly as "has not won the battle yet". No
+	   SaveVersion bump, no migration. */
+	static const FName BattleWonGrant;
+
+	/** Seconds after the victory line before the two doors are offered. */
+	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory", meta = (ClampMin = "0"))
+	float ChoicePauseSeconds = 6.0f;
+
+	/** Where [>] goes. A PROPERTY, not a constant, so the destination can be
+	 *  repointed in the editor while the city is still a placeholder - no rebuild
+	 *  and nothing in C++ has to know what the freed world turned out to be.
+	 *
+	 *  MUST also appear in DefaultGame.ini MapsToCook, or the packaged build travels
+	 *  to nothing: OpenLevel on a missing map is a SILENT no-op. The cathedral door
+	 *  header carries the same warning for the same reason. */
+	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory")
+	FName OnwardLevelName = TEXT("L_City");
+
+	/** The two doors, as the player reads them. Deliberately not "Level 2" and
+	 *  "Quit" - one names a place he knows and one refuses to name a place at all,
+	 *  because the whole appeal of the second door is that he cannot see it yet. */
+	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory")
+	FText ChoiceLine = NSLOCTEXT("Sibelius", "BattleChoice",
+		"[O]   the office, one more time\n[>]   somewhere you have never been");
+
 	/** The agents' line. Editable because the wording is the whole beat. */
 	UPROPERTY(EditAnywhere, Category = "Battle Arrival")
 	FText GrantLine = NSLOCTEXT("Sibelius", "BattleGrant",
@@ -119,7 +170,18 @@ private:
 	void WatchForVictory();
 	void DeclareVictory();
 
+	/** Arm [>] and put the two doors on screen. */
+	void OfferTheChoice();
+
+	/** Re-arm the banner so the choice does not time out from under him. The HUD
+	 *  banner is a DEADLINE, not a flag (ShowBanner sets BannerUntil = now + N), so
+	 *  pushing that deadline forward on a loop holds it steady with no HUD change
+	 *  and no flicker. A choice that expires while the player is deciding is a bug. */
+	void KeepTheChoiceUp();
+
 	FTimerHandle T1, T2, T3, T4, VictoryPoll, VictoryBeat;
+	FTimerHandle ChoiceBeat, ChoiceHold;
 	bool bBattleJoined = false;   // no victory before there is a battle
 	bool bWon = false;            // once
+	bool bChoiceOffered = false;  // once
 };

@@ -465,12 +465,47 @@ void ASibeliusHUD::DrawPlayerLayer()
 		}
 	}
 
+	/* MEASURE EVERY LINE, NOT JUST THE FIRST.
+	
+	   GetTextSize measures ONE line. DrawText renders all of them. So a two-line banner
+	   drew its backing strip around line one and left line two sitting on bare sky -
+	   Walt, looking at the ending: "can the [>] line be on a dark background too?"
+	
+	   Both multi-line banners in the game had it: the victory line is
+	   VictoryLine + LINE_TERMINATOR + ComingSoonLine, and the arrival choice is two
+	   options. Both are the last things the game says, and both were half-legible.
+	
+	   Splits on 
+ and tolerates the 
+ that LINE_TERMINATOR leaves behind on Windows.
+	   Width is the WIDEST line, so centring still centres the block; DrawText then
+	   left-aligns each line from there, which is what a list of two choices wants. */
+	auto MeasureBlock = [this](const FString& Text, float Scale, float& OutW, float& OutH)
+	{
+		float RefW = 0.0f, RefH = 0.0f;
+		GetTextSize(TEXT("Ag"), RefW, RefH, nullptr, Scale);   // a blank line is still a line
+
+		TArray<FString> Lines;
+		Text.ParseIntoArray(Lines, TEXT("\n"), /*InCullEmpty=*/false);
+
+		OutW = 0.0f;
+		OutH = 0.0f;
+		for (FString Line : Lines)
+		{
+			Line.RemoveFromEnd(TEXT("\r"));
+			float W = 0.0f, H = 0.0f;
+			GetTextSize(Line, W, H, nullptr, Scale);
+			OutW = FMath::Max(OutW, W);
+			OutH += (H > 0.0f ? H : RefH);
+		}
+	};
+
 	// The ceremony banner — centered, above the reticle.
 	if (Now < BannerUntil && !BannerText.IsEmpty())
 	{
 		const float Scale = OverlayTextScale * 1.6f;
 		float W = 0.0f, H = 0.0f;
-		GetTextSize(BannerText, W, H, nullptr, Scale);
+		MeasureBlock(BannerText, Scale, W, H);
 		const float Alpha = static_cast<float>(FMath::Clamp((BannerUntil - Now) / 0.75, 0.0, 1.0)); // quick fade at the end
 		const float X = (Canvas->ClipX - W) * 0.5f;
 		const float Y = Canvas->ClipY * 0.32f;
@@ -487,7 +522,7 @@ void ASibeliusHUD::DrawPlayerLayer()
 	{
 		const float Scale = OverlayTextScale * 0.95f;
 		float W = 0.0f, H = 0.0f;
-		GetTextSize(MemoirText, W, H, nullptr, Scale);
+		MeasureBlock(MemoirText, Scale, W, H);   // same latent bug; it is his own voice
 		const float Alpha = static_cast<float>(FMath::Clamp((MemoirUntil - Now) / 1.5, 0.0, 1.0));
 		const float X = (Canvas->ClipX - W) * 0.5f;
 		const float Y = Canvas->ClipY * 0.32f + 90.0f;

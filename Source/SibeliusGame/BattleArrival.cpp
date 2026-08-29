@@ -7,6 +7,7 @@
 #include "SibeliusHUD.h"
 #include "SwarmBenchSubsystem.h"
 #include "RefuserController.h"
+#include "ProgressionSubsystem.h"
 
 #include "EngineUtils.h"
 
@@ -15,6 +16,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+
+const FName ABattleArrival::BattleWonGrant(TEXT("Battle.Won"));
 
 ABattleArrival::ABattleArrival()
 {
@@ -131,7 +134,20 @@ void ABattleArrival::WatchForVictory()
 
 void ABattleArrival::DeclareVictory()
 {
+	/* THE CITY OPENS HERE, not when he picks a door. Claimed before a single word is
+	   drawn, so a player who walks away from the choice, presses O out of habit, or
+	   alt-F4s in triumph still finds [>] live in the office tomorrow. Winning is what
+	   unlocks the city; reading the banner is not. */
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->ClaimOneTimeGrant(BattleWonGrant);
+	}
+
 	const FString Line = VictoryLine.ToString() + LINE_TERMINATOR + ComingSoonLine.ToString();
+
+	// The doors come AFTER the ending has been read, never on top of it.
+	GetWorldTimerManager().SetTimer(ChoiceBeat, this,
+		&ABattleArrival::OfferTheChoice, ChoicePauseSeconds, false);
 
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 	{
@@ -144,4 +160,57 @@ void ABattleArrival::DeclareVictory()
 		}
 	}
 	ASibeliusHUD::Toast(this, Line, 12.0f, SibeliusToast::Good);
+}
+
+/* ===========================================================================
+   THE TWO DOORS.
+
+   NEITHER KEY IS BOUND HERE, and that is the whole shape of it.
+
+   [O] was already global - ASibeliusGameCharacter binds it to ReturnToOffice, which
+   no-ops unless IsAwayFromOffice(). [>] is now global too, bound beside it and gated on
+   the saved BattleWonGrant instead of on this actor being alive.
+
+   That was Walt's call and it is the better design: "I want the player to know that a
+   city is waiting." A key that only exists for six seconds at the end of one fight
+   cannot advertise anything. A key that is in the CONTROLS list from the first minute,
+   greyed out and saying what it wants, is a promise the game keeps.
+
+   So this class stages the OFFER and owns nothing else. Both doors work whether the
+   banner is on screen or not.
+   =========================================================================== */
+
+void ABattleArrival::OfferTheChoice()
+{
+	if (bChoiceOffered)
+	{
+		return;
+	}
+	bChoiceOffered = true;
+
+	KeepTheChoiceUp();
+
+	// Held, not fired once: see the header. The banner is a deadline, so re-arming it
+	// well inside its own duration holds it on screen without a flicker. It stops when
+	// the level is torn down by whichever door he picks.
+	GetWorldTimerManager().SetTimer(ChoiceHold, this,
+		&ABattleArrival::KeepTheChoiceUp, 3.0f, /*bLoop=*/true);
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[BattleArrival] the doors are open: O -> office, > -> the city."));
+}
+
+void ABattleArrival::KeepTheChoiceUp()
+{
+	const FString Line = ChoiceLine.ToString();
+
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			HUD->ShowBanner(Line, 5.0f);
+			return;
+		}
+	}
+	ASibeliusHUD::Toast(this, Line, 5.0f, SibeliusToast::Info);
 }

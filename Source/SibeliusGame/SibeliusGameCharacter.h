@@ -136,6 +136,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Travel")
 	FName OfficeLevelName = TEXT("L_Office_v02");
 
+	/** The freed world, reached with [>] once the Refuser army has fallen. Editable so
+	    the destination can be repointed while the city is still being built - and it
+	    MUST also be in DefaultGame.ini MapsToCook, because OpenLevel on a map that was
+	    never cooked is a SILENT no-op in a packaged build. */
+	UPROPERTY(EditAnywhere, Category = "Travel")
+	FName CityLevelName = TEXT("L_City");
+
 public:
 	ASibeliusGameCharacter();
 
@@ -232,6 +239,7 @@ protected:
 	/** O key: from a wander world, OpenLevel back to the office (L_Office_v02). A no-op
 	    anywhere else, so the same key is harmless in the office / other levels. */
 	void ReturnToOffice();
+	void GoToCity();
 
 	/** N N: the player-facing New Game (Walt: no tilde for players) — double-press
 	    confirm, wipes progression + the deploy save, travels to a fresh office. */
@@ -281,6 +289,10 @@ public:
 	    packaged both resolve. Pure (no world) so it's safe on the CDO, which the smoke gate
 	    uses. Exported per-member: the class isn't SIBELIUSGAME_API, but the editor-module
 	    gate links this (non-inline) symbol across the DLL boundary. */
+	/** [>] - travel to the city, or explain what stands in the way. Public so the
+	    CONTROLS tab can ask the same question the key does. */
+	static bool IsCityOpen(const UObject* WorldContext);
+
 	SIBELIUSGAME_API bool IsAwayFromOfficeLevelName(const FString& RawLevelName) const;
 
 	/** True if the player is in ANY non-office level right now (current map name vs the office,

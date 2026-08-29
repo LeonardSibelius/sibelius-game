@@ -2,6 +2,7 @@
 
 #include "GameMenuWidget.h"
 #include "ProgressionSubsystem.h"
+#include "SibeliusGameCharacter.h"   // IsCityOpen - the [>] row asks the key itself
 #include "InventoryComponent.h"
 #include "CompileTypes.h"
 #include "GenerateComponent.h"
@@ -289,7 +290,20 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 		return !Progression || Progression->IsUnlocked(Verb);
 	};
 
-	struct FControlRow { FString Keys; FString Action; bool bShown; };
+	/* Locked: what this row says while bShown is false. Defaulted, because for a power
+	   the honest answer has always been the same one - but the city is not a power, and
+	   "a power you have not earned yet" would be a lie about it. Walt asked that the
+	   player KNOW a city is waiting; a greyed row that says so from the first minute is
+	   how a control list makes a promise. */
+	struct FControlRow
+	{
+		FString Keys;
+		FString Action;
+		bool bShown;
+		FString Locked = TEXT("(a power you have not earned yet)");
+	};
+
+	const bool bCityOpen = ASibeliusGameCharacter::IsCityOpen(this);
 	const TArray<FControlRow> Rows = {
 		{ TEXT("W A S D / mouse"), TEXT("move / look"), true },
 		{ TEXT("E"), TEXT("interact — collect, doors, the cauldron, talk to an AI Agent"), true },
@@ -304,6 +318,8 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 		{ TEXT("J"), TEXT("how to play"), true },
 		{ TEXT("N N"), TEXT("new game (erases ALL progress)"), true },
 		{ TEXT("O"), TEXT("back to the office (from any other world)"), true },
+		{ TEXT(">"), TEXT("go to the city"), bCityOpen,
+		  TEXT("a city is waiting - it opens when the Architects fall") },
 		{ TEXT("Q Q"), TEXT("quit"), true },
 	};
 
@@ -325,7 +341,7 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 			+ SHorizontalBox::Slot().FillWidth(1.0f)
 			[
 				SNew(STextBlock)
-				.Text(FText::FromString(R.bShown ? R.Action : TEXT("(a power you have not earned yet)")))
+				.Text(FText::FromString(R.bShown ? R.Action : R.Locked))
 				.Font(Font("Regular", 18))
 				.ColorAndOpacity(R.bShown ? Body : Dim)
 			]

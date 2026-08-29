@@ -229,5 +229,11 @@ FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 	{
 		return NSLOCTEXT("Travel", "EnterTemple", "Entering the Temple...");
 	}
+	// The freed world, reached by [>] from the won battle. It does not name itself,
+	// for the same reason the choice does not: not knowing is the appeal.
+	if (LevelName.Contains(TEXT("City")))
+	{
+		return NSLOCTEXT("Travel", "EnterCity", "Somewhere you have never been...");
+	}
 	return NSLOCTEXT("Travel", "Traveling", "Traveling...");
 }
