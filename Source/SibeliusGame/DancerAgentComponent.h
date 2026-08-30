@@ -105,6 +105,42 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
 	FString TalkLine = TEXT("I am AI agent {0}.  I have granted you a power.  Use it wisely.");
 
+	/* THE GUIDE LINE - what she says when she is not handing over a power.
+
+	   Walt, 2026-08-30: "I want Nyra to be the player's date in the city who shows him
+	   around. When you click E on Nyra, she will tell you about destinations there, what
+	   you can do together etc."
+
+	   The office dancers give you a capability and say so. In the city nothing is being
+	   granted - the powers are all won by then - so the same line would be nonsense. She
+	   is there because the man has arrived somewhere new and has nobody to ask.
+
+	   This is deliberately a PROMISE and not a menu. Destinations, things to do together
+	   and the rest are not built; a line that offered them today would be writing a
+	   cheque the city cannot cash. "Ask me where to go" is true the moment there is
+	   somewhere to go, and until then it reads as an invitation rather than a bug. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	FString GuideLine = TEXT("I am AI agent {0}.  I know this city.  Ask me where to go, and I will take you there.");
+
+	/* WHICH DANCERS ARE GUIDES: the ones carrying this ACTOR TAG.
+
+	   Not a level-name check and not a per-instance property, for the two reasons this
+	   whole class already exists. A level-name check would be a hardcoded string that
+	   silently stops matching the day a map is renamed; a per-instance property cannot be
+	   set at all, because UDancerAgentSubsystem ATTACHES this component at runtime and
+	   there is nothing in the editor to tick.
+
+	   The tag is already there - place_city_dancers.py stamps CityDancer on everyone it
+	   stands on the street, and a tag is real data that cooks, unlike a label. So the
+	   same Nyra Blueprint gives a power in the office and gives directions in the city,
+	   with nothing to configure and nothing to keep in sync. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	FName GuideTag = TEXT("CityDancer");
+
+	/** True when the owning actor carries GuideTag - she guides rather than grants. */
+	UFUNCTION(BlueprintPure, Category="Dancer")
+	bool IsGuide() const;
+
 	/** Beat of silence held on her face after the voice clip ends, before the camera lets go. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0"))
 	float TalkTailSeconds = 1.4f;

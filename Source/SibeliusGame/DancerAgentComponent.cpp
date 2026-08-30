@@ -167,6 +167,14 @@ namespace
 	const TCHAR* const VoiceFolder = TEXT("/Game/Audio/Dancers");
 	const TCHAR* const SharedVoiceName = TEXT("dancer_power");
 
+	/* THE GUIDE RECORDINGS live beside the power ones and are looked up the same way, so
+	   dancer_guide_nyra.uasset is all it takes to give her a voice in the city. Until
+	   that asset exists FindTalkVoice falls through to the shared dancer_guide, and if
+	   that is missing too she is silent - which is the same graceful nothing an
+	   unrecorded agent has always produced, and PlayTalkVoice logs exactly which asset
+	   it wanted. */
+	const TCHAR* const GuideVoiceName = TEXT("dancer_guide");
+
 	int32 FindBoneExact(const USkeletalMeshComponent& Mesh, const TCHAR* const* Names, int32 NameCount)
 	{
 		for (int32 n = 0; n < NameCount; ++n)
@@ -887,6 +895,12 @@ void UDancerAgentComponent::Greet()
 	BeginTalkShot();
 }
 
+bool UDancerAgentComponent::IsGuide() const
+{
+	const AActor* Owner = GetOwner();
+	return Owner && !GuideTag.IsNone() && Owner->ActorHasTag(GuideTag);
+}
+
 FString UDancerAgentComponent::GetSpokenLine() const
 {
 	/* HER NAME IS IN THE LINE (Walt, 2026-08-25). "I am AI agent Kaia. I have granted
@@ -895,7 +909,7 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	   dancer without her own take falls back to, including the one AFinaleAltar summons
 	   at the cathedral, and a fallback that confidently announces the wrong name is
 	   worse than one that announces none. */
-	FString Line = TalkLine;
+	FString Line = IsGuide() ? GuideLine : TalkLine;
 	Line.ReplaceInline(TEXT("{0}"), *AgentName);
 	return Line;
 }
@@ -904,11 +918,15 @@ USoundBase* UDancerAgentComponent::FindTalkVoice() const
 {
 	// LOAD_NoWarn|LOAD_Quiet: "not recorded yet" is an expected state, not a fault, and
 	// it must not spray the log every time the player talks to somebody.
+	// One switch decides both halves - the words and the recording - so a guide can
+	// never end up speaking the granting line or the other way round.
+	const TCHAR* const Base = IsGuide() ? GuideVoiceName : SharedVoiceName;
+
 	const FString Own = AgentName.ToLower();
 	if (!Own.IsEmpty())
 	{
 		const FString Path = FString::Printf(TEXT("%s/%s_%s.%s_%s"),
-			VoiceFolder, SharedVoiceName, *Own, SharedVoiceName, *Own);
+			VoiceFolder, Base, *Own, Base, *Own);
 		if (USoundBase* Mine = LoadObject<USoundBase>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet))
 		{
 			return Mine;
@@ -916,7 +934,7 @@ USoundBase* UDancerAgentComponent::FindTalkVoice() const
 	}
 
 	const FString Shared = FString::Printf(TEXT("%s/%s.%s"),
-		VoiceFolder, SharedVoiceName, SharedVoiceName);
+		VoiceFolder, Base, Base);
 	return LoadObject<USoundBase>(nullptr, *Shared, nullptr, LOAD_NoWarn | LOAD_Quiet);
 }
 

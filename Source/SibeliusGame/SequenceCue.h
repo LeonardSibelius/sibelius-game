@@ -64,6 +64,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sequence Cue")
 	bool bPlayOnBeginPlay = true;
 
+	/* HOW LONG HER FACE TAKES TO ARRIVE.
+
+	   Walt: "for a fraction of a second at the start of the game, before Kaia speaks,
+	   there is a small image of her body launching straight up."
+
+	   That is StartDelay rendering. For half a second before Play() is called the level
+	   draws itself normally - Kaia standing wherever the level left her, at whatever
+	   pose her animation begins on - and then the sequence takes over and SNAPS her into
+	   its own transform and cuts to its own camera. The snap is the launch. Nothing is
+	   broken; the cutscene simply has not started yet and the camera is already looking.
+
+	   So the screen is held black from BeginPlay and faded up only once the sequence is
+	   actually playing. That both hides the snap and gives her the slow arrival Walt
+	   asked for - which is a better opening than a hard cut anyway, because the first
+	   thing this game does is a face in the dark.
+
+	   Visual only: audio is deliberately NOT faded. Her first line is lip-synced to
+	   within 0.6 s and muffling the front of it to save a picture would be a poor trade. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sequence Cue", meta = (ClampMin = "0.0"))
+	float FadeInSeconds = 1.5f;
+
 	/** A breath before it starts, so the level is fully up and not hitching. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sequence Cue", meta = (ClampMin = "0.0"))
 	float StartDelay = 0.5f;
@@ -103,6 +124,9 @@ private:
 	void HandleSequenceFinished();
 
 	void HandleSkip();
+	/** Hold or release a full-screen black fade. Duration 0 sets it instantly and holds. */
+	void FadeScreen(float From, float To, float Duration);
+
 	void LockPlayer(bool bLock);
 	class ASibeliusHUD* GetSibeliusHUD() const;
 

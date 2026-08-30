@@ -248,9 +248,44 @@ ALegacyMachine::ALegacyMachine()
 	RejectLabel->SetTextRenderColor(MachineBad);
 }
 
+
+/* WHY THIS RUNS TWICE AND NOT ONCE.
+
+   Setting visibility in the constructor would only touch the class default. The machine
+   is already placed in L_Office_v02, and a placed actor SERIALISES its component
+   properties - so the level's stored "visible = true" would quietly out-vote a new
+   default and the sign would still be there. That is the CDO-is-not-the-instance trap
+   this project has already paid for once.
+
+   Applying it at OnConstruction and again at BeginPlay wins in both places: the editor
+   viewport updates the moment the box is ticked, and the running game is right whatever
+   the .umap happens to hold. */
+void ALegacyMachine::ApplySignVisibility()
+{
+	UStaticMeshComponent* Meshes[] = { SignPlate, SignCard };
+	for (UStaticMeshComponent* M : Meshes)
+	{
+		if (M)
+		{
+			M->SetVisibility(bShowSign, /*bPropagateToChildren=*/true);
+		}
+	}
+
+	UTextRenderComponent* Texts[] = { SignOfficialText, SignText };
+	for (UTextRenderComponent* T : Texts)
+	{
+		if (T)
+		{
+			T->SetVisibility(bShowSign, /*bPropagateToChildren=*/true);
+		}
+	}
+}
+
 void ALegacyMachine::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
+
+	ApplySignVisibility();
 	DressTheVerdict();
 }
 
@@ -354,6 +389,9 @@ void ALegacyMachine::DressTheVerdict()
 void ALegacyMachine::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// The switch wins over whatever the level serialised. See ApplySignVisibility.
+	ApplySignVisibility();
 
 	DressTheVerdict();
 

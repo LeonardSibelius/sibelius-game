@@ -275,6 +275,32 @@ public:
 	   hardware and the card; the official language never winks, because a plaque that
 	   is in on the joke cannot also be the thing Code Vision catches lying. */
 
+	/* THE SIGN IS OFF BY DEFAULT NOW (Walt, 2026-08-30).
+
+	   "i want the player to wonder what the Hall machine is, not get a big sign in their
+	   face."
+
+	   Same instinct that made the toll door invisible rather than locked, and the
+	   cathedral already proved it: nobody needed telling what the slot cabinet was. A
+	   label answers a question the player has not asked yet, and the wondering is the
+	   better version of the moment.
+
+	   HIDDEN, NOT DELETED. The plate, its brass plaque text, the crooked taped-on card
+	   and the card's text are four CreateDefaultSubobject components - they cannot be
+	   removed in the editor, which is why deleting them from the level did nothing. The
+	   writing on them is good and costs nothing to keep, so this is a switch rather than
+	   a demolition: flip it back and the joke returns intact.
+
+	   ALL FOUR MOVE TOGETHER, deliberately. Hiding only the two slabs Walt named would
+	   have left their TextRender components floating in mid-air with nothing behind
+	   them, which is worse than the sign was.
+
+	   Code Vision is unaffected - HandleCodeVisionChanged drives the machine PARTS, not
+	   the sign. Checked before touching it, because the header two paragraphs down says
+	   the plaque is "the thing Code Vision catches lying" and that read like wiring. */
+	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Sign")
+	bool bShowSign = false;
+
 	UPROPERTY(VisibleAnywhere, Category = "Legacy Machine|Sign")
 	TObjectPtr<UStaticMeshComponent> SignPlate;
 
@@ -408,6 +434,11 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	/** Show or hide all four sign components together. Called from OnConstruction so the
+	 *  editor updates live, and from BeginPlay so a level that serialised them visible
+	 *  before bShowSign existed cannot out-vote the switch. */
+	void ApplySignVisibility();
+
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 	/** Meshes, scales, rotations and visibility for the reject heap, the grime in

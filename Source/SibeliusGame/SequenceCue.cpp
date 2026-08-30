@@ -6,6 +6,7 @@
 #include "SibeliusGame.h"                 // LogSibeliusGame
 #include "SibeliusProgressSubsystem.h"
 
+#include "Camera/PlayerCameraManager.h"
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
@@ -58,6 +59,11 @@ void ASequenceCue::BeginPlay()
 			}
 		}
 	}
+
+	// BLACK BEFORE ANYTHING RENDERS. Set here rather than in PlayCue because the whole
+	// problem is the half second BEFORE PlayCue runs. Deliberately after the
+	// already-played check above: that path travels straight on and must not be dimmed.
+	FadeScreen(1.0f, 1.0f, 0.0f);
 
 	GetWorldTimerManager().SetTimer(
 		StartTimer, this, &ASequenceCue::PlayCue, FMath::Max(0.01f, StartDelay), false);
@@ -117,6 +123,10 @@ void ASequenceCue::PlayCue()
 	LockPlayer(true);
 	Player->Play();
 
+	// AFTER Play(), never before: by now the camera cut has happened and she is in her
+	// sequence transform, so what fades up is the shot rather than the snap into it.
+	FadeScreen(1.0f, 0.0f, FadeInSeconds);
+
 	GetWorldTimerManager().SetTimer(
 		SafetyTimer, this, &ASequenceCue::FinishCue, MaxSeconds, false);
 
@@ -153,6 +163,13 @@ void ASequenceCue::FinishCue()
 		return;
 	}
 	bFinished = true;
+
+	/* LET THE SCREEN GO, whatever brought us here. This is the funnel every ending uses
+	   - OnFinished, a skip, the safety watchdog, a missing sequence, a player that could
+	   not be created - so clearing the fade once here covers all five. The alternative
+	   is a failure mode where a cutscene that breaks leaves the player in the dark,
+	   which is strictly worse than the flash this change was made to remove. */
+	FadeScreen(0.0f, 0.0f, 0.0f);
 	bPlaying = false;
 
 	if (Player)
@@ -193,6 +210,33 @@ void ASequenceCue::TravelOnward()
 	// SibeliusGame.cpp, so a plain OpenLevel is already covered.
 	UE_LOG(LogSibeliusGame, Display, TEXT("[SequenceCue] travelling to %s"), *NextLevel.ToString());
 	UGameplayStatics::OpenLevel(this, NextLevel);
+}
+
+/* THE ONE PLACE THE SCREEN IS DARKENED OR LET GO.
+
+   Everything goes through here so no exit path can leave a player staring at black:
+   FinishCue calls it with 0, and FinishCue is the single funnel every ending already
+   uses - natural finish, skip, safety watchdog, missing sequence, and a player that
+   failed to create. */
+void ASequenceCue::FadeScreen(float From, float To, float Duration)
+{
+	const UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	APlayerCameraManager* Cam = PC ? PC->PlayerCameraManager : nullptr;
+	if (!Cam)
+	{
+		return;
+	}
+
+	if (Duration <= 0.0f)
+	{
+		// Instant, and HELD - StartCameraFade with a zero duration does not reliably
+		// stick, and this is the call that has to be trusted before the first frame.
+		Cam->SetManualCameraFade(To, FLinearColor::Black, /*bInFadeAudio=*/false);
+		return;
+	}
+	Cam->StartCameraFade(From, To, Duration, FLinearColor::Black,
+		/*bShouldFadeAudio=*/false, /*bHoldWhenFinished=*/false);
 }
 
 void ASequenceCue::LockPlayer(bool bLock)
