@@ -105,6 +105,8 @@ nothing. It is a gift. Enjoy it.
   G                  Generate
   M                  status menu (powers, sauce, inventory, controls)
   J                  this guide
+  N, twice           new game (erases ALL progress)
   O                  return to the office from any other world
+  >                  go to the city (after the Architects fall)
   H                  developer overlay (debug)
   Q, twice           quit
