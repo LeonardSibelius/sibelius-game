@@ -44,9 +44,16 @@ PKG_DIR = "/Game/Audio/Dancers"
 AUDIO_DIR = "C:/Users/wpark/projects/sibelius-game/Tools/Audio"
 
 # Anything named dancer_power* in Tools/Audio gets imported under its own name.
-# dancer_power.mp3        -> every agent
+# dancer_power.mp3        -> every agent, the granting line
 # dancer_power_kaia.mp3   -> Kaia only, overriding the shared one
-PREFIX = "dancer_power"
+# dancer_guide_nyra.mp3   -> Nyra in the CITY, where she guides instead of granting
+# 2026-08-31: widened from "dancer_power" to "dancer_" so the GUIDE family comes too.
+# UDancerAgentComponent now switches voice family as well as words when a dancer carries
+# the CityDancer tag - dancer_power_nyra in the office, dancer_guide_nyra in the city -
+# and a prefix that only matched dancer_power would have imported the first and silently
+# skipped the second. The error message below would then have said "found no
+# dancer_power*.mp3" about a file sitting right there.
+PREFIX = "dancer_"
 EXTS = (".mp3", ".wav", ".flac", ".ogg", ".opus", ".aif", ".aiff")
 
 

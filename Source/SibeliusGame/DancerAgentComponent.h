@@ -115,12 +115,24 @@ public:
 	   granted - the powers are all won by then - so the same line would be nonsense. She
 	   is there because the man has arrived somewhere new and has nobody to ask.
 
-	   This is deliberately a PROMISE and not a menu. Destinations, things to do together
-	   and the rest are not built; a line that offered them today would be writing a
-	   cheque the city cannot cash. "Ask me where to go" is true the moment there is
-	   somewhere to go, and until then it reads as an invitation rather than a bug. */
+	   IT NAMES A REAL PLACE NOW. The first version was a deliberate promise rather than a
+	   menu, because nothing in the city was enterable and offering destinations would
+	   have been a cheque the city could not cash. Then Jacob's Downtown Deli got a door,
+	   so Walt rewrote her: she greets him by name, tells him where the deli is relative
+	   to where she is standing, and quotes the shop's own sign - "surprisingly adequate"
+	   is printed above the door in Downtown West - back at him.
+
+	   SHE DOES NOT SAY "I am AI agent Nyra". Every dancer in the office opens that way
+	   because each is handing over a power and the announcement is the point. Here she
+	   is not granting anything; she is a person he has met, in a town, telling him where
+	   to eat. Skipping the formula is the difference. {0} is therefore unused in this
+	   string, which GetSpokenLine handles fine - the substitution simply finds nothing.
+
+	   THE RECORDING IS THE REAL LINE. This string only reaches a player's eyes as a log
+	   warning when the clip is missing, so it exists to match dancer_guide_nyra rather
+	   than to be read. Change one and change the other. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
-	FString GuideLine = TEXT("I am AI agent {0}.  I know this city.  Ask me where to go, and I will take you there.");
+	FString GuideLine = TEXT("Hello, Leonard.  It is good to see you in Trans Human City.  Jacob's Downtown Deli is surprisingly adequate.  It is on the corner right behind me.  Have some food before you explore.");
 
 	/* WHICH DANCERS ARE GUIDES: the ones carrying this ACTOR TAG.
 
