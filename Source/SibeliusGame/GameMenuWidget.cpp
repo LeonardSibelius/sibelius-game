@@ -2,7 +2,7 @@
 
 #include "GameMenuWidget.h"
 #include "ProgressionSubsystem.h"
-#include "SibeliusGameCharacter.h"   // IsCityOpen - the [>] row asks the key itself
+#include "SibeliusControls.h"          // the ONE control list   // IsCityOpen - the [>] row asks the key itself
 #include "InventoryComponent.h"
 #include "CompileTypes.h"
 #include "GenerateComponent.h"
@@ -284,46 +284,13 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 {
 	using namespace GameMenuNS;
 
-	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
-	auto Owned = [Progression](EPowerVerb Verb)
-	{
-		return !Progression || Progression->IsUnlocked(Verb);
-	};
+	// THE LIST LIVES IN SibeliusControls, not here. There used to be a second copy of
+	// these facts in Content/Journal/HOW_TO_PLAY.md and the two had drifted in both
+	// directions. This screen is now a VIEW of that list - the view that can grey out
+	// what has not been earned, which is the thing prose could never do.
+	const TArray<SibeliusControls::FControlRow> Rows = SibeliusControls::BuildRows(this);
 
-	/* Locked: what this row says while bShown is false. Defaulted, because for a power
-	   the honest answer has always been the same one - but the city is not a power, and
-	   "a power you have not earned yet" would be a lie about it. Walt asked that the
-	   player KNOW a city is waiting; a greyed row that says so from the first minute is
-	   how a control list makes a promise. */
-	struct FControlRow
-	{
-		FString Keys;
-		FString Action;
-		bool bShown;
-		FString Locked = TEXT("(a power you have not earned yet)");
-	};
-
-	const bool bCityOpen = ASibeliusGameCharacter::IsCityOpen(this);
-	const TArray<FControlRow> Rows = {
-		{ TEXT("W A S D / mouse"), TEXT("move / look"), true },
-		{ TEXT("E"), TEXT("interact — collect, doors, the cauldron, talk to an AI Agent"), true },
-		{ TEXT("F"), TEXT("fight a Refuser / change an AI Agent's dance"), true },
-		{ TEXT("V (hold)"), TEXT("Code Vision"), Owned(EPowerVerb::CodeVision) },
-		{ TEXT("R"), TEXT("Refactor what you're looking at"), Owned(EPowerVerb::Refactor) },
-		{ TEXT("C"), TEXT("Compile at a build site"), Owned(EPowerVerb::Compile) },
-		{ TEXT("6 / 7 / 8"), TEXT("Test-Drive: branch / merge / discard"), Owned(EPowerVerb::TestDrive) },
-		{ TEXT("0"), TEXT("Deploy (persist your edits)"), Owned(EPowerVerb::Deploy) },
-		{ TEXT("G"), TEXT("Generate — type a request"), Owned(EPowerVerb::Generate) },
-		{ TEXT("M"), TEXT("this menu"), true },
-		{ TEXT("J"), TEXT("how to play"), true },
-		{ TEXT("N N"), TEXT("new game (erases ALL progress)"), true },
-		{ TEXT("O"), TEXT("back to the office (from any other world)"), true },
-		{ TEXT(">"), TEXT("go to the city"), bCityOpen,
-		  TEXT("a city is waiting - it opens when the Architects fall") },
-		{ TEXT("Q Q"), TEXT("quit"), true },
-	};
-
-	for (const FControlRow& R : Rows)
+	for (const SibeliusControls::FControlRow& R : Rows)
 	{
 		Box->AddSlot().AutoHeight().Padding(0, 3)
 		[

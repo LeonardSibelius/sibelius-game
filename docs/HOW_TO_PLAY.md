@@ -90,23 +90,3 @@ what it wants next. When the sixth verb lands, the Synthesis completes,
 the wall falls, and what waits behind it is not a test and costs
 nothing. It is a gift. Enjoy it.
 
-
-## EVERY KEY
-
-  W A S D + mouse    move and look
-  E                  interact: books, doors, the stove, machines,
-                     talk to an AI Agent
-  F                  fight a Refuser, or change an AI Agent's dance
-  V (hold)           Code Vision
-  R                  Refactor
-  C                  Compile (build at a build site)
-  6 7 8              branch / merge / discard
-  0                  Deploy
-  G                  Generate
-  M                  status menu (powers, sauce, inventory, controls)
-  J                  this guide
-  N, twice           new game (erases ALL progress)
-  O                  return to the office from any other world
-  >                  go to the city (after the Architects fall)
-  H                  developer overlay (debug)
-  Q, twice           quit

@@ -12,7 +12,8 @@
 
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
-#include "ProgressionSubsystem.h"   // the player's earned memoir record
+#include "ProgressionSubsystem.h"
+#include "SibeliusControls.h"   // the player's earned memoir record
 
 UJournalWidget::UJournalWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -97,6 +98,14 @@ void UJournalWidget::RefreshFromNarrative()
 		UE_LOG(LogTemp, Warning, TEXT("[Journal] FAILED to load '%s' (exists=%d)"), *FullPath, bExists ? 1 : 0);
 	}
 
+	/* THE KEY LIST IS GENERATED, not written. It used to be an "EVERY KEY" section
+	   typed into HOW_TO_PLAY.md, which is why it was missing N N and [>] while carrying
+	   an H the menu had lost. Composed from SibeliusControls now - the same rows the M
+	   screen draws - so the guide and the menu cannot disagree again.
+
+	   Appended like the two below it, which is the pattern this function already used
+	   for the memoir record and the Architects. */
+	JournalText += SibeliusControls::ComposeAsText(this);
 	JournalText += ComposeMemoirRecord();
 	JournalText += ComposeArchitects();
 	ApplyText();
