@@ -109,6 +109,20 @@ Content/Downtown_West/
 # material lives in the pack, so a fresh clone gets a broken reference until the pack is
 # re-downloaded - the same deal as every other entry in docs/VENDOR_PACKS.md.
 Content/Phantom_All_In_One/
+
+# Coffee Shop / RestaurantScene (Leartes Studios) - the cafe interior behind the deli
+# door in the city. FREE to download from Fab, which is not the same as free to
+# REDISTRIBUTE: the Standard License grants use, not publication, and this repo is
+# public. Out it goes, like every other pack.
+Content/RestaurantScene/
+
+# ...and the same pack SPILLS its showcase cinematic outside its own folder, into the
+# project's shared Cinematics directory next to the Kaia intro. Only the Sequences
+# subfolder is vendor; Content/Cinematics itself holds L_Cine_KaiaIntro, L_Meadow and
+# LS_Kaia_Intro and must stay tracked.
+Content/Cinematics/Sequences/
+Content/__ExternalActors__/RestaurantScene/
+Content/__ExternalObjects__/RestaurantScene/
 Content/__ExternalActors__/Phantom_All_In_One/
 Content/__ExternalObjects__/Phantom_All_In_One/
 
