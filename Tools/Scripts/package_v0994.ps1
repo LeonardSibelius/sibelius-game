@@ -65,6 +65,10 @@ if ($code -ne 0) {
 $cooked = "$root\Saved\Cooked\Windows\SibeliusGame\Content"
 $checks = [ordered]@{
   "the city"            = "$cooked\Maps\L_City.umap"
+  "the cafe"            = "$cooked\Maps\L_Cafe.umap"
+  "the burger"          = "$cooked\Fab\Burger\burger\StaticMeshes\burger.uasset"
+  "the ghosts' glow"    = "$cooked\Phantom\Manny_Glow.uasset"
+  "Nyra's guide voice"  = "$cooked\Audio\Dancers\dancer_guide_nyra.uasset"
   "the city's daylight" = "$cooked\Downtown_West\Maps\Sub-Levels\Daytime_Lighting.umap"
   "the meadow"          = "$cooked\Cinematics\L_Meadow.umap"
   "Greystone mesh"      = "$cooked\ParagonGreystone\Characters\Heroes\Greystone\Meshes\Greystone.uasset"
