@@ -39,7 +39,11 @@ TArray<FControlRow> BuildRows(const UObject* WorldContext)
 
 		{ TEXT("M"), TEXT("this menu"), true },
 		{ TEXT("J"), TEXT("how to play"), true },
-		{ TEXT("H"), TEXT("developer overlay (debug)"), true },
+		// H (developer overlay) is DELIBERATELY ABSENT. Walt, 2026-08-31: "take H out of
+		// both." It is a debug toggle, and unifying the two lists had just promoted it
+		// into the player-facing menu for the first time - which is a fair thing to
+		// notice when a store page is three weeks away. The key still works for anyone
+		// who knows it; the game simply stops advertising its own scaffolding.
 
 		{ TEXT("N N"), TEXT("new game (erases ALL progress)"), true },
 		{ TEXT("O"), TEXT("back to the office (from any other world)"), true },
