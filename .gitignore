@@ -100,6 +100,18 @@ Content/PN_*/
 # 1 GB of pak. Re-install from Fab if a fresh clone needs it.
 Content/Downtown_West/
 
+# Phantom All In One (Pautinka, PAID) - the ghost/energy material pack the AI ghosts
+# in L_City are made of. Vendor, licensed to the buying Epic account, and this repo is
+# public - so the pack stays out of it.
+#
+# Content/Phantom/ is NOT ignored: that folder holds Manny_Glow, Walt's own tuned
+# Material Instance, and it is the only part of the look that is his. Its PARENT
+# material lives in the pack, so a fresh clone gets a broken reference until the pack is
+# re-downloaded - the same deal as every other entry in docs/VENDOR_PACKS.md.
+Content/Phantom_All_In_One/
+Content/__ExternalActors__/Phantom_All_In_One/
+Content/__ExternalObjects__/Phantom_All_In_One/
+
 # Build logs from Build.bat runs (pkg-v*.log is already covered above).
 build-*.log
 

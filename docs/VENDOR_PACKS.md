@@ -45,6 +45,7 @@ unless noted. Sizes are what was on disk on 2 Aug 2026.
 | `EchoContent` | 1.3 GB | **yes — `Presence.cpp`** |
 | `StainedGlass3D` | 1.1 GB | yes — `CarouselMachine.cpp` |
 | `Fab` | 744 MB | no, but holds the `MHC_*` source characters |
+| `Phantom_All_In_One` | 657 MB | no — but `Content/Phantom/Manny_Glow` inherits from it, and the AI ghosts in L_City are invisible without it |
 | `SciFi_Box_B` | 676 MB | yes — `ElsewhereBuilder.cpp` |
 | `ModularSciFiEnv_F` | 669 MB | no |
 | `Dragon_Rise` | 647 MB | no |
