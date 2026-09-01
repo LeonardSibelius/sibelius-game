@@ -285,24 +285,73 @@ Control Rig and Flite TTS wrecked the portrait"*).
 | `UAnimInstance::OverrideCurveValue` | Writes the post-evaluation map; discarded next evaluation. |
 | Jaw control curve from C++ | The jaw is a joint driven by a RigLogic control curve. Unreachable at runtime; 858 morphs on the face mesh and not one named for the jaw. |
 
-### The route that would actually work
+### The route that worked — BUILT 2026-09-01
 
-UE 5.7 ships MetaHuman Animator's **audio-driven animation** (`MetaHumanSpeech2Face`,
-Editor-only, NNE models under
-`Engine/Plugins/MetaHuman/MetaHumanAnimator/Content/Speech2Face`). Feed it the same
-ElevenLabs clip in the editor and it bakes a face Anim Sequence with the RigLogic curves
-solved — jaw, phonemes, the lot. That goes *through* RigLogic instead of fighting it,
-which is exactly why it works where this did not.
+This section predicted MetaHuman Animator's **audio-driven animation** would work where
+the three dead ends above did not, because it bakes the RigLogic control curves in the
+editor instead of trying to write them at runtime. It does. Every agent's mouth now says
+her own words.
 
-And it is more tractable than first feared: the diagnostic measured **`leaderpose=no`**,
-so these faces are already in the animated configuration MetaHuman uses for performances
-(leader pose nulled, Copy Pose From Mesh in the graph). The work is generating the
-performance and playing it into a slot — one editor pass per clip, plus careful testing
-that the portrait survives. A scoped feature, not a code tweak.
+The prediction held in full: `leaderpose=no` meant these faces were already in the
+animated configuration, and no rig surgery was needed. Head movement is the only thing
+that had to be argued with, and only because of the 38° frame — see below.
 
-The C++ is kept, switched off, because it is the working half of that feature: the
-envelope, the timing and the shape blending are all correct and measured. Only the write
-is losable.
+#### The recipe, per voice
+
+Everything is installed and enabled already: the `MetaHuman` plugin in `.uproject` IS
+MetaHuman Animator (its `.uplugin` friendly name), the Speech2Face DLL and the Whisper +
+NNE models ship with the engine, and processing needs **DirectX 12**, which this project
+already sets. Nothing to download.
+
+1. Content Browser **+ Add** → search `performance` → **MetaHuman Performance**.
+   (There is also a right-click **MetaHuman Performance → Process And Export to Anim
+   Sequences** batch entry on SoundWaves, which does all of them at once with a
+   prefix/suffix/folder naming rule. It did not appear in this project's context menu on
+   2026-09-01, single or multi selection, scrolled to the bottom. Not worth hunting: the
+   manual loop is three clicks per voice once the Performance asset exists, and the
+   process function is **not** exposed to Python, so there is no scripted path either.)
+2. **Input Type** → `Audio`, then **Audio** → the SoundWave.
+3. **Process**. Green bar = solved.
+4. **Export Animation** → save into `/Game/Audio/Dancers` as the voice's name plus
+   `_face`.
+5. In the settings dialog, **untick Enable Head Movement**, then **Create**.
+
+**Untick head movement every time — it does not stick between exports.** Baked head
+rotation turns her head out of a 38° portrait, which is the same reason `TalkDanceSpeed`
+is 0. Without it, her body still positions her head and only the face muscles are driven,
+which is exactly why the portrait survives. `Face_Archetype_` is the correct target
+skeleton; all five MetaHumans share it, so one target serves every agent.
+
+**Reuse one Performance asset** for all of them: change **Audio**, Process, Export. Six
+voices took about fifteen minutes, most of it waiting.
+
+#### What ships
+
+| Asset | What it is |
+|---|---|
+| `dancer_power_<name>_face` | her office speech, one per agent |
+| `dancer_power_face` | the nameless fallback, for any agent without her own |
+| `dancer_guide_nyra_face` | Nyra's city guide line |
+
+`/Game/Audio/Dancers` is already in **DirectoriesToAlwaysCook**, so the faces reach the
+pak on the same rule as the voices. No config change was needed — but that is the rule
+they depend on, so do not remove it.
+
+#### The code
+
+`UDancerAgentComponent::FindTalkFace` mirrors `FindTalkVoice` exactly, with `_face` on the
+end, so a new agent needs **no code** — bake the animation, name it right, and she uses it.
+`PlayTalkFace` is called on the line directly after `PlayTalkVoice`: the performance was
+solved *from* that recording, so they are already the same length and shape and only have
+to START together. `StopTalkFace` hands the Face component back to its Animation Blueprint
+on every exit path including an F-cancel, which is the half that would otherwise hide — a
+face taken and not returned looks fine until she dances again with a head that no longer
+follows her body.
+
+The old envelope-driven puppet mouth (`bTalkMouthMotion`) stays where it is, off. It is
+superseded, not deleted: the envelope and timing halves are correct and measured, and
+deleting working measured code to celebrate its replacement is how the next person loses
+the diagnosis along with the dead end.
 
 ---
 

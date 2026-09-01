@@ -351,6 +351,42 @@ private:
 	/** Per-agent take if she has one, else the take every agent shares. */
 	class USoundBase* FindTalkVoice() const;
 
+	/* ---------------------------------------------------------------------------
+	   HER FACE SAYS THE WORDS (2026-09-01).
+
+	   The long note on bTalkMouthMotion below explains why C++ cannot move a MetaHuman's
+	   mouth: the jaw is a joint driven by RigLogic from control curves, and every runtime
+	   write is discarded on the next evaluation. That note also names the one route that
+	   works — MetaHuman Animator's audio-driven animation, which BAKES those curves into
+	   an Anim Sequence in the editor. It goes THROUGH RigLogic instead of fighting it.
+
+	   So the same ElevenLabs clip now produces two assets that ship side by side:
+
+	       dancer_guide_nyra          the voice
+	       dancer_guide_nyra_face     her face saying it
+
+	   Same folder, same naming rule, same fallback: FindTalkFace is FindTalkVoice with
+	   "_face" on the end. An agent whose face has not been baked yet simply has no
+	   animation and the close-up runs exactly as it did before — no warning, because a
+	   missing face performance is an expected state on a machine that has not made one,
+	   the same as a missing recording.
+
+	   HEAD MOVEMENT IS DELIBERATELY NOT BAKED IN. The export dialog offers it and it is
+	   left unticked: the shot frames her at 38 degrees, and a head that turns while she
+	   talks leaves the frame — the same reason TalkDanceSpeed is 0. Because the anim
+	   carries no head rotation, her body still positions her head and only the face
+	   muscles are driven, which is why the portrait survives. Verified on Nyra in L_City
+	   before any of this was written. */
+
+	/** Her baked face performance if one exists, else null. Silence is not a fault. */
+	class UAnimSequence* FindTalkFace() const;
+
+	/** Start her face performance on the Face mesh; remembers the mode to restore. */
+	void PlayTalkFace();
+
+	/** Put the Face mesh back on its own AnimBP, so it copies the body's pose again. */
+	void StopTalkFace();
+
 	/** TalkLine with {0} replaced by her name — what the per-agent recording says. */
 	FString GetSpokenLine() const;
 
@@ -446,6 +482,28 @@ private:
 	/** Her voice, while it is playing. Stopped when the shot ends so F cuts her off mid-word. */
 	UPROPERTY(Transient)
 	TObjectPtr<class UAudioComponent> TalkAudio;
+
+	/* WHAT THE FACE WAS DOING BEFORE SHE SPOKE, so it can be handed back exactly.
+
+	   The Face mesh normally runs its own Animation Blueprint, whose graph copies the
+	   body's pose — that is what keeps her head on her neck while she dances. Playing an
+	   Anim Sequence on it switches the component to single-node mode and that graph stops.
+	   Harmless for the length of the shot, because the body is frozen anyway
+	   (TalkDanceSpeed is 0), but it must be given back or her head stops following her
+	   dance for the rest of the game.
+
+	   The MODE is read off the component rather than assumed to be AnimationBlueprint.
+	   Reading it costs one line and survives somebody configuring a dancer differently;
+	   assuming it is the sort of thing that works on all five agents until it doesn't. */
+	bool bFacePlaying = false;
+
+	/* The Face component's animation mode before the performance took it over, held as a
+	   raw uint8 and cast back in the .cpp. EAnimationMode lives in SkeletalMeshComponent.h
+	   and this header goes out of its way to forward-declare USkeletalMeshComponent rather
+	   than pull that in; one stored byte is not worth breaking that. 0 is
+	   AnimationBlueprint, which is also the value we would guess — but it is READ off the
+	   component, never assumed. */
+	uint8 SavedFaceMode = 0;
 
 	/**
 	 * How long THIS close-up holds — GreetingSeconds, or the voice clip plus its tail if

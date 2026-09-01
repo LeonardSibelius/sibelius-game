@@ -175,6 +175,12 @@ namespace
 	   it wanted. */
 	const TCHAR* const GuideVoiceName = TEXT("dancer_guide");
 
+	/* THE FACE PERFORMANCE IS THE VOICE ASSET'S NAME WITH THIS ON THE END, and that is the
+	   whole convention: bake dancer_power_kaia.uasset in MetaHuman Animator, save the
+	   result as dancer_power_kaia_face beside it, and Kaia's face starts saying her line
+	   with no code change at all. See the header. */
+	const TCHAR* const FaceSuffix = TEXT("_face");
+
 	int32 FindBoneExact(const USkeletalMeshComponent& Mesh, const TCHAR* const* Names, int32 NameCount)
 	{
 		for (int32 n = 0; n < NameCount; ++n)
@@ -728,6 +734,13 @@ void UDancerAgentComponent::EndTalkShot()
 		}
 	}
 	ForceFaceLOD(false);
+
+	/* BEFORE the early-out below, not after. EndTalkShot returns early when there was no
+	   shot to end, and F-cancelling her mid-sentence comes through here too — the face has
+	   to be handed back on EVERY path out, or one cancelled greeting leaves her head
+	   detached from her dance for the rest of the session. StopTalkFace is idempotent, so
+	   calling it on the paths that never took the face costs nothing. */
+	StopTalkFace();
 	if (bSavedActorRotation)
 	{
 		TeleportOwnerYaw(SavedActorRotation);
@@ -876,6 +889,15 @@ void UDancerAgentComponent::Greet()
 	bMouthDiagLogged = false;
 	const float VoiceSeconds = PlayTalkVoice();
 
+	/* THE SAME LINE OF CODE STARTS BOTH CLOCKS, and that is the entire trick.
+
+	   The performance was solved FROM this recording, so they are the same length and the
+	   same shape — they only have to start together. Anywhere else (BeginTalkShot, a
+	   timer, the level) is a second start time that can drift, and drift here reads as
+	   bad lip sync rather than as the timing bug it is. Voice then face, adjacent, no
+	   branch between them. */
+	PlayTalkFace();
+
 	TalkHoldSeconds = FMath::Max(GreetingSeconds, VoiceSeconds + TalkTailSeconds);
 
 	if (ASibeliusHUD* HUD = GetSibeliusHUD())
@@ -936,6 +958,88 @@ USoundBase* UDancerAgentComponent::FindTalkVoice() const
 	const FString Shared = FString::Printf(TEXT("%s/%s.%s"),
 		VoiceFolder, Base, Base);
 	return LoadObject<USoundBase>(nullptr, *Shared, nullptr, LOAD_NoWarn | LOAD_Quiet);
+}
+
+UAnimSequence* UDancerAgentComponent::FindTalkFace() const
+{
+	// Deliberately the same shape as FindTalkVoice, so the two can never disagree about
+	// which agent they are serving: her own take first, then the shared one.
+	const TCHAR* const Base = IsGuide() ? GuideVoiceName : SharedVoiceName;
+
+	const FString Own = AgentName.ToLower();
+	if (!Own.IsEmpty())
+	{
+		const FString Path = FString::Printf(TEXT("%s/%s_%s%s.%s_%s%s"),
+			VoiceFolder, Base, *Own, FaceSuffix, Base, *Own, FaceSuffix);
+		if (UAnimSequence* Mine = LoadObject<UAnimSequence>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet))
+		{
+			return Mine;
+		}
+	}
+
+	const FString Shared = FString::Printf(TEXT("%s/%s%s.%s%s"),
+		VoiceFolder, Base, FaceSuffix, Base, FaceSuffix);
+	return LoadObject<UAnimSequence>(nullptr, *Shared, nullptr, LOAD_NoWarn | LOAD_Quiet);
+}
+
+void UDancerAgentComponent::PlayTalkFace()
+{
+	UWorld* World = GetWorld();
+	if (!World || !World->IsGameWorld())
+	{
+		return;
+	}
+
+	USkeletalMeshComponent* Face = FindFaceMesh();
+	if (!Face)
+	{
+		return;
+	}
+
+	UAnimSequence* Performance = FindTalkFace();
+	if (!Performance)
+	{
+		/* NOT A WARNING. Four of the five agents have no baked face yet, and the close-up
+		   is complete without one — she still turns, still speaks, still holds the frame.
+		   Logging a fault for every one of them would train the reader to skim the log,
+		   which is how the real faults get missed. Display, once, and only when she
+		   HAS one, is below. */
+		return;
+	}
+
+	// Read it, do not assume it. See the header on SavedFaceMode.
+	if (!bFacePlaying)
+	{
+		SavedFaceMode = static_cast<uint8>(Face->GetAnimationMode());
+	}
+
+	/* NOT LOOPING. The voice plays once; a looping face would carry on mouthing the line
+	   into the tail of silence and out through the camera's flight home. When the
+	   performance runs out she simply holds her last expression, which is what a person
+	   does when they finish a sentence. */
+	Face->PlayAnimation(Performance, /*bLooping=*/false);
+	bFacePlaying = true;
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s's face performs (%s, %.2fs)"),
+		*AgentName, *Performance->GetName(), Performance->GetPlayLength());
+}
+
+void UDancerAgentComponent::StopTalkFace()
+{
+	if (!bFacePlaying)
+	{
+		return;   // idempotent: CancelGreeting reaches EndTalkShot on every F press
+	}
+	bFacePlaying = false;
+
+	if (USkeletalMeshComponent* Face = FindFaceMesh())
+	{
+		/* HANDING THE FACE BACK IS THE HALF THAT MATTERS. Taking it is visible
+		   immediately; giving it back wrong is invisible until she is dancing again with
+		   a head that no longer follows her body — a bug that would show up three rooms
+		   later and look like something else entirely. */
+		Face->SetAnimationMode(static_cast<EAnimationMode::Type>(SavedFaceMode));
+	}
 }
 
 float UDancerAgentComponent::PlayTalkVoice()
