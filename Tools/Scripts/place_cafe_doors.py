@@ -51,24 +51,49 @@ DELI_DOOR = unreal.Vector(2374.075928, 1475.929565, 0.0)
 STEP_OUT = 90.0     # cm from the shop door toward the plaza
 TRIGGER_H = 110.0   # centre height, so a 2.2 m box spans floor to lintel
 
+# The arrival PlayerStart sits further out than the door trigger, so stepping back into
+# the city does not put him standing inside the volume he just used.
+ARRIVE_OUT = 200.0  # cm from the shop door toward the plaza
+STAND_H = 100.0     # capsule centre above the pavement
+ARRIVE_TAG = "DeliDoor"   # must match UDancerAgentComponent::GuideStage1StartTag
+
 r = {}
 
 
-def make_doorway(eas, label, where, target, prompt, tag):
-    """An ACathedralDoor that is felt but not seen."""
+def make_doorway(eas, label, where, target, prompt, tag, arrival=""):
+    """An ACathedralDoor that is felt but not seen.
+
+    `arrival` names a PlayerStartTag in the TARGET level. Empty (the default, and every
+    other door in the game) means the target's ordinary spawn.
+    """
     cls = unreal.load_class(None, "/Script/SibeliusGame.CathedralDoor")
     if not cls:
         raise Exception("CathedralDoor class not found - editor on an old build?")
 
     # Idempotent by TAG, never by label: labels do not cook, and this one has to survive
     # being re-run without piling up duplicates.
+    #
+    # A HAND-MOVED DOOR STAYS WHERE THE HUMAN PUT IT. The computed position is a first
+    # guess from the PlayerStart, and the cafe's guess was wrong - Walt dragged that door
+    # to where it actually belongs and it worked. Re-running this used to throw that away
+    # and silently put it back in the wall, which is the worst kind of tool: one that
+    # undoes your work while reporting success. So the old transform is inherited, and
+    # only the PROPERTIES are refreshed.
     cleared = 0
+    kept = None
     for a in eas.get_all_level_actors():
         if tag in [str(t) for t in a.get_editor_property("tags")]:
+            if kept is None:
+                kept = (a.get_actor_location(), a.get_actor_rotation())
             eas.destroy_actor(a)
             cleared += 1
 
+    if kept is not None:
+        where = kept[0]
+
     door = eas.spawn_actor_from_class(cls, where)
+    if kept is not None:
+        door.set_actor_rotation(kept[1], False)
     door.set_actor_label(label)
     door.set_editor_property("tags", [unreal.Name(tag)])
     door.set_editor_property("TargetLevelName", unreal.Name(target))
@@ -76,6 +101,7 @@ def make_doorway(eas, label, where, target, prompt, tag):
     door.set_editor_property("bRequireBattleToll", False)
     door.set_editor_property("bRequireGenerateUse", False)
     door.set_editor_property("PromptText", unreal.Text(prompt))
+    door.set_editor_property("ArrivalTag", unreal.Name(arrival))
 
     mesh = door.get_component_by_class(unreal.StaticMeshComponent)
     body = {"had_component": mesh is not None}
@@ -92,6 +118,7 @@ def make_doorway(eas, label, where, target, prompt, tag):
         got = mesh.get_editor_property("static_mesh")
         body["mesh"] = got.get_name() if got else None
 
+    body["kept_hand_placed_transform"] = kept is not None
     return door, cleared, body
 
 
@@ -132,6 +159,49 @@ try:
             "target": str(door.get_editor_property("TargetLevelName")),
             "interactive": bool(door.get_editor_property("bInteractive")),
         }
+        # ---- and the spot he arrives on when he comes back out -----------
+        #
+        # WHY A SECOND PLAYERSTART. Coming out of the deli used to drop him at the city's
+        # default spawn, a street away on the plaza - which is fine when [>] from the
+        # meadow is the only way in, and wrong the moment there are two doors. Nyra
+        # "waiting for him outside" means nothing if outside is somewhere else.
+        #
+        # ONE MARKER DEFINES THE WHOLE MEETING. The cafe's return door names the tag,
+        # ASibeliusGameGameMode::ChoosePlayerStart finds this actor by it, and
+        # UDancerAgentComponent::ApplyGuideStage stands Nyra in front of the same actor.
+        # Drag it in the editor and the arrival, the facing and the guide all move
+        # together - there is no second copy of the position to forget.
+        start_where = unreal.Vector(DELI_DOOR.x + dx / length * ARRIVE_OUT,
+                                    DELI_DOOR.y + dy / length * ARRIVE_OUT,
+                                    DELI_DOOR.z + STAND_H)
+        # Looking the way he stepped: out of the shop, toward the plaza. Nyra reads this
+        # rotation to place herself in his view and turn back to face him.
+        facing = unreal.Rotator(0.0, 0.0,
+                                unreal.MathLibrary.find_look_at_rotation(
+                                    DELI_DOOR, start_where).yaw)
+
+        cleared_starts = 0
+        for a in eas.get_all_level_actors():
+            if ARRIVE_TAG in [str(t) for t in a.get_editor_property("tags")]:
+                eas.destroy_actor(a)
+                cleared_starts += 1
+
+        ps = eas.spawn_actor_from_class(unreal.PlayerStart, start_where, facing)
+        ps.set_actor_label("Start_DeliDoor")
+        ps.set_editor_property("tags", [unreal.Name(ARRIVE_TAG)])
+        # PlayerStartTag is the property the GameMode matches - NOT the actor tag above,
+        # which only exists so re-running this does not pile up duplicates.
+        ps.set_editor_property("player_start_tag", unreal.Name(ARRIVE_TAG))
+
+        r["arrival"] = {
+            "cleared": cleared_starts,
+            "at": [round(start_where.x, 1), round(start_where.y, 1), round(start_where.z, 1)],
+            "yaw": round(facing.yaw, 1),
+            # Read back, not assumed: a tag that silently failed to set would send him to
+            # the plaza and leave Nyra talking to an empty pavement.
+            "player_start_tag": str(ps.get_editor_property("player_start_tag")),
+        }
+
         r["next"] = ("Now open L_Cafe and run this again for the way back. And add "
                      "L_Cafe to MapsToCook before packaging, or [E] finds nothing.")
 
@@ -144,7 +214,7 @@ try:
 
         door, cleared, body = make_doorway(
             eas, "Door_CafeReturn", where, "L_City",
-            "Back to the street [E]", "CafeDoor")
+            "Back to the street [E]", "CafeDoor", arrival=ARRIVE_TAG)
 
         r["half"] = "cafe"
         r["cleared"] = cleared
@@ -153,8 +223,12 @@ try:
         r["readback"] = {
             "target": str(door.get_editor_property("TargetLevelName")),
             "interactive": bool(door.get_editor_property("bInteractive")),
+            # The whole point of the cafe half now. If this reads None, coming out of the
+            # deli lands on the plaza and Nyra is waiting round the corner for nobody.
+            "arrival_tag": str(door.get_editor_property("ArrivalTag")),
         }
-        r["next"] = "Play it: walk to the deli, press E, look around, press E to come back."
+        r["next"] = ("Play it: walk to the deli, press E, look around, press E to come "
+                     "back - and check you come out on the pavement, not the plaza.")
 
     else:
         raise Exception("open %s or %s first - this level is %s"

@@ -88,6 +88,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
 	TArray<TObjectPtr<UAnimSequence>> Dances;
 
+	/* STANDING STILL, for a guide who is past her dancing stage.
+
+	   GS_Idle_MH — a Greystone idle already retargeted onto the MetaHuman skeleton, in the
+	   same gitignored folder as the dances and hard-referenced on the CDO for the same
+	   reason: a soft path resolves in PIE and is missing from the pak.
+
+	   It is deliberately NOT one of the ten dances. IsKnownDance is what the subsystem's
+	   behaviour scan tests, and an idle that counted as a dance would make every standing
+	   MetaHuman in the city an AI agent. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	TObjectPtr<UAnimSequence> IdleAnim;
+
 	/** How long her greeting stays on screen (seconds). Also how long the talk close-up holds. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.5"))
 	float GreetingSeconds = 7.0f;
@@ -134,6 +146,53 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
 	FString GuideLine = TEXT("Hello, Leonard.  It is good to see you in Trans Human City.  Jacob's Downtown Deli is surprisingly adequate.  It is on the corner right behind me.  Have some food before you explore.");
 
+	/* ================================================================================
+	   THE GUIDE HAS STAGES NOW (Walt, 2026-09-01).
+
+	   "When the player exits the deli let us have Nyra waiting for him outside in idle
+	   pose. No more dancing."
+
+	   Stage 0  no City.Deli grant   plaza, dancing, GuideLine — go and eat
+	   Stage 1  grant claimed        outside the deli, idle, GuideLine2 — go and build
+
+	   THE STAGE IS READ ONCE, AT BeginPlay, and never changes while the level is open.
+	   That is not a simplification, it is the reason there is no walking to write: the
+	   only way to claim the grant is to be inside L_Cafe, and coming back out RELOADS
+	   L_City. She cannot be on the plaza when the grant lands, because he cannot be on
+	   the plaza when the grant lands. By the time anybody sees her again the world has
+	   been rebuilt, and "waiting for him outside" is just where she was placed.
+
+	   Walt asked whether she should walk there or pop up. She does neither: the question
+	   only exists if the player is watching, and he is in a different level. That decision
+	   comes back if a stage ever changes with him standing there.
+	   ================================================================================ */
+
+	/** Stage 1: the invitation to Generate. Matches dancer_guide2_nyra — change both. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	FString GuideLine2 = TEXT("There you are, Leonard.  Now I will show you what this city is for.  Look at the empty lawn across the street.  In your old life you would have filled it one brick at a time.  You do not do that any more.  Stand on the grass, and Generate.");
+
+	/* WHERE SHE WAITS AT STAGE 1 — found in the level, not written down here.
+
+	   The first draft of this was a world-space FVector set by the placement script from
+	   the deli door's coordinates. That works and it is brittle: two files would hold the
+	   same spot, and moving the door in the editor would leave her standing in the road.
+
+	   The travel system already solved this. UTravelTransitionSubsystem::Travel takes an
+	   ARRIVAL TAG, and a GameMode's ChoosePlayerStart matches it against PlayerStartTag —
+	   which is how the carousel already drops the player at a chosen spot. So the deli's
+	   return door names a tag, L_City carries a PlayerStart wearing it, and the player
+	   steps out of the cafe onto that exact spot.
+
+	   She then simply stands in front of it. One marker in the level defines both where he
+	   arrives and where she is waiting, so they cannot drift apart: drag the PlayerStart
+	   and the whole meeting moves with it. */
+	UPROPERTY(EditAnywhere, Category="Dancer")
+	FName GuideStage1StartTag = TEXT("DeliDoor");
+
+	/** Centimetres in front of that PlayerStart. Far enough to see her, close enough to E. */
+	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0"))
+	float GuideStage1Distance = 220.0f;
+
 	/* WHICH DANCERS ARE GUIDES: the ones carrying this ACTOR TAG.
 
 	   Not a level-name check and not a per-instance property, for the two reasons this
@@ -152,6 +211,28 @@ public:
 	/** True when the owning actor carries GuideTag - she guides rather than grants. */
 	UFUNCTION(BlueprintPure, Category="Dancer")
 	bool IsGuide() const;
+
+	/**
+	 * 0 before he has been in the deli, 1 after. Always 0 for a dancer who is not a guide.
+	 *
+	 * One function decides the words, the recording, the face, the pose and the place, so
+	 * a half-advanced Nyra standing outside the deli still inviting him to lunch is not a
+	 * state this can reach.
+	 */
+	UFUNCTION(BlueprintPure, Category="Dancer")
+	int32 GuideStage() const;
+
+	/* SHE STOPS DANCING WITHOUT STOPPING BEING AN AGENT — the catch in this whole feature.
+
+	   UDancerAgentSubsystem decides what an AI agent IS by watching what it does: any
+	   skeletal mesh playing one of the ten Morro dances. An idle Nyra is, by that
+	   definition, a statue — the scan would walk past her and she would lose E entirely.
+
+	   The system already allows for it. The scan's first line skips any actor that
+	   ALREADY has this component ("auto-adopted earlier, or added by hand"), so
+	   place_city_dancers.py gives her one explicitly and she never has to dance to
+	   qualify. Behaviour-detection stays exactly as it was for everybody else. */
+	void ApplyGuideStage();
 
 	/** Beat of silence held on her face after the voice clip ends, before the camera lets go. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0"))

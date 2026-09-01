@@ -113,7 +113,7 @@ void ACathedralDoor::Interact_Implementation(AActor* Interactor)
 		return;
 	}
 
-	UTravelTransitionSubsystem::Travel(this, TargetLevelName);
+	UTravelTransitionSubsystem::Travel(this, TargetLevelName, ArrivalTag);
 }
 
 FText ACathedralDoor::GetInteractionPrompt_Implementation() const

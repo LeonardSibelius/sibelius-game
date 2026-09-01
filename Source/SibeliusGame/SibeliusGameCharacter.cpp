@@ -123,6 +123,24 @@ void ASibeliusGameCharacter::BeginPlay()
 	   so she never reacts to a power the gate refused. Reacting to something that did not
 	   happen would be worse than saying nothing. */
 	OnPowerVerbUsed.AddUObject(this, &ASibeliusGameCharacter::HandlePowerUsedForHall);
+
+	/* WALKING IN IS THE WHOLE REQUIREMENT. Standing in the cafe at all is what moves Nyra
+	   on to her second speech — no purchase, no trigger volume, no exit hook. Leaving the
+	   deli reloads L_City, and she reads this grant when she gets there, so "waiting for
+	   him outside" needs nothing more than a flag that was already true.
+
+	   RemovePIEPrefix, or this is true in a packaged build and false in PIE, which is the
+	   worst way round for finding out. */
+	if (const UWorld* World = GetWorld())
+	{
+		if (FName(*UWorld::RemovePIEPrefix(World->GetMapName())) == CafeLevelName)
+		{
+			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+			{
+				Progression->ClaimOneTimeGrant(DeliVisitedGrant);
+			}
+		}
+	}
 }
 
 void ASibeliusGameCharacter::HandlePowerUsedForHall(EPowerVerb Verb)
@@ -508,6 +526,14 @@ bool ASibeliusGameCharacter::IsCityOpen(const UObject* WorldContext)
 {
 	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(WorldContext);
 	return Progression && Progression->HasClaimedGrant(ABattleArrival::BattleWonGrant);
+}
+
+const FName ASibeliusGameCharacter::DeliVisitedGrant(TEXT("City.Deli"));
+
+bool ASibeliusGameCharacter::HasVisitedDeli(const UObject* WorldContext)
+{
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(WorldContext);
+	return Progression && Progression->HasClaimedGrant(DeliVisitedGrant);
 }
 
 /* [>] - AND WHEN IT REFUSES, IT SAYS WHERE TO GO NEXT.

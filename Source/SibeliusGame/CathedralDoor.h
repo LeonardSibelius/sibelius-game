@@ -44,6 +44,17 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
 	FName TargetLevelName = TEXT("L_Cathedral");
 
+	/* WHERE IN THE TARGET LEVEL HE LANDS. None = the level's default PlayerStart, which
+	   is every door's behaviour up to now and stays the default here.
+
+	   Set it and ASibeliusGameGameMode::ChoosePlayerStart looks for a PlayerStart wearing
+	   that tag instead — the same mechanism AHiddenDoor already passes and the carousel
+	   already honours. The deli's return door uses it so that stepping out of Jacob's puts
+	   him back on the pavement he went in from, rather than at the plaza spawn a street
+	   away, which is what makes "Nyra waiting for him outside" mean anything. */
+	UPROPERTY(EditAnywhere, Category = "Cathedral Door")
+	FName ArrivalTag;
+
 	// SIB-43 / CL10: prompt promoted to a property so the cathedral's RETURN
 	// door can say where it goes. Default preserves the attic door verbatim.
 	UPROPERTY(EditAnywhere, Category = "Cathedral Door")

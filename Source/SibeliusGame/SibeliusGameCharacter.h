@@ -143,6 +143,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Travel")
 	FName CityLevelName = TEXT("L_City");
 
+	/** Jacob's Downtown Deli's interior. Arriving here is what claims DeliVisitedGrant. */
+	UPROPERTY(EditAnywhere, Category = "Travel")
+	FName CafeLevelName = TEXT("L_Cafe");
+
 public:
 	ASibeliusGameCharacter();
 
@@ -292,6 +296,22 @@ public:
 	/** [>] - travel to the city, or explain what stands in the way. Public so the
 	    CONTROLS tab can ask the same question the key does. */
 	static bool IsCityOpen(const UObject* WorldContext);
+
+	/* HE WENT INTO THE DELI — the fact Nyra's second speech hangs on.
+
+	   Claimed on ARRIVAL in the cafe, not on eating anything. Walt: "he doesn't have to
+	   eat the burger or drink the coffee, maybe he isn't hungry." Walking in, looking at
+	   the ghost waiter and walking straight back out is the whole requirement.
+
+	   Claimed in BeginPlay by asking which level this is, rather than by a property on the
+	   deli door. The door route would put the grant's NAME in level data as well as in
+	   code — two copies of one string, which is the drift SibeliusControls exists to stop.
+	   The character already knows CityLevelName; knowing CafeLevelName too costs nothing
+	   and keeps the fact in exactly one place. */
+	static const FName DeliVisitedGrant;
+
+	/** True once he has been inside Jacob's. Persistent — it is a saved one-time grant. */
+	static bool HasVisitedDeli(const UObject* WorldContext);
 
 	SIBELIUSGAME_API bool IsAwayFromOfficeLevelName(const FString& RawLevelName) const;
 

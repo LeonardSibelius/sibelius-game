@@ -6,6 +6,7 @@
 #include "SibeliusGame.h"                  // LogSibeliusGame
 #include "DancerAgentSubsystem.h"          // the aim-assist registry
 #include "PowerGrant.h"                    // SPINE: she hands the power over
+#include "SibeliusGameCharacter.h"         // HasVisitedDeli - the guide's stage gate
 
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
@@ -17,7 +18,10 @@
 #include "Engine/SkeletalMesh.h"
 #include "GroomComponent.h"
 #include "Engine/World.h"
+#include "Components/CapsuleComponent.h"   // the PlayerStart's capsule - she stands on the floor
+#include "EngineUtils.h"                   // TActorIterator - finding her stage-1 marker
 #include "GameFramework/Actor.h"
+#include "GameFramework/PlayerStart.h"     // the tagged arrival spot she waits beside
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -173,13 +177,38 @@ namespace
 	   that is missing too she is silent - which is the same graceful nothing an
 	   unrecorded agent has always produced, and PlayTalkVoice logs exactly which asset
 	   it wanted. */
-	const TCHAR* const GuideVoiceName = TEXT("dancer_guide");
 
 	/* THE FACE PERFORMANCE IS THE VOICE ASSET'S NAME WITH THIS ON THE END, and that is the
 	   whole convention: bake dancer_power_kaia.uasset in MetaHuman Animator, save the
 	   result as dancer_power_kaia_face beside it, and Kaia's face starts saying her line
 	   with no code change at all. See the header. */
 	const TCHAR* const FaceSuffix = TEXT("_face");
+
+	/* HER SECOND SPEECH IS A THIRD BASE NAME, not a special case bolted onto the first.
+
+	   dancer_guide_nyra   -> go and eat
+	   dancer_guide2_nyra  -> go and build
+
+	   Same folder, same per-agent fallback, same _face rule. Stage 2 of a future guide is
+	   dancer_guide3 and one more entry here — which is the point of picking the base name
+	   from a table rather than from an if. */
+	const TCHAR* const GuideVoiceNames[] =
+	{
+		TEXT("dancer_guide"),
+		TEXT("dancer_guide2"),
+	};
+
+	/** The idle a guide stands in once she is past dancing. See the header on IdleAnim. */
+	const TCHAR* const IdlePath =
+		TEXT("/Game/Characters/Retargeting/Combat/GS_Idle_MH.GS_Idle_MH");
+
+	/** Clamped, so a stage this build has no recording for still speaks her last line
+	    rather than reading off the end of the table and crashing. */
+	const TCHAR* GuideVoiceBase(int32 Stage)
+	{
+		const int32 Last = UE_ARRAY_COUNT(GuideVoiceNames) - 1;
+		return GuideVoiceNames[FMath::Clamp(Stage, 0, Last)];
+	}
 
 	int32 FindBoneExact(const USkeletalMeshComponent& Mesh, const TCHAR* const* Names, int32 NameCount)
 	{
@@ -276,6 +305,29 @@ UDancerAgentComponent::UDancerAgentComponent()
 	{
 		GreetingAnim = GreetFinder.Object;
 	}
+
+	/* THE IDLE IS NOT LOADED HERE, AND THAT IS THE WHOLE POINT (2026-09-01).
+
+	   It was, for about ten minutes, as an FObjectFinder sitting right below the greeting
+	   one — the obvious place, matching the dances above it. It took the editor down on
+	   STARTUP, twice, before a window ever appeared:
+
+	     EXCEPTION_ACCESS_VIOLATION reading 0x0
+	     ConstructorHelpersInternal::FindOrLoadObject<UAnimSequence>()  ConstructorHelpers.h:35
+	     UDancerAgentComponent::UDancerAgentComponent()                 DancerAgentComponent.cpp:309
+
+	   Line 35 of that header is the LoadObject call, so the fault is in loading
+	   GS_Idle_MH itself during CDO construction — not in the path, and not in the finder.
+	   The dances survive the same treatment; something about that Combat folder does not.
+
+	   A constructor is the worst possible place to find that out. It runs before the
+	   editor exists, so a bad asset there is not a broken animation, it is a project that
+	   will not open — and the only way back is a code change and a full rebuild, which is
+	   a bad afternoon for anyone who did not write the line.
+
+	   So the idle loads on demand instead, in ApplyGuideStage, in a running world. The
+	   cooking that this reference used to guarantee is now DirectoriesToAlwaysCook in
+	   DefaultGame.ini, which is the mechanism the voices already ship on. */
 }
 
 void UDancerAgentComponent::EnsureGreetingAnim()
@@ -340,6 +392,13 @@ void UDancerAgentComponent::BeginPlay()
 			Sub->RegisterDancer(this);
 		}
 	}
+
+	/* LAST, AND AFTER THE REGISTRY. ApplyGuideStage stops her dancing, and the behaviour
+	   scan decides what an agent IS by what it is dancing — so she has to be a registered
+	   agent BEFORE she stops, or she is a statue that nobody adopted. Order is the whole
+	   safety here; a hand-placed component makes her permanent, but this line makes the
+	   order legible to whoever moves it. */
+	ApplyGuideStage();
 }
 
 void UDancerAgentComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -923,6 +982,118 @@ bool UDancerAgentComponent::IsGuide() const
 	return Owner && !GuideTag.IsNone() && Owner->ActorHasTag(GuideTag);
 }
 
+int32 UDancerAgentComponent::GuideStage() const
+{
+	/* A DANCER WHO IS NOT A GUIDE IS ALWAYS STAGE 0. Kaia in the office has been in the
+	   deli too — the grant is the player's, not hers — and without this she would start
+	   inviting him to Generate buildings from behind a desk in a different world. */
+	if (!IsGuide())
+	{
+		return 0;
+	}
+	return ASibeliusGameCharacter::HasVisitedDeli(this) ? 1 : 0;
+}
+
+void UDancerAgentComponent::ApplyGuideStage()
+{
+	if (GuideStage() < 1)
+	{
+		return;   // stage 0 is the placed state: she is already where she should be
+	}
+
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return;
+	}
+
+	/* MOVE HER FIRST, POSE HER SECOND, and only move her if the level said where.
+
+	   No tagged PlayerStart means this level has not been set up for stage 1 yet, and the
+	   right answer then is to leave her exactly where she was placed. Falling back to a
+	   default position would put her at the world origin, which is precisely how three
+	   coffee cups vanished into the ground under Downtown West. Standing in the old spot
+	   with the new line is a visibly half-done feature; standing under the map is a
+	   missing character. */
+	bool bMoved = false;
+	if (!GuideStage1StartTag.IsNone())
+	{
+		for (TActorIterator<APlayerStart> It(Owner->GetWorld()); It; ++It)
+		{
+			if (It->PlayerStartTag != GuideStage1StartTag)
+			{
+				continue;
+			}
+
+			/* SHE STANDS IN FRONT OF WHERE HE APPEARS, FACING HIM. The PlayerStart's
+			   forward is the way he will be looking when the level finishes loading, so
+			   stepping that far along it puts her in his view without making him turn,
+			   and the opposite yaw means she is looking back at him when he arrives. */
+			/* DROP HER TO THE PAVEMENT. A PlayerStart's location is the CENTRE of its
+			   capsule — roughly a metre up, because that is where a standing player's
+			   middle is. Her actor origin is at her FEET. Placing one at the other left
+			   her hanging in the air outside the deli, which is what Walt saw first time.
+
+			   The half-height is read off the actor rather than assumed to be 88 or 96,
+			   so a PlayerStart someone has scaled still lands her on the ground. */
+			float FloorDrop = 0.0f;
+			if (const UCapsuleComponent* Capsule = It->GetCapsuleComponent())
+			{
+				FloorDrop = Capsule->GetScaledCapsuleHalfHeight();
+			}
+
+			const FVector Spot = It->GetActorLocation()
+				+ It->GetActorForwardVector() * GuideStage1Distance
+				- FVector(0.0f, 0.0f, FloorDrop);
+			const FRotator Facing(0.0f, It->GetActorRotation().Yaw + 180.0f, 0.0f);
+
+			Owner->SetActorLocationAndRotation(Spot, Facing,
+				/*bSweep=*/false, nullptr, ETeleportType::TeleportPhysics);
+			bMoved = true;
+			break;
+		}
+	}
+
+	if (!bMoved)
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Dancer] %s is at guide stage 1 but this level has no PlayerStart tagged "
+			     "'%s' - she stays where she was placed. Run place_cafe_doors.py."),
+			*AgentName, *GuideStage1StartTag.ToString());
+	}
+
+	/* LOADED HERE, NOT IN THE CONSTRUCTOR — see the long note there. LOAD_NoWarn|LOAD_Quiet
+	   because a missing idle is a warning we write ourselves below, with the path in it,
+	   rather than engine noise every time a guide reaches stage 1. */
+	if (!IdleAnim)
+	{
+		IdleAnim = LoadObject<UAnimSequence>(nullptr, IdlePath, nullptr,
+			LOAD_NoWarn | LOAD_Quiet);
+	}
+
+	// NO MORE DANCING (Walt). The body drops the Morro loop and stands.
+	if (USkeletalMeshComponent* Body = FindDanceMesh())
+	{
+		if (IdleAnim)
+		{
+			Body->PlayAnimation(IdleAnim, /*bLooping=*/true);
+		}
+		else
+		{
+			/* Warning, not silence, and the difference matters: a missing idle leaves her
+			   in whatever pose the mesh defaults to, which reads as a bug in the character
+			   rather than a missing asset. Name the asset so the log answers it. */
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Dancer] %s is at guide stage 1 with no IdleAnim - she will stand in "
+				     "her default pose. Expected %s"), *AgentName, IdlePath);
+		}
+	}
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Dancer] %s is guiding at stage %d%s."), *AgentName, GuideStage(),
+		bMoved ? TEXT(", waiting outside the deli") : TEXT(""));
+}
+
 FString UDancerAgentComponent::GetSpokenLine() const
 {
 	/* HER NAME IS IN THE LINE (Walt, 2026-08-25). "I am AI agent Kaia. I have granted
@@ -931,7 +1102,7 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	   dancer without her own take falls back to, including the one AFinaleAltar summons
 	   at the cathedral, and a fallback that confidently announces the wrong name is
 	   worse than one that announces none. */
-	FString Line = IsGuide() ? GuideLine : TalkLine;
+	FString Line = IsGuide() ? (GuideStage() >= 1 ? GuideLine2 : GuideLine) : TalkLine;
 	Line.ReplaceInline(TEXT("{0}"), *AgentName);
 	return Line;
 }
@@ -942,7 +1113,7 @@ USoundBase* UDancerAgentComponent::FindTalkVoice() const
 	// it must not spray the log every time the player talks to somebody.
 	// One switch decides both halves - the words and the recording - so a guide can
 	// never end up speaking the granting line or the other way round.
-	const TCHAR* const Base = IsGuide() ? GuideVoiceName : SharedVoiceName;
+	const TCHAR* const Base = IsGuide() ? GuideVoiceBase(GuideStage()) : SharedVoiceName;
 
 	const FString Own = AgentName.ToLower();
 	if (!Own.IsEmpty())
@@ -964,7 +1135,7 @@ UAnimSequence* UDancerAgentComponent::FindTalkFace() const
 {
 	// Deliberately the same shape as FindTalkVoice, so the two can never disagree about
 	// which agent they are serving: her own take first, then the shared one.
-	const TCHAR* const Base = IsGuide() ? GuideVoiceName : SharedVoiceName;
+	const TCHAR* const Base = IsGuide() ? GuideVoiceBase(GuideStage()) : SharedVoiceName;
 
 	const FString Own = AgentName.ToLower();
 	if (!Own.IsEmpty())
