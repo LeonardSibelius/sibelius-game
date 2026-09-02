@@ -15,6 +15,7 @@
 #include "GenerateTypes.generated.h"
 
 class UStaticMesh;
+class ABuildSite;
 
 // Why a request resolved or was refused. Refusals become an in-fiction Mrs. Hall line.
 UENUM()
@@ -52,6 +53,33 @@ struct FGenerateCatalogEntry : public FTableRowBase
 	// catalog doesn't hard-load every asset.
 	UPROPERTY(EditAnywhere, Category = "Generate")
 	TSoftObjectPtr<UStaticMesh> Mesh;
+
+	/* ===========================================================================
+	   AN ENTRY CAN SPAWN A CLASS INSTEAD OF A MESH (2026-09-01, docs/SPACEPORT_PLAN.md).
+
+	   Until now the catalog's ceiling was one static mesh per row. That is fine for a
+	   ladder and useless for anything that has to DO something — the spaceport that
+	   assembles itself, and later the rocket that leaves. Set this and the class is
+	   spawned; leave it empty and the row behaves exactly as it always has. Every
+	   existing row is unaffected, because empty is the old behaviour.
+
+	   WHY ABuildSite AND NOT AActor. The plan first said AActor, which was wrong, and
+	   reading the spawn path is what corrected it. EVERYTHING Generate creates is an
+	   ABuildSite, and that is not incidental — the site is what carries:
+
+	       IBranchable      Test-Drive can branch it and discard a failure for free
+	       MarkGenerated    provenance, so Deploy knows it was generated and from which row
+	       the GUID          stable identity across a save and a re-spawn
+
+	   A plain AActor would spawn, look right, and then quietly sit outside branch,
+	   Deploy and save — three systems this game is built on. Constraining the class to
+	   ABuildSite means ASpaceport INHERITS all of it instead of re-implementing it,
+	   which is also exactly what the plan wants Test-Drive to do to a failed launch.
+
+	   Soft, like Mesh, so the catalog does not hard-load every class at startup.
+	   =========================================================================== */
+	UPROPERTY(EditAnywhere, Category = "Generate")
+	TSoftClassPtr<ABuildSite> ActorClass;
 
 	// Charged against the per-area generation budget (the in-fiction economy).
 	UPROPERTY(EditAnywhere, Category = "Generate")

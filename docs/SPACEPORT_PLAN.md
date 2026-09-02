@@ -139,32 +139,56 @@ mesh.
 
 ---
 
-## Phase A — teach the catalog to spawn an actor
+## Phase A — teach the catalog to spawn an actor — **DONE 2026-09-01**
 
-`FGenerateCatalogEntry` holds `TSoftObjectPtr<UStaticMesh> Mesh`. Give it a
+`FGenerateCatalogEntry` holds `TSoftObjectPtr<UStaticMesh> Mesh`. It now has a
 sibling:
 
 ```cpp
-/** Spawn this class instead of Mesh. Either one, never both — the actor wins. */
 UPROPERTY(EditAnywhere, Category = "Generate")
-TSoftClassPtr<AActor> ActorClass;
+TSoftClassPtr<ABuildSite> ActorClass;
 ```
 
-`UGenerateComponent` spawns the class when it is set and falls back to the mesh
-when it is not. Keywords, cost, budget, refusal and provenance all keep
-working untouched, and **every existing catalog row is unaffected.**
+**`ABuildSite`, not `AActor` — rev 2 said `AActor` and rev 2 was wrong.**
+Reading the spawn path is what corrected it. *Everything* Generate creates is an
+`ABuildSite`, and that is not incidental: the site is what carries `IBranchable`
+(so Test-Drive can branch a launch and discard a failure for free),
+`MarkGenerated` provenance (so Deploy knows which row made it), and a stable
+GUID across save and re-spawn. A plain `AActor` would have spawned, looked
+right, and quietly sat outside branch, Deploy and save — three systems this game
+is built on. Constrained to `ABuildSite`, `ASpaceport` **inherits** all of it.
 
-An afternoon. It unlocks everything below it, and it is worth doing whether or
-not a single rocket is ever built — "Generate can only make one static mesh"
-is the real ceiling on that power.
+Two spawn paths existed and each named `ABuildSite::StaticClass()` itself:
+`SpawnEntry` (live) and `RespawnGeneratedSite` (reload). That is two copies of
+one fact, and harmless only while there is exactly one class. The day a row
+spawns a subclass, they can disagree — generate a spaceport, save, reload, and
+get a bare BuildSite wearing the spaceport's `EntryId`. **`ResolveSiteClass()`
+is now the only place the question is answered**, and a class that fails to load
+falls back to a plain site with a warning rather than refusing a request the
+player already paid for.
+
+`AuthorGeneratedSite` skips mesh authoring for a class-backed row: `ASpaceport`
+builds itself out of dozens of meshes, and stamping one catalog mesh onto its
+`FinalMesh` would overwrite the scale and rotation its own construction needs.
+
+**Every existing catalog row is unaffected** — an empty `ActorClass` is exactly
+the old behaviour. Keywords, cost, budget, refusal and provenance all unchanged.
+
+It was an afternoon, it unlocks everything below it, and it was worth doing
+whether or not a single rocket is ever built — "Generate can only make one
+static mesh" was the real ceiling on that power.
 
 ---
 
 ## Phase B — `ASpaceport`, the thing that assembles
 
-A C++ actor that raises its parts out of the ground over roughly eight seconds,
-implements `IBranchable` (empty / rocket on pad / launched), and owns the pad
-the rocket spawns onto.
+`ASpaceport : public ABuildSite` — a C++ actor that raises its parts out of the
+ground over roughly eight seconds and owns the pad the rocket spawns onto.
+
+Extending `ABuildSite` rather than `AActor` is what Phase A bought: branch state
+(empty / rocket on pad / launched) is a `uint8` the site already
+captures and restores, so **Test-Drive works on a launch the day the class
+exists**, with no branching code written for it.
 
 **Drive it from a looping FTimerManager timer, NOT `TickComponent`.** This is
 not a preference. `UDancerAgentComponent` spent three rounds of debugging on a

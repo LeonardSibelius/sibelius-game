@@ -23,6 +23,33 @@
 #include "Misc/App.h"               // P2.5: FApp::CanEverRenderAudio (headless guard)
 #include "UObject/UObjectGlobals.h" // P2.5: LoadObject (soft-load the clip by path)
 
+/* WHICH CLASS THIS ROW SPAWNS — one answer, used by BOTH spawn paths.
+
+   SpawnEntry (live) and RespawnGeneratedSite (reload) each used to name
+   ABuildSite::StaticClass() themselves. That was two copies of one fact, and the day a
+   row spawns a subclass is the day they can disagree: generate a spaceport, save, reload,
+   and get a bare BuildSite with the spaceport's EntryId on it. This function is the only
+   place the question is answered.
+
+   A class that fails to load falls back to a plain ABuildSite rather than refusing. The
+   row still resolved, the budget was still charged, and a player who typed a valid word
+   should get SOMETHING - the log says which class went missing. */
+static TSubclassOf<ABuildSite> ResolveSiteClass(const FGenerateCatalogEntry& Entry)
+{
+	if (!Entry.ActorClass.IsNull())
+	{
+		if (UClass* Loaded = Entry.ActorClass.LoadSynchronous())
+		{
+			return Loaded;
+		}
+		UE_LOG(LogTemp, Warning,
+			TEXT("[Generate] '%s' names ActorClass '%s' which failed to load - "
+			     "falling back to a plain BuildSite."),
+			*Entry.EntryId.ToString(), *Entry.ActorClass.ToString());
+	}
+	return ABuildSite::StaticClass();
+}
+
 // SIB-30 P3 — shared generated-site authoring. ONE place that turns a catalog entry into a
 // built, tagged ABuildSite, so live generation and re-spawn-on-load can't diverge.
 void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry)
@@ -34,8 +61,14 @@ void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry)
 
 	// Author the catalog mesh + per-entry transform onto the buildable's FinalMesh
 	// (SIB-40-in-data — e.g. the key's Scale 0.25 / Yaw 90). Soft-load is cached/cheap.
+	//
+	// A CLASS-BACKED ROW BRINGS ITS OWN LOOK. ASpaceport builds itself out of dozens of
+	// meshes; stamping a single catalog mesh onto FinalMesh would be meaningless at best
+	// and, with the empty Mesh such a row will have, would OVERWRITE the authored scale
+	// and rotation its own construction depends on. Mesh rows are untouched by this.
 	UStaticMesh* Mesh = Entry.Mesh.LoadSynchronous();
-	if (Site->FinalMesh)
+	const bool bClassBacked = !Entry.ActorClass.IsNull();
+	if (Site->FinalMesh && !bClassBacked)
 	{
 		if (Mesh)
 		{
@@ -64,7 +97,7 @@ ABuildSite* RespawnGeneratedSite(UWorld* World, const FGenerateCatalogEntry& Ent
 	// reload would be wrong (P3-3). The actor pose is the saved pose, full stop.
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ABuildSite* Site = World->SpawnActor<ABuildSite>(ABuildSite::StaticClass(), SavedTransform, SpawnParams);
+	ABuildSite* Site = World->SpawnActor<ABuildSite>(ResolveSiteClass(Entry), SavedTransform, SpawnParams);
 	if (!Site)
 	{
 		return nullptr;
@@ -231,7 +264,7 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	// Spawn — adjust out of overlaps but ALWAYS spawn (never silently rejected).
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	ABuildSite* Site = World->SpawnActor<ABuildSite>(ABuildSite::StaticClass(), SpawnLoc, FRotator::ZeroRotator, SpawnParams);
+	ABuildSite* Site = World->SpawnActor<ABuildSite>(ResolveSiteClass(Entry), SpawnLoc, FRotator::ZeroRotator, SpawnParams);
 	if (!Site)
 	{
 		return false; // confirmed failure — budget must NOT charge (handled by caller)
