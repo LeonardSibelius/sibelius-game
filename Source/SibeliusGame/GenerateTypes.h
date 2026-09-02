@@ -81,6 +81,19 @@ struct FGenerateCatalogEntry : public FTableRowBase
 	UPROPERTY(EditAnywhere, Category = "Generate")
 	TSoftClassPtr<ABuildSite> ActorClass;
 
+	/* HOW FAR IN FRONT OF HIM IT APPEARS. 0 = the component's default (250 cm).
+
+	   Walt, 2026-09-02: "yikes I am under the spaceport - and W doesn't work i can't
+	   move." He was inside it. Generate has always placed things two and a half metres
+	   ahead, which is correct for a lamp, a chair or a potted plant and absurd for a
+	   25-metre launch complex with a 120-metre rocket in the middle of it: the structure
+	   assembled AROUND him and then turned solid.
+
+	   The distance therefore belongs to the ENTRY, not to the component. A row that
+	   builds something big says so, in data, next to the thing that makes it big. */
+	UPROPERTY(EditAnywhere, Category = "Generate", meta = (ClampMin = "0.0"))
+	float SpawnAhead = 0.0f;
+
 	// Charged against the per-area generation budget (the in-fiction economy).
 	UPROPERTY(EditAnywhere, Category = "Generate")
 	int32 Cost = 1;

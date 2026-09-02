@@ -241,12 +241,16 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	const float YawDeg = Pawn->GetControlRotation().Yaw;
 	const FVector Fwd = FRotator(0.0f, YawDeg, 0.0f).Vector();
 
+	/* HOW FAR AHEAD THIS PARTICULAR THING WANTS TO BE. A lamp is happy at 250 cm; a
+	   launch complex is not, and putting one there trapped Walt inside it. */
+	const float RequestedAhead = (Entry.SpawnAhead > 0.0f) ? Entry.SpawnAhead : SpawnAheadDistance;
+
 	// Clamp the forward distance to the nearest wall/window so the object never spawns
 	// beyond it (outside the house). Trace forward at chest height (~capsule center).
-	float EffectiveAhead = SpawnAheadDistance;
+	float EffectiveAhead = RequestedAhead;
 	{
 		const FVector WallStart = PlayerLoc;
-		const FVector WallEnd = WallStart + Fwd * SpawnAheadDistance;
+		const FVector WallEnd = WallStart + Fwd * RequestedAhead;
 		FHitResult WallHit;
 		FCollisionQueryParams WallParams(SCENE_QUERY_STAT(GenerateWallTrace), false, Pawn);
 		WallParams.AddIgnoredActor(Pawn);
@@ -254,6 +258,23 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 		{
 			EffectiveAhead = FMath::Max(0.0f, WallHit.Distance - 50.0f); // just IN FRONT of the wall
 		}
+	}
+
+	/* REFUSE RATHER THAN TRAP HIM. A wall between the player and where a big thing wanted
+	   to stand clamps EffectiveAhead right back to his feet — and for a lamp that is fine,
+	   but for something 25 metres across it puts the structure on top of him and then
+	   turns it solid. There is no recovering from that in a packaged build.
+
+	   So: anything that asked for real distance and cannot have most of it does not get
+	   built. Returning false is the existing "could not place it" path — the budget is not
+	   charged and the player is told, which is the honest outcome for "there is no room
+	   here". A lamp is exempt because it never asked for room in the first place. */
+	if (Entry.SpawnAhead > 0.0f && EffectiveAhead < RequestedAhead * 0.5f)
+	{
+		UE_LOG(LogTemp, Display,
+			TEXT("[Generate] '%s' needs %.0fcm of clearance and only has %.0f - refused."),
+			*Entry.EntryId.ToString(), RequestedAhead, EffectiveAhead);
+		return false;
 	}
 	const FVector ForwardPoint = PlayerLoc + Fwd * EffectiveAhead;
 
