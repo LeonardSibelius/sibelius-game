@@ -1,4 +1,4 @@
-# The spaceport — Generate builds something that leaves (2026-09-01)
+# The spaceport — Generate builds something that leaves (2026-09-01, rev 2)
 
 Leonard stands on the empty lawn across from Jacob's Downtown Deli. He presses
 **G**, types `spaceport`, and the ground opens. A pad and a gantry assemble
@@ -18,24 +18,102 @@ at this.
 
 ---
 
-## Decisions
+## What the launch is FOR — the memoir goes up
 
-- **Generate spawns an ACTOR, not just a mesh.** This is the foundational
-  change and it is worth making on its own merits — "Generate can only produce
-  one static mesh" is the real ceiling on that power, spaceport or no spaceport.
-- **The rocket runs on real physics, not an animation.** Mass, thrust, gravity,
-  drag, stage separation — Chaos rigid bodies. Get the thrust-to-weight wrong
-  and it sits on the pad. That failure mode is the proof it is real.
-- **The physics stops below orbit.** No orbital mechanics, no flight controls,
-  no time warp, no staging UI. See "Where the physics stops" — this is the most
-  important boundary in the document.
-- **Nothing new gets bought.** 145 sci-fi meshes are already in the project.
-  The rocket itself can be a cylinder, a cone and four fins; at launch distance
-  under a plume, nobody can tell.
-- **Every phase is playable alone.** Phase A improves Generate. Phase B is a
-  building that grows. Only C and D need each other.
-- **The sound arrives late.** Delay it by `distance / 343`. It costs ten
-  minutes and nobody forgets it.
+Rev 1 of this plan ended with "he watches it leave." That is the physics
+scope, and it stands. But a rocket that carries nothing is a firework.
+
+The game already collects Walt's eight messages to former employers, one per
+power shrine and placard (`docs/MEMOIR_VOICE.md`) — SAIC 1988, IBM 1995,
+Seagate 1998, Motorola 2001, Northrop Grumman 2002, San Diego County 2005,
+Bally 2007, US Army iKrome 2022. He gathers them as rewards. Nothing is ever
+*done* with them.
+
+**The spaceport is where they go.** Each rocket carries one message. Walt's
+own line about them is the design brief: *"Of course they will not see the
+messages, but it will be satisfying to say them."* There is no more satisfying
+place to put a message nobody will read than orbit.
+
+- A launch needs a **payload**: one collected message. You can only launch what
+  you have earned, so the spaceport pays off the whole game behind it.
+- **Eight launches, eight employers**, in whatever order he chooses; iKrome
+  (2022, "especially iKrome", now being retired) is the natural last.
+- On ignition, the message reads once — on the HUD, or spoken. After 1.0's
+  face pipeline, a recorded read in Walt's own voice is a real option; that is
+  a separate decision and not a dependency.
+- **Every successful, Deployed launch adds one moving light to the city's
+  sky.** Eight lights, eventually. They are the only stars that move.
+
+This turns a tech showcase into the end of a memoir. It is also cheap: the
+messages exist, the ceremony that shows them exists, and a moving light is a
+point light on a timer.
+
+---
+
+## The six powers finally compose
+
+Every power was taught alone. The spaceport is the first object in the game
+that answers to all of them, and that — more than the rocket — is what makes it
+the endgame.
+
+| Key | Power | On the spaceport |
+|---|---|---|
+| **G** | Generate | Builds the spaceport (and, later, a fresh rocket on the pad) |
+| **V** (hold) | Code Vision | **Live telemetry** — TWR, mass, velocity, altitude, dynamic pressure, stage, fuel. The simulation *shown*, not just running |
+| **6 / 7 / 8** | Test-Drive | **Branch before launch.** A failed launch on a branch is *free* — discard and try again. Merge to keep it |
+| **R** | Refactor | Cycles the rocket's configuration on the pad — stages, engine class, fuel load. In the office R made animals; in the city R reveals; here R redesigns |
+| **C** | Compile | Pre-flight. A design with TWR < 1 or an empty tank is a *compile error*, read out by Mrs. Hall like any other refusal |
+| **0** | Deploy | Makes the launch real. Undeployed, it was a test; Deployed, the satellite enters the save and the sky |
+
+**Test-Drive is the one that matters most.** Kerbal's genius was that failure
+is the fun, and the branch system already exists to make failure cost nothing.
+*"In your old life a failed launch cost you. Now you branch."* `IBranchable` is
+a `uint8` capture/restore, and a spaceport's state fits in a byte: empty,
+rocket on pad, launched.
+
+**Code Vision is the showcase.** The numbers are already in the physics body;
+drawing them under **V** is the same HUD work the game does everywhere. It is
+the difference between "look at the effects" and "look at the physics."
+
+---
+
+## Failure is the show
+
+Rev 1 said TWR < 1 sits on the pad. That is the honesty test, and it stays.
+But failure should be **spectacular**, because the branch makes it free.
+
+- **Chaos Destruction.** Fracture mode ships with the engine
+  (`Engine/Plugins/Experimental/ChaosEditor`). A rocket that tips, or whose
+  stage separation goes wrong, becomes a Geometry Collection and comes apart —
+  the one marquee UE simulation feature this game has never used, and it lands
+  on a plaza full of cafe tables.
+- **Wind.** A small random lateral force per launch. Some launches drift.
+  Branches differ. Kerbal again: the second attempt is never the first.
+- **The spent first stage comes back.** Stage separation gives it drag and a
+  tumble, and it falls where physics says — sometimes on the lawn, sometimes
+  on the plaza. Deploy keeps it there as a monument.
+
+None of this needs a solver. It is Chaos rigid bodies, a fracture asset, and
+one random vector.
+
+---
+
+## The city reacts
+
+The AI ghosts have ignored him since he arrived. The launch is the first thing
+that makes them stop.
+
+- **Ignition: every dancing ghost freezes and faces the pad.** That is
+  `TalkDanceSpeed`-style freezing plus a yaw — machinery `UDancerAgentComponent`
+  already has. Cheapest emotional beat in the plan.
+- **A few ghosts become the ground crew.** Teleport three to marked spots
+  around the pad, idle (`GS_Idle_MH`, already cooked). The transhumans run the
+  spaceport. "No animals in heaven" — but there are technicians.
+- **Nyra's stage 2.** The guide-stage system built for 1.0 exists for this:
+  after the first Deployed launch, `dancer_guide3_nyra` and one more entry in
+  `GuideVoiceNames[]`. Her line is Walt's to write; the mechanism is done.
+- **Sound.** The city goes quiet at T-minus ten. The launch is heard late,
+  by `distance / 343`. The two together are what make people look up.
 
 ---
 
@@ -50,6 +128,9 @@ The typed-request half of this feature shipped in Ch6 and works:
 | `FGenerateCatalogEntry` | One row: keywords, a mesh, a Sauce cost |
 | `UGenerateComponent` | Budget, resolve, spawn |
 | `ABuildSite` | A thing that reveals in phases — `EBuildSiteRevealPhase` |
+| `IBranchable` | `uint8` capture / restore — what Test-Drive snapshots |
+| `UCodeVisionComponent` | The **V** overlay, with an `OnCodeVisionChanged` hook |
+| `UDancerAgentComponent` | Guide stages, freeze-and-face, idle |
 
 So the player *already* types a word and gets a thing, on a budget, with Mrs.
 Hall reading out the refusal when it does not match. None of that needs
@@ -70,17 +151,20 @@ TSoftClassPtr<AActor> ActorClass;
 ```
 
 `UGenerateComponent` spawns the class when it is set and falls back to the mesh
-when it is not. Keywords, cost, budget, refusal and provenance
-(`FBranchTypes` records runtime-generated `ABuildSite`s already) all keep
+when it is not. Keywords, cost, budget, refusal and provenance all keep
 working untouched, and **every existing catalog row is unaffected.**
 
-An afternoon. It unlocks everything below it.
+An afternoon. It unlocks everything below it, and it is worth doing whether or
+not a single rocket is ever built — "Generate can only make one static mesh"
+is the real ceiling on that power.
 
 ---
 
 ## Phase B — `ASpaceport`, the thing that assembles
 
-A C++ actor that raises its parts out of the ground over roughly eight seconds.
+A C++ actor that raises its parts out of the ground over roughly eight seconds,
+implements `IBranchable` (empty / rocket on pad / launched), and owns the pad
+the rocket spawns onto.
 
 **Drive it from a looping FTimerManager timer, NOT `TickComponent`.** This is
 not a preference. `UDancerAgentComponent` spent three rounds of debugging on a
@@ -99,7 +183,9 @@ Parts are already owned — no purchase:
 
 Pad, gantry, fuel tanks, cable runs. Each part starts below the surface and
 eases upward, so the structure grows out of the lawn rather than popping into
-existence.
+existence. **The grass retreats as the concrete spreads** — a material
+parameter or a PCG spline, and the lawn visibly becomes a spaceport rather
+than having one dropped on it.
 
 `ABuildSite` already models phased reveal. Borrow its shape rather than
 inventing a second one.
@@ -111,15 +197,40 @@ inventing a second one.
 This is where "advanced simulation" stops being a word in a plan.
 
 A rigid body with real mass: `SetSimulatePhysics(true)`, then `AddForce` along
-its up-vector every tick. Gravity is already there. Drag is a velocity-squared
-term. Stage separation is a second rigid body detaching with its own mass and
-its own tumble.
+its up-vector every tick. Gravity is already there. Stage separation is a
+second rigid body detaching with its own mass and its own tumble.
 
 **Tune thrust-to-weight below 1 and it sits on the pad.** Keep that test — a
 rocket that cannot fail to launch is an animation wearing a physics costume.
 
 Chaos does all of this natively. No custom integrator, no floating origin, no
 solver of our own.
+
+### Real rocket science that is free — the safe side of the cliff
+
+Five things, each a line or two, each *visible in the telemetry under V*:
+
+1. **Fuel burns off.** Mass decreases every tick; acceleration climbs as it
+   does. That is the rocket equation, happening on screen.
+2. **The air thins.** Drag is `v²` times a density that falls off exponentially
+   with altitude. Two terms.
+3. **Max-Q.** Follows from 1 and 2 for free: dynamic pressure peaks partway up
+   and then falls. Show it. It is the number real launch commentary calls out.
+4. **A gravity turn.** A slow programmed pitch after clearing the tower. Not
+   player control — a schedule. It is the difference between a launch and a
+   firework going straight up.
+5. **Wind.** One random lateral vector per launch, for variance between
+   branches.
+
+None of these touch the physics engine's internals. They are forces and a mass
+property.
+
+### The rocket's name
+
+The `Text3D` plugin is enabled and used nowhere near this. **Leonard names the
+rocket when he generates it** — he is already typing into that panel — and the
+name is printed down the hull in Text3D. The employer's name is the obvious
+default. *SEAGATE 1998*, on the side of the thing that leaves.
 
 ---
 
@@ -141,7 +252,8 @@ Then the cheap things that do most of the work:
 ## Where the physics stops
 
 **No orbit. No flight controls. No time warp. No staging UI.** It launches, it
-climbs, it goes out of sight.
+climbs, it goes out of sight — and if it was Deployed, a light appears in the
+sky.
 
 The cliff is real and it is worth naming precisely. UE5 has double-precision
 world coordinates, so world size is not the blocker. The blocker is that Chaos
@@ -155,23 +267,52 @@ spiritual successor (Kitten Space Agency), built by the man who wrote the
 original alongside an ex-SpaceX engineer, is still in pre-alpha.
 
 **Two people who know exactly how to do this are years into doing it.** Leonard
-watches the rocket leave. That is the scope.
+watches the rocket leave. That is the scope. Everything in this document lives
+on this side of that line.
 
 ---
 
-## Cost
+## Cost, in tiers
 
-Roughly a week and a half, phased.
+Rev 2 adds scope, so it is split honestly. **1.1.0 is the first tier only.**
+The second tier is what makes it a memoir; the third is seeds.
+
+### 1.1.0 — the launch (about two weeks)
 
 | Phase | What lands | Rough |
 |---|---|---|
 | A | Generate can spawn actors | an afternoon |
-| B | A spaceport grows out of the lawn | 3 days |
-| C | It launches on real physics | 3 days |
+| B | A spaceport grows out of the lawn, branch-safe | 3 days |
+| C | It launches on real physics, five free physics touches | 3 days |
 | D | Plume, scorch, shake, late sound | 2 days |
+| V | Telemetry under Code Vision | 1 day |
+| — | Ghosts freeze and face the pad on ignition | half a day |
 
-**To buy: probably nothing.** A proper rocket body is one cheap Fab pack if the
-primitive version disappoints, but that is an upgrade, not a dependency.
+### 1.1.x — the memoir (about a week, after 1.1.0 ships)
+
+| What lands | Rough |
+|---|---|
+| Payloads: one collected message per launch, read on ignition | 1 day |
+| Deploy adds a moving light to the sky per launch | half a day |
+| Text3D name on the hull | half a day |
+| Ground-crew ghosts around the pad | half a day |
+| Nyra's stage 2 (`dancer_guide3_nyra`) — Walt's words, the same bake | half a day |
+| Chaos Destruction on a failed launch | 2 days |
+| R redesigns the rocket on the pad; C is the pre-flight compile | 1–2 days |
+
+### Seeds — not scheduled
+
+- **The eighth launch as the third door.** `[O]` is the office, `[>]` is the
+  city. If iKrome is the last thing to leave, the rocket could be how Leonard
+  leaves too. That is an ending, and endings are not features — it is written
+  down here so nobody has to rediscover the idea.
+- **A night launch.** The city is deliberately in full daylight (1.0). A plume
+  lighting the plaza at dusk is a better shot; whether the launch is allowed to
+  change the time of day is a design call, not a technical one.
+
+**To buy: nothing.** A proper rocket body is one cheap Fab pack if the
+cylinder-cone-fins version disappoints, but that is an upgrade, not a
+dependency.
 
 ---
 
@@ -197,3 +338,5 @@ These cost real time this year. They apply directly to the work above.
 - **A tool that reverts your work while reporting success is worse than no
   tool.** `place_cafe_doors.py` used to recompute a door position that had been
   fixed by hand. It now inherits the transform it replaces.
+- **Do not drive the rocket from `TickComponent`.** See Phase B. The tick that
+  never fires is still unexplained; the timer has never failed.
