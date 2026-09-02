@@ -245,9 +245,25 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	   launch complex is not, and putting one there trapped Walt inside it. */
 	const float RequestedAhead = (Entry.SpawnAhead > 0.0f) ? Entry.SpawnAhead : SpawnAheadDistance;
 
-	// Clamp the forward distance to the nearest wall/window so the object never spawns
-	// beyond it (outside the house). Trace forward at chest height (~capsule center).
+	/* THE WALL CLAMP IS FOR SMALL THINGS ONLY, and finding that out cost two playtests.
+
+	   The clamp exists so a lamp asked for indoors does not appear through the wall in
+	   the next room. It line-traces forward and stops just short of the first hit, which
+	   is exactly right at 250 cm inside a house.
+
+	   It is exactly wrong at 45 metres outdoors. Walt stood on the pavement facing the
+	   lawn and was refused, because the trace hit the KNEE-HIGH FENCE four metres away
+	   and concluded there was no room — beyond which lay the empty field he was pointing
+	   at. A fence between you and a meadow does not make the meadow smaller.
+
+	   So an entry that names its own distance gets it verbatim: no clamp, no refusal.
+	   The trapping hazard that made the clamp look necessary was never about walls — it
+	   was about the structure landing ON him at 250 cm, and 4500 cm cannot do that. The
+	   remaining risk is a spaceport that intersects a building if he aims at one, which
+	   is ugly, obvious, and undone with a Test-Drive discard. That is a fair trade for a
+	   feature that otherwise cannot be used at all. */
 	float EffectiveAhead = RequestedAhead;
+	if (Entry.SpawnAhead <= 0.0f)
 	{
 		const FVector WallStart = PlayerLoc;
 		const FVector WallEnd = WallStart + Fwd * RequestedAhead;
@@ -259,31 +275,30 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 			EffectiveAhead = FMath::Max(0.0f, WallHit.Distance - 50.0f); // just IN FRONT of the wall
 		}
 	}
-
-	/* REFUSE RATHER THAN TRAP HIM. A wall between the player and where a big thing wanted
-	   to stand clamps EffectiveAhead right back to his feet — and for a lamp that is fine,
-	   but for something 25 metres across it puts the structure on top of him and then
-	   turns it solid. There is no recovering from that in a packaged build.
-
-	   So: anything that asked for real distance and cannot have most of it does not get
-	   built. Returning false is the existing "could not place it" path — the budget is not
-	   charged and the player is told, which is the honest outcome for "there is no room
-	   here". A lamp is exempt because it never asked for room in the first place. */
-	if (Entry.SpawnAhead > 0.0f && EffectiveAhead < RequestedAhead * 0.5f)
-	{
-		UE_LOG(LogTemp, Display,
-			TEXT("[Generate] '%s' needs %.0fcm of clearance and only has %.0f - refused."),
-			*Entry.EntryId.ToString(), RequestedAhead, EffectiveAhead);
-		return false;
-	}
 	const FVector ForwardPoint = PlayerLoc + Fwd * EffectiveAhead;
 
-	// Downward floor trace. Start BELOW the ceiling but above the floor (player head
-	// height ~= player.Z + 100), then trace straight DOWN a long way so the FIRST hit is
-	// the floor — NOT the ceiling. (Starting above the ceiling made the first hit the
-	// ceiling, dropping the object overhead.)
-	const FVector TraceStart(ForwardPoint.X, ForwardPoint.Y, PlayerLoc.Z + 100.0f);
-	const FVector TraceEnd = TraceStart - FVector(0.0f, 0.0f, 3000.0f);
+	/* Downward floor trace. Start BELOW the ceiling but above the floor (player head
+	   height ~= player.Z + 100), then trace straight DOWN a long way so the FIRST hit is
+	   the floor — NOT the ceiling. (Starting above the ceiling made the first hit the
+	   ceiling, dropping the object overhead.)
+
+	   THAT CEILING RULE IS AN INDOOR RULE, and 45 metres away there is no ceiling. The
+	   lawn outside Jacob's RISES away from the road: start the trace a metre above the
+	   player's head and, by the time it is out over the field, the ground can be above
+	   the start point entirely. The trace then hits nothing, falls back to the player's
+	   own foot height, and buries the spaceport in a hillside.
+
+	   So a long throw starts high — above any slope it could reasonably reach — and a
+	   short one keeps the ceiling-safe height it has always had. Same shape as the wall
+	   clamp above: the indoor behaviour was never wrong, it was just never outdoors. */
+	const float TraceTop = (Entry.SpawnAhead > 0.0f)
+		? PlayerLoc.Z + FMath::Max(100.0f, EffectiveAhead * 0.5f)
+		: PlayerLoc.Z + 100.0f;
+	const FVector TraceStart(ForwardPoint.X, ForwardPoint.Y, TraceTop);
+	// End 30 m below the PLAYER, not below the start — otherwise raising the start point
+	// above a hill also raises where the trace gives up, and a downhill throw stops in
+	// mid-air short of the ground it was aimed at.
+	const FVector TraceEnd(TraceStart.X, TraceStart.Y, PlayerLoc.Z - 3000.0f);
 	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(GenerateSpawnTrace), false, Pawn);
 	Params.AddIgnoredActor(Pawn);
