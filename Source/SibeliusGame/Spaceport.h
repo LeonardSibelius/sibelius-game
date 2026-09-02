@@ -175,9 +175,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Spaceport", meta = (ClampMin = "0.0"))
 	float MaterialiseGlow = 6.0f;
 
-	/** Height above the actor origin where a rocket sits. See GetPadTopLocation. */
+	/* Height above the actor origin where the rocket stands — Phase C's entry point.
+
+	   1433.2 is not a guess: it is SM_Rocket's own Z in PackDev's showcase map, once the
+	   layout is re-centred with the launch pad's base at zero. Phase C's physics body
+	   replaces the static rocket at exactly the height the artist stood it at. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport")
-	float PadTopHeight = 60.0f;
+	float PadTopHeight = 1433.2f;
 
 private:
 	/** Create the component for each part, hidden and sunk. Idempotent. */

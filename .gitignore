@@ -116,6 +116,16 @@ Content/Phantom_All_In_One/
 # public. Out it goes, like every other pack.
 Content/RestaurantScene/
 
+# Rocket Launch Pad & Interior (PackDev) - the spaceport Generate builds on the lawn,
+# and the rocket Phase C will launch. Bought for $39.99, which buys USE and not
+# REDISTRIBUTION: this repo is public, so committing 23 meshes and their 4K textures
+# would be publishing a paid pack. Same rule as every other entry above.
+#
+# It reaches the shipped pak through DirectoriesToAlwaysCook in DefaultGame.ini, exactly
+# like the sci-fi packs - Spaceport.cpp names its meshes by soft path, and a soft path in
+# C++ is not a package reference the cooker will follow.
+Content/Rocket_Launch_Pad/
+
 # ...and the same pack SPILLS its showcase cinematic outside its own folder, into the
 # project's shared Cinematics directory next to the Kaia intro. Only the Sequences
 # subfolder is vendor; Content/Cinematics itself holds L_Cine_KaiaIntro, L_Meadow and

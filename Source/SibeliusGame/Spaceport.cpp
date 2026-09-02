@@ -14,14 +14,25 @@ namespace
 {
 	/* THE VENDOR MESHES, BY PATH — and the cook rule they depend on.
 
-	   ModularSciFiEnv_F and _J are gitignored. A soft path written here is NOT a package
-	   reference and the cooker will not follow it, so these reach a shipped build ONLY
-	   because DefaultGame.ini names their directories in DirectoriesToAlwaysCook. Remove
-	   those lines and the spaceport assembles flawlessly in PIE and is invisible to every
-	   player. Checked before writing this file: all three assets exist on disk. */
-	const TCHAR* const PadMeshPath    = TEXT("/Game/ModularSciFiEnv_J/Meshes/SM_Floor_A_4x2m_A.SM_Floor_A_4x2m_A");
-	const TCHAR* const ColumnMeshPath = TEXT("/Game/ModularSciFiEnv_J/Meshes/SM_Column_A.SM_Column_A");
-	const TCHAR* const PanelMeshPath  = TEXT("/Game/ModularSciFiEnv_F/Meshes/SM_Panel_A_2x2m.SM_Panel_A_2x2m");
+	   Rocket Launch Pad & Interior (PackDev, bought 2026-09-01) is gitignored like every
+	   vendor pack. A soft path written here is NOT a package reference and the cooker will
+	   not follow it, so these reach a shipped build ONLY because DefaultGame.ini names
+	   /Game/Rocket_Launch_Pad/Meshes and .../Materials in DirectoriesToAlwaysCook. Remove
+	   those lines and the spaceport materialises flawlessly in PIE and is invisible to
+	   every player who downloads the game. */
+	const TCHAR* const P_Base     = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Base.SM_Base");
+	const TCHAR* const P_Pad      = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Launch_Pad.SM_Launch_Pad");
+	const TCHAR* const P_Holder   = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Rocket_Holder.SM_Rocket_Holder");
+	const TCHAR* const P_Pipes    = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Cooling_Pipes.SM_Cooling_Pipes");
+	const TCHAR* const P_Details  = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Details.SM_Details");
+	const TCHAR* const P_Rocket   = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Rocket.SM_Rocket");
+	const TCHAR* const P_Walls    = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Walls.SM_Walls");
+	const TCHAR* const P_BackWall = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Back_Wall.SM_Back_Wall");
+	const TCHAR* const P_Iface    = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Interface.SM_Interface");
+	const TCHAR* const P_Power    = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Power_Box.SM_Power_Box");
+	const TCHAR* const P_Seats    = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Seats.SM_Seats");
+	const TCHAR* const P_Bags     = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Storage_Bags.SM_Storage_Bags");
+	const TCHAR* const P_Controls = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Controls.SM_Controls");
 
 	/** Ease-out cubic. A part decelerates into place instead of stopping dead. */
 	float Settle(float A)
@@ -52,15 +63,33 @@ ASpaceport::ASpaceport()
 
 void ASpaceport::MakeDefaultLayout()
 {
-	/* A GREYBOX SILHOUETTE, NOT A FINISHED BUILD (Phase B).
+	/* THE ARTIST'S COMPOSITION, NOT MY ARITHMETIC.
 
-	   The numbers below are round metres and deliberately generous, because the exact
-	   pivots and dimensions of a vendor pack are not knowable from a file listing. A
-	   layout that tries to tile precisely against guessed dimensions looks worse than one
-	   that spaces parts out and reads clearly at a distance.
+	   The first version of this function was twelve greybox parts at positions guessed
+	   from a file listing, and Walt's verdict was that it looked like hell. He was right;
+	   you cannot compose a launch complex out of mesh names.
 
-	   Everything here is EditAnywhere. The art pass is dragging these numbers in the
-	   Details panel with the level open, which needs no rebuild and no code. */
+	   So these numbers are not invented. dump_launchpad_layout.py read PackDev's own
+	   showcase map, L_Rocket_Launch_Pad, and reported the transform of all 41 static
+	   meshes the artist placed. What follows is that data, re-centred on the launch pad
+	   and with the pad's base at Z=0 so the structure stands on the lawn.
+
+	   WHY 13 PARTS AND NOT 41. The full facility measures 217 m by 119 m — it would
+	   swallow the whole of Downtown West. Most of that spread is outlying dressing:
+	   floodlights 108 m out, pipe runs, two cooling towers, an observation tower 68 m
+	   away, and six concrete barriers ringing a perimeter that does not exist here. The
+	   core cluster — base, pad, rocket holder, cooling pipes, details, the rocket, and
+	   its seven interior pieces — sits inside about 25 m and is the whole silhouette.
+
+	   SM_Ground is deliberately excluded. It is the showcase map's own concrete apron,
+	   and dropping a ground plane onto a city street would clip through the pavement the
+	   player is standing on. The city keeps its own ground.
+
+	   THE ROCKET IS ~120 M TALL. The interior sits at Z 11 900, a hundred metres above
+	   its own base — Saturn V scale, and correct. That is why PadTopHeight is 1433: the
+	   rocket's origin, where Phase C stands its physics body.
+
+	   Everything is EditAnywhere. Tuning is dragging numbers with the level open. */
 	Parts.Reset();
 
 	auto Add = [this](const TCHAR* Path, FVector Loc, FRotator Rot, FVector Scale,
@@ -76,29 +105,44 @@ void ASpaceport::MakeDefaultLayout()
 		Parts.Add(P);
 	};
 
-	// The pad first — the ground becomes concrete before anything stands on it.
-	Add(PadMeshPath, FVector(0, 0, 0), FRotator::ZeroRotator, FVector(3.0f, 3.0f, 1.0f), 0.00f, 0.30f);
+	/* THE ORDER IS THE ORDER IT APPEARS, and it is dramatic rather than structural: the
+	   ground works first, the machinery grows on it, and the rocket itself arrives LAST
+	   and slowest, so the thing the player came to see is the thing that finishes. */
+	const FRotator Flat = FRotator::ZeroRotator;
+	const FVector One = FVector::OneVector;
 
-	// Four gantry legs at the corners, rising together.
-	const float Leg = 550.0f;
-	Add(ColumnMeshPath, FVector( Leg,  Leg, 0), FRotator::ZeroRotator, FVector(1, 1, 4), 0.20f, 0.35f);
-	Add(ColumnMeshPath, FVector( Leg, -Leg, 0), FRotator::ZeroRotator, FVector(1, 1, 4), 0.22f, 0.35f);
-	Add(ColumnMeshPath, FVector(-Leg,  Leg, 0), FRotator::ZeroRotator, FVector(1, 1, 4), 0.24f, 0.35f);
-	Add(ColumnMeshPath, FVector(-Leg, -Leg, 0), FRotator::ZeroRotator, FVector(1, 1, 4), 0.26f, 0.35f);
+	// --- the ground works ---------------------------------------------------
+	Add(P_Base,    FVector(2410.6f,    0.0f,    0.0f), Flat, One, 0.00f, 0.22f);
+	Add(P_Pad,     FVector(   0.0f,    0.0f,  700.3f), Flat, One, 0.06f, 0.24f);
+	Add(P_Details, FVector(1665.6f, 1757.5f,  651.7f), Flat, One, 0.18f, 0.20f);
 
-	// The service tower on one side, stacking upward — the part that reads as "spaceport".
-	for (int32 i = 0; i < 4; ++i)
-	{
-		Add(PanelMeshPath,
-			FVector(-780.0f, 0.0f, 200.0f * i),
-			FRotator(0.0f, 90.0f, 0.0f),
-			FVector(1.0f, 1.0f, 1.0f),
-			0.40f + 0.10f * i, 0.25f);
-	}
+	// --- the machinery ------------------------------------------------------
+	Add(P_Pipes,   FVector(   0.0f,  128.5f, 1128.9f), Flat, One, 0.26f, 0.22f);
+	Add(P_Holder,  FVector(   0.0f,  -73.7f, 1389.1f), Flat, One, 0.34f, 0.26f);
 
-	// Two fuel tanks, last, off to the side.
-	Add(ColumnMeshPath, FVector(300.0f, 950.0f, 0), FRotator::ZeroRotator, FVector(2.5f, 2.5f, 2.0f), 0.72f, 0.28f);
-	Add(ColumnMeshPath, FVector(-300.0f, 950.0f, 0), FRotator::ZeroRotator, FVector(2.5f, 2.5f, 2.0f), 0.76f, 0.24f);
+	/* --- the rocket, last and slowest --------------------------------------
+	   Its RiseFor is the longest in the list on purpose: 120 metres of hull fading in
+	   over a third of the whole sequence is the shot, and rushing it wastes the asset. */
+	Add(P_Rocket,  FVector(   0.0f,  360.2f, 1433.2f),
+		FRotator(0.0f, 0.96f, 0.0f), One, 0.48f, 0.40f);
+
+	/* --- the crew compartment, inside the nose ------------------------------
+	   A hundred metres up and invisible from the lawn, so this is not for looking at
+	   today. It is here because the pack ships it, it costs seven components, and the
+	   plan's own seed — "the eighth launch as the third door" — needs somewhere for
+	   Leonard to sit if he ever rides one. Scale 1.352 is the artist's, not a guess. */
+	const FVector InteriorScale(1.352f, 1.352f, 1.352f);
+	const FRotator InteriorRot(0.0f, -52.28f, 0.0f);
+	const FVector InteriorAt(-19.6f, 314.1f, 11900.5f);
+
+	Add(P_Walls,    InteriorAt, InteriorRot, InteriorScale, 0.70f, 0.20f);
+	Add(P_BackWall, InteriorAt, FRotator(0.0f, -52.94f, 0.0f), InteriorScale, 0.72f, 0.20f);
+	Add(P_Iface,    InteriorAt, InteriorRot, InteriorScale, 0.74f, 0.18f);
+	Add(P_Power,    InteriorAt, InteriorRot, InteriorScale, 0.76f, 0.18f);
+	Add(P_Bags,     InteriorAt, InteriorRot, InteriorScale, 0.78f, 0.18f);
+	Add(P_Seats,    FVector(-52.8f, 294.4f, 11900.5f),
+		FRotator(0.0f, -60.22f, 0.0f), InteriorScale, 0.80f, 0.18f);
+	Add(P_Controls, FVector(-62.0f, 287.2f, 11930.0f), InteriorRot, One, 0.82f, 0.18f);
 }
 
 void ASpaceport::BeginPlay()
