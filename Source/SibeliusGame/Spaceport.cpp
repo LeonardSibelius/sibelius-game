@@ -185,9 +185,11 @@ void ASpaceport::BuildPartComponents()
 		UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this);
 		Comp->SetStaticMesh(Mesh);
 		Comp->SetupAttachment(SceneRoot);
-		Comp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		// Created inert. ApplyPartProgress turns visibility and collision on together;
+		// see the note there on why a hidden solid is a bug and not an optimisation.
+		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Comp->SetCanEverAffectNavigation(false);
-		Comp->SetHiddenInGame(true);   // shown when its slice of the assembly begins
+		Comp->SetHiddenInGame(true);
 		Comp->RegisterComponent();
 		PartComponents.Add(Comp);
 		OriginalMaterials.AddDefaulted();
@@ -339,8 +341,22 @@ void ASpaceport::ApplyPartProgress(int32 Index, float Alpha)
 	Comp->SetRelativeRotation(P.Rotation);
 	Comp->SetRelativeScale3D(P.Scale);
 
-	// Hidden until it has actually started moving, so nothing pops at the sunk position.
-	Comp->SetHiddenInGame(Alpha <= 0.0f);
+	/* COLLISION FOLLOWS VISIBILITY, ALWAYS — the CoffeeCup lesson, and a real bug until
+	   this line existed.
+
+	   Components were created QueryAndPhysics and hidden, so an ASpaceport sitting at
+	   branch state 0, or one restored from a save, was thirteen INVISIBLE SOLID OBJECTS
+	   on the lawn — including a hundred-and-twenty-metre rocket. Walking into that reads
+	   exactly as "W stopped working", with nothing on screen to explain it.
+
+	   A half-formed ghost is not solid either: you cannot lean on something that has not
+	   finished arriving. Collision switches on only at full opacity, when the part stops
+	   being an apparition and becomes a building. */
+	const bool bVisible = Alpha > 0.0f;
+	const bool bSolid = Alpha >= 1.0f;
+	Comp->SetHiddenInGame(!bVisible);
+	Comp->SetCollisionEnabled(bSolid ? ECollisionEnabled::QueryAndPhysics
+	                                 : ECollisionEnabled::NoCollision);
 }
 
 void ASpaceport::PlayAssembly()

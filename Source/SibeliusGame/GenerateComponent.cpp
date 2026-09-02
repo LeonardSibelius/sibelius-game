@@ -170,6 +170,20 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 {
 	const FGenerateResolution R = ClassifyGenerateRequest(RawText, Catalog, RemainingBudget, Blocklist);
 
+	/* SAY WHAT WAS ASKED AND WHAT WAS DECIDED — every time, refusal or not.
+
+	   Mrs. Hall is deliberately in-fiction: she says "we don't keep that here" and never
+	   which of four reasons that was, which is right for the player and useless for
+	   anyone debugging. Twice now a refusal has had to be diagnosed by inference, once
+	   from a screenshot of her memo. The resolution already carries RefusalReason; it was
+	   simply never written down. One line, and the next "why did Generate say no" is a
+	   log search instead of an argument. */
+	UE_LOG(LogTemp, Display,
+		TEXT("[Generate] request \"%s\" -> outcome %d (%s), entry '%s', cost %d, budget %d."),
+		*RawText, static_cast<int32>(R.Outcome),
+		R.RefusalReason.IsEmpty() ? TEXT("resolved") : *R.RefusalReason,
+		*R.EntryId.ToString(), R.Cost, RemainingBudget);
+
 	// Success path is unchanged: the object appears + a small neutral confirm. Don't over-style.
 	if (R.Outcome == EGenerateOutcome::Resolved)
 	{
