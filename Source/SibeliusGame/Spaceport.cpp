@@ -6,6 +6,8 @@
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/World.h"
 
 namespace
@@ -126,7 +128,13 @@ void ASpaceport::BuildPartComponents()
 				TEXT("[Spaceport] part %d failed to load (%s) - it will be missing. "
 				     "Is its folder in DirectoriesToAlwaysCook?"),
 				i, *Parts[i].Mesh.ToString());
+			// Still take a slot in every parallel array. Skipping one here would shift
+			// every later part's materials onto the wrong component — a far stranger bug
+			// than the missing mesh that caused it.
 			PartComponents.Add(nullptr);
+			OriginalMaterials.AddDefaulted();
+			MaterialiseMIDs.Add(nullptr);
+			PartIsMaterialising.Add(false);
 			continue;
 		}
 
@@ -138,6 +146,9 @@ void ASpaceport::BuildPartComponents()
 		Comp->SetHiddenInGame(true);   // shown when its slice of the assembly begins
 		Comp->RegisterComponent();
 		PartComponents.Add(Comp);
+		OriginalMaterials.AddDefaulted();
+		MaterialiseMIDs.Add(nullptr);
+		PartIsMaterialising.Add(false);
 
 		ApplyPartProgress(i, 0.0f);
 	}
@@ -152,7 +163,87 @@ void ASpaceport::ClearParts()
 			Comp->DestroyComponent();
 		}
 	}
+	// All four together, always. They are indexed in lockstep, so a reset that missed one
+	// would leave stale materials pointed at components that no longer exist.
 	PartComponents.Reset();
+	OriginalMaterials.Reset();
+	MaterialiseMIDs.Reset();
+	PartIsMaterialising.Reset();
+}
+
+UMaterialInterface* ASpaceport::GetMaterialiseMaterial()
+{
+	// On demand, in a running world. Never a constructor: see the header.
+	if (MaterialiseMaterial.IsNull())
+	{
+		MaterialiseMaterial = TSoftObjectPtr<UMaterialInterface>(
+			FSoftObjectPath(TEXT("/Game/AIApparition/M_materialise.M_materialise")));
+	}
+	return MaterialiseMaterial.LoadSynchronous();
+}
+
+void ASpaceport::DressPart(int32 Index, bool bMaterialise)
+{
+	if (!PartComponents.IsValidIndex(Index) || !PartComponents[Index]
+		|| !PartIsMaterialising.IsValidIndex(Index))
+	{
+		return;
+	}
+	if (PartIsMaterialising[Index] == bMaterialise)
+	{
+		return;   // already dressed this way — capturing twice would lose the originals
+	}
+
+	UStaticMeshComponent* Comp = PartComponents[Index];
+
+	if (bMaterialise)
+	{
+		UMaterialInterface* Ghost = GetMaterialiseMaterial();
+		if (!Ghost)
+		{
+			/* NO GHOST MATERIAL = NO FADE, BUT STILL A SPACEPORT. It pops in, which is
+			   what Walt did not want, and that is much better than a spaceport that never
+			   becomes visible because the effect failed silently. Says which asset. */
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Spaceport] no materialise material - parts will appear instantly. "
+				     "Run Tools/Scripts/build_materialise_material.py."));
+			return;
+		}
+
+		// Capture the mesh's own materials ONCE, before anything replaces them.
+		FSpaceportPartMaterials& Saved = OriginalMaterials[Index];
+		Saved.Slots.Reset();
+		const int32 SlotCount = Comp->GetNumMaterials();
+		for (int32 Slot = 0; Slot < SlotCount; ++Slot)
+		{
+			Saved.Slots.Add(Comp->GetMaterial(Slot));
+		}
+
+		// One instance drives every slot, so a mesh with six material slots still fades
+		// as a single object rather than six overlapping ghosts at different opacities.
+		UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Ghost, this);
+		MaterialiseMIDs[Index] = MID;
+		if (MID)
+		{
+			MID->SetScalarParameterValue(TEXT("Glow"), MaterialiseGlow);
+			MID->SetScalarParameterValue(TEXT("Opacity"), 0.0f);
+			for (int32 Slot = 0; Slot < SlotCount; ++Slot)
+			{
+				Comp->SetMaterial(Slot, MID);
+			}
+		}
+		PartIsMaterialising[Index] = true;
+		return;
+	}
+
+	// SOLIDIFY: hand the real materials back, slot for slot.
+	const FSpaceportPartMaterials& Saved = OriginalMaterials[Index];
+	for (int32 Slot = 0; Slot < Saved.Slots.Num(); ++Slot)
+	{
+		Comp->SetMaterial(Slot, Saved.Slots[Slot]);
+	}
+	MaterialiseMIDs[Index] = nullptr;
+	PartIsMaterialising[Index] = false;
 }
 
 void ASpaceport::ApplyPartProgress(int32 Index, float Alpha)
@@ -168,6 +259,33 @@ void ASpaceport::ApplyPartProgress(int32 Index, float Alpha)
 	const float Eased = Settle(Alpha);
 	FVector Where = P.Location;
 	Where.Z -= RiseFromBelow * (1.0f - Eased);
+
+	/* THE FADE ITSELF — three states, and the order matters.
+
+	   Alpha 0        not there at all: hidden, still solid-materialled, nothing to see.
+	   0 < Alpha < 1  wearing the apparition, Opacity ramping — it forms out of the air.
+	   Alpha 1        real materials back. The swap lands at full opacity, so the only
+	                  visible change is the cyan glow leaving; nothing blinks. */
+	if (Alpha <= 0.0f)
+	{
+		DressPart(Index, false);
+	}
+	else if (Alpha < 1.0f)
+	{
+		DressPart(Index, true);
+		if (UMaterialInstanceDynamic* MID = MaterialiseMIDs.IsValidIndex(Index)
+			? MaterialiseMIDs[Index].Get() : nullptr)
+		{
+			MID->SetScalarParameterValue(TEXT("Opacity"), Eased);
+			// The glow fades out as it solidifies, so the material swap at the top is
+			// the quietest moment of the effect rather than the loudest.
+			MID->SetScalarParameterValue(TEXT("Glow"), MaterialiseGlow * (1.0f - Eased));
+		}
+	}
+	else
+	{
+		DressPart(Index, false);
+	}
 
 	/* RELATIVE, and it is safe BECAUSE these are not the root. SceneRoot is the root
 	   component (ABuildSite sets it explicitly, for the CP3 reason), so "relative" here

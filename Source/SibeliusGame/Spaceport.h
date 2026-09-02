@@ -41,6 +41,24 @@
 
 class UStaticMesh;
 class UStaticMeshComponent;
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
+
+/**
+ * One part's own materials, kept so they can be handed back.
+ *
+ * A USTRUCT wrapper rather than TArray<TArray<>>, because UPROPERTY cannot reflect a
+ * nested array and an unreflected TObjectPtr array is a garbage-collection bug waiting
+ * for a quiet afternoon.
+ */
+USTRUCT()
+struct FSpaceportPartMaterials
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UMaterialInterface>> Slots;
+};
 
 /**
  * One piece of the spaceport: a mesh, where it sits, and when it arrives.
@@ -134,9 +152,28 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Spaceport", meta = (ClampMin = "0.5"))
 	float AssemblySeconds = 8.0f;
 
-	/** How far below its resting place each part starts. It grows OUT of the lawn. */
+	/* PARTS MATERIALISE; THEY NO LONGER CLIMB OUT OF THE GROUND (Walt, 2026-09-01).
+
+	   The first version raised each part from RiseFromBelow centimetres under the lawn.
+	   With a greybox layout that read as "columns sliding out of the pavement", which
+	   Walt summarised as looking like hell. Rising is kept as an OPTIONAL flourish and
+	   defaulted OFF: set it above zero and parts drift up as they form, which reads well
+	   once the proportions are real. Zero is the honest default until then. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport", meta = (ClampMin = "0.0"))
-	float RiseFromBelow = 700.0f;
+	float RiseFromBelow = 0.0f;
+
+	/* THE APPARITION MATERIAL EVERY PART WEARS WHILE IT FORMS.
+
+	   Built by Tools/Scripts/build_materialise_material.py, and deliberately NOT loaded
+	   in the constructor — GS_Idle_MH crashed the editor on startup that way and the
+	   rule stands: a constructor runs before the editor exists, so a bad asset there is
+	   a project that will not open. Loaded on demand, in a running world. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport")
+	TSoftObjectPtr<UMaterialInterface> MaterialiseMaterial;
+
+	/** How brightly a forming part glows. Handed to the material's Glow parameter. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport", meta = (ClampMin = "0.0"))
+	float MaterialiseGlow = 6.0f;
 
 	/** Height above the actor origin where a rocket sits. See GetPadTopLocation. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport")
@@ -146,14 +183,37 @@ private:
 	/** Create the component for each part, hidden and sunk. Idempotent. */
 	void BuildPartComponents();
 
-	/** Place one part at its progress (0 = fully sunk, 1 = home). */
+	/** Place and shade one part at its progress (0 = not yet there, 1 = solid). */
 	void ApplyPartProgress(int32 Index, float Alpha);
+
+	/* PUT THE REAL MATERIALS BACK — the half that would otherwise be forgotten.
+
+	   Taking a mesh's materials is visible instantly; failing to give them back is
+	   invisible until someone notices the spaceport is permanently a cyan ghost. The
+	   originals are captured the first time a part is dressed and restored the moment it
+	   reaches full opacity, so a part that finishes early solidifies while its neighbours
+	   are still forming. */
+	void DressPart(int32 Index, bool bMaterialise);
+
+	/** Loaded on demand, never in the constructor. Null if the asset is missing. */
+	UMaterialInterface* GetMaterialiseMaterial();
 
 	/** The authored default layout, filled in the constructor. */
 	void MakeDefaultLayout();
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UStaticMeshComponent>> PartComponents;
+
+	/** Per-part: the mesh's own materials, captured before the apparition replaces them. */
+	UPROPERTY(Transient)
+	TArray<FSpaceportPartMaterials> OriginalMaterials;
+
+	/** Per-part: the live apparition instance whose Opacity is being driven. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UMaterialInstanceDynamic>> MaterialiseMIDs;
+
+	/** Per-part: true while wearing the apparition, so restore happens exactly once. */
+	TArray<bool> PartIsMaterialising;
 
 	/** Seconds since PlayAssembly began. Meaningless unless bAssembling. */
 	float AssemblyElapsed = 0.0f;
