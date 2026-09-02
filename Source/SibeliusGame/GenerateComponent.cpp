@@ -52,7 +52,8 @@ static TSubclassOf<ABuildSite> ResolveSiteClass(const FGenerateCatalogEntry& Ent
 
 // SIB-30 P3 — shared generated-site authoring. ONE place that turns a catalog entry into a
 // built, tagged ABuildSite, so live generation and re-spawn-on-load can't diverge.
-void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry)
+void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry,
+	bool bFreshlyGenerated)
 {
 	if (!Site)
 	{
@@ -82,6 +83,14 @@ void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry)
 	// the BUDGET, not Books, so it uses the RAW RestoreBranchState(1) path, NOT Build().
 	Site->MarkGenerated(Entry.EntryId);
 	Site->RestoreBranchState(1);
+
+	/* LAST, and only when the player is watching. RestoreBranchState has already put the
+	   site in its finished state, so a class that performs an arrival replays it FROM
+	   finished — nothing can be left half-built if the hook does nothing or throws. */
+	if (bFreshlyGenerated)
+	{
+		Site->OnGeneratedFresh();
+	}
 }
 
 ABuildSite* RespawnGeneratedSite(UWorld* World, const FGenerateCatalogEntry& Entry,
@@ -274,7 +283,7 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	// re-spawn-on-load uses, so a generated object looks identical fresh or reloaded. The
 	// actor's GUID is assigned by the normal IBranchable fallback (BeginPlay); Deploy then
 	// persists it + this site's EntryId + transform so reload can re-create it.
-	AuthorGeneratedSite(Site, Entry);
+	AuthorGeneratedSite(Site, Entry, /*bFreshlyGenerated=*/true);
 
 	// Budget charges only because we reached here with a real, created actor.
 	return true;

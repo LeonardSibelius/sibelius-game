@@ -26,7 +26,12 @@ struct FGenerateCatalogEntry;
 
 // Author a resolved catalog entry onto an ALREADY-spawned site: catalog mesh + per-entry
 // FinalMesh transform (SIB-40-in-data), tag it generated with its EntryId, present it BUILT.
-SIBELIUSGAME_API void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry);
+// bFreshlyGenerated: TRUE only on the live path, where the player is standing there
+// watching. It fires ABuildSite::OnGeneratedFresh so a site that performs an arrival
+// (ASpaceport) performs it once. The reload path leaves it false and stays silent —
+// see the note on that hook in BuildSite.h.
+SIBELIUSGAME_API void AuthorGeneratedSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry,
+	bool bFreshlyGenerated = false);
 
 // Re-create a generated site from a save record: spawn an ABuildSite at SavedTransform
 // VERBATIM (no placement re-trace, P3-3), force SavedId as the stable identity (P3-4), then

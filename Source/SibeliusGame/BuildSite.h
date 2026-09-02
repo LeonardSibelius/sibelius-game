@@ -63,6 +63,19 @@ public:
 	FName GetGenerateEntryId() const { return GenerateEntryId; }
 	void MarkGenerated(FName InEntryId) { bIsGenerated = true; GenerateEntryId = InEntryId; }
 
+	/* JUST MADE, AS OPPOSED TO JUST RESTORED (2026-09-01, docs/SPACEPORT_PLAN.md).
+
+	   Live generation and re-spawn-on-load both funnel through AuthorGeneratedSite, and
+	   both are right to: from the save's point of view they mean the same thing. But a
+	   site that puts on a SHOW when it appears — ASpaceport rising out of the lawn over
+	   eight seconds — must do that once, when the player asks for it, and never again on
+	   reload.
+
+	   So restoration stays silent and this hook marks the difference. Empty here: a
+	   ladder has nothing to perform. It is a virtual rather than a Cast<ASpaceport> in
+	   UGenerateComponent so the generator never has to know what it is building. */
+	virtual void OnGeneratedFresh() {}
+
 	// Authored default: unbuilt.
 	virtual uint8 GetDefaultBranchState() const override { return 0; }
 
