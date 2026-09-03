@@ -352,6 +352,32 @@ the most and it is the most convincing: the deli set the expectation that a shop
 in this city is a room you walk into, and a purchase panel bolted to a facade
 would be the first place the city admits it is a set.
 
+### Stage 3 — "See you there", and the destination
+
+Walt's recorded stage 2 line (2026-09-03) added two things the plan did not have:
+
+> "Nice job, Leonard! You built a Spaceport using your Generate power! Next, you
+> will be travelling on your new rocket to **the planet Grok**. Before you go, you
+> need to go down the block to the You Foods supermarket and buy supplies.
+> **See you there.**"
+
+**The planet Grok** is the first destination the rocket has ever had. Phase C was
+"it launches"; now it launches *somewhere*, which gives the telemetry something to
+count down to and the memoir somewhere to arrive.
+
+**"See you there" means she is waiting when he comes OUT** — Walt's own reading,
+correcting a first guess that she would be inside the shop. That makes stage 3 the
+deli beat exactly: he goes in, he comes out, she is standing there with the next
+thing. And it is nearly free, for the reason the stage-1 header already gives —
+**leaving uFoods RELOADS L_City**, so there is no moving-while-watched problem and
+no restage needed. She is just placed at BeginPlay, like stage 1.
+
+The marker already exists: `place_ufoods_doors.py` made a PlayerStart tagged
+`uFoodsStreet` for where he lands coming out. Stage 3 stands her in front of it.
+
+So stage 3 costs: one anchor case, one `GuideLine4`, one `dancer_guide4_nyra` bake,
+and the supplies grant to gate on. No new mechanism.
+
 ### Open, and worth deciding before code
 
 - **What are "supplies"?** A grant alone (`City.Supplies`), or an inventory item
