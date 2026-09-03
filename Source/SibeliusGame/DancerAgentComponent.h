@@ -189,9 +189,19 @@ public:
 	UPROPERTY(EditAnywhere, Category="Dancer")
 	FName GuideStage1StartTag = TEXT("DeliDoor");
 
-	/** Centimetres in front of that PlayerStart. Far enough to see her, close enough to E. */
-	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0"))
-	float GuideStage1Distance = 220.0f;
+	/** Centimetres in front of that PlayerStart. Far enough to see her, close enough to E.
+
+	   220 put her in the deli's own shadow (Walt, 3 Sep). Stepping further along the
+	   PlayerStart's forward is the way OUT of that shadow, because forward points away
+	   from the building — it is the direction he is already facing when he walks out.
+
+	   THE CEILING IS UInteractorComponent::InteractRange (450 cm). E is a camera-forward
+	   line trace of that length, so past 450 she is visible and cannot be talked to —
+	   a bug that looks like the dialogue being broken rather than her being too far.
+	   Anything up to ~400 is safe; this leaves 130 cm of margin from the arrival spot,
+	   and he can always walk toward her besides. */
+	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0", ClampMax="400"))
+	float GuideStage1Distance = 320.0f;
 
 	/* WHICH DANCERS ARE GUIDES: the ones carrying this ACTOR TAG.
 
