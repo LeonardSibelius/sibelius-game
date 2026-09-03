@@ -8,6 +8,7 @@
 #include "PowerGrant.h"                    // SPINE: she hands the power over
 #include "SibeliusGameCharacter.h"         // HasVisitedDeli - the guide's stage gate
 #include "Spaceport.h"                     // stage 2 asks the world whether one stands
+#include "SupplyCounter.h"                 // stage 3 asks the save whether he shopped
 #include "TimerManager.h"                  // the restage retry, waiting for him to look away
 
 #include "Animation/AnimSequence.h"
@@ -201,6 +202,8 @@ namespace
 		// Stage 2, the supply run. Bake dancer_guide3_nyra and its _face beside the
 		// others; until then she is silent at stage 2 and that is the correct failure.
 		TEXT("dancer_guide3"),
+		// Stage 3, outside uFoods with the supplies bought - go and board.
+		TEXT("dancer_guide4"),
 	};
 
 	/** The idle a guide stands in once she is past dancing. See the header on IdleAnim. */
@@ -1001,6 +1004,15 @@ int32 UDancerAgentComponent::GuideStage() const
 		return 0;
 	}
 
+	/* STAGE 3 IS "HE HAS THE SUPPLIES", and it is checked FIRST because it is the
+	   furthest along. The supplies are a fact about HIM, held in the save, so this stays
+	   true even if the spaceport is later Test-Drive discarded — which is right: he did
+	   go shopping, and no amount of un-building a launch pad undoes that. */
+	if (ASupplyCounter::HasSupplies(this))
+	{
+		return 3;
+	}
+
 	/* STAGE 2 IS "A SPACEPORT STANDS" — and it ASKS THE WORLD, not a saved flag.
 
 	   Same reasoning as AHintVolume, and it is right in the three places a bool is
@@ -1022,7 +1034,13 @@ int32 UDancerAgentComponent::GuideStage() const
 
 void UDancerAgentComponent::GetStageAnchor(int32 Stage, FName& OutTag, float& OutDistance) const
 {
-	if (Stage >= 2)
+	if (Stage >= 3)
+	{
+		OutTag = GuideStage3StartTag;
+		OutDistance = GuideStage3Distance;
+		return;
+	}
+	if (Stage == 2)
 	{
 		OutTag = GuideStage2StartTag;
 		OutDistance = GuideStage2Distance;
@@ -1307,7 +1325,10 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	if (IsGuide())
 	{
 		const int32 Stage = GuideStage();
-		Line = (Stage >= 2) ? GuideLine3 : (Stage >= 1) ? GuideLine2 : GuideLine;
+		Line = (Stage >= 3) ? GuideLine4
+			 : (Stage >= 2) ? GuideLine3
+			 : (Stage >= 1) ? GuideLine2
+			 : GuideLine;
 	}
 	Line.ReplaceInline(TEXT("{0}"), *AgentName);
 	return Line;

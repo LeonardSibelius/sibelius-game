@@ -378,6 +378,34 @@ The marker already exists: `place_ufoods_doors.py` made a PlayerStart tagged
 So stage 3 costs: one anchor case, one `GuideLine4`, one `dancer_guide4_nyra` bake,
 and the supplies grant to gate on. No new mechanism.
 
+### What Nyra's stage 3 line committed the game to (Walt, 2026-09-03)
+
+Recorded as `dancer_guide4_nyra`, outside uFoods with the supplies bought:
+
+> "We are ready to go to Grok! **I will upload myself into the spaceship computer
+> and I will be going with you!** You have plenty of supplies now. **Because you
+> are part AI now**, you will be able to compress your sense of time and
+> **40 light years** will go by quickly! Go back to the spaceport and we will do
+> the **boarding procedures**."
+
+Four things that were not in this plan an hour ago, and all four are load-bearing:
+
+- **Nyra comes along.** She uploads herself into the ship's computer. The guide
+  does not wave him off — she is the AI aboard. That answers "who talks during a
+  40-light-year flight" before the question was asked, and it means the voice
+  work already done is the voice of the voyage.
+- **Leonard is part AI.** Stated plainly for the first time. It is also the
+  in-fiction reason the flight can be survived at all.
+- **40 light years**, and time compression. The trip has a distance now, which
+  Phase C's telemetry can count, and a reason the player does not sit through it.
+- **"Boarding procedures"** — boarding is a *procedure at the spaceport*, not a
+  door you walk through. That is a better Phase C opening than "climb in": a
+  sequence with steps, which is what the six powers are for.
+
+The rocket cannot be boarded yet, so stage 3 currently ends by pointing at
+something the game does not do. That is the next piece of work, and it now has a
+shape: go back to the pad, run the procedures, and leave with her aboard.
+
 ### Open, and worth deciding before code
 
 - **What are "supplies"?** A grant alone (`City.Supplies`), or an inventory item

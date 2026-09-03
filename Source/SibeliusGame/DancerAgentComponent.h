@@ -168,6 +168,18 @@ public:
 	   Stage 0  no City.Deli grant   plaza, GuideLine — go and eat
 	   Stage 1  grant claimed        outside the deli, GuideLine2 — go and build
 	   Stage 2  a spaceport stands   the lawn's edge, GuideLine3 — go and provision
+	   Stage 3  City.Supplies held   outside uFoods, GuideLine4 — go and board
+
+	   STAGE 3 IS STAGE 1 AGAIN, and deliberately so. Walt's stage 2 recording ends "See
+	   you there", which he then clarified means she is waiting when he comes OUT of the
+	   shop — not standing inside it. That is the deli beat exactly: he goes in, he comes
+	   out, she is there with the next thing.
+
+	   Which makes it the CHEAP stage, for the reason this comment gives about stage 1:
+	   leaving uFoods RELOADS L_City, so nobody is watching when she takes her place and
+	   BeginPlay does all the work. No restage, no view cone, no eight-second window. The
+	   marker already exists too — place_ufoods_doors.py made a PlayerStart tagged
+	   uFoodsStreet for where he lands coming out, and she stands in front of it.
 
 	   SHE DANCES THROUGH ALL THREE (Walt, 2026-09-03, reversing "No more dancing" from
 	   two days earlier): "she is a dancer with endless energy, so let her dance outside
@@ -270,6 +282,21 @@ public:
 	    visible and unreachable. */
 	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0", ClampMax="400"))
 	float GuideStage2Distance = 320.0f;
+
+	/** Stage 3: he has the supplies. Matches dancer_guide4_nyra — change both. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	FString GuideLine4 = TEXT("We are ready to go to Grok!  I will upload myself into the spaceship computer and I will be going with you!  You have plenty of supplies now.  Because you are part AI now, you will be able to compress your sense of time and 40 light years will go by quickly!  Go back to the spaceport and we will do the boarding procedures.");
+
+	/* WHERE SHE WAITS AT STAGE 3 — the marker he arrives on, coming out of the shop.
+
+	   uFoodsStreet is the PlayerStart the uFoods return door aims at, so this is the same
+	   trick stage 1 uses on DeliDoor: ONE marker defines both where he lands and where
+	   she is standing, and they cannot drift apart because there is only one of them. */
+	UPROPERTY(EditAnywhere, Category="Dancer")
+	FName GuideStage3StartTag = TEXT("uFoodsStreet");
+
+	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0", ClampMax="400"))
+	float GuideStage3Distance = 320.0f;
 
 	/* HOW WIDE "HE CAN SEE HER" IS, as a dot product against the camera's forward.
 
