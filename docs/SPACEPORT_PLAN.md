@@ -1,4 +1,10 @@
-# The spaceport — Generate builds something that leaves (2026-09-01, rev 2)
+# The spaceport — Generate builds something that leaves (2026-09-01, rev 3)
+
+> **rev 3 (2026-09-03)** — Phases A and B shipped in 1.1.0. Added **Phase E, the
+> supply run**: Nyra appears after the spaceport is built and sends Leonard to
+> uFoods for supplies, and the supplies are the permission to board. That
+> promotes the "power you earn" seed into scheduled work, and it is the first
+> thing in this game that needs a guide stage to change in a *running* world.
 
 Leonard stands on the empty lawn across from Jacob's Downtown Deli. He presses
 **G**, types `spaceport`, and the ground opens. A pad and a gantry assemble
@@ -273,6 +279,105 @@ Then the cheap things that do most of the work:
 
 ---
 
+## Phase E — the supply run, and the permission to board
+
+*Locked 2026-09-03 (Walt). This is the seed below, promoted: the power you earn
+is an errand, and the errand is what makes the rocket boardable.*
+
+The chain, end to end:
+
+```
+spaceport materialises  ->  Nyra appears, stage 2  ->  uFoods interior
+                                                          |
+                            boarding unlocked  <-  supplies bought
+```
+
+Every link but one already exists. **The deli is the whole pattern already
+working**: a door with an `ArrivalTag`, `UTravelTransitionSubsystem::Travel`,
+`ChoosePlayerStart` matching the tag, and arrival claiming a grant that a guide
+then reads. uFoods is the deli again with a purchase in the middle.
+
+### The one architectural change
+
+`GuideStage()` is binary and **read once at BeginPlay**. The header says so on
+purpose — "that is not a simplification, it is the reason there is no walking to
+write." Stage 1 works because the change happens behind a level load: he goes
+into the deli, he comes out, she is somewhere new.
+
+Phase E breaks that. The spaceport appears *while he is standing on the lawn
+watching it*, and she has to arrive after it, in a world that is already
+running. So:
+
+- Stage becomes **re-evaluatable**, not read-once. Three stages, not two.
+- `ASpaceport::OnGeneratedFresh()` is the trigger. It already exists and already
+  fires — Phase B put it there so the spaceport could play its own arrival.
+- "Has a spaceport been built?" is answered by **asking the world**
+  (`TActorIterator`), never by a saved bool. `AHintVolume` already does exactly
+  this, and it is right after a load, after a Test-Drive discard, and on New
+  Game — all three of which a bool gets wrong.
+
+**And it reopens a question the read-once design got to dodge: does she walk, or
+does she pop?** Popping was invisible behind a level load. In view, on an open
+lawn, it is a teleport. This is the first time the game has to answer it.
+
+### A bug this will trip over on day one
+
+`AHintVolume` has a generic `FName RequiresGrant` property that is **ignored**.
+`HintVolume.cpp:70` hardcodes `HasVisitedDeli` no matter what grant is named:
+
+```cpp
+if (!RequiresGrant.IsNone() && !ASibeliusGameCharacter::HasVisitedDeli(this))
+```
+
+Any hint gated on "has supplies" would silently gate on "has visited the deli".
+`FProgressionState::HasClaimed(FName)` is right there and generic. One line.
+Fix it before building on it, not after.
+
+### What already exists, and what does not
+
+| Needed | State |
+|---|---|
+| Grant registry | `HasClaimed(FName)` / `Claim(FName)` — generic, done |
+| Currency | **Sauce**, unified, `TrySpendSauce` — done |
+| Purchase ledger | `RecordPurchase(FName)` / `GetPurchaseCount` — done |
+| Travel to an interior | The deli's door + `ArrivalTag` + `ChoosePlayerStart` — proven |
+| "Spaceport exists?" | `TActorIterator`, the `AHintVolume` pattern — proven |
+| Boarding gate | Branch state 2 (`RocketOnPad`) reserved in Phase C |
+| **`L_uFoods` interior** | **does not exist** — the real cost of this phase |
+| **Stage 2 voice + face** | `dancer_guide3_nyra` + its bake — the proven recipe |
+| **A shop interaction** | new; closest existing pattern is `PowerGrant`'s `BookCost` |
+
+**Walt chose the full interior** over a storefront counter (2026-09-03). It costs
+the most and it is the most convincing: the deli set the expectation that a shop
+in this city is a room you walk into, and a purchase panel bolted to a facade
+would be the first place the city admits it is a set.
+
+### Open, and worth deciding before code
+
+- **What are "supplies"?** A grant alone (`City.Supplies`), or an inventory item
+  he carries to the rocket? The grant is enough to gate boarding; the item is
+  better if it should be visible, loseable, or shown on the pad.
+- **What do they cost?** Sauce starts at 50. Price it so the errand is felt but
+  never blocks — a player who cannot afford the only path forward is stuck, and
+  this game has no way to grind.
+- **Is there a shopkeeper?** The deli has none. A uFoods clerk is another
+  MetaHuman, another voice bake, and the first NPC in the game who is not a
+  dancer.
+
+### Cost
+
+| What lands | Rough |
+|---|---|
+| `HintVolume` grant fix | minutes |
+| Guide stage becomes re-evaluatable + stage 2 trigger | 1 day |
+| Walk-or-pop: whichever is chosen | half a day to 2 days |
+| `L_uFoods` interior, door, arrival tag, grant on arrival | 2–3 days |
+| The purchase interaction | 1 day |
+| `dancer_guide3_nyra` voice + face bake | half a day |
+| Boarding unlock wired to the supplies grant | half a day |
+
+---
+
 ## Where the physics stops
 
 **No orbit. No flight controls. No time warp. No staging UI.** It launches, it
@@ -328,6 +433,13 @@ The second tier is what makes it a memoir; the third is seeds.
 
 - **GETTING INSIDE THE ROCKET IS A POWER YOU EARN** (Walt, 2026-09-03, after
   trying to climb it in the shipped build and finding he could not).
+
+  > **PROMOTED THE SAME DAY — this is now Phase E above, and no longer a seed.**
+  > The open question at the bottom of this entry ("whether the power is Compile,
+  > a seventh verb, or something Nyra grants") was answered by Walt hours later:
+  > it is an errand. Nyra appears once the spaceport is standing and sends him to
+  > uFoods for supplies; the supplies are the permission. Kept here in full
+  > because the reasoning below is what made Phase E obvious.
 
   *"tried climbing onto the spaceport from all angles but it won't let me which
   is good because getting inside the spaceship is another power you earn in
