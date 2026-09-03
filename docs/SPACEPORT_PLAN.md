@@ -326,6 +326,27 @@ The second tier is what makes it a memoir; the third is seeds.
 
 ### Seeds — not scheduled
 
+- **GETTING INSIDE THE ROCKET IS A POWER YOU EARN** (Walt, 2026-09-03, after
+  trying to climb it in the shipped build and finding he could not).
+
+  *"tried climbing onto the spaceport from all angles but it won't let me which
+  is good because getting inside the spaceship is another power you earn in
+  town."*
+
+  This turns a limitation into the design. The crew compartment is already
+  built and already shipping — seven meshes a hundred metres up in the nose,
+  put there because the pack included them and it cost nothing. There is
+  nothing to model. What is missing is only the *permission*, which is exactly
+  the shape of every other power in this game: Leonard cannot do a thing, then
+  he is granted it, then he can.
+
+  It also answers a question the seed below leaves open. If boarding is earned
+  in the city, then the eighth launch has somewhere for him to be.
+
+  Whether the power is Compile, a seventh verb, or something Nyra grants is
+  Walt's call; the machinery — PowerGrant, the shrine ceremony, the memoir line
+  that comes with it — all exists.
+
 - **The eighth launch as the third door.** `[O]` is the office, `[>]` is the
   city. If iKrome is the last thing to leave, the rocket could be how Leonard
   leaves too. That is an ending, and endings are not features — it is written
