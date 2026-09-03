@@ -20,6 +20,7 @@ namespace
 	   /Game/Rocket_Launch_Pad/Meshes and .../Materials in DirectoriesToAlwaysCook. Remove
 	   those lines and the spaceport materialises flawlessly in PIE and is invisible to
 	   every player who downloads the game. */
+	const TCHAR* const P_Ground   = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Ground.SM_Ground");
 	const TCHAR* const P_Base     = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Base.SM_Base");
 	const TCHAR* const P_Pad      = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Launch_Pad.SM_Launch_Pad");
 	const TCHAR* const P_Holder   = TEXT("/Game/Rocket_Launch_Pad/Meshes/Environment/SM_Rocket_Holder.SM_Rocket_Holder");
@@ -111,8 +112,20 @@ void ASpaceport::MakeDefaultLayout()
 	const FRotator Flat = FRotator::ZeroRotator;
 	const FVector One = FVector::OneVector;
 
-	// --- the ground works ---------------------------------------------------
-	Add(P_Base,    FVector(2410.6f,    0.0f,    0.0f), Flat, One, 0.00f, 0.22f);
+	/* --- the ground works ---------------------------------------------------
+	   SM_Ground FIRST, and it is back after being cut. The reasoning for excluding it was
+	   that a ground plane dropped on a city street would clip the pavement — true, but it
+	   ignored what it is FOR. PackDev's launch pad is ELEVATED, the way a real one is,
+	   with a flame trench beneath it; their apron is what fills that space. Without it the
+	   pad stands on legs over open daylight and the player walks underneath, which is what
+	   Walt found: "platform is above ground in front of me".
+
+	   It is 45 metres out on grass rather than on the road, so the clipping worry it was
+	   cut for does not arise there. If it ever does, the fix is moving the spaceport, not
+	   removing the floor from under it. */
+	Add(P_Ground,  FVector(2212.7f,    0.2f,  -95.4f),
+		FRotator(0.0f, 90.0f, 0.0f), One, 0.00f, 0.18f);
+	Add(P_Base,    FVector(2410.6f,    0.0f,    0.0f), Flat, One, 0.04f, 0.22f);
 	Add(P_Pad,     FVector(   0.0f,    0.0f,  700.3f), Flat, One, 0.06f, 0.24f);
 	Add(P_Details, FVector(1665.6f, 1757.5f,  651.7f), Flat, One, 0.18f, 0.20f);
 

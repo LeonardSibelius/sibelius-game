@@ -82,13 +82,32 @@ void UGenerateRequestWidget::FocusInput()
 
 void UGenerateRequestWidget::HandleTextCommitted(const FText& Text, ETextCommit::Type Method)
 {
+	/* FOCUS LOSS IS NOT A CANCEL — and treating it as one is why G needed pressing twice
+	   for the whole life of this feature (Walt, 2026-09-02).
+
+	   Opening the panel is itself a focus transition: SetVisibility, then
+	   SetInputMode(UIOnly) with SetWidgetToFocus on this box. Slate delivers a commit of
+	   OnUserMovedFocus during that dance, the old code read anything-but-Enter as "the
+	   player gave up", and the panel cancelled itself in the same frame it appeared.
+
+	   The first G therefore opened and instantly closed it; the second opened it once
+	   focus had settled. Walt learned to double-tap and reasonably assumed that was the
+	   game. It was never a binding problem, which is exactly where anyone would look.
+
+	   So only two things close this panel now, and both are the player saying so:
+	   ENTER submits, and ESCAPE cancels — through NativeOnKeyDown, which handles the key
+	   directly and does not depend on the text box's commit reason at all. A focus change
+	   leaves the panel open, which is also just better behaviour: clicking away from a
+	   text field has never meant "throw away what I typed".
+
+	   OnCleared is left alone deliberately: it is Slate's own "the box was cleared and
+	   dismissed" and is the one non-Enter commit that really does mean cancel. */
 	if (Method == ETextCommit::OnEnter)
 	{
 		OnSubmit.ExecuteIfBound(Text.ToString());
 	}
-	else
+	else if (Method == ETextCommit::OnCleared)
 	{
-		// Esc (OnCleared) or focus-loss — close without submitting.
 		OnCancel.ExecuteIfBound();
 	}
 }

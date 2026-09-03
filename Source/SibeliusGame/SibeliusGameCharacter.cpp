@@ -644,10 +644,25 @@ void ASibeliusGameCharacter::ToggleGameMenu()
 
 void ASibeliusGameCharacter::ToggleGenerate()
 {
+	/* THE KEY ARRIVED — say so before anything can swallow it.
+
+	   "now G does nothing no matter how many times I press it" has two completely
+	   different causes and no way to tell them apart from the outside: either the
+	   keypress never reaches this function (focus, binding, input mode), or it arrives
+	   and something below returns early. One line settles which half to look in, and it
+	   costs a log entry per press of one key. */
+	const bool bHaveWidget = (GenerateWidget != nullptr);
+	const bool bInViewport = bHaveWidget && GenerateWidget->IsInViewport();
+	UE_LOG(LogTemp, Display,
+		TEXT("[Generate] G pressed. widget=%d inViewport=%d visible=%d"),
+		bHaveWidget ? 1 : 0, bInViewport ? 1 : 0,
+		(bHaveWidget && GenerateWidget->GetVisibility() != ESlateVisibility::Collapsed) ? 1 : 0);
+
 	// FUN-1: the Generate verb must be earned before the panel opens. (Closing an
 	// already-open panel is below this gate and unreachable while locked.)
 	if (!CheckPowerUnlocked(EPowerVerb::Generate))
 	{
+		UE_LOG(LogTemp, Display, TEXT("[Generate] G refused by the power gate."));
 		return;
 	}
 	OnPowerVerbUsed.Broadcast(EPowerVerb::Generate);
