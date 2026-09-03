@@ -263,3 +263,14 @@ pkg-v*.log
 
 # Exported devlog videos (belong in Videos/, not the repo)
 /*.mp4
+
+# Poly Supermarket 01 - the uFoods interior (docs/SPACEPORT_PLAN.md Phase E, the supply
+# run). Bought from Fab, which buys USE and not REDISTRIBUTION, and this repo is public.
+# Same rule as every other pack above: bytes stay local, re-install via Fab -> Add to
+# Project on a fresh clone.
+#
+# It will reach the shipped pak through DirectoriesToAlwaysCook in DefaultGame.ini once
+# L_uFoods actually uses it - Meshes and Materials, NOT Levels: the pack's L_Showcase and
+# L_Overview are layout reference for building the interior, never something a player
+# loads. That is exactly how the Rocket_Launch_Pad pack is handled.
+Content/Poly_Supermarket_01/
