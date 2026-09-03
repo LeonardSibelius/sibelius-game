@@ -24,6 +24,7 @@
 #include "JournalWidget.h"        // SIB-41 journal panel
 #include "GameMenuWidget.h"       // FUN-8 Tab game menu
 #include "GenerateRequestWidget.h" // SIB-30 P1 typed-request panel
+#include "Framework/Application/SlateApplication.h" // hand the keyboard back on close
 #include "Blueprint/UserWidget.h" // CreateWidget
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"       // EKeys / EInputEvent (debug branch keys)
@@ -721,6 +722,31 @@ void ASibeliusGameCharacter::CloseGenerate()
 	{
 		PC->SetInputMode(FInputModeGameOnly());
 		PC->SetShowMouseCursor(false);
+	}
+
+	/* GIVE THE KEYBOARD BACK TO THE GAME, not just the input MODE (Walt, 2026-09-02).
+
+	   "my wasd does not work - also, I have always had to press G twice to get the
+	   prompt throughout the game."
+
+	   Those are one bug, and it has been in the game since Generate shipped.
+	   SetInputMode(GameOnly) changes how the PLAYER CONTROLLER routes input; it does not
+	   move Slate's keyboard focus, which is still sitting in the panel's text box. The
+	   box is Collapsed rather than removed - deliberately, so a callback never destroys
+	   the widget that is calling it - and a collapsed widget can still hold focus.
+
+	   So every keystroke after the first Generate went into an invisible text field.
+	   WASD did nothing. G did nothing either, until a press finally shook focus loose,
+	   which is why it always took two - and why Walt learned to double-tap it and
+	   assumed that was how the game worked.
+
+	   SetAllUserFocusToGameViewport is the other half of SetInputMode and is easy to
+	   omit because the symptom looks like an input-binding problem rather than a focus
+	   one. Guarded on IsInitialized so the headless smoke gates, which have no Slate
+	   application at all, do not fault here. */
+	if (FSlateApplication::IsInitialized())
+	{
+		FSlateApplication::Get().SetAllUserFocusToGameViewport();
 	}
 }
 
