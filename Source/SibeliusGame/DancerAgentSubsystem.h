@@ -56,6 +56,20 @@ public:
 	/** Idempotent — safe to call for a component that is already registered. */
 	void RegisterDancer(UDancerAgentComponent* Dancer);
 
+	/**
+	 * Something changed in the world that a guide's stage depends on — tell the guides.
+	 *
+	 * ASpaceport calls this the moment it is freshly generated. Routing it through here
+	 * rather than having the spaceport find dancers itself means the spaceport does not
+	 * need to know what a dancer IS, and any future trigger (a shop bought out, a rocket
+	 * launched) has one obvious place to call.
+	 *
+	 * Each guide decides for herself whether her stage actually moved and waits until the
+	 * player cannot see her, so this is safe to call speculatively and safe to call twice.
+	 */
+	UFUNCTION(BlueprintCallable, Category="Dancer")
+	void RestageGuides();
+
 	/** Real gameplay worlds only — not the editor preview or the commandlet worlds. */
 	virtual bool DoesSupportWorldType(EWorldType::Type WorldType) const override
 	{

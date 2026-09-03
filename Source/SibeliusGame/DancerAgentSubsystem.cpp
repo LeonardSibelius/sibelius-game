@@ -52,6 +52,19 @@ void UDancerAgentSubsystem::RegisterDancer(UDancerAgentComponent* Dancer)
 	Dancers.AddUnique(Dancer);
 }
 
+void UDancerAgentSubsystem::RestageGuides()
+{
+	// Copy-free walk over weak pointers; stale entries are simply skipped, the same way
+	// the aim-assist walk treats them.
+	for (const TWeakObjectPtr<UDancerAgentComponent>& Weak : Dancers)
+	{
+		if (UDancerAgentComponent* Dancer = Weak.Get())
+		{
+			Dancer->RestageGuide();
+		}
+	}
+}
+
 int32 UDancerAgentSubsystem::ScanForDancers()
 {
 	UWorld* World = GetWorld();

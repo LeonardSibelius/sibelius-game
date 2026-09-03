@@ -7,6 +7,8 @@
 #include "DancerAgentSubsystem.h"          // the aim-assist registry
 #include "PowerGrant.h"                    // SPINE: she hands the power over
 #include "SibeliusGameCharacter.h"         // HasVisitedDeli - the guide's stage gate
+#include "Spaceport.h"                     // stage 2 asks the world whether one stands
+#include "TimerManager.h"                  // the restage retry, waiting for him to look away
 
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
@@ -196,6 +198,9 @@ namespace
 	{
 		TEXT("dancer_guide"),
 		TEXT("dancer_guide2"),
+		// Stage 2, the supply run. Bake dancer_guide3_nyra and its _face beside the
+		// others; until then she is silent at stage 2 and that is the correct failure.
+		TEXT("dancer_guide3"),
 	};
 
 	/** The idle a guide stands in once she is past dancing. See the header on IdleAnim. */
@@ -991,7 +996,111 @@ int32 UDancerAgentComponent::GuideStage() const
 	{
 		return 0;
 	}
-	return ASibeliusGameCharacter::HasVisitedDeli(this) ? 1 : 0;
+	if (!ASibeliusGameCharacter::HasVisitedDeli(this))
+	{
+		return 0;
+	}
+
+	/* STAGE 2 IS "A SPACEPORT STANDS" — and it ASKS THE WORLD, not a saved flag.
+
+	   Same reasoning as AHintVolume, and it is right in the three places a bool is
+	   wrong: after a load, after a Test-Drive discard that removed the spaceport, and on
+	   a New Game. If the thing is not there, the errand it starts makes no sense, and she
+	   should be back to inviting him to build one.
+
+	   Iterating actors on a stage query is cheap and rare: this runs when he talks to
+	   her, when a spaceport is generated, and on the restage retry — never per frame. */
+	if (UWorld* World = GetWorld())
+	{
+		for (TActorIterator<ASpaceport> It(World); It; ++It)
+		{
+			return 2;
+		}
+	}
+	return 1;
+}
+
+void UDancerAgentComponent::GetStageAnchor(int32 Stage, FName& OutTag, float& OutDistance) const
+{
+	if (Stage >= 2)
+	{
+		OutTag = GuideStage2StartTag;
+		OutDistance = GuideStage2Distance;
+		return;
+	}
+	OutTag = GuideStage1StartTag;
+	OutDistance = GuideStage1Distance;
+}
+
+bool UDancerAgentComponent::IsUnseenByPlayer() const
+{
+	const AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return false;
+	}
+
+	const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	if (!PC || !PC->PlayerCameraManager)
+	{
+		// No camera means nobody is looking, but it also means something is wrong. Say
+		// "seen" so we wait rather than teleport into an unknown state.
+		return false;
+	}
+
+	const FVector Eye = PC->PlayerCameraManager->GetCameraLocation();
+	const FVector Look = PC->PlayerCameraManager->GetCameraRotation().Vector();
+
+	FVector ToHer = Owner->GetActorLocation() - Eye;
+	if (!ToHer.Normalize())
+	{
+		return false;   // he is standing inside her; definitely not the moment
+	}
+
+	// Wider than the screen on purpose - a flick of the mouse must not catch her mid-move.
+	return FVector::DotProduct(Look, ToHer) < RestageViewDot;
+}
+
+void UDancerAgentComponent::RestageGuide()
+{
+	if (!IsGuide() || bRestagePending)
+	{
+		return;
+	}
+
+	bRestagePending = true;
+	TryRestageNow();
+}
+
+void UDancerAgentComponent::TryRestageNow()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		bRestagePending = false;
+		return;
+	}
+
+	if (!IsUnseenByPlayer())
+	{
+		/* HE IS LOOKING. Wait, and keep waiting - there is no deadline and no forced
+		   move. She is already saying the new stage's line from where she stands, so the
+		   cost of never moving is that she is in an older spot, which is exactly what
+		   stage 1 looks like right now. The cost of forcing it is a character teleporting
+		   in full view, which is the one outcome this whole mechanism exists to avoid. */
+		World->GetTimerManager().SetTimer(RestageTimerHandle, this,
+			&UDancerAgentComponent::TryRestageNow, RestageRetrySeconds, /*bLoop=*/false);
+		return;
+	}
+
+	World->GetTimerManager().ClearTimer(RestageTimerHandle);
+	bRestagePending = false;
+
+	ApplyGuideStage();
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Dancer] %s restaged to guide stage %d while unseen."),
+		*AgentName, GuideStage());
 }
 
 void UDancerAgentComponent::ApplyGuideStage()
@@ -1015,12 +1124,20 @@ void UDancerAgentComponent::ApplyGuideStage()
 	   coffee cups vanished into the ground under Downtown West. Standing in the old spot
 	   with the new line is a visibly half-done feature; standing under the map is a
 	   missing character. */
+	/* ONE BODY, ANY STAGE. The marker tag and the stand-off both come from the stage, so
+	   adding stage 3 is two properties and a line in GetStageAnchor - not another copy of
+	   the capsule-drop arithmetic below, which is the part that was got wrong once
+	   already. */
+	FName StageTag = NAME_None;
+	float StageDistance = 0.0f;
+	GetStageAnchor(GuideStage(), StageTag, StageDistance);
+
 	bool bMoved = false;
-	if (!GuideStage1StartTag.IsNone())
+	if (!StageTag.IsNone())
 	{
 		for (TActorIterator<APlayerStart> It(Owner->GetWorld()); It; ++It)
 		{
-			if (It->PlayerStartTag != GuideStage1StartTag)
+			if (It->PlayerStartTag != StageTag)
 			{
 				continue;
 			}
@@ -1042,9 +1159,64 @@ void UDancerAgentComponent::ApplyGuideStage()
 				FloorDrop = Capsule->GetScaledCapsuleHalfHeight();
 			}
 
-			const FVector Spot = It->GetActorLocation()
-				+ It->GetActorForwardVector() * GuideStage1Distance
+			FVector Spot = It->GetActorLocation()
+				+ It->GetActorForwardVector() * StageDistance
 				- FVector(0.0f, 0.0f, FloorDrop);
+
+			/* NOW ASK THE GROUND WHERE IT IS, instead of trusting arithmetic about the
+			   marker's height.
+
+			   Subtracting the capsule half-height is only correct if the marker's capsule
+			   is sitting exactly on the floor, and by 3 Sep that assumption had put a
+			   character in the air three separate times: her feet below the pavement at
+			   the deli (the half-height was missing), then a metre up on the lawn (the
+			   marker inherited a trigger SPHERE's centre), then a few inches up after
+			   that was hand-corrected by eye.
+
+			   Every one of those is the same bug — a height derived from something that
+			   is not the ground. So derive it from the ground. A downward trace does not
+			   care where the marker sits, which means the marker only has to be in the
+			   right PLACE, and nobody has to nudge a Z again. It also fixes stage 1 for
+			   free, and any stage added later.
+
+			   Falls back to the arithmetic if the trace hits nothing at all, because a
+			   guide slightly off the floor is a blemish and a guide at the world origin
+			   is a missing character. */
+			if (const UWorld* World = Owner->GetWorld())
+			{
+				FHitResult Floor;
+				FCollisionQueryParams Params(SCENE_QUERY_STAT(GuideFloor), /*bTraceComplex=*/false, Owner);
+				Params.AddIgnoredActor(*It);
+
+				const FVector From = Spot + FVector(0.0f, 0.0f, 300.0f);
+				const FVector To = Spot - FVector(0.0f, 0.0f, 3000.0f);
+				if (World->LineTraceSingleByChannel(Floor, From, To, ECC_Visibility, Params))
+				{
+					/* AND HER ORIGIN IS NOT QUITE HER FEET. Putting the actor origin on
+					   the impact point left her a few inches up (Walt, 3 Sep) - the trace
+					   was right, the assumption about what to do with it was not.
+
+					   So measure the gap instead of assuming it is zero: how far below the
+					   actor's origin her rendered body actually reaches. Then stand that
+					   bottom on the floor. Read off the mesh, so a different agent, a
+					   different rig or a scaled one all land correctly. */
+					float FeetBelowOrigin = 0.0f;
+					if (const USkeletalMeshComponent* Body = FindDanceMesh())
+					{
+						const FBoxSphereBounds B = Body->Bounds;
+						FeetBelowOrigin = Owner->GetActorLocation().Z
+							- (B.Origin.Z - B.BoxExtent.Z);
+					}
+					Spot.Z = Floor.ImpactPoint.Z + FMath::Max(0.0f, FeetBelowOrigin);
+				}
+				else
+				{
+					UE_LOG(LogSibeliusGame, Warning,
+						TEXT("[Dancer] %s found no floor under her stage %d spot - "
+						     "falling back to the marker's height."),
+						*AgentName, GuideStage());
+				}
+			}
 			const FRotator Facing(0.0f, It->GetActorRotation().Yaw + 180.0f, 0.0f);
 
 			Owner->SetActorLocationAndRotation(Spot, Facing,
@@ -1057,41 +1229,67 @@ void UDancerAgentComponent::ApplyGuideStage()
 	if (!bMoved)
 	{
 		UE_LOG(LogSibeliusGame, Warning,
-			TEXT("[Dancer] %s is at guide stage 1 but this level has no PlayerStart tagged "
-			     "'%s' - she stays where she was placed. Run place_cafe_doors.py."),
-			*AgentName, *GuideStage1StartTag.ToString());
+			TEXT("[Dancer] %s is at guide stage %d but this level has no PlayerStart tagged "
+			     "'%s' - she stays where she was placed, and still speaks the new line."),
+			*AgentName, GuideStage(), *StageTag.ToString());
 	}
 
-	/* LOADED HERE, NOT IN THE CONSTRUCTOR — see the long note there. LOAD_NoWarn|LOAD_Quiet
-	   because a missing idle is a warning we write ourselves below, with the path in it,
-	   rather than engine noise every time a guide reaches stage 1. */
-	if (!IdleAnim)
-	{
-		IdleAnim = LoadObject<UAnimSequence>(nullptr, IdlePath, nullptr,
-			LOAD_NoWarn | LOAD_Quiet);
-	}
+	/* SHE KEEPS DANCING (Walt, 2026-09-03) — which REVERSES "No more dancing" from
+	   2026-09-01, and the reason is better than the original:
 
-	// NO MORE DANCING (Walt). The body drops the Morro loop and stands.
-	if (USkeletalMeshComponent* Body = FindDanceMesh())
+	       "actually, you know, she is a dancer with endless energy, so let her dance
+	        outside the deli and at the spaceport."
+
+	   The reversal was prompted by her HANDS. GS_Idle_MH is a Paragon (Greystone)
+	   animation retargeted onto a MetaHuman skeleton, and the two rigs do not agree about
+	   fingers — she stood outside the deli with her hands visibly mangled, gripping a
+	   sword that was not there. Every other _MH file in that folder came through the same
+	   retarget, so there was no better idle to swap to and no neutral idle anywhere in
+	   the project.
+
+	   The Morro dances have no such problem: they retarget cleanly, which is why the city
+	   dancers look right. So the fix for a broken standing pose is to not stand. A guide
+	   who dances while she waits is also simply a better character than one who powers
+	   down between errands.
+
+	   The idle is kept behind bGuideStopsDancing, off by default, because the machinery
+	   was correct even though the art was not — and if a properly retargeted idle ever
+	   arrives, this becomes a tickbox rather than a rewrite. */
+	if (bGuideStopsDancing)
 	{
-		if (IdleAnim)
+		/* LOADED HERE, NOT IN THE CONSTRUCTOR — see the long note there.
+		   LOAD_NoWarn|LOAD_Quiet because a missing idle is a warning we write ourselves
+		   below, with the path in it, rather than engine noise. */
+		if (!IdleAnim)
 		{
-			Body->PlayAnimation(IdleAnim, /*bLooping=*/true);
+			IdleAnim = LoadObject<UAnimSequence>(nullptr, IdlePath, nullptr,
+				LOAD_NoWarn | LOAD_Quiet);
 		}
-		else
+
+		if (USkeletalMeshComponent* Body = FindDanceMesh())
 		{
-			/* Warning, not silence, and the difference matters: a missing idle leaves her
-			   in whatever pose the mesh defaults to, which reads as a bug in the character
-			   rather than a missing asset. Name the asset so the log answers it. */
-			UE_LOG(LogSibeliusGame, Warning,
-				TEXT("[Dancer] %s is at guide stage 1 with no IdleAnim - she will stand in "
-				     "her default pose. Expected %s"), *AgentName, IdlePath);
+			if (IdleAnim)
+			{
+				Body->PlayAnimation(IdleAnim, /*bLooping=*/true);
+			}
+			else
+			{
+				/* Warning, not silence, and the difference matters: a missing idle leaves
+				   her in whatever pose the mesh defaults to, which reads as a bug in the
+				   character rather than a missing asset. Name the asset so the log
+				   answers it. */
+				UE_LOG(LogSibeliusGame, Warning,
+					TEXT("[Dancer] %s is at guide stage %d with no IdleAnim - she will stand "
+					     "in her default pose. Expected %s"),
+					*AgentName, GuideStage(), IdlePath);
+			}
 		}
 	}
 
 	UE_LOG(LogSibeliusGame, Display,
-		TEXT("[Dancer] %s is guiding at stage %d%s."), *AgentName, GuideStage(),
-		bMoved ? TEXT(", waiting outside the deli") : TEXT(""));
+		TEXT("[Dancer] %s is guiding at stage %d%s, and %s."), *AgentName, GuideStage(),
+		bMoved ? TEXT(", moved to her marker") : TEXT(""),
+		bGuideStopsDancing ? TEXT("standing") : TEXT("still dancing"));
 }
 
 FString UDancerAgentComponent::GetSpokenLine() const
@@ -1102,7 +1300,15 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	   dancer without her own take falls back to, including the one AFinaleAltar summons
 	   at the cathedral, and a fallback that confidently announces the wrong name is
 	   worse than one that announces none. */
-	FString Line = IsGuide() ? (GuideStage() >= 1 ? GuideLine2 : GuideLine) : TalkLine;
+	/* The stage picks the words, and GuideVoiceBase picks the recording from the same
+	   number, so the two can never drift apart. Highest stage first: adding stage 3 means
+	   one more clause here and one more entry in GuideVoiceNames. */
+	FString Line = TalkLine;
+	if (IsGuide())
+	{
+		const int32 Stage = GuideStage();
+		Line = (Stage >= 2) ? GuideLine3 : (Stage >= 1) ? GuideLine2 : GuideLine;
+	}
 	Line.ReplaceInline(TEXT("{0}"), *AgentName);
 	return Line;
 }

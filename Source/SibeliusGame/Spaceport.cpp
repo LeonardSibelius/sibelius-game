@@ -3,6 +3,7 @@
 #include "Spaceport.h"
 
 #include "SibeliusGame.h"   // LogSibeliusGame
+#include "DancerAgentSubsystem.h"   // tell the guides a spaceport now stands (Phase E)
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -553,6 +554,24 @@ void ASpaceport::OnGeneratedFresh()
 {
 	// The one path that DOES animate: he asked for it and he is standing there watching.
 	PlayAssembly();
+
+	/* AND THAT IS EXACTLY WHY THE GUIDE IS TOLD NOW (docs/SPACEPORT_PLAN.md Phase E).
+
+	   Nyra's stage 2 is "a spaceport stands", and she has to get to the lawn's edge
+	   without walking — L_City has no navmesh. The assembly above runs for
+	   AssemblySeconds with the player watching a launch complex build itself 160 metres
+	   away, which is the one window in this game where his attention is somewhere else by
+	   construction rather than by luck.
+
+	   She still checks his view cone and waits if he is looking, so this is a good moment
+	   offered rather than a teleport demanded. */
+	if (const UWorld* World = GetWorld())
+	{
+		if (UDancerAgentSubsystem* Dancers = World->GetSubsystem<UDancerAgentSubsystem>())
+		{
+			Dancers->RestageGuides();
+		}
+	}
 }
 
 FText ASpaceport::GetInteractionPrompt_Implementation() const

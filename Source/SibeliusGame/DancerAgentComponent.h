@@ -100,6 +100,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
 	TObjectPtr<UAnimSequence> IdleAnim;
 
+	/* DOES REACHING A GUIDE STAGE STOP HER DANCING? No, since 2026-09-03.
+
+	   It did for two days, and the reason it stopped is worth keeping: GS_Idle_MH is a
+	   Paragon animation retargeted to a MetaHuman skeleton, the two rigs disagree about
+	   finger bones, and she stood outside the deli with visibly broken hands. There is no
+	   correctly retargeted neutral idle in this project, and every _MH animation in that
+	   folder shares the same retarget, so there was nothing to swap to.
+
+	   Turn this on if a good idle ever arrives. Leave it off and she dances, which costs
+	   nothing, fixes the hands, and suits her. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	bool bGuideStopsDancing = false;
+
 	/** How long her greeting stays on screen (seconds). Also how long the talk close-up holds. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.5"))
 	float GreetingSeconds = 7.0f;
@@ -152,19 +165,46 @@ public:
 	   "When the player exits the deli let us have Nyra waiting for him outside in idle
 	   pose. No more dancing."
 
-	   Stage 0  no City.Deli grant   plaza, dancing, GuideLine — go and eat
-	   Stage 1  grant claimed        outside the deli, idle, GuideLine2 — go and build
+	   Stage 0  no City.Deli grant   plaza, GuideLine — go and eat
+	   Stage 1  grant claimed        outside the deli, GuideLine2 — go and build
+	   Stage 2  a spaceport stands   the lawn's edge, GuideLine3 — go and provision
 
-	   THE STAGE IS READ ONCE, AT BeginPlay, and never changes while the level is open.
-	   That is not a simplification, it is the reason there is no walking to write: the
-	   only way to claim the grant is to be inside L_Cafe, and coming back out RELOADS
-	   L_City. She cannot be on the plaza when the grant lands, because he cannot be on
-	   the plaza when the grant lands. By the time anybody sees her again the world has
-	   been rebuilt, and "waiting for him outside" is just where she was placed.
+	   SHE DANCES THROUGH ALL THREE (Walt, 2026-09-03, reversing "No more dancing" from
+	   two days earlier): "she is a dancer with endless energy, so let her dance outside
+	   the deli and at the spaceport." The stage moves her and changes what she says; it
+	   no longer changes what her body is doing. See bGuideStopsDancing.
 
-	   Walt asked whether she should walk there or pop up. She does neither: the question
-	   only exists if the player is watching, and he is in a different level. That decision
-	   comes back if a stage ever changes with him standing there.
+	   ---------------------------------------------------------------------------------
+	   STAGE 2 CAME DUE, AND SO DID THE QUESTION THIS COMMENT DEFERRED (Walt, 2026-09-03).
+
+	   "can she appear after the spaceport appears and tell Leonard to go to uFoods to buy
+	   supplies for his space voyage?"
+
+	   The paragraph above used to end: "That decision comes back if a stage ever changes
+	   with him standing there." It has. He types "spaceport" on the lawn and a launch
+	   complex assembles 160 metres out — no level load, no curtain, and he is very much
+	   standing there.
+
+	   THE STAGE IS THEREFORE NO LONGER READ ONCE. GuideStage() is evaluated live and has
+	   always been — FindTalkVoice, FindTalkFace and the line all call it at TALK time, so
+	   the words and the recording were already correct the instant a spaceport existed.
+	   Only ApplyGuideStage — where she STANDS — ran a single time at BeginPlay.
+
+	   HOW SHE MOVES WITHOUT WALKING. L_City has no navmesh (checked: zero
+	   NavMeshBoundsVolume, zero RecastNavMesh), so MoveToActor — the way ARefuser chases —
+	   is not available here, and building navigation over a landscape city with a
+	   runtime-spawned 120 m obstacle is not a side quest.
+
+	   So she moves while nobody can see her, and ASpaceport::OnGeneratedFresh is the
+	   perfect moment to try: it plays an EIGHT SECOND assembly of the thing he just
+	   summoned, 160 metres away. His attention is not merely elsewhere, it is elsewhere by
+	   construction. RestageGuide checks the player's view cone anyway and retries until
+	   she is genuinely unseen.
+
+	   AND IT NEVER FORCES. If he somehow stares at her for the whole assembly she simply
+	   does not move — and that costs nothing, because she is already saying the stage 2
+	   line from wherever she is. A guide in the old spot with the new words is exactly
+	   what stage 1 looks like today. A guide teleporting in full view is not.
 	   ================================================================================ */
 
 	/** Stage 1: the invitation to Generate. Matches dancer_guide2_nyra — change both. */
@@ -202,6 +242,48 @@ public:
 	   and he can always walk toward her besides. */
 	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0", ClampMax="400"))
 	float GuideStage1Distance = 320.0f;
+
+	/** Stage 2: the supply run. Matches dancer_guide3_nyra — change both.
+
+	    Until that clip is baked she is SILENT at stage 2, which is deliberate: the voice
+	    lookup treats "not recorded yet" as an expected state, and a guide confidently
+	    speaking the previous stage's words is worse than one saying nothing. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer")
+	FString GuideLine3 = TEXT("Nice job, Leonard!  You built a Spaceport using your Generate power!  Next, you will be travelling on your new rocket to the planet Grok.  Before you go, you need to go down the block to the You Foods supermarket and buy supplies.  See you there.");
+
+	/* WHERE SHE WAITS AT STAGE 2 — the same marker trick as stage 1.
+
+	   Put a PlayerStart in L_City wearing this tag, somewhere at the lawn's edge with the
+	   spaceport behind it, and she stands in front of it exactly as she stands in front
+	   of the deli door. Drag the marker and the meeting moves with it.
+
+	   IF NO SUCH MARKER EXISTS SHE SIMPLY DOES NOT MOVE. That is the graceful half of
+	   this feature: stage 2 still works — new line, new voice, new face — from wherever
+	   she happens to be standing. The placement is a nicety, and a missing nicety must
+	   never be a broken guide. (The alternative, falling back to a default position, is
+	   how three coffee cups ended up at the world origin.) */
+	UPROPERTY(EditAnywhere, Category="Dancer")
+	FName GuideStage2StartTag = TEXT("SpaceportLawn");
+
+	/** Centimetres in front of the stage 2 marker. Same 450 cm ceiling as stage 1 —
+	    UInteractorComponent::InteractRange is a camera-forward trace, and past it she is
+	    visible and unreachable. */
+	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0", ClampMax="400"))
+	float GuideStage2Distance = 320.0f;
+
+	/* HOW WIDE "HE CAN SEE HER" IS, as a dot product against the camera's forward.
+
+	   0.0 would be a literal 90-degree half-angle; 0.35 is wider than the screen, so she
+	   will not move just outside the frame edge where a flick of the mouse would catch
+	   her mid-teleport. Cheaper and steadier than a real frustum test, and erring wide
+	   costs nothing — the worst case is she waits a little longer. */
+	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="-1.0", ClampMax="1.0"))
+	float RestageViewDot = 0.35f;
+
+	/** How often to re-check whether he has looked away, in seconds. The assembly runs
+	    for 8 s, so half a second gives sixteen chances inside the window it was built for. */
+	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0.1"))
+	float RestageRetrySeconds = 0.5f;
 
 	/* WHICH DANCERS ARE GUIDES: the ones carrying this ACTOR TAG.
 
@@ -243,6 +325,34 @@ public:
 	   place_city_dancers.py gives her one explicitly and she never has to dance to
 	   qualify. Behaviour-detection stays exactly as it was for everybody else. */
 	void ApplyGuideStage();
+
+	/* THE STAGE CHANGED WITH HIM STANDING THERE. Called by ASpaceport when it is freshly
+	   generated (through UDancerAgentSubsystem::RestageGuides, so the spaceport does not
+	   need to know what a dancer is).
+
+	   Moves her to the new stage's marker AS SOON AS THE PLAYER CANNOT SEE HER, retrying
+	   every RestageRetrySeconds until that is true. It never gives up and never forces:
+	   an unmoved guide is already correct, just standing somewhere older. */
+	void RestageGuide();
+
+private:
+	/** True while a restage is pending, so a second trigger does not stack timers. */
+	bool bRestagePending = false;
+
+	FTimerHandle RestageTimerHandle;
+
+	/** One retry: move if unseen, otherwise leave the timer running. */
+	void TryRestageNow();
+
+	/** Rough view-cone test against the player camera. Generous on purpose — see
+	    RestageViewDot. Returns true when moving her would go unnoticed. */
+	bool IsUnseenByPlayer() const;
+
+	/** The marker tag and stand-off distance for a given stage, so ApplyGuideStage has
+	    one body rather than a branch per stage. */
+	void GetStageAnchor(int32 Stage, FName& OutTag, float& OutDistance) const;
+
+public:
 
 	/** Beat of silence held on her face after the voice clip ends, before the camera lets go. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer", meta=(ClampMin="0.0"))
