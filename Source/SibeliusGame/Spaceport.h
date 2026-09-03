@@ -202,6 +202,17 @@ private:
 	/** Loaded on demand, never in the constructor. Null if the asset is missing. */
 	UMaterialInterface* GetMaterialiseMaterial();
 
+	/* Retries the parts that stayed intangible because the player was inside them, and
+	   stops itself once every part is solid. A timer rather than Tick: the structure is
+	   finished by now and it would be wrong to keep an 8-second assembly's tick alive for
+	   the rest of the level just in case somebody loiters under the gantry. */
+	void PokeDeferredParts();
+
+	FTimerHandle DeferredCollisionTimer;
+
+	/** True while at least one part is waiting for the player to move. */
+	bool bHasDeferredCollision = false;
+
 	/** The authored default layout, filled in the constructor. */
 	void MakeDefaultLayout();
 

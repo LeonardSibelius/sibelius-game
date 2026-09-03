@@ -9,6 +9,9 @@
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 
 namespace
 {
@@ -368,8 +371,40 @@ void ASpaceport::ApplyPartProgress(int32 Index, float Alpha)
 	const bool bVisible = Alpha > 0.0f;
 	const bool bSolid = Alpha >= 1.0f;
 	Comp->SetHiddenInGame(!bVisible);
-	Comp->SetCollisionEnabled(bSolid ? ECollisionEnabled::QueryAndPhysics
-	                                 : ECollisionEnabled::NoCollision);
+
+	/* NEVER TURN SOLID AROUND THE PLAYER (Walt, 2026-09-02, the second time).
+
+	   Making collision follow visibility fixed invisible walls, and introduced this: if he
+	   is standing where a part finishes materialising, the part becomes solid AROUND him
+	   and physics embeds him in it. Mouse-look still works, WASD does nothing, and there
+	   is blackness overhead — the inside of a mesh. That is exactly what he reported, and
+	   in a packaged build there is no Stop button to escape it.
+
+	   So a part that would close on him stays intangible and is retried; PokeDeferredParts
+	   turns it solid the moment he steps clear. A spaceport briefly walk-through where he
+	   happens to be standing is a far smaller sin than a spaceport he is sealed inside.
+
+	   The bounding BOX is deliberately generous rather than accurate. A gantry's box
+	   contains a great deal of air, so this defers more often than strictly necessary —
+	   and every false positive costs a moment of non-solidity, while every false negative
+	   costs the player his game. */
+	bool bDefer = false;
+	if (bSolid)
+	{
+		if (const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
+		{
+			const FBox Box = Comp->Bounds.GetBox().ExpandBy(120.0f);
+			bDefer = Box.IsInside(Player->GetActorLocation());
+		}
+	}
+
+	Comp->SetCollisionEnabled((bSolid && !bDefer) ? ECollisionEnabled::QueryAndPhysics
+	                                              : ECollisionEnabled::NoCollision);
+
+	if (bDefer)
+	{
+		bHasDeferredCollision = true;
+	}
 }
 
 void ASpaceport::PlayAssembly()
@@ -442,6 +477,48 @@ void ASpaceport::Tick(float DeltaSeconds)
 		bAssembled = true;
 		SetActorTickEnabled(false);
 		UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] assembled."));
+
+		// Anything that stayed intangible because he was standing in it gets retried
+		// twice a second until he moves. Cheap, and it stops itself.
+		if (bHasDeferredCollision && GetWorld())
+		{
+			GetWorldTimerManager().SetTimer(DeferredCollisionTimer, this,
+				&ASpaceport::PokeDeferredParts, 0.5f, true);
+		}
+	}
+}
+
+void ASpaceport::PokeDeferredParts()
+{
+	const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
+	bool bStillWaiting = false;
+
+	for (int32 i = 0; i < PartComponents.Num(); ++i)
+	{
+		UStaticMeshComponent* Comp = PartComponents[i];
+		if (!Comp || Comp->GetCollisionEnabled() != ECollisionEnabled::NoCollision)
+		{
+			continue;   // already solid, or never had a mesh
+		}
+
+		const bool bClear = !Player
+			|| !Comp->Bounds.GetBox().ExpandBy(120.0f).IsInside(Player->GetActorLocation());
+		if (bClear)
+		{
+			Comp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		}
+		else
+		{
+			bStillWaiting = true;
+		}
+	}
+
+	if (!bStillWaiting)
+	{
+		bHasDeferredCollision = false;
+		GetWorldTimerManager().ClearTimer(DeferredCollisionTimer);
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Spaceport] player clear - every part is solid."));
 	}
 }
 
