@@ -5,7 +5,8 @@
 #include "SibeliusGame.h"            // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "Spaceport.h"               // the default "job already done" class
-#include "SibeliusGameCharacter.h"   // DeliVisitedGrant, HasVisitedDeli
+#include "SibeliusGameCharacter.h"   // DeliVisitedGrant (the constructor default)
+#include "ProgressionSubsystem.h"    // HasClaimedGrant - any grant, not just the deli
 
 #include "Components/SphereComponent.h"
 #include "EngineUtils.h"             // TActorIterator
@@ -65,11 +66,21 @@ void AHintVolume::OnPlayerEnter(UPrimitiveComponent* /*OverlappedComp*/, AActor*
 	}
 	bInside = true;
 
-	// Not yet invited: he has not met the idea, and a hint before the invitation is
-	// just noise on a lawn.
-	if (!RequiresGrant.IsNone() && !ASibeliusGameCharacter::HasVisitedDeli(this))
+	/* Not yet invited: he has not met the idea, and a hint before the invitation is
+	   just noise on a lawn.
+
+	   THIS ASKS FOR THE GRANT THE PROPERTY NAMES. It used to call HasVisitedDeli
+	   regardless of what RequiresGrant said, which was invisible for exactly as long as
+	   the only hint in the game used the constructor's default (the deli grant) — and
+	   would have gated Phase E's "you have supplies" hint on having eaten a burger.
+	   A property the code ignores is worse than no property: it reads as configured. */
+	if (!RequiresGrant.IsNone())
 	{
-		return;
+		const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+		if (!Progression || !Progression->HasClaimedGrant(RequiresGrant))
+		{
+			return;
+		}
 	}
 
 	/* ALREADY DONE? Ask the WORLD, not a flag. One iteration over actors on a single
