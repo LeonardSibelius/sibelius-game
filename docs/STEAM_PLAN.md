@@ -59,6 +59,51 @@ date — but it eats into the run-up to the 11 September page deadline. If it is
 pending after 7 business days, THEN open a support ticket.
 
 The useful consequence: the thing actually on the critical path, capsule art, needs
+
+### What actually happened at the KYC gate (2026-09-03)
+
+The section above predicted a **passive** 2–7 business day wait and said to open a
+ticket after seven. Reality was different in a way worth writing down: it became an
+**active document request that then stalled silently**.
+
+- **26 Aug** — tax interview submitted. Steamworks then showed *"Identity verification
+  required — additional documents are necessary to complete your KYC verification."*
+  Not "pending". A request, sitting behind a **View details** button, which will wait
+  forever if nobody clicks it.
+- The documents go to **Tax Identity Solutions**, a third party, through a **Dropbox
+  file request** — not to Valve. Valve support is a middleman here.
+- **26–27 Aug** — uploaded US driver's licence front, rear, and a selfie holding it.
+- **3 Sep** — uploaded the *same three files* again. Identical files cannot fail once
+  and pass the next time; two attempts produced two identical silences.
+- **3 Sep** — re-uploaded a resized set. The originals were 12 MP, **7.5–7.8 MB each**,
+  and these processors commonly cap at 5 MB. Resized to 2400 px long edge at quality
+  92: **0.9–1.2 MB**, still ~600 dpi across a licence. That is a *guess* at the cause,
+  well founded but unconfirmed.
+- **3 Sep** — support ticket **HT-64HH-K77N-8GCT** opened, asking the only question
+  that ends the loop: **which document failed, and why.** They can see the rejection
+  code; the payee cannot.
+
+**The contradiction worth quoting at them.** The Required Documents page lists
+"Driver's License" as acceptable, but the *Specifically* section beneath it enumerates
+only **International Passport**, **FOREIGN Driver's License**, and **Government issued
+Identification**. There is no line for a domestic US licence. A US licence may be
+falling into a gap in whatever checklist the reviewer works from. If the answer is
+"passport", that is a clear path instead of a silent loop.
+
+**A deadline is attached.** The notice says that if the documents are not provided by
+the date indicated, the KYC *and the completed tax form* are invalidated and the whole
+interview must be retaken. The date is not stated in the notice body — hence question
+3 on the ticket.
+
+**Timeline impact.** The plan needs the store page public by **11 September** for the
+30-day review to finish by the 25th. The app cannot be created until KYC clears, so
+that is **8 days of slack** as of 3 September. Capsule art still needs nothing from
+Steamworks — it remains the right thing to do during the gate.
+
+**The lesson, which is this project's oldest one in a new coat:** identical inputs
+produce identical failures. Two attempts with the same three files was one attempt
+performed twice. Change something measurable, or ask for the error.
+
 nothing from Steamworks. Do it during this gate.
 
 ## 2. The steps, in order
