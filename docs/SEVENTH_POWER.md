@@ -146,4 +146,4 @@ to do that work.
 `docs/SPACEPORT_PLAN.md` (Phase C, the launch cutscene, branch state 3) ·
 `docs/MEMOIR_VOICE.md` (the eight employer messages, verbatim) ·
 `docs/SPINE.md` (where a new Move fits) · `docs/NARRATIVE.md` ·
-
+`docs/DANCER_VOICE.md` (the ElevenLabs pass for the ghost's line)
