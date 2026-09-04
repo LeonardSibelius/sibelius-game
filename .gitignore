@@ -274,3 +274,15 @@ pkg-v*.log
 # L_Overview are layout reference for building the interior, never something a player
 # loads. That is exactly how the Rocket_Launch_Pad pack is handled.
 Content/Poly_Supermarket_01/
+
+# Build, package and commandlet logs written to the REPO ROOT by Tools/Scripts.
+# Root-level only (/*.log), so nothing under Saved/ or Content/ is affected.
+#
+# 83 of these were already tracked when this rule was added (build-*.log, gate-*.log,
+# pkg-v0*.log and friends) and they STAY tracked - a tracked file beats an ignore rule,
+# and rewriting that much history to tidy up would cost more than the mess does. This
+# only stops NEW ones being added.
+#
+# build-diag.log was untracked at the same time because it is the one that gets
+# regenerated, so it showed as modified forever and hid real changes in git status.
+/*.log
