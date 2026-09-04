@@ -9,6 +9,7 @@
 #include "SupplyCounter.h"          // HasSupplies() - the gate, asked where it is answered
 #include "SibeliusHUD.h"            // Toast, and every refusal names the next move
 #include "Camera/CameraActor.h"     // boarding moves the VIEW, not the body
+#include "Camera/CameraComponent.h"
 #include "Components/PointLightComponent.h"   // ...and the view has to carry its own light
 #include "HAL/IConsoleManager.h"              // sib.BoardingLight, so brightness needs no rebuild
 #include "Components/CapsuleComponent.h"
@@ -18,6 +19,11 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "EngineUtils.h"            // TActorIterator, for FindForPlayer
+#include "Components/InputComponent.h"        // skip keys during the launch cutscene
+#include "InputCoreTypes.h"
+#include "NiagaraComponent.h"
+#include "NiagaraSystem.h"
+#include "UObject/ConstructorHelpers.h"       // hard-ref the plume so it cooks
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -90,6 +96,17 @@ ASpaceport::ASpaceport()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	MakeDefaultLayout();
+
+	/* HARD-REF THE PLUME so the cooker follows it. Soft path alone is the v0.7.4 miss.
+	   The plugin template is the same gas the sauce cauldron uses; launch retints it
+	   orange and points it at the pad. A game copy at /Game/Cinematics/NS_RocketPlume
+	   is preferred at runtime if build_launch_shot.py has run. */
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> PlumeFinder(
+		TEXT("/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_ColoredSmoke.Grid3D_Gas_ColoredSmoke"));
+	if (PlumeFinder.Succeeded())
+	{
+		PlumeSystem = PlumeFinder.Object;
+	}
 }
 
 void ASpaceport::MakeDefaultLayout()
@@ -192,6 +209,26 @@ void ASpaceport::BeginPlay()
 {
 	Super::BeginPlay();
 	BuildPartComponents();
+}
+
+void ASpaceport::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (bLaunching)
+	{
+		BindLaunchSkip(false);
+		if (APlayerController* PC = LaunchPawn ? Cast<APlayerController>(LaunchPawn->GetController()) : nullptr)
+		{
+			PC->SetIgnoreMoveInput(false);
+			PC->SetIgnoreLookInput(false);
+			if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+			{
+				HUD->ReleaseCinematic();
+			}
+		}
+		DestroyLaunchRig();
+		bLaunching = false;
+	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void ASpaceport::BuildPartComponents()
@@ -480,6 +517,12 @@ void ASpaceport::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);   // the parent still owns its own float-and-spin reveal
 
+	if (bLaunching)
+	{
+		TickLaunch(DeltaSeconds);
+		return;
+	}
+
 	if (!bAssembling)
 	{
 		return;
@@ -554,7 +597,12 @@ void ASpaceport::PokeDeferredParts()
 
 uint8 ASpaceport::CaptureBranchState() const
 {
-	// 1 == the parent's "built". Phase C adds 2 (rocket on pad) and 3 (launched) here.
+	// 1 == the parent's "built". 3 == launched (pad empty). 2 stays reserved for
+	// RocketOnPad once a fresh hull can sit on a used pad.
+	if (bLaunched)
+	{
+		return 3;
+	}
 	return bAssembled ? 1 : 0;
 }
 
@@ -582,13 +630,26 @@ void ASpaceport::RestoreBranchState(uint8 InState)
 
 		bAssembling = false;
 		bAssembled = false;
+		bLaunching = false;
+		bLaunched = false;
 		SetActorTickEnabled(false);
+		DestroyLaunchRig();
 		ClearParts();
 		return;
 	}
 
 	// SNAP, never animate. See the header: a reload must not replay the show.
+	// Flag launched BEFORE SnapAssembled so the boarding-hint watch does not arm
+	// on a pad whose hull is about to vanish.
+	if (InState >= 3)
+	{
+		bLaunched = true;
+	}
 	SnapAssembled();
+	if (bLaunched)
+	{
+		HideFlightParts();
+	}
 }
 
 void ASpaceport::OnGeneratedFresh()
@@ -743,9 +804,29 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
 	}
 
 	// FIRST, before anything measures a distance. See FindForPlayer.
+	if (bLaunching)
+	{
+		SkipLaunch();
+		return true;
+	}
+
+	if (bLaunched)
+	{
+		ASibeliusHUD::Toast(this,
+			TEXT("COMPILE ERROR: THAT SHIP IS ALREADY AWAY"),
+			4.0f, SibeliusToast::Warn);
+		return true;
+	}
+
 	if (bAboard)
 	{
-		Disembark(Pawn);
+		/* C WHILE ABOARD IS IGNITION. Disembark was the way out only while there was
+		   nothing to press; Nyra's boarding procedures end in a launch, and Compile is
+		   the verb that runs the program. Space / Enter / Escape skip the shot. */
+		if (!BeginLaunch(Pawn))
+		{
+			Disembark(Pawn);
+		}
 		return true;
 	}
 
@@ -951,11 +1032,10 @@ bool ASpaceport::Board(APawn* Pawn)
 	   clip and this one is not cut yet.  docs/SPACEPORT_PLAN.md carries it as the next
 	   ElevenLabs pass.
 
-	   THE SECOND HALF OF THE SENTENCE IS NOT DECORATION.  Until Phase C there is no launch
-	   to press, so a player told only "aboard" is a player hunting for a button that does
-	   not exist.  The way out has to be on screen the moment he arrives. */
+	   THE SECOND HALF OF THE SENTENCE IS THE VERB.  C boarded him; C again is ignition.
+	   A player told only "aboard" is a player hunting for a button that does not exist. */
 	ASibeliusHUD::Toast(this,
-		TEXT("ABOARD - NYRA IS IN THE SHIP'S COMPUTER   (C AGAIN TO STEP BACK OUT)"),
+		TEXT("ABOARD - NYRA IS IN THE SHIP'S COMPUTER   (C TO LAUNCH)"),
 		6.0f, SibeliusToast::Good);
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Aboard; view at local %s."),
@@ -985,7 +1065,10 @@ void ASpaceport::Disembark(APawn* Pawn)
 	}
 
 	FadeIn(Pawn);
-	ASibeliusHUD::Toast(this, TEXT("BACK ON THE LAWN."), 3.0f, SibeliusToast::Info);
+	if (!bLaunched)
+	{
+		ASibeliusHUD::Toast(this, TEXT("BACK ON THE LAWN."), 3.0f, SibeliusToast::Info);
+	}
 }
 
 /* A FADE UP, NOT A FADE OUT AND BACK.
@@ -1025,7 +1108,7 @@ void ASpaceport::FadeIn(APawn* Pawn) const
    =================================================================================== */
 void ASpaceport::StartBoardingHintWatch()
 {
-	if (bBoardingHintShown || !bAssembled)
+	if (bBoardingHintShown || !bAssembled || bLaunched)
 	{
 		return;
 	}
@@ -1062,7 +1145,7 @@ void ASpaceport::PollBoardingHint()
 		return;
 	}
 
-	if (bBoardingHintShown || bAboard || !bAssembled)
+	if (bBoardingHintShown || bAboard || bLaunched || bLaunching || !bAssembled)
 	{
 		World->GetTimerManager().ClearTimer(BoardingHintTimer);
 		return;
@@ -1109,4 +1192,439 @@ void ASpaceport::PollBoardingHint()
 
 	UE_LOG(LogSibeliusGame, Display,
 		TEXT("[Spaceport] Hint shown at %.0f cm."), Away);
+}
+
+/* ===================================================================================
+   LAUNCH CUTSCENE — live cameras on THIS pad, Niagara under THIS hull.
+   =================================================================================== */
+
+namespace
+{
+	FRotator LookAt(const FVector& From, const FVector& To)
+	{
+		const FVector Delta = To - From;
+		if (Delta.IsNearlyZero())
+		{
+			return FRotator::ZeroRotator;
+		}
+		return Delta.Rotation();
+	}
+
+	void TintNiagara(UNiagaraComponent* Comp, const FLinearColor& Color)
+	{
+		if (!Comp)
+		{
+			return;
+		}
+		static const FName ColorNames[] = {
+			TEXT("User.Color"), TEXT("Color"), TEXT("User.SmokeColor"), TEXT("Smoke Color"),
+			TEXT("User.Albedo"), TEXT("Albedo"), TEXT("User.ParticleColor"), TEXT("ParticleColor"),
+			TEXT("Grid3D_Gas.Color"), TEXT("User.DensityColor"), TEXT("Density Color")
+		};
+		for (const FName& Name : ColorNames)
+		{
+			Comp->SetVariableLinearColor(Name, Color);
+		}
+	}
+}
+
+bool ASpaceport::IsFlightPart(int32 Index) const
+{
+	if (!Parts.IsValidIndex(Index))
+	{
+		return false;
+	}
+	return Parts[Index].Mesh.ToSoftObjectPath().ToString().Contains(TEXT("/Meshes/Rocket/"));
+}
+
+UStaticMeshComponent* ASpaceport::FindRocketMesh() const
+{
+	for (int32 i = 0; i < Parts.Num(); ++i)
+	{
+		if (!IsFlightPart(i) || !PartComponents.IsValidIndex(i) || !PartComponents[i])
+		{
+			continue;
+		}
+		if (Parts[i].Mesh.ToSoftObjectPath().GetAssetName() == TEXT("SM_Rocket"))
+		{
+			return PartComponents[i];
+		}
+	}
+	return nullptr;
+}
+
+void ASpaceport::AttachFlightPartsToRocket()
+{
+	UStaticMeshComponent* Rocket = FindRocketMesh();
+	if (!Rocket)
+	{
+		return;
+	}
+
+	/* ONE RIG. The crew compartment is seven meshes a hundred metres up the nose. If
+	   each pitched around its own origin the interior would shear out of the hull on
+	   the gravity turn. Parent them to SM_Rocket with KEEP_WORLD so the cutscene moves
+	   one transform. */
+	for (int32 i = 0; i < PartComponents.Num(); ++i)
+	{
+		UStaticMeshComponent* Comp = PartComponents[i];
+		if (!Comp || Comp == Rocket || !IsFlightPart(i))
+		{
+			continue;
+		}
+		Comp->AttachToComponent(Rocket, FAttachmentTransformRules::KeepWorldTransform);
+	}
+}
+
+void ASpaceport::AttachPlume()
+{
+	UStaticMeshComponent* Rocket = FindRocketMesh();
+	if (!Rocket)
+	{
+		return;
+	}
+
+	UNiagaraSystem* Sys = LoadObject<UNiagaraSystem>(nullptr,
+		TEXT("/Game/Cinematics/NS_RocketPlume.NS_RocketPlume"),
+		nullptr, LOAD_NoWarn | LOAD_Quiet);
+	if (!Sys)
+	{
+		Sys = PlumeSystem.LoadSynchronous();
+	}
+	if (!Sys)
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Spaceport] no Niagara plume - launch will be a silent climb. ")
+			TEXT("Is NiagaraFluids enabled?"));
+		return;
+	}
+
+	if (!Plume)
+	{
+		Plume = NewObject<UNiagaraComponent>(this, TEXT("RocketPlume"));
+		Plume->SetupAttachment(Rocket);
+		Plume->SetAutoActivate(false);
+		Plume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Plume->SetCastShadow(false);
+		Plume->SetMobility(EComponentMobility::Movable);
+		Plume->RegisterComponent();
+	}
+
+	Plume->SetAsset(Sys);
+	Plume->SetRelativeLocation(PlumeRelativeOffset);
+	Plume->SetRelativeRotation(PlumeRelativeRotation);
+	Plume->SetRelativeScale3D(FVector(PlumeScale));
+	TintNiagara(Plume, PlumeColor);
+	Plume->Activate(true);
+
+	if (!PlumeLight)
+	{
+		PlumeLight = NewObject<UPointLightComponent>(this, TEXT("PlumeLight"));
+		PlumeLight->SetupAttachment(Rocket);
+		PlumeLight->RegisterComponent();
+		PlumeLight->SetIntensityUnits(ELightUnits::Lumens);
+		PlumeLight->SetCastShadows(false);
+		PlumeLight->SetMobility(EComponentMobility::Movable);
+	}
+	PlumeLight->SetRelativeLocation(PlumeRelativeOffset + FVector(0.0f, 0.0f, 80.0f));
+	PlumeLight->SetIntensity(140000.0f);
+	PlumeLight->SetAttenuationRadius(7000.0f);
+	PlumeLight->SetLightColor(PlumeColor);
+	PlumeLight->SetVisibility(true);
+}
+
+void ASpaceport::SpawnLaunchCameras()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	for (ACameraActor* Cam : LaunchCams)
+	{
+		if (IsValid(Cam))
+		{
+			Cam->Destroy();
+		}
+	}
+	LaunchCams.Reset();
+
+	const FTransform Xf = GetActorTransform();
+	auto SpawnCam = [this, World, &Xf](const FVector& LocalPos, const FVector& LocalLook, float Fov) -> ACameraActor*
+	{
+		const FVector WPos = Xf.TransformPosition(LocalPos);
+		const FVector WLook = Xf.TransformPosition(LocalLook);
+		FActorSpawnParameters Spawn;
+		Spawn.Owner = this;
+		Spawn.ObjectFlags |= RF_Transient;
+		ACameraActor* Cam = World->SpawnActor<ACameraActor>(WPos, LookAt(WPos, WLook), Spawn);
+		if (Cam)
+		{
+			if (UCameraComponent* C = Cam->GetCameraComponent())
+			{
+				C->bConstrainAspectRatio = false;
+				C->SetFieldOfView(Fov);
+			}
+		}
+		return Cam;
+	};
+
+	/* Four exteriors. Shot 0 is the cabin camera already sitting in BoardingView.
+	   Distances are Saturn-V scale: the hull is 120 m tall. */
+	LaunchCams.Reset();
+	LaunchCams.Add(SpawnCam(FVector(-14000.0f, -9000.0f,  2200.0f), FVector(0.0f, 360.0f,  4000.0f), 38.0f)); // wide pad
+	LaunchCams.Add(SpawnCam(FVector(  3400.0f,  2800.0f,   380.0f), FVector(0.0f, 360.0f,   900.0f), 42.0f)); // engines
+	LaunchCams.Add(SpawnCam(FVector(  5200.0f, -3200.0f,  5200.0f), FVector(0.0f, 360.0f,  6500.0f), 48.0f)); // track
+	LaunchCams.Add(SpawnCam(FVector(-18000.0f, 11000.0f, 28000.0f), FVector(0.0f, 360.0f, 22000.0f), 35.0f)); // sky
+}
+
+void ASpaceport::DestroyLaunchRig()
+{
+	if (Plume)
+	{
+		Plume->Deactivate();
+		Plume->DestroyComponent();
+		Plume = nullptr;
+	}
+	if (PlumeLight)
+	{
+		PlumeLight->DestroyComponent();
+		PlumeLight = nullptr;
+	}
+	for (ACameraActor* Cam : LaunchCams)
+	{
+		if (IsValid(Cam))
+		{
+			Cam->Destroy();
+		}
+	}
+	LaunchCams.Reset();
+}
+
+void ASpaceport::CutToLaunchShot(int32 Shot)
+{
+	APlayerController* PC = LaunchPawn
+		? Cast<APlayerController>(LaunchPawn->GetController())
+		: nullptr;
+	if (!PC)
+	{
+		return;
+	}
+
+	AActor* Target = nullptr;
+	if (Shot <= 0)
+	{
+		Target = BoardingView;
+	}
+	else if (LaunchCams.IsValidIndex(Shot - 1))
+	{
+		Target = LaunchCams[Shot - 1];
+	}
+
+	if (Target)
+	{
+		PC->SetViewTargetWithBlend(Target, 0.25f);
+	}
+	LaunchShot = Shot;
+}
+
+void ASpaceport::BindLaunchSkip(bool bBind)
+{
+	APlayerController* PC = LaunchPawn
+		? Cast<APlayerController>(LaunchPawn->GetController())
+		: nullptr;
+	if (!PC)
+	{
+		return;
+	}
+
+	if (bBind && !bLaunchSkipBound)
+	{
+		EnableInput(PC);
+		if (InputComponent)
+		{
+			InputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &ASpaceport::SkipLaunch);
+			InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ASpaceport::SkipLaunch);
+			InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &ASpaceport::SkipLaunch);
+			InputComponent->BindKey(EKeys::C, IE_Pressed, this, &ASpaceport::SkipLaunch);
+			InputComponent->BindKey(EKeys::Gamepad_FaceButton_Bottom, IE_Pressed, this, &ASpaceport::SkipLaunch);
+		}
+		bLaunchSkipBound = true;
+	}
+	else if (!bBind && bLaunchSkipBound)
+	{
+		DisableInput(PC);
+		bLaunchSkipBound = false;
+	}
+}
+
+void ASpaceport::HideFlightParts()
+{
+	for (int32 i = 0; i < PartComponents.Num(); ++i)
+	{
+		if (!IsFlightPart(i) || !PartComponents[i])
+		{
+			continue;
+		}
+		PartComponents[i]->SetHiddenInGame(true);
+		PartComponents[i]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	if (Plume)
+	{
+		Plume->Deactivate();
+		Plume->SetVisibility(false);
+	}
+	if (PlumeLight)
+	{
+		PlumeLight->SetVisibility(false);
+	}
+}
+
+bool ASpaceport::BeginLaunch(APawn* Pawn)
+{
+	if (bLaunching || bLaunched || !IsValid(Pawn))
+	{
+		return false;
+	}
+
+	UStaticMeshComponent* Rocket = FindRocketMesh();
+	if (!Rocket)
+	{
+		ASibeliusHUD::Toast(this,
+			TEXT("COMPILE ERROR: NO HULL ON THE PAD"),
+			4.0f, SibeliusToast::Bad);
+		return false;
+	}
+
+	LaunchPawn = Pawn;
+	AttachFlightPartsToRocket();
+	RocketRestRelative = Rocket->GetRelativeTransform();
+	AttachPlume();
+	SpawnLaunchCameras();
+
+	if (APlayerController* PC = Cast<APlayerController>(Pawn->GetController()))
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			HUD->HoldCinematic(LaunchSeconds + 8.0f);
+		}
+	}
+
+	BindLaunchSkip(true);
+	bLaunching = true;
+	LaunchElapsed = 0.0f;
+	LaunchShot = INDEX_NONE;
+	SetActorTickEnabled(true);
+	CutToLaunchShot(0);
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Spaceport] ignition - Niagara %s, cameras %d."),
+		Plume && Plume->GetAsset() ? *Plume->GetAsset()->GetName() : TEXT("NONE"),
+		LaunchCams.Num());
+	return true;
+}
+
+void ASpaceport::TickLaunch(float DeltaSeconds)
+{
+	LaunchElapsed += DeltaSeconds;
+
+	const float Hold = FMath::Max(0.0f, IgnitionHoldSeconds);
+	const float Total = FMath::Max(Hold + 0.5f, LaunchSeconds);
+	const float ClimbTime = FMath::Max(0.01f, Total - Hold);
+	const float Raw = FMath::Clamp((LaunchElapsed - Hold) / ClimbTime, 0.0f, 1.0f);
+	const float Eased = Raw * Raw * Raw;
+
+	if (UStaticMeshComponent* Rocket = FindRocketMesh())
+	{
+		FVector Loc = RocketRestRelative.GetLocation();
+		Loc.Z += ClimbHeight * Eased;
+		FRotator Rot = RocketRestRelative.Rotator();
+		const float TurnAlpha = FMath::Clamp((Raw - 0.12f) / 0.55f, 0.0f, 1.0f);
+		Rot.Pitch += GravityTurnDegrees * TurnAlpha;
+		Rocket->SetRelativeLocationAndRotation(Loc, Rot);
+	}
+
+	// Camera cuts: cabin, wide, engines, track, sky.
+	int32 Wanted = 0;
+	if (LaunchElapsed >= 16.0f)      { Wanted = 4; }
+	else if (LaunchElapsed >= 10.0f) { Wanted = 3; }
+	else if (LaunchElapsed >= 5.5f)  { Wanted = 2; }
+	else if (LaunchElapsed >= 2.5f)  { Wanted = 1; }
+
+	if (Wanted != LaunchShot)
+	{
+		CutToLaunchShot(Wanted);
+	}
+
+	if (Wanted >= 3 && LaunchCams.IsValidIndex(Wanted - 1))
+	{
+		if (UStaticMeshComponent* Rocket = FindRocketMesh())
+		{
+			const FVector Hull = Rocket->GetComponentLocation();
+			ACameraActor* Cam = LaunchCams[Wanted - 1];
+			if (Wanted == 3)
+			{
+				const FVector Offset = GetActorRotation().RotateVector(FVector(5200.0f, -3200.0f, 800.0f));
+				const FVector CamLoc = Hull + Offset;
+				Cam->SetActorLocation(CamLoc);
+				Cam->SetActorRotation(LookAt(CamLoc, Hull + FVector(0.0f, 0.0f, 2500.0f)));
+			}
+			else if (Wanted == 4)
+			{
+				Cam->SetActorRotation(LookAt(Cam->GetActorLocation(), Hull));
+			}
+		}
+	}
+
+	if (LaunchElapsed >= Total)
+	{
+		EndLaunch();
+	}
+}
+
+void ASpaceport::SkipLaunch()
+{
+	if (bLaunching)
+	{
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] launch skipped at %.1fs."), LaunchElapsed);
+		EndLaunch();
+	}
+}
+
+void ASpaceport::EndLaunch()
+{
+	if (!bLaunching && bLaunched)
+	{
+		return;
+	}
+
+	bLaunching = false;
+	bLaunched = true;
+
+	BindLaunchSkip(false);
+	HideFlightParts();
+	DestroyLaunchRig();
+
+	if (APlayerController* PC = LaunchPawn ? Cast<APlayerController>(LaunchPawn->GetController()) : nullptr)
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			HUD->ReleaseCinematic();
+		}
+	}
+
+	APawn* Pawn = LaunchPawn;
+	LaunchPawn = nullptr;
+	SetActorTickEnabled(false);
+
+	if (IsValid(Pawn))
+	{
+		Disembark(Pawn);
+		ASibeliusHUD::Toast(this,
+			TEXT("THE SHIP IS AWAY. NYRA WILL CALL FROM GROK."),
+			6.0f, SibeliusToast::Good);
+	}
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] launched."));
 }

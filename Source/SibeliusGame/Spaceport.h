@@ -101,6 +101,7 @@ public:
 	ASpaceport();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
 
 	/* BRANCH STATE — deliberately wider than ABuildSite's built/unbuilt, and deliberately
@@ -285,6 +286,61 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Boarding", meta = (ClampMin = "100.0"))
 	float BoardingRange = 12000.0f;
 
+	/* ===================================================================================
+	   LAUNCH CUTSCENE — Unreal plays it, on THIS rocket, with Niagara (2026-09-03).
+
+	   Not a pre-rendered film and not a second rocket in a black void. C while aboard
+	   is ignition: cameras cut around the pad that Generate built, a Niagara Fluids
+	   plume lights under PackDev's SM_Rocket, and the hull (plus the crew compartment
+	   riding in its nose) climbs out of the city. Sequencer can author a matching shot
+	   (Tools/Scripts/build_launch_shot.py → LS_Rocket_Launch); the runtime path does
+	   not depend on that asset existing, because a missing sequence must never strand
+	   him in the cabin.
+
+	   Physics (TWR, fuel, max-Q) is still Phase C's rest. This is the voyage beat Nyra
+	   already promised — time compression, skippable, then the pad is empty. */
+	bool IsLaunching() const { return bLaunching; }
+	bool HasLaunched() const { return bLaunched; }
+
+	/** Soft ref to a Sequencer-authored shot. Empty / failed load = the in-place cameras. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch")
+	TSoftObjectPtr<class ULevelSequence> LaunchSequence;
+
+	/** Niagara Fluids gas, pointed down and orange. Constructor hard-refs the plugin
+	    template so it cooks; BeginPlay prefers a game copy if build_launch_shot.py made one. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch")
+	TSoftObjectPtr<class UNiagaraSystem> PlumeSystem;
+
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch")
+	FLinearColor PlumeColor = FLinearColor(1.0f, 0.42f, 0.08f);
+
+	/** Engine bell, relative to SM_Rocket's origin. Negative Z is toward the pad. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch")
+	FVector PlumeRelativeOffset = FVector(0.0f, 0.0f, -400.0f);
+
+	/** The gas template rises along its local +Z. Pitch 180 points that column at the ground. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch")
+	FRotator PlumeRelativeRotation = FRotator(180.0f, 0.0f, 0.0f);
+
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch", meta = (ClampMin = "0.2"))
+	float PlumeScale = 5.0f;
+
+	/** Whole cutscene, including the ignition hold. Skip ends it early. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch", meta = (ClampMin = "4.0"))
+	float LaunchSeconds = 22.0f;
+
+	/** Engines lit, hull not yet moving. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch", meta = (ClampMin = "0.0"))
+	float IgnitionHoldSeconds = 2.5f;
+
+	/** How far the hull climbs, in cm. 80 000 = 800 m, enough to leave the skyline. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch", meta = (ClampMin = "1000.0"))
+	float ClimbHeight = 80000.0f;
+
+	/** Programmed pitch after clearing the tower, degrees. Negative = gravity turn. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Launch")
+	float GravityTurnDegrees = -12.0f;
+
 private:
 	/** Create the component for each part, hidden and sunk. Idempotent. */
 	void BuildPartComponents();
@@ -403,4 +459,46 @@ private:
 
 	/** Throttles the "still too far" log to one line in five. Diagnostic only. */
 	int32 PollsWhileFar = 0;
+
+	/* --- launch cutscene ---------------------------------------------------------- */
+
+	/** C while aboard. False only if there is no rocket mesh to fly. */
+	bool BeginLaunch(APawn* Pawn);
+
+	void TickLaunch(float DeltaSeconds);
+	void EndLaunch();
+	void SkipLaunch();
+
+	void AttachFlightPartsToRocket();
+	void AttachPlume();
+	void SpawnLaunchCameras();
+	void DestroyLaunchRig();
+	void CutToLaunchShot(int32 Shot);
+	void HideFlightParts();
+	void BindLaunchSkip(bool bBind);
+
+	/** Hull + crew compartment (Meshes/Rocket/*). The pad stays. */
+	bool IsFlightPart(int32 Index) const;
+	class UStaticMeshComponent* FindRocketMesh() const;
+
+	bool bLaunching = false;
+	bool bLaunched = false;
+	float LaunchElapsed = 0.0f;
+	int32 LaunchShot = INDEX_NONE;
+	bool bLaunchSkipBound = false;
+
+	/** Assembled relative transform of SM_Rocket, captured at ignition so climb is a delta. */
+	FTransform RocketRestRelative = FTransform::Identity;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UNiagaraComponent> Plume;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UPointLightComponent> PlumeLight;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class ACameraActor>> LaunchCams;
+
+	UPROPERTY(Transient)
+	TObjectPtr<APawn> LaunchPawn;
 };

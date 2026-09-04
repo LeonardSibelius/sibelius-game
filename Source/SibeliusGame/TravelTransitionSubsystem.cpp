@@ -235,5 +235,9 @@ FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 	{
 		return NSLOCTEXT("Travel", "EnterCity", "Somewhere you have never been...");
 	}
+	if (LevelName.Contains(TEXT("Cine_Launch")))
+	{
+		return NSLOCTEXT("Travel", "Ignition", "Ignition...");
+	}
 	return NSLOCTEXT("Travel", "Traveling", "Traveling...");
 }

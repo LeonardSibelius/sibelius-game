@@ -520,10 +520,14 @@ so tuning is dragging numbers with the level open.
   Test-Drive can branch and discard. "Leonard happens to be standing in the
   nose" is a fact about the *pawn*. Writing it into the save would let a reload
   put him inside a rocket he never boarded.
-- **No launch.** There is nothing to press once aboard, which is why the
-  boarding toast carries `(C AGAIN TO STEP BACK OUT)` in the same sentence — a
-  player told only "aboard" is a player hunting a button that does not exist,
-  inside a sealed room, 119 m up.
+- **Launch cutscene, first slice (2026-09-03).** C while aboard is ignition.
+  Unreal plays it on *this* hull: Niagara Fluids plume (the sauce cauldron's
+  gas template, pointed down and orange) under PackDev `SM_Rocket`, four
+  exterior cameras plus the cabin view, a gravity-turn climb, skippable.
+  Afterward the pad is empty (branch state 3) and he is back on the lawn.
+  Sequencer authoring is `Tools/Scripts/build_launch_shot.py` → `LS_Rocket_Launch`
+  / `L_Cine_Launch` — open that map and Unreal generates the same shot from the
+  project's own mesh. Physics (TWR, fuel, max-Q) is still the rest of Phase C.
 - **Nyra's line inside the ship is a toast, not her voice.** She promised it:
   *"I will upload myself into the spaceship computer and I will be going with
   you!"* Every other line she speaks is a recorded clip. **This one is the next
@@ -531,11 +535,12 @@ so tuning is dragging numbers with the level open.
 
 ### Left for the rest of Phase C
 
-The physics body, the throttle, staging, the plume, and the two compile errors
-this key was named for: TWR < 1 and an empty tank. The failure path is already
-shaped for them — `PreflightCompile` refuses with a sentence that names what is
-wrong and where to fix it, and a TWR refusal is the same sentence with a
-different subject.
+The physics body, the throttle, staging, and the two compile errors this key
+was named for: TWR < 1 and an empty tank. The plume is in the launch cutscene
+already (Niagara Fluids, orange, under the hull). The failure path is already
+shaped for the compile errors — `PreflightCompile` refuses with a sentence that
+names what is wrong and where to fix it, and a TWR refusal is the same sentence
+with a different subject.
 ## Where the physics stops
 
 **No orbit. No flight controls. No time warp. No staging UI.** It launches, it
