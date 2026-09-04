@@ -67,6 +67,10 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	/** Writes back the branch state of every generated object as the level tears down —
+	    so a Test-Drive discard survives leaving and returning. */
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	// Per-session generation budget (the in-fiction economy). Tunable; Walt curates.
 	UPROPERTY(EditAnywhere, Category = "Generate")
 	int32 RemainingBudget = 10;

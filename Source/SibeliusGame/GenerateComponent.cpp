@@ -380,6 +380,42 @@ void UGenerateComponent::RememberSite(ABuildSite* Site, const FGenerateCatalogEn
 		Site->GetActorTransform(), Id);
 }
 
+void UGenerateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	/* THE LAST HONEST MOMENT. Branch work moves a lot of object states and none of it
+	   tells progression, so rather than hook every RestoreBranchState and save on each
+	   one, read the truth off the world as it tears down and write it once.
+
+	   This is where a DISCARD becomes permanent: Test-Drive set the spaceport to Empty on
+	   a live actor, and until now nothing wrote that down, so the record still said Built
+	   and reloading stood it back up.
+
+	   If this never runs - a crash, a hard kill - the record keeps whatever it last held,
+	   which is the state at build time. The object is not lost; only the last state
+	   change is. That is the right way round. */
+	if (UWorld* World = GetWorld())
+	{
+		if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+		{
+			TMap<FGuid, uint8> States;
+			for (TActorIterator<ABuildSite> It(World); It; ++It)
+			{
+				const FGuid Id = It->GetBranchId();
+				if (Id.IsValid())
+				{
+					States.Add(Id, It->CaptureBranchState());
+				}
+			}
+			if (States.Num() > 0)
+			{
+				Progression->UpdateGeneratedSiteStates(States);
+			}
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
 FName UGenerateComponent::CurrentLevelName(const UWorld* World)
 {
 	/* RemovePIEPrefix, or every record made in the editor names a level that does not
@@ -435,8 +471,13 @@ void UGenerateComponent::RestoreGeneratedSites()
 				*R.EntryId.ToString(), *R.LevelName.ToString());
 			continue;
 		}
-		if (RespawnGeneratedSite(World, *Entry, R.Transform, R.ObjectId))
+		if (ABuildSite* Site = RespawnGeneratedSite(World, *Entry, R.Transform, R.ObjectId))
 		{
+			/* PUT IT BACK IN THE STATE HE LEFT IT IN. AuthorGeneratedSite ends with
+			   RestoreBranchState(1), which is right for a fresh build and wrong for a
+			   reload: a spaceport discarded with Test-Drive was set to Empty, and
+			   re-authoring it as Built stood it up again behind his back. */
+			Site->RestoreBranchState(R.State);
 			++Restored;
 		}
 	}

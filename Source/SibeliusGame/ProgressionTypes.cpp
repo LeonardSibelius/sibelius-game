@@ -186,6 +186,23 @@ void FProgressionState::RememberGeneratedSite(FName LevelName, FName EntryId,
 	GeneratedSites.Add(R);
 }
 
+bool FProgressionState::UpdateGeneratedSiteState(const FGuid& ObjectId, uint8 NewState)
+{
+	for (FGeneratedSiteRecord& R : GeneratedSites)
+	{
+		if (R.ObjectId == ObjectId)
+		{
+			if (R.State == NewState)
+			{
+				return false;
+			}
+			R.State = NewState;
+			return true;
+		}
+	}
+	return false;
+}
+
 bool FProgressionState::ForgetGeneratedSite(const FGuid& ObjectId)
 {
 	if (!ObjectId.IsValid())

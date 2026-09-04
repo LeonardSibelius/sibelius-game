@@ -205,6 +205,19 @@ void UProgressionSubsystem::ForgetGeneratedSite(const FGuid& ObjectId)
 	}
 }
 
+void UProgressionSubsystem::UpdateGeneratedSiteStates(const TMap<FGuid, uint8>& States)
+{
+	bool bChanged = false;
+	for (const TPair<FGuid, uint8>& Pair : States)
+	{
+		bChanged |= State.UpdateGeneratedSiteState(Pair.Key, Pair.Value);
+	}
+	if (bChanged)
+	{
+		SaveNow();
+	}
+}
+
 TArray<FGeneratedSiteRecord> UProgressionSubsystem::GeneratedSitesForLevel(FName LevelName) const
 {
 	TArray<FGeneratedSiteRecord> Out;

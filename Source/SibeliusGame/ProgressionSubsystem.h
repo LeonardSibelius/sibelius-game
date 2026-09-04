@@ -61,6 +61,11 @@ public:
 		const FTransform& Transform, const FGuid& ObjectId);
 	void ForgetGeneratedSite(const FGuid& ObjectId);
 
+	/* Write back the states of many remembered objects at once, saving ONCE if anything
+	   changed. Called as the level tears down, which is why it is a batch: branch work
+	   moves a lot of states at a time and a save per change would be absurd. */
+	void UpdateGeneratedSiteStates(const TMap<FGuid, uint8>& States);
+
 	/** Everything recorded for one level, in the order it was built. */
 	TArray<FGeneratedSiteRecord> GeneratedSitesForLevel(FName LevelName) const;
 	bool ClaimOneTimeGrant(FName GrantKey);  // claim-and-save; false if already claimed

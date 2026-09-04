@@ -111,6 +111,17 @@ struct SIBELIUSGAME_API FGeneratedSiteRecord
 
 	UPROPERTY(SaveGame)
 	FGuid ObjectId;
+
+	/* THE BRANCH STATE IT WAS LAST IN — 0 Empty, 1 Built, and whatever a subclass adds
+	   (ASpaceport reserves 2 and 3 for the rocket).
+
+	   Without this, replaying a record always re-authored it as BUILT, because
+	   AuthorGeneratedSite ends with RestoreBranchState(1). Discarding a spaceport with
+	   Test-Drive sets it to Empty and hides it - and then travelling and coming back
+	   stood it up again, undoing the discard. Old saves default to 1, which is what they
+	   would have done anyway. */
+	UPROPERTY(SaveGame)
+	uint8 State = 1;
 };
 
 USTRUCT(BlueprintType)
@@ -158,6 +169,9 @@ struct SIBELIUSGAME_API FProgressionState
 
 	/** Forget one, by the id the world knows it by. True if something was removed. */
 	bool ForgetGeneratedSite(const FGuid& ObjectId);
+
+	/** Note what state a remembered object ended up in. True if it actually changed. */
+	bool UpdateGeneratedSiteState(const FGuid& ObjectId, uint8 NewState);
 
 	// FUN-3: how many times each cauldron offer has been bought — the record the
 	// shop re-applies at spawn so purchased upgrades persist across sessions.
