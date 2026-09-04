@@ -159,6 +159,43 @@ bool FProgressionState::Claim(FName GrantKey)
 	return true;
 }
 
+void FProgressionState::RememberGeneratedSite(FName LevelName, FName EntryId,
+	const FTransform& Transform, const FGuid& ObjectId)
+{
+	if (LevelName.IsNone() || EntryId.IsNone() || !ObjectId.IsValid())
+	{
+		return;   // an unidentifiable record is worse than none: it cannot be forgotten
+	}
+
+	for (FGeneratedSiteRecord& R : GeneratedSites)
+	{
+		if (R.ObjectId == ObjectId)
+		{
+			R.LevelName = LevelName;
+			R.EntryId = EntryId;
+			R.Transform = Transform;
+			return;
+		}
+	}
+
+	FGeneratedSiteRecord R;
+	R.LevelName = LevelName;
+	R.EntryId = EntryId;
+	R.Transform = Transform;
+	R.ObjectId = ObjectId;
+	GeneratedSites.Add(R);
+}
+
+bool FProgressionState::ForgetGeneratedSite(const FGuid& ObjectId)
+{
+	if (!ObjectId.IsValid())
+	{
+		return false;
+	}
+	return GeneratedSites.RemoveAll(
+		[&ObjectId](const FGeneratedSiteRecord& R) { return R.ObjectId == ObjectId; }) > 0;
+}
+
 int32 FProgressionState::GetPurchaseCount(FName OfferKey) const
 {
 	const int32* Found = PurchaseCounts.Find(OfferKey);

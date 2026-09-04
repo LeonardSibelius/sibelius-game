@@ -186,6 +186,42 @@ bool UProgressionSubsystem::ClaimOneTimeGrant(FName GrantKey)
 	return true;
 }
 
+void UProgressionSubsystem::RememberGeneratedSite(FName LevelName, FName EntryId,
+	const FTransform& Transform, const FGuid& ObjectId)
+{
+	State.RememberGeneratedSite(LevelName, EntryId, Transform, ObjectId);
+	/* SAVE IMMEDIATELY. The moment this has to survive is the player walking out of the
+	   level, and nothing tells us that is about to happen - he presses [O], or opens a
+	   door, and the world is gone. Saving on the build is the only point we are certain
+	   to be alive for. */
+	SaveNow();
+}
+
+void UProgressionSubsystem::ForgetGeneratedSite(const FGuid& ObjectId)
+{
+	if (State.ForgetGeneratedSite(ObjectId))
+	{
+		SaveNow();
+	}
+}
+
+TArray<FGeneratedSiteRecord> UProgressionSubsystem::GeneratedSitesForLevel(FName LevelName) const
+{
+	TArray<FGeneratedSiteRecord> Out;
+	if (LevelName.IsNone())
+	{
+		return Out;
+	}
+	for (const FGeneratedSiteRecord& R : State.GeneratedSites)
+	{
+		if (R.LevelName == LevelName)
+		{
+			Out.Add(R);
+		}
+	}
+	return Out;
+}
+
 void UProgressionSubsystem::ResetProgression()
 {
 	State = FProgressionState();

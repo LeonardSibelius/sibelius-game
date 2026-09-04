@@ -9,6 +9,10 @@
 #include "MrsHallSubsystem.h"       // SPINE Move 2: the one channel she speaks through
 
 #include "BuildSite.h"
+#include "Branchable.h"              // GetBranchId - the id a record is keyed on
+#include "ProgressionSubsystem.h"    // where generated objects are remembered
+#include "SibeliusGame.h"            // LogSibeliusGame
+#include "EngineUtils.h"             // TActorIterator - what is already here
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Pawn.h"
@@ -159,6 +163,11 @@ void UGenerateComponent::BeginPlay()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Generate] blocklist load FAILED: %s"), *BlockErr);
 	}
+
+	/* LAST, AND AFTER THE CATALOG IS LOADED. Restoring a saved site needs its catalog row
+	   to author it from, so this cannot move above the load without silently restoring
+	   nothing. Order is the whole safety here. */
+	RestoreGeneratedSites();
 }
 
 const FGenerateCatalogEntry* UGenerateComponent::FindEntry(const FName& Id) const
@@ -335,8 +344,109 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	// persists it + this site's EntryId + transform so reload can re-create it.
 	AuthorGeneratedSite(Site, Entry, /*bFreshlyGenerated=*/true);
 
+	/* AND REMEMBER IT, so it is still standing when he comes back to this level.
+	   AuthorGeneratedSite has run, so the IBranchable id exists to key the record on. */
+	RememberSite(Site, Entry);
+
 	// Budget charges only because we reached here with a real, created actor.
 	return true;
+}
+
+void UGenerateComponent::RememberSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry)
+{
+	UWorld* World = Site ? Site->GetWorld() : nullptr;
+	if (!World)
+	{
+		return;
+	}
+	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (!Progression)
+	{
+		return;   // headless / no save: build it, just do not promise it will keep
+	}
+
+	const FGuid Id = Site->GetBranchId();
+	if (!Id.IsValid())
+	{
+		/* Loud, because the failure is invisible until he walks away and comes back.
+		   A site with no stable id cannot be remembered OR forgotten. */
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Generate] '%s' has no branch id - it will NOT survive a level change."),
+			*Entry.EntryId.ToString());
+		return;
+	}
+
+	Progression->RememberGeneratedSite(CurrentLevelName(World), Entry.EntryId,
+		Site->GetActorTransform(), Id);
+}
+
+FName UGenerateComponent::CurrentLevelName(const UWorld* World)
+{
+	/* RemovePIEPrefix, or every record made in the editor names a level that does not
+	   exist in a packaged build - the same trap ASibeliusGameCharacter avoids when it
+	   decides whether it is standing in L_Cafe. */
+	return World ? FName(*UWorld::RemovePIEPrefix(World->GetMapName())) : NAME_None;
+}
+
+void UGenerateComponent::RestoreGeneratedSites()
+{
+	UWorld* World = GetWorld();
+	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (!World || !Progression)
+	{
+		return;
+	}
+
+	const FName Level = CurrentLevelName(World);
+	const TArray<FGeneratedSiteRecord> Records = Progression->GeneratedSitesForLevel(Level);
+	if (Records.Num() == 0)
+	{
+		return;
+	}
+
+	/* WHAT IS ALREADY HERE? A Deploy load, or a Test-Drive restore, may have re-created
+	   some of these before we got here - and putting a second spaceport inside the first
+	   is a worse bug than the one this fixes. Ask the world, by the id the record holds. */
+	TSet<FGuid> Present;
+	for (TActorIterator<ABuildSite> It(World); It; ++It)
+	{
+		const FGuid Id = It->GetBranchId();
+		if (Id.IsValid())
+		{
+			Present.Add(Id);
+		}
+	}
+
+	int32 Restored = 0;
+	for (const FGeneratedSiteRecord& R : Records)
+	{
+		if (Present.Contains(R.ObjectId))
+		{
+			continue;
+		}
+		const FGenerateCatalogEntry* Entry = FindEntry(R.EntryId);
+		if (!Entry)
+		{
+			/* The catalog no longer has the row this was built from. Say so with both
+			   names in it: the alternative is an object that silently stops coming back
+			   after a data edit, which reads as a save bug rather than a catalog one. */
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Generate] saved site '%s' in %s has no catalog row - not restored."),
+				*R.EntryId.ToString(), *R.LevelName.ToString());
+			continue;
+		}
+		if (RespawnGeneratedSite(World, *Entry, R.Transform, R.ObjectId))
+		{
+			++Restored;
+		}
+	}
+
+	if (Restored > 0)
+	{
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Generate] restored %d generated object(s) in %s."),
+			Restored, *Level.ToString());
+	}
 }
 
 void UGenerateComponent::Toast(const FString& Msg, const FColor& Color) const

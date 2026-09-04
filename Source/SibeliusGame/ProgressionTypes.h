@@ -78,6 +78,41 @@ namespace SibeliusStats
 // cheats. False if nothing matched.
 SIBELIUSGAME_API bool ParsePowerVerb(const FString& Name, EPowerVerb& OutVerb);
 
+/* ONE THING THE PLAYER GENERATED, remembered across a level change.
+ *
+ * Walt, coming back from uFoods: "I go back to the spaceport, but it is gone - it should
+ * be there when we start boarding, right?"
+ *
+ * It should. Generated objects used to survive only a manual Deploy, because
+ * UBranchSubsystem is a WORLD subsystem and dies with the world - so a lamp made before
+ * pressing [O] was gone on return too. Nobody noticed until the spaceport, which is the
+ * first generated thing the story has to walk away from and come back to.
+ *
+ * LEVEL NAME IS PART OF THE RECORD. Without it a spaceport built in the city would be
+ * rebuilt in the cafe, which is how a save format quietly becomes a haunting.
+ *
+ * The GUID is the actor's IBranchable id, kept so Deploy and Test-Drive still recognise a
+ * respawned object as the same one. Losing it would not be visible until somebody
+ * deployed, restored, and found a duplicate.
+ */
+USTRUCT()
+struct SIBELIUSGAME_API FGeneratedSiteRecord
+{
+	GENERATED_BODY()
+
+	UPROPERTY(SaveGame)
+	FName LevelName;
+
+	UPROPERTY(SaveGame)
+	FName EntryId;
+
+	UPROPERTY(SaveGame)
+	FTransform Transform;
+
+	UPROPERTY(SaveGame)
+	FGuid ObjectId;
+};
+
 USTRUCT(BlueprintType)
 struct SIBELIUSGAME_API FProgressionState
 {
@@ -98,6 +133,12 @@ struct SIBELIUSGAME_API FProgressionState
 	UPROPERTY(SaveGame)
 	TArray<FName> ClaimedGrants;
 
+	/* Everything the player has Generated and not discarded, so it is still standing when
+	   he comes back to the level. Old saves load with this empty, which is correct: they
+	   were made in a world where nothing persisted anyway. */
+	UPROPERTY(SaveGame)
+	TArray<FGeneratedSiteRecord> GeneratedSites;
+
 	bool IsUnlocked(EPowerVerb Verb) const;
 	bool Unlock(EPowerVerb Verb);        // true only when newly unlocked
 	void UnlockAll();
@@ -108,6 +149,15 @@ struct SIBELIUSGAME_API FProgressionState
 
 	bool HasClaimed(FName GrantKey) const;
 	bool Claim(FName GrantKey);          // true first time, false on re-claim / NAME_None
+
+	/* Remember one generated object. Keyed on ObjectId, so re-recording the same actor
+	   updates it rather than growing a duplicate - which matters because a Test-Drive
+	   branch can re-author a site that is already remembered. */
+	void RememberGeneratedSite(FName LevelName, FName EntryId,
+		const FTransform& Transform, const FGuid& ObjectId);
+
+	/** Forget one, by the id the world knows it by. True if something was removed. */
+	bool ForgetGeneratedSite(const FGuid& ObjectId);
 
 	// FUN-3: how many times each cauldron offer has been bought — the record the
 	// shop re-applies at spawn so purchased upgrades persist across sessions.

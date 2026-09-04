@@ -78,6 +78,18 @@ protected:
 private:
 	bool SpawnEntry(const FGenerateCatalogEntry& Entry);
 	const FGenerateCatalogEntry* FindEntry(const FName& Id) const;
+
+	/* PERSISTENCE ACROSS A LEVEL CHANGE. UBranchSubsystem is a WORLD subsystem and dies
+	   with the world, so before this a generated object survived only a manual Deploy —
+	   walk out of L_City and your lamp was gone. Walt found it with the spaceport, which
+	   is the first generated thing the story has to leave and return to. */
+	void RememberSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry);
+
+	/** Called from BeginPlay: put back everything recorded for the level we just entered. */
+	void RestoreGeneratedSites();
+
+	/** The open level's name with any PIE prefix removed — records must match in both. */
+	static FName CurrentLevelName(const UWorld* World);
 	void Toast(const FString& Msg, const FColor& Color) const;
 
 	// P2: present Mrs. Hall's refusal as a styled memo (auto-dismissed); helper-toast fallback.

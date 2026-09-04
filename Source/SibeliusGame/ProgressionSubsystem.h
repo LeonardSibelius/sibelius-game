@@ -53,6 +53,16 @@ public:
 
 	// --- One-time grants (shrines, chapter-end rewards) ---
 	bool HasClaimedGrant(FName GrantKey) const { return State.HasClaimed(GrantKey); }
+
+	/* GENERATED OBJECTS THAT OUTLIVE THE LEVEL. See FGeneratedSiteRecord for why these
+	   exist at all. Both of these SAVE, because the moment worth surviving is the one
+	   where he walks out of the level - and that is not a moment we get told about. */
+	void RememberGeneratedSite(FName LevelName, FName EntryId,
+		const FTransform& Transform, const FGuid& ObjectId);
+	void ForgetGeneratedSite(const FGuid& ObjectId);
+
+	/** Everything recorded for one level, in the order it was built. */
+	TArray<FGeneratedSiteRecord> GeneratedSitesForLevel(FName LevelName) const;
 	bool ClaimOneTimeGrant(FName GrantKey);  // claim-and-save; false if already claimed
 
 	// --- Purchases (FUN-3, the cauldron shop) ---
