@@ -37,6 +37,7 @@
 #include "TimerManager.h"
 #include "SauceShop.h"                  // FUN-3: re-apply bought upgrades on spawn
 #include "SauceBowl.h"                  // temple ritual: C claims a filled pot in reach
+#include "Spaceport.h"                  // ...and at the spaceport, C is the pre-flight
 #include "EngineUtils.h"                // TActorIterator (the pot scan)
 #include "NavigationInvokerComponent.h" // forest roads: navmesh bubbles around agents
 #include "SibeliusGame.h"
@@ -882,6 +883,36 @@ void ASibeliusGameCharacter::OnBuildPressed()
 		{
 			OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);
 			return;
+		}
+	}
+
+	/* AND THE SPACEPORT'S PRE-FLIGHT — same rule, third case (docs/SPACEPORT_PLAN.md).
+
+	   Walt, 2026-09-03: "why not have Leonard just go to the space port and type 'C' and
+	   suddenly he is inside the ship?"  C is already this verb's key, and the plan's own
+	   table of the six powers already gives that row to the spaceport — "C | Compile |
+	   Pre-flight" — so boarding is not a seventh verb or a new binding.  It is Compile, at
+	   the one object in the game that all six powers answer to.
+
+	   BUT ONLY WHEN NOTHING NEARER WANTS THE PRESS.  The spaceport claims C across 120
+	   metres, because the catalog plants it 160 m ahead of the player and ignores walls
+	   doing it — Walt's landed in a fenced meadow he could not get within 70 m of, which
+	   is what three failed playtests of this feature were actually measuring.  A radius
+	   that large would shadow an ordinary build site standing inside it, so it yields:
+	   if UBuildComponent has a site in reach, that is plainly where the press was aimed.
+
+	   PreflightCompile decides the rest — too far, no supplies, or already aboard and
+	   asking to come back down — because every one of those is a question about a
+	   spaceport, and it returns false on the ones that are not its business. */
+	if (!BuildComp || !BuildComp->HasSiteInReach())
+	{
+		if (ASpaceport* Port = ASpaceport::FindForPlayer(this))
+		{
+			if (Port->PreflightCompile(this))
+			{
+				OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);
+				return;
+			}
 		}
 	}
 

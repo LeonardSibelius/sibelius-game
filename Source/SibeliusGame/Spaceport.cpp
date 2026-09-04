@@ -5,11 +5,26 @@
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "DancerAgentSubsystem.h"   // tell the guides a spaceport now stands (Phase E)
 
+// Boarding ("C", the pre-flight compile) — see the bottom of this file.
+#include "SupplyCounter.h"          // HasSupplies() - the gate, asked where it is answered
+#include "SibeliusHUD.h"            // Toast, and every refusal names the next move
+#include "Camera/CameraActor.h"     // boarding moves the VIEW, not the body
+#include "Components/PointLightComponent.h"   // ...and the view has to carry its own light
+#include "HAL/IConsoleManager.h"              // sib.BoardingLight, so brightness needs no rebuild
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
+#include "EngineUtils.h"            // TActorIterator, for FindForPlayer
+
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/World.h"
+#include "Engine/Engine.h"          // GEngine, for FindForPlayer's world lookup
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -38,6 +53,17 @@ namespace
 	const TCHAR* const P_Seats    = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Seats.SM_Seats");
 	const TCHAR* const P_Bags     = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Storage_Bags.SM_Storage_Bags");
 	const TCHAR* const P_Controls = TEXT("/Game/Rocket_Launch_Pad/Meshes/Rocket/SM_Controls.SM_Controls");
+
+	/* THE CABIN LAMP, TUNABLE FROM THE CONSOLE - because it was black, then blown out, and
+	   each correction otherwise costs a full editor-closed rebuild.
+
+	   Type "sib.BoardingLight 500" in the Cmd box, press C twice, and the next boarding uses
+	   it: Disembark destroys the view actor, so re-boarding builds a fresh lamp that reads
+	   this again. Negative means "use the property", which is the shipping default. */
+	static TAutoConsoleVariable<float> CVarBoardingLight(
+		TEXT("sib.BoardingLight"), -1.0f,
+		TEXT("Crew-compartment lamp brightness in lumens. Negative = use ASpaceport's own value."),
+		ECVF_Cheat);
 
 	/** Ease-out cubic. A part decelerates into place instead of stopping dead. */
 	float Settle(float A)
@@ -447,6 +473,7 @@ void ASpaceport::SnapAssembled()
 	}
 
 	SetActorTickEnabled(false);
+	StartBoardingHintWatch();   // he may have come back from uFoods with supplies
 }
 
 void ASpaceport::Tick(float DeltaSeconds)
@@ -478,6 +505,8 @@ void ASpaceport::Tick(float DeltaSeconds)
 		bAssembled = true;
 		SetActorTickEnabled(false);
 		UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] assembled."));
+
+		StartBoardingHintWatch();   // supplies already bought? then the pad can say so
 
 		// Anything that stayed intangible because he was standing in it gets retried
 		// twice a second until he moves. Cheap, and it stops itself.
@@ -539,6 +568,18 @@ void ASpaceport::RestoreBranchState(uint8 InState)
 
 	if (InState == 0)
 	{
+		/* DISCARDING A SPACEPORT HE IS STANDING IN.
+
+		   Test-Drive can branch a spaceport and throw it away, which is the plan's best
+		   mechanic and which now has a case it did not have before: he can be 119 metres up
+		   inside it when the branch is discarded.  The parts vanish, the boarding floor does
+		   not (it is not one of them), and he is left standing on nothing, in the sky, above
+		   a bare lawn.  Put him back on the grass first. */
+		if (bAboard)
+		{
+			Disembark(UGameplayStatics::GetPlayerPawn(this, 0));
+		}
+
 		bAssembling = false;
 		bAssembled = false;
 		SetActorTickEnabled(false);
@@ -584,4 +625,488 @@ FText ASpaceport::GetInteractionPrompt_Implementation() const
 FVector ASpaceport::GetPadTopLocation() const
 {
 	return GetActorLocation() + FVector(0.0f, 0.0f, PadTopHeight);
+}
+
+
+/* ===================================================================================
+   BOARDING — "C", the pre-flight compile.  See the header for why it lives here.
+   =================================================================================== */
+
+ASpaceport* ASpaceport::FindForPlayer(const UObject* WorldContext)
+{
+	UWorld* World = GEngine
+		? GEngine->GetWorldFromContextObject(WorldContext, EGetWorldErrorMode::ReturnNull)
+		: nullptr;
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	const APawn* Player = UGameplayStatics::GetPlayerPawn(World, 0);
+
+	ASpaceport* Best = nullptr;
+	double BestDistSq = TNumericLimits<double>::Max();
+
+	for (TActorIterator<ASpaceport> It(World); It; ++It)
+	{
+		ASpaceport* Port = *It;
+		if (!IsValid(Port))
+		{
+			continue;
+		}
+
+		/* THE ONE HE IS STANDING IN WINS OUTRIGHT, before any distance is measured.
+		   From inside the nose he is 119 metres above this actor's origin, so a nearest
+		   test would rank his own spaceport last — and C, the only way back out, would
+		   answer some other spaceport across the lawn instead. */
+		if (Port->IsAboard())
+		{
+			return Port;
+		}
+
+		if (!Port->IsAssembled() || !Player)
+		{
+			continue;
+		}
+
+		// 2D: the structure is 120 m tall and he is always standing at the bottom of it.
+		const double D = FVector::DistSquared2D(Player->GetActorLocation(), Port->GetActorLocation());
+		if (D < BestDistSq)
+		{
+			BestDistSq = D;
+			Best = Port;
+		}
+	}
+
+	return Best;
+}
+
+/* HOW FAR HE IS FROM THE SPACEPORT — measured to the STRUCTURE, not to the actor.
+
+   The first version asked FVector::Dist2D against GetActorLocation(), and that is wrong
+   in a way that is invisible in the code and total in the game.  The actor's origin is the
+   LAUNCH PAD.  SM_Ground, the concrete apron, is centred 22 metres away in +X and is
+   itself tens of metres across; the base is 24 metres out.  So a player standing squarely
+   ON the apron, looking up at the rocket, with every part of the complex around him, can
+   easily be more than 30 metres from the one point the test was measuring to — and both
+   the hint and the key go silent at exactly the moment they are most obviously wanted.
+
+   Measuring to the assembled BOUNDS instead makes BoardingRange mean what its comment
+   always claimed: how far from the EDGE of the complex.  Standing on it returns 0, and the
+   number stops depending on where in the layout the artist happened to put the origin. */
+float ASpaceport::BoardingLampLumens() const
+{
+	const float Override = CVarBoardingLight.GetValueOnGameThread();
+	return (Override >= 0.0f) ? Override : BoardingLightLumens;
+}
+
+float ASpaceport::DistanceToStructure(const FVector& From) const
+{
+	FBox Box(ForceInit);
+	for (const UStaticMeshComponent* Comp : PartComponents)
+	{
+		// Hidden parts are ones that have not arrived yet; they are not the building.
+		if (IsValid(Comp) && !Comp->bHiddenInGame)
+		{
+			Box += Comp->Bounds.GetBox();
+		}
+	}
+
+	// No parts (not assembled, or cleared) — fall back to the origin rather than to zero,
+	// which would read as "he is standing on it".
+	if (!Box.IsValid)
+	{
+		return FVector::Dist2D(From, GetActorLocation());
+	}
+
+	const double DX = FMath::Max(0.0, FMath::Max(Box.Min.X - From.X, From.X - Box.Max.X));
+	const double DY = FMath::Max(0.0, FMath::Max(Box.Min.Y - From.Y, From.Y - Box.Max.Y));
+	return static_cast<float>(FMath::Sqrt(DX * DX + DY * DY));
+}
+
+/* THE PRE-FLIGHT.
+
+   RETURNS TRUE ONLY WHEN THE PRESS WAS THIS SPACEPORT'S TO ANSWER, because C is the
+   Compile key and Compile has other work.  A press from across the lawn has to fall
+   through to UBuildComponent so that ordinary build sites still build — a spaceport
+   standing 160 metres away must not silently eat the verb everywhere in the city.
+
+   AND WHY EVERY REFUSAL NAMES THE NEXT MOVE: GoToCity's rule, applied again — "a locked
+   key that says locked teaches nothing."  Each sentence below says where to go, not that
+   he cannot go.  The one silence is a spaceport still assembling: there is nothing to do
+   about that but watch, and a toast telling him to wait eight seconds would be noise. */
+bool ASpaceport::PreflightCompile(APawn* Pawn)
+{
+	if (!IsValid(Pawn))
+	{
+		return false;
+	}
+
+	// FIRST, before anything measures a distance. See FindForPlayer.
+	if (bAboard)
+	{
+		Disembark(Pawn);
+		return true;
+	}
+
+	if (!bAssembled)
+	{
+		return false;
+	}
+
+	const float Away = DistanceToStructure(Pawn->GetActorLocation());
+	if (Away > BoardingRange)
+	{
+		/* SELF-DIAGNOSING, but only near the pad — a Display line on every C press in the
+		   city would be noise, and this silence was the whole of the first bug report
+		   ("I was not prompted to press C at the spaceport.  I pressed it anyway with no
+		   result").  A refusal a player cannot see should at least be one the log can. */
+		if (Away < BoardingRange * 4.0f)
+		{
+			UE_LOG(LogSibeliusGame, Display,
+				TEXT("[Spaceport] Pre-flight out of range: %.0f cm from the structure ")
+				TEXT("(BoardingRange %.0f). Supplies: %s."),
+				Away, BoardingRange, ASupplyCounter::HasSupplies(this) ? TEXT("yes") : TEXT("NO"));
+		}
+		return false;   // not ours; let the build sites have it
+	}
+
+	/* THE COMPILE ERROR THAT EXISTS TODAY.
+
+	   The plan's row for this key is "a design with TWR < 1 or an empty tank is a compile
+	   error".  Phase C's physics will supply those two.  Until it does, the empty tank IS
+	   the empty hold: Nyra sent him down the block for supplies, and the grant that
+	   records the purchase is the one gate boarding has.  Same shape of failure, same
+	   sentence structure — what is wrong, and where to go and fix it. */
+	if (!ASupplyCounter::HasSupplies(this))
+	{
+		ASibeliusHUD::Toast(this,
+			TEXT("COMPILE ERROR: NOTHING IN THE HOLD - BUY SUPPLIES AT THE YOU FOODS DOWN THE BLOCK"),
+			5.0f, SibeliusToast::Warn);
+		return true;
+	}
+
+	if (!Board(Pawn))
+	{
+		ASibeliusHUD::Toast(this,
+			TEXT("COMPILE ERROR: NO CLEAR SPACE IN THE CREW COMPARTMENT"),
+			4.0f, SibeliusToast::Bad);
+	}
+	return true;
+}
+
+/* BOARDING SHOWS HIM THE INTERIOR. IT DOES NOT PUT HIS BODY IN IT.
+
+   Walt, after the fourth attempt: "let's not try to fit that stupid Greystone body in a
+   little capsule.  Just show the interior and say he has boarded."
+
+   He is right, and the log is the proof.  The crew compartment's parts span 10 m x 10 m x
+   3.8 m, but that is the UNION of seven props - the free volume inside them will not take
+   a 96 cm capsule anywhere, at any height on the grid.  SM_Seats alone is 6.4 m x 4.1 m in
+   a 7.4 m room.  It is a set dressed to be LOOKED at, not a room built to be stood in, and
+   every attempt to stand a character in it was arguing with the asset.
+
+   So the pawn never moves.  He stays exactly where he pressed C, and the CAMERA goes
+   aboard: a view target inside the compartment, movement and look held while it is there,
+   and C again brings the view home.  Nothing to collide with, no floor to lay, no offset
+   to guess - and on screen it is the same beat Walt asked for in the first place,
+   "suddenly he is inside the ship".
+
+   A camera is also a POINT, which is the part that finally makes the search work.  The
+   same grid that could not fit a capsule anywhere finds a spot for a 12 cm probe easily,
+   so the view is still guaranteed to be inside the room and not embedded in the seats. */
+bool ASpaceport::Board(APawn* Pawn)
+{
+	UWorld* World = GetWorld();
+	APlayerController* PC = IsValid(Pawn) ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+	if (!World || !PC)
+	{
+		return false;
+	}
+
+	// The room, in world space: the union of the seven interior pieces. Past this is the
+	// hull, or the sky - and open air beside the hull passes an overlap test perfectly,
+	// which is exactly where the first three attempts kept putting him.
+	FBox Room(ForceInit);
+	for (int32 i = FirstInteriorPart; i < PartComponents.Num(); ++i)
+	{
+		if (IsValid(PartComponents[i]))
+		{
+			Room += PartComponents[i]->Bounds.GetBox();
+		}
+	}
+	if (!Room.IsValid)
+	{
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Spaceport] Boarding refused: no interior parts."));
+		return false;
+	}
+
+	/* WHERE THE CAMERA SITS.  A 12 cm probe, not a capsule - it only has to avoid being
+	   buried in a mesh, and looking out from inside SM_Seats is the one result worth
+	   ruling out.  Searched outward from BoardingOffset and preferring near and low, so
+	   the view lands in the middle of the room rather than in a corner of it. */
+	const FCollisionShape Probe = FCollisionShape::MakeSphere(12.0f);
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(SpaceportBoarding), false, Pawn);
+
+	FVector Eye = Room.GetCenter();
+	double BestScore = TNumericLimits<double>::Max();
+	bool bFound = false;
+
+	for (int32 iz = 0; iz <= 3; ++iz)
+	{
+		for (int32 ix = -5; ix <= 5; ++ix)
+		{
+			for (int32 iy = -5; iy <= 5; ++iy)
+			{
+				const FVector Try = GetActorTransform().TransformPosition(
+					BoardingOffset + FVector(ix * 70.0f, iy * 70.0f, 120.0f + iz * 60.0f));
+
+				if (!Room.IsInsideOrOn(Try))
+				{
+					continue;
+				}
+				if (World->OverlapBlockingTestByChannel(Try, FQuat::Identity, ECC_Visibility, Probe, Params))
+				{
+					continue;
+				}
+
+				const double Score = double(ix * ix + iy * iy) + double(iz * iz) * 4.0;
+				if (Score < BestScore)
+				{
+					BestScore = Score;
+					Eye = Try;
+					bFound = true;
+				}
+			}
+		}
+	}
+
+	// Even with nothing free, the room's centre is a better view than a refusal: this is a
+	// camera, and the worst case is a frame of upholstery, not a player stuck in a wall.
+	if (!bFound)
+	{
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Spaceport] No clear camera spot; using the room centre. Room %s."),
+			*Room.GetSize().ToCompactString());
+	}
+
+	if (!BoardingView)
+	{
+		FActorSpawnParameters Spawn;
+		Spawn.Owner = this;
+		Spawn.ObjectFlags |= RF_Transient;   // a view is not something a save should carry
+		BoardingView = World->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Spawn);
+
+		/* AND A LIGHT, BECAUSE THE COMPARTMENT IS SEALED (Walt: "yikes, it is extremely
+		   dark in there").
+
+		   Of course it is.  It is the inside of a hull 119 metres up: the level's sun is
+		   outside it, the set was authored to be lit by whatever scene it is dropped into,
+		   and this one drops it into the dark.  The first boarding shot had a working
+		   composition - the instrument panel and the altimeter dead ahead - and no way to
+		   see it.
+
+		   Carried by the camera, so it lights what he is actually looking at and dies with
+		   the view when he steps back out.  Offset ABOVE the eye rather than sitting on it,
+		   because a light exactly at the camera is a flash photograph: flat, shadowless,
+		   and it would iron out the one panel worth seeing.
+
+		   NO SHADOW CASTING.  A single unshadowed light is cheap, and its only cost here is
+		   bleeding a little glow onto the hull within its radius - 10 m, inside a rocket
+		   23 m across, for as long as he is aboard and nobody is outside looking at it. */
+		if (BoardingView)
+		{
+			UPointLightComponent* Lamp = NewObject<UPointLightComponent>(BoardingView, TEXT("BoardingLamp"));
+			Lamp->SetupAttachment(BoardingView->GetRootComponent());
+			Lamp->RegisterComponent();
+			Lamp->SetRelativeLocation(FVector(0.0f, 0.0f, 80.0f));
+			Lamp->SetIntensityUnits(ELightUnits::Lumens);
+			Lamp->SetIntensity(BoardingLampLumens());
+			Lamp->SetAttenuationRadius(BoardingLightRadius);
+			Lamp->SetLightColor(FLinearColor(1.0f, 0.94f, 0.86f));   // warm, like cabin lighting
+			Lamp->SetCastShadows(false);
+		}
+	}
+	if (!BoardingView)
+	{
+		return false;
+	}
+
+	BoardingView->SetActorLocationAndRotation(
+		Eye, FRotator(0.0f, GetActorRotation().Yaw + BoardingYaw, 0.0f));
+
+	/* HOLD THE CONTROLS WHILE HE IS ABOARD.  The pawn is still standing on the lawn, and
+	   without this he walks around out there while looking at the inside of a rocket. */
+	PC->SetViewTargetWithBlend(BoardingView, 0.0f);
+	PC->SetIgnoreMoveInput(true);
+	PC->SetIgnoreLookInput(true);
+
+	bAboard = true;
+	FadeIn(Pawn);
+
+	/* AND SHE IS ALREADY THERE, because she said she would be:
+	   "I will upload myself into the spaceship computer and I will be going with you!"
+
+	   A toast rather than her voice, for now — every other line she speaks is a recorded
+	   clip and this one is not cut yet.  docs/SPACEPORT_PLAN.md carries it as the next
+	   ElevenLabs pass.
+
+	   THE SECOND HALF OF THE SENTENCE IS NOT DECORATION.  Until Phase C there is no launch
+	   to press, so a player told only "aboard" is a player hunting for a button that does
+	   not exist.  The way out has to be on screen the moment he arrives. */
+	ASibeliusHUD::Toast(this,
+		TEXT("ABOARD - NYRA IS IN THE SHIP'S COMPUTER   (C AGAIN TO STEP BACK OUT)"),
+		6.0f, SibeliusToast::Good);
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Aboard; view at local %s."),
+		*GetActorTransform().InverseTransformPosition(Eye).ToCompactString());
+	return true;
+}
+
+void ASpaceport::Disembark(APawn* Pawn)
+{
+	bAboard = false;
+
+	APlayerController* PC = IsValid(Pawn) ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+	if (!PC)
+	{
+		return;
+	}
+
+	// He never left the lawn, so coming back is giving him his eyes and his legs again.
+	PC->SetViewTargetWithBlend(Pawn, 0.0f);
+	PC->SetIgnoreMoveInput(false);
+	PC->SetIgnoreLookInput(false);
+
+	if (BoardingView)
+	{
+		BoardingView->Destroy();
+		BoardingView = nullptr;
+	}
+
+	FadeIn(Pawn);
+	ASibeliusHUD::Toast(this, TEXT("BACK ON THE LAWN."), 3.0f, SibeliusToast::Info);
+}
+
+/* A FADE UP, NOT A FADE OUT AND BACK.
+
+   Walt's words were "suddenly he is inside the ship", and suddenly is the point.  Fading
+   OUT first would need a timer and would turn a cut into a transition.  Fading up from
+   black on the far side reads as a cut that landed, and costs one call. */
+void ASpaceport::FadeIn(APawn* Pawn) const
+{
+	if (const APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr)
+	{
+		if (PC->PlayerCameraManager)
+		{
+			PC->PlayerCameraManager->StartCameraFade(1.0f, 0.0f, 0.45f, FLinearColor::Black,
+				/*bShouldFadeAudio=*/false, /*bHoldWhenFinished=*/false);
+		}
+	}
+}
+
+/* ===================================================================================
+   TELLING HIM THE KEY EXISTS.
+
+   A mechanic nobody can find is not built.  Nyra's stage 3 sends him back to the
+   spaceport — "we will do the boarding procedures" — and then the game goes quiet: he is
+   standing on the pad with supplies in hand and nothing on screen saying which of his six
+   powers to try.
+
+   So the pad says it, once, the first time he walks up to it ready.  A one-second timer
+   rather than Tick, because this is a proximity poll on a finished building and it would
+   be wrong to hold an eight-second assembly's tick open for the rest of the level to run
+   it — the same reasoning as PokeDeferredParts, which is the neighbour it sits beside.
+
+   It arms itself only when he can actually act on it (assembled AND supplies bought), and
+   it stops itself the moment it has spoken.  A player who never buys supplies never sees
+   it, which is right: the sentence he needs THEN is the compile error, and that one comes
+   from pressing the key.
+   =================================================================================== */
+void ASpaceport::StartBoardingHintWatch()
+{
+	if (bBoardingHintShown || !bAssembled)
+	{
+		return;
+	}
+
+	if (!ASupplyCounter::HasSupplies(this))
+	{
+		/* SAY SO, ONCE.  "No hint appeared" has two causes that look identical from the
+		   lawn - he never bought supplies, or he did and the watch never armed - and one
+		   line at load tells them apart without another round trip. */
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Spaceport] Boarding hint idle: no supplies bought yet."));
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World || World->GetTimerManager().IsTimerActive(BoardingHintTimer))
+	{
+		return;
+	}
+
+	World->GetTimerManager().SetTimer(BoardingHintTimer, this,
+		&ASpaceport::PollBoardingHint, 1.0f, /*bLoop=*/true);
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Spaceport] Boarding hint armed - watching for the player within %.0f cm."),
+		BoardingRange);
+}
+
+void ASpaceport::PollBoardingHint()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	if (bBoardingHintShown || bAboard || !bAssembled)
+	{
+		World->GetTimerManager().ClearTimer(BoardingHintTimer);
+		return;
+	}
+
+	const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!Player)
+	{
+		return;
+	}
+
+	const float Away = DistanceToStructure(Player->GetActorLocation());
+
+	// The same radius the key itself uses, so what the hint promises is exactly what
+	// pressing C from where he is standing will do.
+	if (Away > BoardingRange)
+	{
+		/* AND IT SAYS HOW FAR, every five seconds, until it can stop saying it.
+
+		   The second failure ("I did NN and went through the entire game... I was not
+		   prompted") proved the watch ARMS - the log said so - and then went quiet, which
+		   left exactly one unknown: the distance.  A silent out-of-range branch is a
+		   branch that cannot be debugged from a log, and this one had already cost two
+		   round trips of guessing.  Throttled to 5 s so walking the block is six lines,
+		   not sixty, and it stops the moment the hint fires. */
+		if ((PollsWhileFar++ % 5) == 0)
+		{
+			const FVector P = Player->GetActorLocation();
+			UE_LOG(LogSibeliusGame, Display,
+				TEXT("[Spaceport] Hint waiting: player %.0f cm from the structure ")
+				TEXT("(range %.0f). Player %s, spaceport origin %s, parts %d."),
+				Away, BoardingRange, *P.ToCompactString(),
+				*GetActorLocation().ToCompactString(), PartComponents.Num());
+		}
+		return;
+	}
+
+	bBoardingHintShown = true;
+	World->GetTimerManager().ClearTimer(BoardingHintTimer);
+
+	ASibeliusHUD::Toast(this,
+		TEXT("PRE-FLIGHT READY - PRESS C TO BOARD"),
+		6.0f, SibeliusToast::Prize);
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Spaceport] Hint shown at %.0f cm."), Away);
 }

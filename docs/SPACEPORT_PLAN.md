@@ -432,6 +432,110 @@ shape: go back to the pad, run the procedures, and leave with her aboard.
 
 ---
 
+
+---
+
+## Phase C, first slice — boarding is a compile — **DONE 2026-09-03**
+
+Walt, after Nyra's stage 3 shipped:
+
+> "why not have Leonard just go to the space port and type 'C' and suddenly he
+> is inside the ship?"
+
+That is this document's own row for that key, arrived at independently:
+
+| Key | Power | On the spaceport |
+|---|---|---|
+| **C** | Compile | Pre-flight. A design with TWR < 1 or an empty tank is a *compile error* |
+
+It also closes the open question the Phase E seed left behind — *"whether the
+power is Compile, a seventh verb, or something Nyra grants is Walt's call."*
+**It is Compile.** No seventh verb, and no new binding.
+
+### What it does
+
+Press **C** near an assembled spaceport:
+
+| State | Result |
+|---|---|
+| Aboard already | Step back out, to the exact spot he pressed C on |
+| Not assembled | Silent |
+| More than `BoardingRange` (30 m) away | Silent — the press falls through to the build sites |
+| No supplies | `COMPILE ERROR: NOTHING IN THE HOLD — BUY SUPPLIES AT THE YOU FOODS DOWN THE BLOCK` |
+| Supplies bought | Fade up inside the crew compartment, 119 m up the nose |
+
+And once, the first time he walks up to a finished pad with supplies bought,
+the pad says `PRE-FLIGHT READY — PRESS C TO BOARD`.  Not "at the pad": the
+catalog plants the spaceport 160 m ahead of wherever it is typed and skips the
+generator's wall clamp doing it, so it can land past a fence you cannot cross
+(Walt's did).  Telling a player to stand somewhere he cannot reach is worse than
+telling him nothing.  A mechanic
+nobody can find is not built, and Nyra's stage 3 sends him here without ever
+naming a key.
+
+### The three things that were nearly wrong
+
+**1. C is already the Compile key, and a raw `BindKey` would have eaten it.**
+The first draft bound `EKeys::C` on the character beside O and `[>]`. Raw
+`BindKey` **consumes by default** — that press would have stopped reaching
+`IA_Build`, and the Compile *power* would have died silently: every build site,
+the temple sauce bowl, the attic key orb. `SibeliusControls.cpp` — the list in
+the M menu, and the player-facing source of truth — has said `C — Compile at a
+build site` since the powers were written. Reading it is what caught this.
+
+So boarding adds **no binding at all**. It is one more case in
+`OnBuildPressed`, beside the attic key and the sauce bowl, under the rule those
+two already follow: *one verb, disambiguated by state.* It sits **before** the
+build-site scan, because a spaceport IS an `ABuildSite` and precedence at the
+one object where both meanings of C apply should be named, not left to
+whichever actor the iterator reaches first.
+
+**2. `FinaleAltar.cpp` had been telling players to press B.** Found in the same
+sweep. The altar is the one place in the game that *tells* the player which key
+to press, and its Compile hint said `B` — a key that does nothing. A player who
+did what the altar said could not finish the Synthesis rite. Now `C`.
+
+**3. There is no floor in the crew compartment, and no way to know from a path
+string.** `SM_Walls`, `SM_Back_Wall`, `SM_Seats` and the rest are what PackDev
+ships; whether any carries collidable floor geometry is not knowable without
+standing on it. The cost of guessing wrong is a 119-metre fall inside a rocket,
+in a packaged build with no Stop button. So `ASpaceport` lays its own invisible
+box floor before he arrives, and `FindTeleportSpot` — not `SetActorLocation` —
+places him, so a bad `BoardingOffset` produces a refusal he can read instead of
+sealing him inside a hull.
+
+### What is tunable, and what to expect on the first playtest
+
+`BoardingOffset` defaults to `(-40, 300, 11900.5)` — the centroid of the seven
+interior meshes, at their shared Z, read straight off `MakeDefaultLayout`. It
+is the **floor**; `Board()` adds the pawn's own capsule half-height. It is a
+read off a layout, **not** a measurement of the inside of a hull nobody has
+stood in, so expect to nudge it once. Every boarding field is `EditAnywhere`,
+so tuning is dragging numbers with the level open.
+
+### What is deliberately NOT here
+
+- **Aboard is not a branch state.** States 2 (`RocketOnPad`) and 3 (`Launched`)
+  stay reserved for facts about the *spaceport*, which persist and which
+  Test-Drive can branch and discard. "Leonard happens to be standing in the
+  nose" is a fact about the *pawn*. Writing it into the save would let a reload
+  put him inside a rocket he never boarded.
+- **No launch.** There is nothing to press once aboard, which is why the
+  boarding toast carries `(C AGAIN TO STEP BACK OUT)` in the same sentence — a
+  player told only "aboard" is a player hunting a button that does not exist,
+  inside a sealed room, 119 m up.
+- **Nyra's line inside the ship is a toast, not her voice.** She promised it:
+  *"I will upload myself into the spaceship computer and I will be going with
+  you!"* Every other line she speaks is a recorded clip. **This one is the next
+  ElevenLabs pass** — it is the only unrecorded line she has.
+
+### Left for the rest of Phase C
+
+The physics body, the throttle, staging, the plume, and the two compile errors
+this key was named for: TWR < 1 and an empty tank. The failure path is already
+shaped for them — `PreflightCompile` refuses with a sentence that names what is
+wrong and where to fix it, and a TWR refusal is the same sentence with a
+different subject.
 ## Where the physics stops
 
 **No orbit. No flight controls. No time warp. No staging UI.** It launches, it

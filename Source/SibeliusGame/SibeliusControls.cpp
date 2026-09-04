@@ -32,7 +32,7 @@ TArray<FControlRow> BuildRows(const UObject* WorldContext)
 
 		{ TEXT("V (hold)"), TEXT("Code Vision"), Owned(EPowerVerb::CodeVision) },
 		{ TEXT("R"), TEXT("Refactor what you're looking at"), Owned(EPowerVerb::Refactor) },
-		{ TEXT("C"), TEXT("Compile at a build site"), Owned(EPowerVerb::Compile) },
+		{ TEXT("C"), TEXT("Compile — a build site, the sauce pot, the spaceport pre-flight"), Owned(EPowerVerb::Compile) },
 		{ TEXT("6 / 7 / 8"), TEXT("Test-Drive: branch / merge / discard"), Owned(EPowerVerb::TestDrive) },
 		{ TEXT("0"), TEXT("Deploy (persist your edits)"), Owned(EPowerVerb::Deploy) },
 		{ TEXT("G"), TEXT("Generate — type a request"), Owned(EPowerVerb::Generate) },

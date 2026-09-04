@@ -29,6 +29,15 @@ public:
 	/** Walk-up / C on the library alcove orb. Does not require COMPILE. */
 	bool TryTakeNearbyAtticKey();
 
+	/* IS THERE A SITE UNDER THE PLAYER'S NOSE RIGHT NOW?
+
+	   Asked by the spaceport pre-flight, which claims C over a far larger radius than a
+	   build site does - the spaceport is placed 160 m from where it is typed and ignores
+	   walls, so boarding cannot require standing on it. Over that radius it must never
+	   SHADOW an ordinary build site the player is standing at, so it steps aside whenever
+	   this is true and the press goes where the player was obviously aiming it. */
+	bool HasSiteInReach() const { return CurrentSite.IsValid(); }
+
 	// Collect / unlock / dismantle on E run through the shared IInteractable system
 	// (UInteractorComponent) - the Ch3 actors implement the interface directly (C7).
 

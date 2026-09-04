@@ -33,7 +33,17 @@ AFinaleAltar::AFinaleAltar()
 	// Input binding, not a C++ BindKey, so guessing it here would be worse than
 	// printing nothing.
 	VerbKeyHints.Add(EPowerVerb::CodeVision, TEXT("V"));
-	VerbKeyHints.Add(EPowerVerb::Compile,    TEXT("B"));
+	/* C, NOT B (fixed 2026-09-03).
+
+	   This said "B" since the altar was written, and the altar is the one place in the
+	   game that TELLS the player which key to press.  SibeliusControls.cpp - the list in
+	   the M menu, the player-facing source of truth - has always said C, and so has
+	   SauceBowl.h ("[C] - the Compile key, deliberately").  This entry was the odd one out,
+	   and being wrong here is worse than being wrong anywhere else: the Synthesis rite
+	   cannot be finished by a player who does what the altar tells him.
+
+	   Found while wiring the spaceport pre-flight onto the same key. */
+	VerbKeyHints.Add(EPowerVerb::Compile,    TEXT("C"));
 	VerbKeyHints.Add(EPowerVerb::TestDrive,  TEXT("6"));
 	VerbKeyHints.Add(EPowerVerb::Deploy,     TEXT("0"));
 	VerbKeyHints.Add(EPowerVerb::Generate,   TEXT("G"));
