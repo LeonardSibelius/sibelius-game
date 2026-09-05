@@ -79,13 +79,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Wormhole")
 	TSoftObjectPtr<UNiagaraSystem> PassageFX;
 
-	/** Where the effect sits relative to him. Up a little, so it surrounds rather than pools. */
-	UPROPERTY(EditAnywhere, Category = "Wormhole")
-	FVector FXOffset = FVector(0.0f, 0.0f, 90.0f);
+	/* HOW FAR IN FRONT OF HIM IT STANDS, in cm along his facing.
 
-	/** Scale for the system. These are authored for a doorway; a passage wants more. */
+	   NOT zero, which is what the first Niagara build used. These are DOORWAYS - authored
+	   to be viewed from a few metres - and centring one on the player put him inside a flat
+	   sheet: "just a weird vertical thing with no animation". Live on sib.WormholeFXAhead. */
+	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "0.0"))
+	float FXAhead = 450.0f;
+
+	/** Lifted off the ground so a doorway stands rather than sinks. */
+	UPROPERTY(EditAnywhere, Category = "Wormhole")
+	float FXUp = 120.0f;
+
+	/** Scale. Authored for a doorway, so 1 is the honest starting point, not 3. */
 	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "0.1"))
-	float FXScale = 3.0f;
+	float FXScale = 1.0f;
 
 	/** Tint, if the chosen system exposes a Color override. Cyan, to match the apparitions. */
 	UPROPERTY(EditAnywhere, Category = "Wormhole")

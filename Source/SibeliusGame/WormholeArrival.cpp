@@ -37,6 +37,23 @@ namespace
 		TEXT("sib.WormholeFX"), TEXT(""),
 		TEXT("Niagara system for the Grok arrival. Bare name (NS_HeavenPath) or full path. Empty = the actor's own."),
 		ECVF_Cheat);
+
+	/* AND HOW BIG, AND HOW FAR IN FRONT.
+
+	   The first Niagara attempt put the system ON the player at 3x scale and he arrived
+	   inside a flat sheet: "just a weird vertical thing with no animation". These are
+	   DOORWAYS - authored to be viewed from a few metres, not stood inside - and no amount
+	   of picking a different one fixes being in the wrong place relative to it.
+
+	   Distance and scale therefore matter as much as which system, and all three are eye
+	   judgements. Negative means "use the actor's own value". */
+	static TAutoConsoleVariable<float> CVarWormholeScale(
+		TEXT("sib.WormholeFXScale"), -1.0f,
+		TEXT("Scale for the arrival FX. Negative = the actor's own."), ECVF_Cheat);
+
+	static TAutoConsoleVariable<float> CVarWormholeAhead(
+		TEXT("sib.WormholeFXAhead"), -1.0f,
+		TEXT("How many cm in FRONT of the player the arrival FX sits. Negative = the actor's own."), ECVF_Cheat);
 }
 
 AWormholeArrival::AWormholeArrival()
@@ -98,12 +115,25 @@ void AWormholeArrival::BeginPlay()
 	/* CENTRED ON HIM, NOT ON THIS ACTOR. The two are placed by the same script and should
 	   coincide, but "should" is how a player ends up watching the effect happen somewhere
 	   across the valley. Ask the pawn. */
+	const float Scale = (CVarWormholeScale.GetValueOnGameThread() >= 0.0f)
+		? CVarWormholeScale.GetValueOnGameThread() : FXScale;
+	const float Ahead = (CVarWormholeAhead.GetValueOnGameThread() >= 0.0f)
+		? CVarWormholeAhead.GetValueOnGameThread() : FXAhead;
+
 	FVector Where = GetActorLocation();
+	FRotator Facing = GetActorRotation();
 	if (const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
 	{
 		Where = Player->GetActorLocation();
+		Facing = FRotator(0.0f, Player->GetActorRotation().Yaw, 0.0f);
 	}
-	Where += FXOffset;
+
+	/* IN FRONT OF HIM, AND TURNED TO FACE HIM. A doorway seen edge-on is a line, which is
+	   exactly what the first attempt looked like. Placing it along his facing and rotating
+	   it back at him is the difference between a portal and a smear. */
+	Where += Facing.Vector() * Ahead;
+	Where.Z += FXUp;
+	const FRotator FXRot(0.0f, Facing.Yaw + 180.0f, 0.0f);
 
 	if (UNiagaraSystem* System = ResolveFX())
 	{
@@ -118,10 +148,11 @@ void AWormholeArrival::BeginPlay()
 		{
 			FXComponent->SetVariableLinearColor(TEXT("Color"), FXColor);
 			FXComponent->SetVariableLinearColor(TEXT("CustomColor"), FXColor);
-			FXComponent->SetVariableFloat(TEXT("ScalableSize"), FXScale);
+			FXComponent->SetVariableFloat(TEXT("ScalableSize"), Scale);
 		}
-		UE_LOG(LogSibeliusGame, Display, TEXT("[Wormhole] Arrival FX '%s' over %.1fs."),
-			*System->GetName(), PassageSeconds);
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Wormhole] FX '%s', scale %.1f, %.0f cm ahead, %.1fs."),
+			*System->GetName(), Scale, Ahead, PassageSeconds);
 	}
 	else
 	{
