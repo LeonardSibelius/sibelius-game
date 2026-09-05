@@ -242,11 +242,23 @@ Nyra and her three guide stages, the You Foods supply run, the spaceport that Ge
 builds on the lawn, and the launch. A store page that stops at the cathedral is
 describing v0.9.
 
-**It also predates a fact that matters on this particular page.** Rev 1 says "written by
-Claude". Since 2026-09-03 that is no longer the whole truth — Grok 4.6 wrote the launch
-cutscene, and the itch page has said "first Claude, now Grok" for a while. The AI
-disclosure is the section Valve reads most closely on this submission (§4), so the long
-description should not contradict it. Rev 2 names both.
+**And it names a model, which the page should not do.** Rev 1 says "written by Claude".
+Rev 2 says "an AI".
+
+This is NOT a disclosure matter, and an earlier note here wrongly implied it was. Section
+4 is explicit that Valve's disclosure covers AI content players CONSUME, not the tools
+used to build the game — so who wrote the code is a personal statement in Walt's own
+description and his alone to word.
+
+It is a SHELF-LIFE matter, which is the same reason rev 1 already cut "I'm liking Grok
+4.6": a store page outlives whichever model was in favour the month it was written. Walt
+removed the model names from the itch page on 2026-09-04 for that reason. There is also a
+local hazard — **"Grok" is the PLANET in this game**, so crediting a model of that name in
+the same paragraph reads as a pun nobody intended.
+
+If Walt ever wants to name Claude specifically, that is his call and entirely defensible;
+he has said he expects to keep using it. The generic line is simply the one that will
+still be true in a year.
 
 **Short description** (Steam's 300-character blurb — the one that travels into every
 capsule, search result and wishlist email):
@@ -298,8 +310,8 @@ four seconds than one that promises both.)*
 > They cannot hurt you. Not one of them has ever been on call. What four hundred bodies
 > can do is surround you and put you back in your place — so keep swinging.
 >
-> Every system in this game was written by an AI — first Claude, then Grok — while I
-> playtested, pointed, and dragged the furniture. Working as a programmer all those years
+> Every system in this game was written by an AI while I playtested, pointed, and
+> dragged the furniture. Working as a programmer all those years
 > was being a farmer with a plow, a donkey, and a shovel. This is what the tractor feels
 > like. That part isn't fiction.
 
