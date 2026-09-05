@@ -88,6 +88,22 @@ namespace
 		ECVF_Cheat);
 
 	/** Stand a flat one up: 90 puts a ground disc vertical. Negative = leave it alone. */
+	/* HOW FAR DOWN THE FIELD IT STANDS, from the pad toward the player.
+
+	   Walt: "can you please move that big portal closer to the fence?" It opened AT the
+	   spaceport, which the catalog plants 160 m ahead of wherever he typed - so the door
+	   was on the wrong side of a fence he cannot cross, which is the same geography problem
+	   that has bitten every interaction with this thing.
+
+	   Measured from the pad TOWARD him rather than at a fixed local offset, because the
+	   spaceport's own rotation is whatever his aim was and "toward the street" is not a
+	   direction this actor knows. Clamped to 80% of the gap so it can never overshoot past
+	   him and open behind his back. */
+	static TAutoConsoleVariable<float> CVarGrokPortalToward(
+		TEXT("sib.GrokPortalToward"), -1.0f,
+		TEXT("Cm from the pad toward the player where the portal opens. Negative = the actor's own."),
+		ECVF_Cheat);
+
 	static TAutoConsoleVariable<float> CVarGrokPortalPitch(
 		TEXT("sib.GrokPortalPitch"), -1.0f,
 		TEXT("Pitch in degrees for the Grok portal. 90 stands a ground disc up. Negative = none."),
@@ -1802,10 +1818,33 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 	const float Pitch = CVarGrokPortalPitch.GetValueOnGameThread();
 	const FRotator PortalRot = (Pitch >= 0.0f) ? FRotator(Pitch, 0.0f, 0.0f) : FRotator::ZeroRotator;
 
-	GrokPortal = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		System, GetRootComponent(), NAME_None,
-		FVector(GrokPortalOffset.X, GrokPortalOffset.Y, Up), PortalRot,
-		EAttachLocation::KeepRelativeOffset, /*bAutoDestroy=*/false);
+	/* WHERE IT STANDS. Down the field from the pad, toward wherever he is standing when it
+	   opens - and at HIS ground height, not the elevated pad's, so it is a door on the lawn
+	   rather than a light on a rooftop. */
+	const float TowardWanted = (CVarGrokPortalToward.GetValueOnGameThread() >= 0.0f)
+		? CVarGrokPortalToward.GetValueOnGameThread() : GrokPortalTowardPlayer;
+
+	FVector Where = GetActorLocation() + FVector(GrokPortalOffset.X, GrokPortalOffset.Y, Up);
+	if (const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		const FVector ToHim = Player->GetActorLocation() - GetActorLocation();
+		const float Gap = ToHim.Size2D();
+		if (Gap > 100.0f)
+		{
+			// Never past him: 80% of the gap at most, or the door opens behind his back.
+			const float Along = FMath::Min(TowardWanted, Gap * 0.8f);
+			Where = GetActorLocation() + ToHim.GetSafeNormal2D() * Along;
+
+			/* ON THE GROUND, not at his eyeline. His actor location is his capsule CENTRE,
+			   so a "height above ground" measured from it floats by a capsule - and
+			   TeleporterHole is a disc that has to LIE on the lawn to read as a hole. */
+			Where.Z = Player->GetActorLocation().Z - Player->GetSimpleCollisionHalfHeight() + Up;
+		}
+	}
+
+	GrokPortal = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		this, System, Where, PortalRot, FVector(Scale),
+		/*bAutoDestroy=*/false, /*bAutoActivate=*/true);
 
 	if (GrokPortal)
 	{
@@ -1822,8 +1861,8 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 		   anybody needs to be thrifty about. */
 		GrokPortal->SetSystemFixedBounds(FBox(FVector(-6000.0f), FVector(6000.0f)));
 		UE_LOG(LogSibeliusGame, Display,
-			TEXT("[Spaceport] Portal '%s' at +%.0f cm, scale %.1f, pitch %.0f, from %.0f cm."),
-			*System->GetName(), Up, Scale, Pitch, GrokPortalRange);
+			TEXT("[Spaceport] Portal '%s' at %s (+%.0f, %.0f cm toward him), scale %.1f, from %.0f cm."),
+			*System->GetName(), *Where.ToCompactString(), Up, TowardWanted, Scale, GrokPortalRange);
 	}
 
 	ASibeliusHUD::Toast(this,

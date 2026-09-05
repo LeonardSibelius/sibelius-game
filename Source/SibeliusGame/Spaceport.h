@@ -505,7 +505,18 @@ private:
 	   sat on the pad behind the launch complex's own retaining wall. Live on
 	   sib.GrokPortalUp. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
-	FVector GrokPortalOffset = FVector(0.0f, 0.0f, 1100.0f);
+	/* HEIGHT ABOVE THE GROUND, and 40 cm is a HOLE sitting on the lawn.
+
+	   Walt wants NS_TeleporterHole - a flat disc he walks up to and steps into. It failed
+	   the first time only because it opened 160 m away and edge-on; at 130 m closer it is a
+	   door on the grass. An upright system (NS_ArchGate, NS_AnyWhereDoor) wants several
+	   hundred instead - sib.GrokPortalUp. */
+	FVector GrokPortalOffset = FVector(0.0f, 0.0f, 40.0f);
+
+	/* How far from the pad, toward the player, the portal opens. See OpenGrokPortal: at the
+	   pad it stood 160 m away behind a fence he cannot cross. Live on sib.GrokPortalToward. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.0"))
+	float GrokPortalTowardPlayer = 13000.0f;
 
 	/* AND MUCH BIGGER. These systems are authored as person-sized doorways; this one has to
 	   read from across a field, against a 120 m rocket complex. Live on sib.GrokPortalScale. */
