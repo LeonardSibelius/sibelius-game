@@ -298,3 +298,20 @@ Content/Poly_Supermarket_01/
 # references what it places, so this needs no DirectoriesToAlwaysCook rule - the
 # L_uFoods arrangement, not the Rocket_Launch_Pad one.
 Content/Elite_AlienPack_04/
+
+# ---- L_Grok: a 647 MB copy of purchased terrain -----------------------------
+# A LANDSCAPE LIVES INSIDE ITS .umap. L_Grok is duplicated from Elite Landscapes:
+# Alien Part IV, so this file IS Velarion's heightmap and weightmap data under a
+# different name - not a reference to it, the way L_uFoods merely references the
+# supermarket's meshes. Committing it to a PUBLIC repo republishes a pack somebody
+# has to pay for, which is what ignoring Content/Elite_AlienPack_04/ was for.
+#
+# THE COST OF THIS LINE: the level is not backed up and not reproducible from a
+# clean clone. The answer is the pattern this repo already uses everywhere else -
+# Tools/Scripts/make_grok_from_alien.py rebuilds it from the pack, and anything
+# placed on it (Nyra, her stage-4 trigger) should be placed BY A SCRIPT that is
+# committed, exactly as place_supply_counter.py and place_spaceport_lawn_marker.py
+# do. Then the repo holds the recipe and never the vendor's bytes.
+#
+# If Walt decides the licence permits it, or the repo goes private, delete this.
+Content/Maps/L_Grok.umap
