@@ -15,24 +15,37 @@
 // cut into Grok at the end — and the reveal of the planet is the shot the whole ending
 // rests on, so a seam is the last thing it can afford.
 //
-// So there is no passage level. He travels straight to L_Grok and arrives BLIND, inside a
-// dense swarm that thins away over a few seconds until the landscape is simply there. Rev
-// 2 argued for this before anyone knew it was cheaper: "the drift does not cut to a place,
-// it thickens into one."
+// So there is no passage level. He travels straight to L_Grok and arrives inside the
+// effect, which fades away until the landscape is simply there. Rev 2 argued for this
+// before anyone knew it was cheaper: "the drift does not cut to a place, it thickens
+// into one."
 //
 // ---------------------------------------------------------------------------
-// IT IS MADE OF THE GAME'S OWN APPARITION, RUN BACKWARDS.
+// IT IS NIAGARA NOW, AND THE FIRST VERSION WAS NOT.
 //
-// M_materialise is the cyan shader every spaceport part wears while it is forming —
-// Walt's own, built by Tools/Scripts/build_materialise_material.py, and already one of
-// the 26 things package_v130.ps1 refuses to ship without. The spaceport fades it OUT as
-// geometry becomes real. This fades it out as a WORLD becomes real. Same idea, same
-// asset, no import, and nothing new that can go missing from a pak.
+// The first build made the cloud out of static-mesh cubes wearing M_materialise, because
+// that was the part I could author from C++ without touching the editor. Walt's verdict
+// was exact: "a flying cube wormhole?" It was. Swapping cubes for spheres would have
+// made it a flying sphere wormhole. Meshes with a translucent material are an imitation
+// of a particle system, and the imitation has a ceiling.
 //
-// A SWARM OF SHAPES, NOT ONE ENCLOSING SPHERE. A sphere around the camera would be
-// backface-culled and invisible from inside — the classic version of this effect that
-// does not work. Many small shapes seen from within a cloud have no such problem, and
-// they read as "abstract particle art" rather than as a fogged lens.
+// Portal and SavePoint VFX (Dr.Game, $5) is the thing that unblocked it — 14 real Niagara
+// systems whose parameters are EXPOSED as overrides, so they can be driven from C++
+// without anyone authoring a node graph. That was the gap.
+//
+// ---------------------------------------------------------------------------
+// TWO THINGS THAT WOULD OTHERWISE BITE.
+//
+// HARD REFERENCE, NOT A SOFT PATH. Content/PortalVFX/ is gitignored, and a Niagara system
+// named only by soft path from C++ is not a package reference — the cooker will not
+// follow it. It would work perfectly in PIE and be MISSING from the shipped build, which
+// is the v0.7.4 invisible-spaceport bug, in the last scene of the game. The constructor
+// hard-references the default via FObjectFinder so the cook has a real edge to follow.
+//
+// AND THE SYSTEM IS PICKED BY CONSOLE VARIABLE. There are 14 of them and choosing between
+// them is an eye judgement, not a code one. `sib.WormholeFX NS_HeavenPath` swaps it at
+// runtime; a rebuild per candidate would be fourteen editor restarts to answer a question
+// about taste. The boarding lamp learned this the same evening.
 
 #pragma once
 
@@ -40,9 +53,8 @@
 #include "GameFramework/Actor.h"
 #include "WormholeArrival.generated.h"
 
-class UStaticMeshComponent;
-class UMaterialInterface;
-class UMaterialInstanceDynamic;
+class UNiagaraSystem;
+class UNiagaraComponent;
 
 UCLASS()
 class SIBELIUSGAME_API AWormholeArrival : public AActor
@@ -56,64 +68,40 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	/** How long the swarm takes to thin away and hand him the controls. */
+	/** How long the effect runs before he gets the controls and the planet. */
 	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "0.5"))
 	float PassageSeconds = 7.0f;
 
-	/** How many shapes are in the cloud. Cheap: unlit-ish translucent, no shadows. */
-	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "1", ClampMax = "600"))
-	int32 ShapeCount = 140;
-
-	/** Radius of the cloud he arrives inside, in cm. */
-	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "50.0"))
-	float CloudRadius = 900.0f;
-
-	/** Nearest a shape may sit to his eyes, so nothing spawns clipped through his face. */
-	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "0.0"))
-	float CloudInnerRadius = 120.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "1.0"))
-	float ShapeSize = 55.0f;
-
-	/** How fast the swarm drifts outward as it fades. Slow: this is a dream, not a blast. */
-	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "0.0"))
-	float DriftSpeed = 55.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "0.0"))
-	float PassageGlow = 6.0f;
-
-	/* THE SHADER, SOFT AND LOADED ON DEMAND — deliberately not in the constructor.
-
-	   ASpaceport learned this one the hard way and its comment is worth repeating: a
-	   constructor runs before the editor exists, so a bad asset reference there is a
-	   project that will not open. GS_Idle_MH cost a session that way.
-
-	   Cooking is not at risk. M_materialise is already checked by name in
-	   package_v130.ps1 ("the materialise fx"), so it reaches the pak by a route that does
-	   not depend on this pointer. */
+	/* WHICH OF THE FOURTEEN. NS_DreamLand is the default because Walt's own words for what
+	   he wanted were "an abstract dreamlike realm of particle art", and the pack happens to
+	   ship a system with that name. NS_HeavenPath, NS_TeleporterHole and NS_TwistEddy are
+	   the other obvious candidates — try them with sib.WormholeFX rather than rebuilding. */
 	UPROPERTY(EditAnywhere, Category = "Wormhole")
-	TSoftObjectPtr<UMaterialInterface> PassageMaterial;
+	TSoftObjectPtr<UNiagaraSystem> PassageFX;
+
+	/** Where the effect sits relative to him. Up a little, so it surrounds rather than pools. */
+	UPROPERTY(EditAnywhere, Category = "Wormhole")
+	FVector FXOffset = FVector(0.0f, 0.0f, 90.0f);
+
+	/** Scale for the system. These are authored for a doorway; a passage wants more. */
+	UPROPERTY(EditAnywhere, Category = "Wormhole", meta = (ClampMin = "0.1"))
+	float FXScale = 3.0f;
+
+	/** Tint, if the chosen system exposes a Color override. Cyan, to match the apparitions. */
+	UPROPERTY(EditAnywhere, Category = "Wormhole")
+	FLinearColor FXColor = FLinearColor(0.15f, 0.85f, 1.0f, 1.0f);
 
 	/** Any key ends it early. On by default: nobody wants a cutscene twice. */
 	UPROPERTY(EditAnywhere, Category = "Wormhole")
 	bool bSkippable = true;
 
 private:
-	void BuildCloud();
-	void ClearCloud();
 	void Finish();
 	void HoldPlayer(bool bHold);
-
-	UMaterialInterface* GetPassageMaterial();
-
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<UStaticMeshComponent>> Shapes;
+	UNiagaraSystem* ResolveFX() const;
 
 	UPROPERTY(Transient)
-	TArray<TObjectPtr<UMaterialInstanceDynamic>> ShapeMIDs;
-
-	/** Unit direction each shape drifts along, so the cloud opens outward around him. */
-	TArray<FVector> Drifts;
+	TObjectPtr<UNiagaraComponent> FXComponent;
 
 	float Elapsed = 0.0f;
 	bool bRunning = false;

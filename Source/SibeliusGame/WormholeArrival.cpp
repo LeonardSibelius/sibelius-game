@@ -1,31 +1,42 @@
-// WormholeArrival.cpp — see the header for why the passage is not its own level.
+// WormholeArrival.cpp — see the header for why this is Niagara and not cubes.
 
 #include "WormholeArrival.h"
 
 #include "SibeliusGame.h"   // LogSibeliusGame
 
-#include "Components/StaticMeshComponent.h"
-#include "Engine/StaticMesh.h"
-#include "Materials/MaterialInterface.h"
-#include "Materials/MaterialInstanceDynamic.h"
+#include "NiagaraSystem.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
+#include "HAL/IConsoleManager.h"
+#include "UObject/ConstructorHelpers.h"
 #include "Engine/World.h"
 
 namespace
 {
-	// Engine basic shapes: always present, no pack to go missing, nothing to gitignore.
-	const TCHAR* const P_Shape = TEXT("/Engine/BasicShapes/Cube.Cube");
-	const TCHAR* const P_Materialise = TEXT("/Game/AIApparition/M_materialise.M_materialise");
+	/* THE DEFAULT, HARD-REFERENCED IN THE CONSTRUCTOR SO IT COOKS.
 
-	/** Ease-out cubic — the swarm thins fast at first and lets go slowly. */
-	float Settle(float A)
-	{
-		const float T = 1.0f - FMath::Clamp(A, 0.0f, 1.0f);
-		return 1.0f - (T * T * T);
-	}
+	   Content/PortalVFX/ is a gitignored purchased pack. A soft path from C++ is not a
+	   package reference and the cooker does not follow one — the system would work
+	   perfectly in PIE and be missing from the shipped build. That is the v0.7.4
+	   invisible-spaceport bug, and here it would land in the last scene of the game. */
+	const TCHAR* const P_DefaultFX = TEXT("/Game/PortalVFX/NS/NS_DreamLand.NS_DreamLand");
+
+	/* PICK ONE OF FOURTEEN WITHOUT A REBUILD.
+
+	   `sib.WormholeFX NS_HeavenPath` in the Cmd box, then replay. Which of these looks
+	   like a passage rather than a special effect is a question about taste, and answering
+	   it fourteen times at one editor restart each is not a reasonable way to spend an
+	   evening. The boarding lamp learned this the same night.
+
+	   A bare name is resolved under /Game/PortalVFX/NS/; a full path also works. */
+	static TAutoConsoleVariable<FString> CVarWormholeFX(
+		TEXT("sib.WormholeFX"), TEXT(""),
+		TEXT("Niagara system for the Grok arrival. Bare name (NS_HeavenPath) or full path. Empty = the actor's own."),
+		ECVF_Cheat);
 }
 
 AWormholeArrival::AWormholeArrival()
@@ -35,16 +46,46 @@ AWormholeArrival::AWormholeArrival()
 
 	SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot")));
 
-	PassageMaterial = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(P_Materialise));
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FXFinder(P_DefaultFX);
+	if (FXFinder.Succeeded())
+	{
+		PassageFX = FXFinder.Object;
+	}
+}
+
+UNiagaraSystem* AWormholeArrival::ResolveFX() const
+{
+	const FString Override = CVarWormholeFX.GetValueOnGameThread();
+	if (!Override.IsEmpty())
+	{
+		// A bare name is the useful case at a console; spell out the folder for it.
+		FString Path = Override;
+		if (!Path.StartsWith(TEXT("/")))
+		{
+			Path = FString::Printf(TEXT("/Game/PortalVFX/NS/%s.%s"), *Override, *Override);
+		}
+		if (UNiagaraSystem* Picked = LoadObject<UNiagaraSystem>(nullptr, *Path))
+		{
+			return Picked;
+		}
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Wormhole] sib.WormholeFX '%s' did not load; using the default."), *Override);
+	}
+
+	if (UNiagaraSystem* Own = PassageFX.Get())
+	{
+		return Own;
+	}
+	return PassageFX.LoadSynchronous();
 }
 
 void AWormholeArrival::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/* HE ARRIVES BLIND, AND THAT IS THE POINT. Black first, then the swarm resolves out
-	   of it, then the planet resolves out of the swarm. Fading up over the whole passage
-	   rather than snapping means there is never a frame where Grok is simply "on". */
+	/* HE ARRIVES BLIND, AND THAT IS THE POINT. Black first, then the effect out of it,
+	   then the planet out of the effect. Fading up over a good part of the passage rather
+	   than snapping means there is never a frame where Grok is simply "on". */
 	if (const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 	{
 		if (PC->PlayerCameraManager)
@@ -54,23 +95,53 @@ void AWormholeArrival::BeginPlay()
 		}
 	}
 
-	BuildCloud();
-	HoldPlayer(true);
+	/* CENTRED ON HIM, NOT ON THIS ACTOR. The two are placed by the same script and should
+	   coincide, but "should" is how a player ends up watching the effect happen somewhere
+	   across the valley. Ask the pawn. */
+	FVector Where = GetActorLocation();
+	if (const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		Where = Player->GetActorLocation();
+	}
+	Where += FXOffset;
 
+	if (UNiagaraSystem* System = ResolveFX())
+	{
+		FXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this, System, Where, FRotator::ZeroRotator,
+			FVector(FXScale), /*bAutoDestroy=*/false, /*bAutoActivate=*/true);
+
+		/* THE PACK EXPOSES OVERRIDES; NOT EVERY SYSTEM EXPOSES THE SAME ONES. Setting a
+		   parameter a system does not have is a no-op, not an error, so these are safe to
+		   attempt across all fourteen and there is no need to special-case per system. */
+		if (FXComponent)
+		{
+			FXComponent->SetVariableLinearColor(TEXT("Color"), FXColor);
+			FXComponent->SetVariableLinearColor(TEXT("CustomColor"), FXColor);
+			FXComponent->SetVariableFloat(TEXT("ScalableSize"), FXScale);
+		}
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Wormhole] Arrival FX '%s' over %.1fs."),
+			*System->GetName(), PassageSeconds);
+	}
+	else
+	{
+		// Not fatal: he still arrives, just plainly. Say so rather than fail silently -
+		// a missing effect and a broken one look identical from the lawn.
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Wormhole] No Niagara system resolved; arriving with no effect."));
+	}
+
+	HoldPlayer(true);
 	bRunning = true;
 	Elapsed = 0.0f;
 	SetActorTickEnabled(true);
-
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Wormhole] Arrival: %d shapes over %.1fs."),
-		Shapes.Num(), PassageSeconds);
 }
 
 void AWormholeArrival::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	/* GIVE HIM HIS LEGS BACK NO MATTER HOW THIS ENDS. A level torn down mid-passage
-	   would otherwise leave IgnoreMoveInput set on a controller that outlives this
-	   actor — the player would arrive somewhere later, unable to move, with nothing on
-	   screen to explain it. */
+	/* GIVE HIM HIS LEGS BACK NO MATTER HOW THIS ENDS. A level torn down mid-passage would
+	   otherwise leave IgnoreMoveInput set on a controller that outlives this actor — the
+	   player arrives somewhere later unable to move, with nothing on screen to explain it. */
 	if (bRunning && !bFinished)
 	{
 		HoldPlayer(false);
@@ -88,11 +159,9 @@ void AWormholeArrival::Tick(float DeltaSeconds)
 	}
 
 	Elapsed += DeltaSeconds;
-	const float Alpha = FMath::Clamp(Elapsed / FMath::Max(0.5f, PassageSeconds), 0.0f, 1.0f);
-	const float Eased = Settle(Alpha);
 
-	// Any key ends it. Checked on the controller rather than bound, so it needs no input
-	// component of its own and cannot starve anything else of a key (the BindKey trap).
+	// Any key ends it. Read off the controller rather than bound, so it needs no input
+	// component of its own and cannot starve another actor of a key (the BindKey trap).
 	if (bSkippable)
 	{
 		if (const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
@@ -107,26 +176,7 @@ void AWormholeArrival::Tick(float DeltaSeconds)
 		}
 	}
 
-	for (int32 i = 0; i < Shapes.Num(); ++i)
-	{
-		if (!IsValid(Shapes[i]))
-		{
-			continue;
-		}
-
-		// Opening outward, and turning: a still cloud reads as fog, a drifting one reads
-		// as something he is passing through.
-		Shapes[i]->AddRelativeLocation(Drifts[i] * DriftSpeed * DeltaSeconds);
-		Shapes[i]->AddLocalRotation(FRotator(12.0f * DeltaSeconds, 18.0f * DeltaSeconds, 0.0f));
-
-		if (UMaterialInstanceDynamic* MID = ShapeMIDs.IsValidIndex(i) ? ShapeMIDs[i].Get() : nullptr)
-		{
-			MID->SetScalarParameterValue(TEXT("Opacity"), 1.0f - Eased);
-			MID->SetScalarParameterValue(TEXT("Glow"), PassageGlow * (1.0f - Eased));
-		}
-	}
-
-	if (Alpha >= 1.0f)
+	if (Elapsed >= PassageSeconds)
 	{
 		Finish();
 	}
@@ -142,9 +192,28 @@ void AWormholeArrival::Finish()
 	bRunning = false;
 	SetActorTickEnabled(false);
 
-	ClearCloud();
-	HoldPlayer(false);
+	/* DEACTIVATE, DO NOT DESTROY. The pack's own description: "These VFX have Automatic
+	   Fade-in, Fade-Out animation for 1 sec once you deactivate them." Destroying the
+	   component here would cut the effect off mid-frame and the planet would snap in.
+	   Let it fade, then clean up. */
+	if (FXComponent)
+	{
+		FXComponent->Deactivate();
 
+		FTimerHandle Cleanup;
+		TWeakObjectPtr<UNiagaraComponent> Weak = FXComponent;
+		GetWorldTimerManager().SetTimer(Cleanup, [Weak]()
+		{
+			if (Weak.IsValid())
+			{
+				Weak->DestroyComponent();
+			}
+		}, 1.5f, false);
+
+		FXComponent = nullptr;
+	}
+
+	HoldPlayer(false);
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Wormhole] Arrived. Controls released."));
 }
 
@@ -155,109 +224,4 @@ void AWormholeArrival::HoldPlayer(bool bHold)
 		PC->SetIgnoreMoveInput(bHold);
 		PC->SetIgnoreLookInput(bHold);
 	}
-}
-
-UMaterialInterface* AWormholeArrival::GetPassageMaterial()
-{
-	if (UMaterialInterface* Loaded = PassageMaterial.Get())
-	{
-		return Loaded;
-	}
-	return PassageMaterial.LoadSynchronous();
-}
-
-void AWormholeArrival::BuildCloud()
-{
-	UWorld* World = GetWorld();
-	if (!World || Shapes.Num() > 0)
-	{
-		return;
-	}
-
-	UStaticMesh* Mesh = Cast<UStaticMesh>(
-		StaticLoadObject(UStaticMesh::StaticClass(), nullptr, P_Shape));
-	UMaterialInterface* Mat = GetPassageMaterial();
-	if (!Mesh)
-	{
-		UE_LOG(LogSibeliusGame, Warning, TEXT("[Wormhole] No shape mesh; arriving plainly."));
-		return;
-	}
-
-	/* CENTRED ON HIM, NOT ON THIS ACTOR. The arrival point and the actor are placed by
-	   the same script and should coincide, but "should" is how a player ends up watching
-	   the effect happen somewhere across the valley. Ask the pawn. */
-	FVector Centre = GetActorLocation();
-	if (const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
-	{
-		Centre = Player->GetActorLocation();
-	}
-
-	const float Inner = FMath::Min(CloudInnerRadius, CloudRadius * 0.9f);
-
-	Shapes.Reserve(ShapeCount);
-	ShapeMIDs.Reserve(ShapeCount);
-	Drifts.Reserve(ShapeCount);
-
-	for (int32 i = 0; i < ShapeCount; ++i)
-	{
-		const FVector Dir = FMath::VRand();
-		const float Dist = FMath::FRandRange(Inner, CloudRadius);
-
-		UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(this);
-		if (!Comp)
-		{
-			continue;
-		}
-		Comp->SetupAttachment(GetRootComponent());
-		Comp->RegisterComponent();
-		Comp->SetStaticMesh(Mesh);
-
-		// Never solid. He is standing inside this and must be able to walk out of it the
-		// instant it lets go - the spaceport's "invisible solid objects on the lawn"
-		// lesson, applied before it can happen rather than after.
-		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Comp->SetCastShadow(false);
-
-		Comp->SetWorldLocation(Centre + Dir * Dist);
-		Comp->SetWorldRotation(FRotator(FMath::FRandRange(0.0f, 360.0f),
-			FMath::FRandRange(0.0f, 360.0f), FMath::FRandRange(0.0f, 360.0f)));
-		const float S = ShapeSize * FMath::FRandRange(0.4f, 1.6f) / 100.0f;   // cube is 100 cm
-		Comp->SetWorldScale3D(FVector(S));
-
-		if (Mat)
-		{
-			if (UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(Mat, this))
-			{
-				MID->SetScalarParameterValue(TEXT("Opacity"), 1.0f);
-				MID->SetScalarParameterValue(TEXT("Glow"), PassageGlow);
-				Comp->SetMaterial(0, MID);
-				ShapeMIDs.Add(MID);
-			}
-			else
-			{
-				ShapeMIDs.Add(nullptr);
-			}
-		}
-		else
-		{
-			ShapeMIDs.Add(nullptr);
-		}
-
-		Shapes.Add(Comp);
-		Drifts.Add(Dir);
-	}
-}
-
-void AWormholeArrival::ClearCloud()
-{
-	for (UStaticMeshComponent* Comp : Shapes)
-	{
-		if (IsValid(Comp))
-		{
-			Comp->DestroyComponent();
-		}
-	}
-	Shapes.Reset();
-	ShapeMIDs.Reset();
-	Drifts.Reset();
 }
