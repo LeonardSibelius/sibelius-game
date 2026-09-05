@@ -1,4 +1,4 @@
-# The seventh power — Nyra takes the ship (2026-09-04, rev 2, SEED)
+# The seventh power — Nyra takes the ship (2026-09-04, rev 3, SEED)
 
 **Nothing here is locked.** This is the seed of a design, written the night the
 launch cutscene shipped so it is not lost. The one thing that must be decided
@@ -250,6 +250,134 @@ ElevenLabs pass either way — see `docs/DANCER_VOICE.md`.
 | Niagara | shipping, and the launch plume proves it carries a shot |
 | A dark abstract level | `L_Cine_KaiaIntro` is exactly this — her, three lights, pure black |
 | The reason they notice him | already written into `SPACEPORT_PLAN.md` |
+
+---
+
+---
+
+# REV 3 (2026-09-04) — Grok is the ending, and Nyra is on it
+
+Rev 2 got him to Grok and left the destination undecided. Rev 3 decides what is
+there, and it turns out to be a person.
+
+Walt:
+
+> we can put Nyra in here and she can apologize for stranding us and we can
+> finish out the game discussing the meaning of life or whatever
+
+## This is the ending of the game
+
+Not *an* ending. Nyra is the most developed thing in this project — three voiced
+guide stages, a MetaHuman, a dancer who will not stop dancing — and a version of
+this game that never resolves her wastes its best asset.
+
+And **"she is already there"** is both funnier and sadder than the theft alone.
+She did go to Grok. She just did not take him. He gets there anyway, by a better
+road than the one she stole, and finds her waiting to apologise.
+
+Two figures on a hillside under an alien sky, talking about what it all meant.
+It is the oldest ending shape there is and it has never stopped working.
+
+## Why it is cheap, which is the surprising part
+
+**The dialogue machinery already exists and already ships.**
+`UDancerAgentComponent` carries `GuideLine1` through `GuideLine4` — staged,
+voiced, distance-gated, with the view-cone check and the floor trace that took
+three separate bugs to get right. **Nyra on Grok is stage 4.** It is a field and
+a recording, not a system.
+
+**She does not need to walk.** L_City has no navmesh and she never needed one;
+she dances, and `bGuideStopsDancing` already exists. A dancer on an alien
+hillside is genuinely strange and exactly right.
+
+**And the hardest writing is already done.** See below.
+
+## The dialogue — do NOT write a philosophy of life
+
+This is the one place in the project where the writing could go sentimental and
+take the whole ending down with it. A "meaning of life" conversation written
+from scratch is how good games end badly.
+
+It does not have to be written from scratch. `docs/MEMOIR_VOICE.md` holds
+**eight messages, 1988 to 2022** — Walt's own words, one per employer, and
+`ProgressionTypes.h` calls them "forty years, one sentence at a time." Today
+they appear exactly once, in the finale's read-back, for about twelve seconds.
+
+**So: Nyra asks, and the memoir answers.** She apologises, she asks what forty
+years of it was for, and what comes back is what Walt already wrote — including
+the two employers that never became a power (San Diego County and Bally). That
+conversation cannot be corny, because none of it is invented.
+
+It also solves a mechanical problem: Leonard has no voice in this game and never
+has. Nyra speaks; his replies are the memoir lines arriving on screen. Nothing
+needs a voice actor for him, and the asymmetry is the point — the AI talks, the
+man's forty years answer.
+
+## The place — decided by elimination, on 2026-09-04
+
+**Tried and rejected: High Tech Base** (YaMaKundra, in Walt's Fab library, UE
+5.7, Substrate + Lumen, a clean technical match). Created as a standalone
+project at `C:\Users\wpark\projects\GrokBase\GrokBase` and opened. Walt's
+verdict:
+
+> i opened it and actually don't like it - a grim stark little base
+
+**Nothing was migrated. That is the process working** — look before importing,
+and a rejected pack costs ten minutes instead of a gigabyte in the pak. (It is
+1013 MB, of which **1001 MB is textures** and 6.4 MB is geometry.)
+
+The lesson generalises: *every* sci-fi interior kit is somebody's 1979 idea of
+the future — heat pipes and insulation panels, grey and cramped. That is a human
+space station. **Grok is where an AI lives and should not look like something
+NASA built.**
+
+**Under consideration: Elite Landscapes: Alien Part IV** (Velarion, **$4.99**,
+NOT owned, **asset package** so it drops straight in, UE 4.20–4.27 and 5.0–5.8).
+Six 8K landscapes, a matte-painting sky panorama, and the lit levels from the
+screenshots. Walt: *"grim but open"*.
+
+Why open beats enclosed here: **Grok does not need to be a place to live in. It
+needs one image that says you are forty light years from home.** A landscape with
+a matte sky does that in a single frame; an interior never can, which is why the
+base read as a grim little box. It was a box.
+
+**The combination worth considering over either:** buy the landscape for the
+vista and the sky, and stand Walt's own `M_materialise` structures on it —
+half-formed, glowing AI architecture that never finishes arriving. The pack
+solves "open"; the shader solves "grim" and makes the place his rather than
+stock. It is also continuous with the particle passage from rev 2: the drift does
+not cut to a place, it *thickens* into one.
+
+## The trap to avoid, which Walt already named
+
+An open landscape **invites walking, and there is nothing to walk to**. That is
+the crew compartment's failure again — a space that promises more than it
+delivers. Decide the verb before spending the five dollars:
+
+- *arrives, sees, talks to Nyra, ends* → a landscape is ideal
+- *explores* → no asset fixes that, and it is a second game again
+
+## NEW PROBLEM: the game now has two endings
+
+The Architects battle currently closes the game, and the shipped build says
+**"More adventures coming soon"** after it. If Grok is the ending, the battle
+becomes the midpoint and that line is wrong — it promises a sequel at what is now
+the middle of the story.
+
+Not urgent, but it is in the build, so it is a player-facing promise and not just
+a doc question. Decide before the Steam release.
+
+## Still open
+
+1. **Does Walt buy the landscape?** $4.99, his call, nothing else blocked by it.
+2. **What the seventh power does** (rev 1's blocking question) — and whether
+   travelling-as-data IS the power, or something Nyra hands over on Grok as the
+   apology. The latter would tie every thread in one scene.
+3. **Nyra's stage-4 line** — ElevenLabs, `docs/DANCER_VOICE.md`.
+4. **"Allows usage with AI: No"** appears on every Fab listing opened so far
+   (High Tech Base, Space Station Interior, Elite Landscapes), which suggests a
+   default rather than a statement. Worth reading Fab's definition once, since
+   this game is marketed as AI-built.
 
 ---
 
