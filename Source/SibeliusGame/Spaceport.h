@@ -500,16 +500,26 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
 	TSoftObjectPtr<UNiagaraSystem> GrokPortalSystem;
 
-	/** Where it stands, relative to the spaceport. Up off the pad so it reads as a doorway. */
+	/* HIGH ENOUGH TO SEE OVER THE BERM. Walt, 2026-09-05: "that tiny purple portal is at
+	   the base of the rocket and I cannot walk there, the fence blocks my way." At 300 cm it
+	   sat on the pad behind the launch complex's own retaining wall. Live on
+	   sib.GrokPortalUp. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
-	FVector GrokPortalOffset = FVector(0.0f, 0.0f, 300.0f);
+	FVector GrokPortalOffset = FVector(0.0f, 0.0f, 1100.0f);
 
+	/* AND MUCH BIGGER. These systems are authored as person-sized doorways; this one has to
+	   read from across a field, against a 120 m rocket complex. Live on sib.GrokPortalScale. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.1"))
-	float GrokPortalScale = 3.0f;
+	float GrokPortalScale = 14.0f;
 
-	/** How near he must be for C to take him through. Generous: it is the last door. */
+	/* THE SAME RANGE AS BOARDING, AND FOR THE SAME REASON.
+
+	   25 m was the second time I priced a spaceport interaction like a doorway. The catalog
+	   plants this thing 160 m ahead of the player and skips the wall clamp doing it, so it
+	   lands where he was AIMING and not where he can WALK - his went behind a fence. If C
+	   could board a rocket from 120 m it can enter the door that replaced it from 120 m. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "100.0"))
-	float GrokPortalRange = 2500.0f;
+	float GrokPortalRange = 12000.0f;
 
 	/** Seconds after the launch before it opens — long enough for the toast to clear. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.0"))

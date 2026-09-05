@@ -68,6 +68,18 @@ namespace
 	   Type "sib.BoardingLight 500" in the Cmd box, press C twice, and the next boarding uses
 	   it: Disembark destroys the view actor, so re-boarding builds a fresh lamp that reads
 	   this again. Negative means "use the property", which is the shipping default. */
+	/* THE PORTAL, SIZED BY EYE. Same lesson as the boarding lamp and sib.WormholeFX: how big
+	   a doorway should look across a field is not a question code can answer, and a rebuild
+	   per guess is not a way to answer it. Travel out and back to re-open it with new
+	   values - the reload path opens it immediately. Negative = the actor's own. */
+	static TAutoConsoleVariable<float> CVarGrokPortalScale(
+		TEXT("sib.GrokPortalScale"), -1.0f,
+		TEXT("Scale of the portal to Grok. Negative = the actor's own."), ECVF_Cheat);
+
+	static TAutoConsoleVariable<float> CVarGrokPortalUp(
+		TEXT("sib.GrokPortalUp"), -1.0f,
+		TEXT("Height of the portal above the spaceport origin, cm. Negative = the actor's own."), ECVF_Cheat);
+
 	static TAutoConsoleVariable<float> CVarBoardingLight(
 		TEXT("sib.BoardingLight"), -1.0f,
 		TEXT("Crew-compartment lamp brightness in lumens. Negative = use ASpaceport's own value."),
@@ -853,9 +865,11 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
 				return true;
 			}
 
-			ASibeliusHUD::Toast(this,
-				TEXT("THE WAY TO GROK IS OPEN WHERE THE SHIP STOOD - WALK TO IT"),
-				4.0f, SibeliusToast::Info);
+			/* AND SAY HOW FAR, because "walk to it" was unhelpful advice at a portal behind
+			   a fence. With the range now matching boarding this branch should be rare. */
+			ASibeliusHUD::Toast(this, FString::Printf(
+				TEXT("THE WAY TO GROK IS OPEN WHERE THE SHIP STOOD - %.0f M AWAY"),
+				ToPortal / 100.0f), 4.0f, SibeliusToast::Info);
 			return true;
 		}
 
@@ -1727,16 +1741,25 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 		return;
 	}
 
+	const float Scale = (CVarGrokPortalScale.GetValueOnGameThread() >= 0.0f)
+		? CVarGrokPortalScale.GetValueOnGameThread() : GrokPortalScale;
+	const float Up = (CVarGrokPortalUp.GetValueOnGameThread() >= 0.0f)
+		? CVarGrokPortalUp.GetValueOnGameThread() : GrokPortalOffset.Z;
+
 	GrokPortal = UNiagaraFunctionLibrary::SpawnSystemAttached(
-		System, GetRootComponent(), NAME_None, GrokPortalOffset, FRotator::ZeroRotator,
+		System, GetRootComponent(), NAME_None,
+		FVector(GrokPortalOffset.X, GrokPortalOffset.Y, Up), FRotator::ZeroRotator,
 		EAttachLocation::KeepRelativeOffset, /*bAutoDestroy=*/false);
 
 	if (GrokPortal)
 	{
-		GrokPortal->SetWorldScale3D(FVector(GrokPortalScale));
+		GrokPortal->SetWorldScale3D(FVector(Scale));
 		// Not every system in the pack exposes the same overrides; setting one it does not
 		// have is a no-op rather than an error, so these are safe to attempt blind.
-		GrokPortal->SetVariableFloat(TEXT("ScalableSize"), GrokPortalScale);
+		GrokPortal->SetVariableFloat(TEXT("ScalableSize"), Scale);
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Spaceport] Portal at +%.0f cm, scale %.1f, enterable from %.0f cm."),
+			Up, Scale, GrokPortalRange);
 	}
 
 	ASibeliusHUD::Toast(this,
