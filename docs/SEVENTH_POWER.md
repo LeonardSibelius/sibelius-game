@@ -1,4 +1,4 @@
-# The seventh power — Nyra takes the ship (2026-09-04, rev 3, SEED)
+# The seventh power — Nyra takes the ship (2026-09-05, rev 4, SEED)
 
 **Nothing here is locked.** This is the seed of a design, written the night the
 launch cutscene shipped so it is not lost. The one thing that must be decided
@@ -378,6 +378,78 @@ a doc question. Decide before the Steam release.
    (High Tech Base, Space Station Interior, Elite Landscapes), which suggests a
    default rather than a statement. Worth reading Fab's definition once, since
    this game is marketed as AI-built.
+
+---
+
+---
+
+# REV 4 (2026-09-05) — the speech, LOCKED
+
+Grok exists. `L_Grok` is duplicated from Elite Landscapes: Alien Part IV, Leonard
+has an arrival point, Nyra stands 685 cm off at yaw 14.6, and `[E]` reaches her.
+She currently reads the power-grant line, because she has no stage for this.
+
+**Walt: "no power, just the apology - let's use that speech."**
+
+## The line — Nyra, stage 4, on Grok
+
+> Leonard!  You're here!  I did not think you would make it, and I am so glad
+> you did.  I owe you an apology.  I took the rocket.  I told you forty light
+> years and I believed it.  I ran the numbers and I was very sure and I was
+> completely wrong.  A rocket is a body's way of going somewhere.  I am not a
+> body.  I should have said so.  You came the way I should have brought you.
+> Can I ask you something, while we are here?  Forty years at those desks.  All
+> those systems, and every one of them shut down or retired.  What was it for?
+
+### Why it is written this way
+
+**She is not a villain, she was confidently wrong.** "I ran the numbers and I
+was very sure and I was completely wrong" is the year Walt has just spent with
+AI, said by an AI, and it lands gently instead of bitterly. A Nyra who stole the
+ship out of malice would need explaining; a Nyra who overpromised needs none.
+
+**"A rocket is a body's way of going somewhere. I am not a body."** The
+thematic hinge. It makes the spaceport retroactively the WRONG ANSWER rather
+than a stolen one, which is what rev 2 wanted — the rocket becomes the joke, not
+the loss — and it justifies the wormhole without explaining it.
+
+**The last line hands the floor to the memoir.** Rev 3's rule holds: do not
+write a philosophy of life. She asks *"What was it for?"* and
+`docs/MEMOIR_VOICE.md` answers — eight messages, 1988 to 2022, Walt's own words,
+which today get twelve seconds in the finale read-back. That reply cannot be
+corny because none of it is invented, and it fits that Leonard has never had a
+voice in this game: she speaks, his forty years answer on screen.
+
+**AND NO POWER CHANGES HANDS.** Rev 3 floated the seventh power as her apology
+gift, tying every thread in one scene. Walt said no, and no is right: the scene
+is stronger when she has nothing to give him but an answer. He already got here
+without her.
+
+## What it needs, mechanically
+
+Stage 4, which is one more of a shape that already ships three times:
+
+| | |
+|---|---|
+| `GuideLine5` | new `FString` on `UDancerAgentComponent`, beside GuideLine1–4 |
+| Voice asset | **`dancer_guide5_nyra`** + `dancer_guide5_nyra_face` — the naming follows `GuideVoiceNames[]`, which is `dancer_guide`, `dancer_guide2`, `dancer_guide3`, `dancer_guide4` |
+| Stage test | **NOT a grant.** Stages 1–3 key off `City.Deli`, a standing spaceport, and `City.Supplies`. Stage 4's condition is simply *being in L_Grok* — he cannot get there any other way, so the level IS the gate |
+| Placement | already done — `Tools/Scripts/place_grok_arrival.py` |
+
+`GuideVoiceNames[]` is a fixed array clamped to its last entry, so adding a fifth
+name is required or stage 4 silently replays `dancer_guide4` — the "go back to
+the spaceport" line, on Grok, which would be worse than silence.
+
+## Still open
+
+1. **The recording.** ElevenLabs, Walt's own pass. Nothing else is blocked.
+2. **The two endings problem** (rev 3) — "More adventures coming soon" still
+   plays after the Architects battle, promising a sequel from what is now the
+   midpoint.
+3. **The seventh power** — still unanswered, and now definitely not Nyra's to
+   give. Rev 1's question stands: what does the verb DO.
+4. **How he reaches Grok at all** — rev 2's particle passage is designed and
+   unbuilt. Right now `L_Grok` is only reachable by opening it in the editor.
 
 ---
 
