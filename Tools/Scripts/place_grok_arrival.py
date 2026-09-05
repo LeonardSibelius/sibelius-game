@@ -66,17 +66,23 @@ TAG_NYRA = "GrokNyra"
 r = {"arrival": [ARRIVAL.x, ARRIVAL.y, ARRIVAL.z], "yaw": FACING_YAW}
 
 
-def ground_at(world, x, y, z_hint):
+def ground_at(world, x, y, z_hint, ignore=None):
     # TRACE DOWN AND STAND ON WHAT IS THERE. Three separate floating-character bugs in
     # this project were all the same mistake: a height derived from something that is not
     # the ground. The landscape here is at negative Z, so the trace starts well above the
     # hint and runs a long way past it.
+    #
+    # IGNORE is not optional, it is the fourth bug (Walt, 2026-09-05: "Nyra is several feet
+    # in the air"). This script MOVES actors it finds rather than respawning them, so on a
+    # re-run the trace starts above Nyra and hits NYRA - and stands her on top of herself,
+    # 157 cm up. Run it again and she climbs again. Whatever is being placed, and the
+    # player, must be invisible to the trace that decides where it goes.
     start = unreal.Vector(x, y, z_hint + 5000.0)
     end = unreal.Vector(x, y, z_hint - 20000.0)
     hit = unreal.SystemLibrary.line_trace_single(
         world, start, end,
         unreal.TraceTypeQuery.TRACE_TYPE_QUERY1,
-        False, [], unreal.DrawDebugTrace.NONE, True,
+        False, ignore or [], unreal.DrawDebugTrace.NONE, True,
         unreal.LinearColor.RED, unreal.LinearColor.GREEN, 0.0)
     if hit:
         return hit.to_tuple()[4].z, True
@@ -117,6 +123,40 @@ def place(world, tag, cls_or_path, loc, yaw, sink):
     return actor
 
 
+def actor_ignore_list(world, *tags):
+    # Everything this script owns, plus the player. A trace that can see what it is about
+    # to move will stand it on itself; a trace that can see the pawn will stand things on
+    # the pawn's head.
+    out = []
+    for t in tags:
+        a = find_tagged(world, t)
+        if a:
+            out.append(a)
+    pawn = unreal.GameplayStatics.get_player_pawn(world, 0)
+    if pawn:
+        out.append(pawn)
+    return out
+
+
+def stand_on(actor, ground_z):
+    # STAND THE RENDERED BODY ON THE GROUND, NOT THE ORIGIN.
+    #
+    # A MetaHuman's origin is usually at its feet, but "usually" is how a character ends
+    # up hovering. UDancerAgentComponent already solved this properly for the city guides:
+    # measure how far below the actor's origin the body actually reaches, then stand THAT
+    # on the floor. Read off the bounds, so a different rig or a scaled one both land.
+    if not actor:
+        return ground_z, 0.0
+    origin, extent = actor.get_actor_bounds(False)
+    feet_below = actor.get_actor_location().z - (origin.z - extent.z)
+    if feet_below < 0.0:
+        feet_below = 0.0
+    loc = actor.get_actor_location()
+    loc.z = ground_z + feet_below
+    actor.set_actor_location(loc, False, False)
+    return loc.z, feet_below
+
+
 def main():
     world = unreal.EditorLevelLibrary.get_editor_world()
     if world is None:
@@ -127,8 +167,11 @@ def main():
         r["error"] = "open L_Grok first - this is %s" % world.get_name()
         return
 
+    ignore = actor_ignore_list(world, TAG_START, TAG_NYRA, TAG_WORMHOLE)
+    r["ignored"] = [a.get_name() for a in ignore]
+
     # --- Leonard's arrival point ------------------------------------------------------
-    gz, hit = ground_at(world, ARRIVAL.x, ARRIVAL.y, ARRIVAL.z)
+    gz, hit = ground_at(world, ARRIVAL.x, ARRIVAL.y, ARRIVAL.z, ignore)
     r["ground_hit"] = hit
     r["ground_z"] = round(gz, 1)
 
@@ -142,15 +185,16 @@ def main():
     # Her XY is his; her Z is re-traced rather than trusted, so a later terrain edit or a
     # rebuilt landscape cannot leave her hovering. The trace is the authority on ground.
     nx, ny = NYRA_LOCATION.x, NYRA_LOCATION.y
-    nz, nhit = ground_at(world, nx, ny, gz)
+    nz, nhit = ground_at(world, nx, ny, gz, ignore)
     r["nyra_ground_hit"] = nhit
 
-    # Her origin is at her FEET - assembled MetaHumans are AActor-derived - so she stands
-    # ON the hit with no offset.
     nyra_info = {}
-    place(world, TAG_NYRA, NYRA_BP, unreal.Vector(nx, ny, nz), NYRA_YAW, nyra_info)
+    nyra = place(world, TAG_NYRA, NYRA_BP, unreal.Vector(nx, ny, nz), NYRA_YAW, nyra_info)
+    # Placed first, THEN stood on the ground: her bounds are only readable once she exists.
+    final_z, feet = stand_on(nyra, nz)
     r["nyra"] = nyra_info
-    r["nyra_location"] = [round(nx, 1), round(ny, 1), round(nz, 1)]
+    r["nyra_feet_below_origin"] = round(feet, 1)
+    r["nyra_location"] = [round(nx, 1), round(ny, 1), round(final_z, 1)]
 
     # --- the wormhole arrival, at his feet --------------------------------------------
     # AWormholeArrival centres its cloud on the PAWN rather than on itself, so this only
