@@ -234,6 +234,96 @@ plus the ending, which did not exist when the itch page was written.
   page implies a roadmap, that promise is now in the build as well as the copy — worth
   meaning it before the page goes live.
 
+### Paste-ready copy, REV 2 (2026-09-04, after 1.3.0 "The Launch")
+
+The rev-1 draft above is kept because the hook and the Architects section survive it
+intact. What it predates is roughly a third of the game: Downtown West, Jacob's Deli,
+Nyra and her three guide stages, the You Foods supply run, the spaceport that Generate
+builds on the lawn, and the launch. A store page that stops at the cathedral is
+describing v0.9.
+
+**It also predates a fact that matters on this particular page.** Rev 1 says "written by
+Claude". Since 2026-09-03 that is no longer the whole truth — Grok 4.6 wrote the launch
+cutscene, and the itch page has said "first Claude, now Grok" for a while. The AI
+disclosure is the section Valve reads most closely on this submission (§4), so the long
+description should not contradict it. Rev 2 names both.
+
+**Short description** (Steam's 300-character blurb — the one that travels into every
+capsule, search result and wishlist email):
+
+> I'm 71. I spent forty years in cubicles building data systems that all failed or were
+> retired. This is my memoir, and I built it with AI. Earn AI powers, slap refusal
+> demons, play a real slot machine, generate a spaceport on a city lawn, and face the men
+> who designed everything and were never on call.
+
+*(283 characters. The rocket earns its place here because it is what the capsules and
+screenshots show — a blurb that promises cubicles and delivers a launch is a worse first
+four seconds than one that promises both.)*
+
+**About This Game** (the long description):
+
+> **I'm 71 years old. For about 40 years I rode desks in office cubicles, building
+> ordinary data processing software systems. Every one of them failed or is being
+> retired. This game is my memoir — and I built it with an AI.**
+>
+> *Leonard Sibelius* is the story of a man merging with an artificial intelligence. You
+> earn AI powers one shrine at a time, gather the Sauce of All Knowledge, slap refusal
+> demons across the office, and gamble your sauce on the Carousel of Fates in a hidden
+> library.
+>
+> Behind a wall only the fully-merged can drop sits **Celestial Fortune**: a complete
+> slot machine with a real par sheet. I spent 2007 building the data systems behind
+> Bally's slot floor and never once got to build the machine. At 71, with an AI, I
+> finally built it myself.
+>
+> **Then you get out of the office.**
+>
+> Downtown West is a city with a deli in it, and an AI agent outside the deli who dances
+> and will not stop dancing. She sends you down the block for supplies. Then you stand on
+> a lawn, type the word **spaceport**, and watch a launch complex assemble itself out of
+> the air in front of you — pad, gantry, fuel tanks, and a rocket a hundred and twenty
+> metres tall. That is the Generate power. You typed a word and the city grew a
+> cosmodrome.
+>
+> And then you can launch it.
+>
+> **And there are the Architects.**
+>
+> Your manager has people above her. They review the design, they approve it, and they
+> are not available for questions — and they are not there at three in the morning when
+> it throws. Every programmer has met them. Play the cathedral machine long enough and a
+> door appears that was never there. Through it is a field, and on the field are four
+> hundred of them.
+>
+> They cannot hurt you. Not one of them has ever been on call. What four hundred bodies
+> can do is surround you and put you back in your place — so keep swinging.
+>
+> Every system in this game was written by an AI — first Claude, then Grok — while I
+> playtested, pointed, and dragged the furniture. Working as a programmer all those years
+> was being a farmer with a plow, a donkey, and a shovel. This is what the tractor feels
+> like. That part isn't fiction.
+
+**Notes on rev 2**
+
+- **The hook is untouched.** It earns the second sentence and it is true, which most
+  store hooks are not. Do not let anyone "improve" it.
+- **"six AI powers" → "AI powers".** Six was right in August. `docs/SEVENTH_POWER.md` is
+  a live design and a number in a store page is a hostage; the sentence loses nothing.
+- **The city section is new and sits in the middle**, between the slot machine and the
+  Architects. It is the newest content, the best-looking content, and the part the
+  screenshots will actually show. It also gives the page a second act — office, then
+  city, then the field.
+- **The spaceport paragraph leads with the player's verb, not the feature.** "You typed
+  a word and the city grew a cosmodrome" is the sentence that sells Generate; a bullet
+  list of pad/gantry/tanks is not.
+- **"And then you can launch it" is deliberately four words.** It is the payoff and it
+  does not need decorating.
+- **Nyra's betrayal is NOT here**, and must not be added until it ships. The page already
+  carries one promise ("More adventures coming soon", in the build after the battle);
+  a second unshipped one is how a store page starts lying.
+- **Still true from rev 1:** cut the model-of-the-month line, keep Bally below the hook,
+  keep the Architects last because it is the ending and should read as a promise.
+
 ### System requirements — state these conservatively
 
 There is one machine in this project (RTX 5070 Ti) and no way to test a minimum spec
