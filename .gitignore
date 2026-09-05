@@ -315,3 +315,15 @@ Content/Elite_AlienPack_04/
 #
 # If Walt decides the licence permits it, or the repo goes private, delete this.
 Content/Maps/L_Grok.umap
+
+# ---- Portal and SavePoint VFX (Dr.Game, bought 2026-09-05) -------------------
+# 142 MB purchased vendor pack, public repo. Third one this week to arrive NOT
+# ignored; the ritual is now: buy, add, ignore, THEN touch anything else.
+#
+# 14 Niagara systems with exposed override parameters, which is what makes them
+# usable from C++ without authoring a node graph. They reach the pak by HARD
+# reference from AWormholeArrival's constructor (FObjectFinder) - a soft path
+# alone is the v0.7.4 miss that shipped an invisible spaceport, and a portal
+# that works in PIE and is missing from the build would be that bug again in
+# the last scene of the game.
+Content/PortalVFX/
