@@ -241,8 +241,27 @@ def main():
     r["wormhole"] = wh_info
 
 
+def save_level():
+    # SAVE IT, because forgetting to has now cost three playtests.
+    #
+    # Travelling from L_City to L_Grok LOADS THE LEVEL FROM DISK - it does not use the
+    # editor's in-memory copy - so an unsaved placement is invisible to every playthrough
+    # that arrives by portal, while looking perfectly correct if you just open the level.
+    # Walt saved twice and a locked asset took the whole Save All down with it both times.
+    #
+    # Saving is not loading or deleting a level, so this does not go anywhere near the
+    # rule that editor Python must not do those.
+    try:
+        ok = unreal.EditorLevelLibrary.save_current_level()
+        r["saved"] = bool(ok)
+    except Exception as e:
+        r["saved"] = "FAILED: %s" % e
+
+
 try:
     main()
+    if "error" not in r:
+        save_level()
 except Exception:
     r["traceback"] = traceback.format_exc()
 
