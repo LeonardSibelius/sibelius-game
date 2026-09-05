@@ -63,6 +63,18 @@ TAG_START = "GrokArrival"
 TAG_WORMHOLE = "GrokWormhole"
 TAG_NYRA = "GrokNyra"
 
+# THE TAG THAT MAKES HER A GUIDE RATHER THAN A POWER GRANTER.
+#
+# UDancerAgentComponent::IsGuide() is exactly
+#     Owner && !GuideTag.IsNone() && Owner->ActorHasTag(GuideTag)
+# and GuideTag defaults to "CityDancer". Without it she is not a guide, GuideStage()
+# returns 0 before it ever looks at the level, and she gives the power-grant speech -
+# which is what Walt got on Grok: "her speech is about having given a power use it wisely".
+#
+# The first version of this script did `actor.tags = [TAG_NYRA]`, which REPLACES the tag
+# list. Setting a tag to find her by quietly removed the tag that made her herself.
+GUIDE_TAG = "CityDancer"
+
 r = {"arrival": [ARRIVAL.x, ARRIVAL.y, ARRIVAL.z], "yaw": FACING_YAW}
 
 
@@ -95,6 +107,12 @@ def find_tagged(world, tag):
     return None
 
 
+def tags_for(tag):
+    # GUIDE_TAG belongs to Nyra alone. place() is shared with the PlayerStart and the
+    # wormhole actor, and neither should be answering [E] with a guide speech.
+    return (tag, GUIDE_TAG) if tag == TAG_NYRA else (tag,)
+
+
 def place(world, tag, cls_or_path, loc, yaw, sink):
     existing = find_tagged(world, tag)
     # unreal.Rotator is (ROLL, PITCH, YAW) in Python - NOT the C++ (Pitch, Yaw, Roll)
@@ -104,7 +122,14 @@ def place(world, tag, cls_or_path, loc, yaw, sink):
     if existing:
         existing.set_actor_location(loc, False, False)
         existing.set_actor_rotation(rot, False)
+        # A re-run must repair a Nyra placed before GUIDE_TAG existed, not just move her.
+        tags = [t for t in existing.tags] if existing.tags else []
+        for t in tags_for(tag):
+            if t not in tags:
+                tags.append(t)
+        existing.tags = tags
         sink["moved"] = existing.get_name()
+        sink["tags"] = [str(t) for t in tags]
         return existing
 
     if isinstance(cls_or_path, str):
@@ -118,7 +143,12 @@ def place(world, tag, cls_or_path, loc, yaw, sink):
 
     actor = unreal.EditorLevelLibrary.spawn_actor_from_class(cls, loc, rot)
     if actor:
-        actor.tags = [tag]
+        # ADD, never replace - see GUIDE_TAG. Keep whatever the blueprint already carries.
+        existing_tags = [t for t in actor.tags] if actor.tags else []
+        for t in tags_for(tag):
+            if t not in existing_tags:
+                existing_tags.append(t)
+        actor.tags = existing_tags
         sink["spawned"] = actor.get_name()
     return actor
 
