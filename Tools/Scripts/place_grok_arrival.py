@@ -41,10 +41,19 @@ OUT = "C:/Users/wpark/projects/sibelius-game/Saved/grok_arrival.json"
 ARRIVAL = unreal.Vector(193891.4, 149016.0, -1229.3)
 FACING_YAW = 294.6
 
-# How far in front of him Nyra waits. 500 cm: the city guide talks at 320 and that is the
-# conversational distance, but this is also the last shot of the game and wants enough air
-# to see the landscape she is standing in.
-NYRA_AHEAD = 500.0
+# WHERE NYRA STANDS - Walt's own placement, read back off the Details panel after he
+# nudged her in the viewport on 2026-09-05.
+#
+# The script first put her 500 cm straight ahead, which is the conversational distance the
+# city guide uses. He moved her to 685 cm and turned her to yaw 14.6 - further out, and
+# not square-on. That is a framing decision made by eye, which is the only way framing
+# decisions get made, so it is recorded here as an explicit position rather than
+# re-derived from an angle and a distance.
+#
+# WHY IT HAD TO BE COPIED BACK. L_Grok.umap is gitignored. His nudge existed only in the
+# level, on one machine, until it was written down here.
+NYRA_LOCATION = unreal.Vector(194099.5, 148363.0, -1525.1)
+NYRA_YAW = 14.6
 
 PLAYER_CAPSULE_HALF_HEIGHT = 96.0   # ASibeliusGameCharacter's own value
 
@@ -128,17 +137,17 @@ def main():
           FACING_YAW, start_info)
     r["player_start"] = start_info
 
-    # --- Nyra, NYRA_AHEAD in front of him, turned to face him -------------------------
-    fwd = unreal.Rotator(0.0, 0.0, FACING_YAW).get_forward_vector()
-    nx = ARRIVAL.x + fwd.x * NYRA_AHEAD
-    ny = ARRIVAL.y + fwd.y * NYRA_AHEAD
+    # --- Nyra, where Walt put her ----------------------------------------------------
+    # Her XY is his; her Z is re-traced rather than trusted, so a later terrain edit or a
+    # rebuilt landscape cannot leave her hovering. The trace is the authority on ground.
+    nx, ny = NYRA_LOCATION.x, NYRA_LOCATION.y
     nz, nhit = ground_at(world, nx, ny, gz)
     r["nyra_ground_hit"] = nhit
 
     # Her origin is at her FEET - assembled MetaHumans are AActor-derived - so she stands
-    # ON the hit with no offset. Facing back down the arrival heading, at him.
+    # ON the hit with no offset.
     nyra_info = {}
-    place(world, TAG_NYRA, NYRA_BP, unreal.Vector(nx, ny, nz), FACING_YAW + 180.0, nyra_info)
+    place(world, TAG_NYRA, NYRA_BP, unreal.Vector(nx, ny, nz), NYRA_YAW, nyra_info)
     r["nyra"] = nyra_info
     r["nyra_location"] = [round(nx, 1), round(ny, 1), round(nz, 1)]
 
