@@ -298,6 +298,28 @@ public:
 	UPROPERTY(EditAnywhere, Category="Dancer", meta=(ClampMin="0", ClampMax="400"))
 	float GuideStage3Distance = 320.0f;
 
+	/* STAGE 4 — GROK. The last words of the game (docs/SEVENTH_POWER.md rev 5).
+
+	   She stole the ship, she went without him, he got there anyway by a better road than
+	   the one she took, and she is waiting to apologise. Then she tells him what forty
+	   years in a cubicle was for.
+
+	   TWO THINGS IN IT ARE LOAD-BEARING AND SHOULD NOT BE TIDIED AWAY.
+
+	   "I ran the numbers and I was very sure and I was completely wrong" is the year Walt
+	   has just spent with AI, said by an AI. She is not a villain; she was confident.
+
+	   And "Good job, Leonard" is the same phrase her stage-2 line OPENS with - "Nice job,
+	   Leonard!" The first words she says to him as a guide and the last words she says to
+	   him as an equal. Nobody planned that; it should survive. */
+	UPROPERTY(EditAnywhere, Category = "Dancer|Guide")
+	FString GuideLine5 = TEXT("Leonard!  You're here!  I did not think you would make it, and I am so glad you did.  I owe you an apology.  I took the rocket.  I told you forty light years and I believed it.  I ran the numbers and I was very sure and I was completely wrong.  A rocket is a body's way of going somewhere.  I am not a body.  I should have said so.  You came the way I should have brought you.  Do you realize that you have achieved something tremendous?  Even though you were born 40 years too early, you survived to reach the AI age.  Good job, Leonard.");
+
+	/* THE LEVEL IS THE GATE for stage 4 — there is exactly one way to be standing on Grok.
+	   See GuideStage(); every earlier stage keys off a saved grant instead. */
+	UPROPERTY(EditAnywhere, Category = "Dancer|Guide")
+	FName GrokLevelName = TEXT("L_Grok");
+
 	/* HOW WIDE "HE CAN SEE HER" IS, as a dot product against the camera's forward.
 
 	   0.0 would be a literal 90-degree half-angle; 0.35 is wider than the screen, so she

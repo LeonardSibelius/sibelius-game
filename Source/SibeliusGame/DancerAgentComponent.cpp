@@ -204,6 +204,8 @@ namespace
 		TEXT("dancer_guide3"),
 		// Stage 3, outside uFoods with the supplies bought - go and board.
 		TEXT("dancer_guide4"),
+		// Stage 4, on Grok: the apology, and the last words of the game.
+		TEXT("dancer_guide5"),
 	};
 
 	/** The idle a guide stands in once she is past dancing. See the header on IdleAnim. */
@@ -1004,6 +1006,24 @@ int32 UDancerAgentComponent::GuideStage() const
 		return 0;
 	}
 
+	/* STAGE 4 IS "HE IS STANDING ON GROK", and it is the LEVEL, not a grant.
+
+	   Stages 1-3 key off facts in the save - City.Deli, a spaceport in the world,
+	   City.Supplies - because he could be anywhere when each becomes true, so the fact has
+	   to be carried rather than observed. Stage 4 has no such ambiguity. There is exactly
+	   one way to be standing on Grok, and standing on Grok IS the condition.
+
+	   Checked before everything else because it is the furthest along, and because he
+	   arrives holding City.Supplies - without this she would meet him at the end of a forty
+	   light year journey and tell him to go and buy groceries. */
+	if (const UWorld* World = GetWorld())
+	{
+		if (FName(*UWorld::RemovePIEPrefix(World->GetMapName())) == GrokLevelName)
+		{
+			return 4;
+		}
+	}
+
 	/* STAGE 3 IS "HE HAS THE SUPPLIES", and it is checked FIRST because it is the
 	   furthest along. The supplies are a fact about HIM, held in the save, so this stays
 	   true even if the spaceport is later Test-Drive discarded — which is right: he did
@@ -1034,7 +1054,17 @@ int32 UDancerAgentComponent::GuideStage() const
 
 void UDancerAgentComponent::GetStageAnchor(int32 Stage, FName& OutTag, float& OutDistance) const
 {
-	if (Stage >= 3)
+	/* STAGE 4 HAS NO ANCHOR, and that is deliberate. The other stages move her to a tagged
+	   marker because the city is large and she has to be found where the errand starts. On
+	   Grok she is placed by Tools/Scripts/place_grok_arrival.py at a spot Walt chose by eye,
+	   five metres from where the player materialises. Nothing should move her from it. */
+	if (Stage >= 4)
+	{
+		OutTag = NAME_None;
+		OutDistance = 0.0f;
+		return;
+	}
+	if (Stage == 3)
 	{
 		OutTag = GuideStage3StartTag;
 		OutDistance = GuideStage3Distance;
@@ -1325,7 +1355,8 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	if (IsGuide())
 	{
 		const int32 Stage = GuideStage();
-		Line = (Stage >= 3) ? GuideLine4
+		Line = (Stage >= 4) ? GuideLine5
+			 : (Stage >= 3) ? GuideLine4
 			 : (Stage >= 2) ? GuideLine3
 			 : (Stage >= 1) ? GuideLine2
 			 : GuideLine;
