@@ -314,8 +314,21 @@ four seconds than one that promises both.)*
 > dragged the furniture. Working as a programmer all those years
 > was being a farmer with a plow, a donkey, and a shovel. This is what the tractor feels
 > like. That part isn't fiction.
+>
+> **Made with the work of independent artists**
+>
+> Characters Nyra, Isla, Kaia, Aisling and Elise by **xAndrei** · Dance animations by
+> **Morro Motion** · Downtown West by **Jacob Norris / PurePolygons** · Office by
+> **QuadArt** · Space Port by **PackDev**
 
 **Notes on rev 2**
+
+- **The artist credits are not optional politeness.** Walt added them to the itch page
+  himself on 2026-09-05 and they belong here too. Some Fab and Marketplace licences ask
+  for attribution, so this is partly a licence matter - but it also reads well on a page
+  whose whole argument is that a man who spent forty years unable to build things alone
+  finally could. Naming the people whose work he built with is the same sentence from the
+  other side. Keep them last, after the AI line, where credits belong.
 
 - **The hook is untouched.** It earns the second sentence and it is true, which most
   store hooks are not. Do not let anyone "improve" it.
