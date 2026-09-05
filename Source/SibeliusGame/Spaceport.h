@@ -513,15 +513,21 @@ private:
 	   hundred instead - sib.GrokPortalUp. */
 	FVector GrokPortalOffset = FVector(0.0f, 0.0f, 40.0f);
 
-	/* How far from the pad, toward the player, the portal opens. See OpenGrokPortal: at the
-	   pad it stood 160 m away behind a fence he cannot cross. Live on sib.GrokPortalToward. */
+	/* HOW FAR IN FRONT OF THE PLAYER the portal opens, on the line toward the pad.
+
+	   A STANDOFF FROM HIM, not a distance from the pad. Measuring forward from the
+	   spaceport could never reach his side of the fence: the clamp that stopped the door
+	   opening behind his back also capped it at 80% of a 160 m gap, which is 128 m - the
+	   wrong side, always. 9 m in front of him is where he asked for it and has no ceiling.
+
+	   Live on sib.GrokPortalToward. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.0"))
-	float GrokPortalTowardPlayer = 13000.0f;
+	float GrokPortalTowardPlayer = 900.0f;
 
 	/* AND MUCH BIGGER. These systems are authored as person-sized doorways; this one has to
 	   read from across a field, against a 120 m rocket complex. Live on sib.GrokPortalScale. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.1"))
-	float GrokPortalScale = 14.0f;
+	float GrokPortalScale = 28.0f;   // doubled at Walt's request, 2026-09-05
 
 	/* THE SAME RANGE AS BOARDING, AND FOR THE SAME REASON.
 

@@ -1831,8 +1831,18 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 		const float Gap = ToHim.Size2D();
 		if (Gap > 100.0f)
 		{
-			// Never past him: 80% of the gap at most, or the door opens behind his back.
-			const float Along = FMath::Min(TowardWanted, Gap * 0.8f);
+			/* MEASURED BACK FROM HIM, NOT FORWARD FROM THE PAD.
+
+			   Walt: "if possible move it to the player's side of the fence." Measuring
+			   forward from the pad could not get there - the 80%-of-the-gap clamp meant a
+			   160 m gap capped the door at 128 m, which is a few metres the WRONG side of
+			   the fence no matter how large TowardWanted was set.
+
+			   A standoff from the player has no such ceiling and is what he actually asked
+			   for: the door opens a fixed few metres in front of him, on the line toward the
+			   pad, so it still reads as being on the way to the spaceport. */
+			const float Along = FMath::Max(0.0f,
+				Gap - FMath::Min(TowardWanted, Gap - 200.0f));
 			Where = GetActorLocation() + ToHim.GetSafeNormal2D() * Along;
 
 			/* ON THE GROUND, not at his eyeline. His actor location is his capsule CENTRE,
