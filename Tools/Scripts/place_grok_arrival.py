@@ -60,6 +60,7 @@ PLAYER_CAPSULE_HALF_HEIGHT = 96.0   # ASibeliusGameCharacter's own value
 NYRA_BP = "/Game/MetaHumans/MHC_NyraSolmere/BP_MHC_NyraSolmere"
 
 TAG_START = "GrokArrival"
+TAG_WORMHOLE = "GrokWormhole"
 TAG_NYRA = "GrokNyra"
 
 r = {"arrival": [ARRIVAL.x, ARRIVAL.y, ARRIVAL.z], "yaw": FACING_YAW}
@@ -150,6 +151,20 @@ def main():
     place(world, TAG_NYRA, NYRA_BP, unreal.Vector(nx, ny, nz), NYRA_YAW, nyra_info)
     r["nyra"] = nyra_info
     r["nyra_location"] = [round(nx, 1), round(ny, 1), round(nz, 1)]
+
+    # --- the wormhole arrival, at his feet --------------------------------------------
+    # AWormholeArrival centres its cloud on the PAWN rather than on itself, so this only
+    # has to exist in the level - but it is placed at the arrival point anyway so that
+    # anyone opening L_Grok can see where the effect belongs.
+    wh_info = {}
+    wh_cls = unreal.load_class(None, "/Script/SibeliusGame.WormholeArrival")
+    if wh_cls:
+        place(world, TAG_WORMHOLE, wh_cls,
+              unreal.Vector(ARRIVAL.x, ARRIVAL.y, gz + PLAYER_CAPSULE_HALF_HEIGHT),
+              FACING_YAW, wh_info)
+    else:
+        wh_info["error"] = "WormholeArrival class not found - build the editor target first"
+    r["wormhole"] = wh_info
 
 
 try:
