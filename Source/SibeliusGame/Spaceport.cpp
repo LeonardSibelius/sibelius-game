@@ -19,6 +19,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "EngineUtils.h"            // TActorIterator, for FindForPlayer
+#include "TravelTransitionSubsystem.h"        // C at the open portal leaves for Grok
+#include "NiagaraFunctionLibrary.h"
 #include "Components/InputComponent.h"        // skip keys during the launch cutscene
 #include "InputCoreTypes.h"
 #include "NiagaraComponent.h"
@@ -101,6 +103,16 @@ ASpaceport::ASpaceport()
 	   The plugin template is the same gas the sauce cauldron uses; launch retints it
 	   orange and points it at the pad. A game copy at /Game/Cinematics/NS_RocketPlume
 	   is preferred at runtime if build_launch_shot.py has run. */
+	/* THE PORTAL TO GROK, hard-referenced for the same reason as the plume: a soft path
+	   from C++ is not a package reference, and Content/PortalVFX/ is a gitignored purchased
+	   pack. Soft-only, it would open perfectly in PIE and not exist in the shipped build. */
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> PortalFinder(
+		TEXT("/Game/PortalVFX/NS/NS_TeleporterHole.NS_TeleporterHole"));
+	if (PortalFinder.Succeeded())
+	{
+		GrokPortalSystem = PortalFinder.Object;
+	}
+
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> PlumeFinder(
 		TEXT("/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_ColoredSmoke.Grid3D_Gas_ColoredSmoke"));
 	if (PlumeFinder.Succeeded())
@@ -634,6 +646,7 @@ void ASpaceport::RestoreBranchState(uint8 InState)
 		bLaunched = false;
 		SetActorTickEnabled(false);
 		DestroyLaunchRig();
+		ClearGrokPortal();
 		ClearParts();
 		return;
 	}
@@ -649,6 +662,8 @@ void ASpaceport::RestoreBranchState(uint8 InState)
 	if (bLaunched)
 	{
 		HideFlightParts();
+		// He is returning to a pad the ship already left. The door is standing, not opening.
+		OpenGrokPortal(/*bImmediate=*/true);
 	}
 }
 
@@ -827,6 +842,25 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
 		{
 			Disembark(Pawn);
 		}
+		return true;
+	}
+
+	/* THE SHIP HAS GONE, AND C NOW MEANS THE PORTAL.
+
+	   Checked before everything below, because after a launch the pad is still "assembled"
+	   and he still has supplies - so the boarding path would happily run again on a hull
+	   that is no longer there. Once the way to Grok is open it is the only thing C does
+	   here. */
+	if (bLaunched && GrokPortal)
+	{
+		if (DistanceToStructure(Pawn->GetActorLocation()) > GrokPortalRange)
+		{
+			return false;   // not ours; let the build sites have it
+		}
+
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Entering the portal to %s."),
+			*GrokLevelName.ToString());
+		UTravelTransitionSubsystem::Travel(this, GrokLevelName);
 		return true;
 	}
 
@@ -1626,5 +1660,76 @@ void ASpaceport::EndLaunch()
 			6.0f, SibeliusToast::Good);
 	}
 
+	/* AND THE WAY OUT OPENS WHERE THE SHIP STOOD, once the toast above has had its say. */
+	OpenGrokPortal(/*bImmediate=*/false);
+
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] launched."));
+}
+
+/* ===================================================================================
+   THE WAY TO GROK. See the header for why it is here, on this key, on this ground.
+   =================================================================================== */
+
+void ASpaceport::OpenGrokPortal(bool bImmediate)
+{
+	UWorld* World = GetWorld();
+	if (!World || GrokPortal)
+	{
+		return;
+	}
+
+	/* A RELOAD MUST NOT REPLAY THE WAIT. The seven-second delay exists so the portal opens
+	   as the launch toast clears - it is a beat in a sequence he just watched. Coming back
+	   to a level where the ship already left, he should find the portal standing, not wait
+	   seven seconds for something he has no reason to expect. Same rule as SnapAssembled:
+	   the show happens once. */
+	if (!bImmediate && GrokPortalDelay > 0.0f)
+	{
+		World->GetTimerManager().SetTimer(GrokPortalTimer,
+			[this]() { OpenGrokPortal(true); }, GrokPortalDelay, false);
+		return;
+	}
+
+	UNiagaraSystem* System = GrokPortalSystem.Get();
+	if (!System)
+	{
+		System = GrokPortalSystem.LoadSynchronous();
+	}
+	if (!System)
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Spaceport] No portal system; the way to Grok will have no door."));
+		return;
+	}
+
+	GrokPortal = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		System, GetRootComponent(), NAME_None, GrokPortalOffset, FRotator::ZeroRotator,
+		EAttachLocation::KeepRelativeOffset, /*bAutoDestroy=*/false);
+
+	if (GrokPortal)
+	{
+		GrokPortal->SetWorldScale3D(FVector(GrokPortalScale));
+		// Not every system in the pack exposes the same overrides; setting one it does not
+		// have is a no-op rather than an error, so these are safe to attempt blind.
+		GrokPortal->SetVariableFloat(TEXT("ScalableSize"), GrokPortalScale);
+	}
+
+	ASibeliusHUD::Toast(this,
+		TEXT("A WAY HAS OPENED WHERE THE SHIP STOOD - PRESS C TO GO THROUGH"),
+		7.0f, SibeliusToast::Prize);
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Grok portal open."));
+}
+
+void ASpaceport::ClearGrokPortal()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(GrokPortalTimer);
+	}
+	if (GrokPortal)
+	{
+		GrokPortal->DestroyComponent();
+		GrokPortal = nullptr;
+	}
 }

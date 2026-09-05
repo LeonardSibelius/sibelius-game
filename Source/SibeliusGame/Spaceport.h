@@ -43,6 +43,8 @@ class UStaticMesh;
 class UStaticMeshComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
+class UNiagaraSystem;
+class UNiagaraComponent;
 
 /**
  * One part's own materials, kept so they can be handed back.
@@ -441,6 +443,61 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Boarding", meta = (ClampMin = "50.0"))
 	float BoardingLightRadius = 700.0f;
 
+	/* ===================================================================================
+	   THE WAY TO GROK — the portal that replaces the rocket.
+
+	   Walt, 2026-09-05: "TeleporterHole in the city, with a [C] to enter Portal on it -
+	   skip talking to the blue ghosts. Actually, put the portal at the spot that the [G]
+	   for spaceport went, after the message fades out after the takeoff."
+
+	   THREE DECISIONS, ALL HIS, ALL SIMPLIFICATIONS.
+
+	   NO GHOST CONVERSATION. docs/SEVENTH_POWER.md rev 2 had a blue ghost invite him
+	   through. That needed a new dialogue actor, a new recorded line, and a reason for one
+	   particular ghost to break a silence it has kept all game. The portal simply opens.
+
+	   ON THE SPACEPORT'S OWN GROUND. He typed "spaceport" on that lawn and watched a launch
+	   complex assemble there; the rocket left from there; and now the way out opens on the
+	   same spot. Nothing has to be found.
+
+	   AND ON C, WHICH IS ALREADY THE KEY. C is the Compile verb and already means "the
+	   pre-flight" at this actor - it is what boarded the rocket. So the key that put him on
+	   the ship is the key that follows it. No new binding, and nothing to teach.
+
+	   AFTER THE TOAST, NOT DURING IT. EndLaunch says "THE SHIP IS AWAY. NYRA WILL CALL FROM
+	   GROK." for six seconds. A portal opening under that line would be two things at once;
+	   opening as it clears is a beat.
+	   =================================================================================== */
+
+	/** True once the portal stands and C will take him through. */
+	bool IsGrokPortalOpen() const { return GrokPortal != nullptr; }
+
+	/* WHICH SYSTEM. NS_TeleporterHole is Walt's pick out of the fourteen in Portal and
+	   SavePoint VFX, after seeing them on Grok. HARD-REFERENCED in the constructor:
+	   Content/PortalVFX/ is gitignored, and a soft path from C++ is not a package
+	   reference - it would work in PIE and be missing from the shipped build, which is the
+	   v0.7.4 invisible-spaceport bug landing on the way to the last scene. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
+	TSoftObjectPtr<UNiagaraSystem> GrokPortalSystem;
+
+	/** Where it stands, relative to the spaceport. Up off the pad so it reads as a doorway. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
+	FVector GrokPortalOffset = FVector(0.0f, 0.0f, 300.0f);
+
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.1"))
+	float GrokPortalScale = 3.0f;
+
+	/** How near he must be for C to take him through. Generous: it is the last door. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "100.0"))
+	float GrokPortalRange = 2500.0f;
+
+	/** Seconds after the launch before it opens — long enough for the toast to clear. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.0"))
+	float GrokPortalDelay = 7.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
+	FName GrokLevelName = TEXT("L_Grok");
+
 	/* TELLING HIM THE KEY EXISTS — once, when he first walks up to the pad able to use it.
 
 	   Nyra's stage 3 sends him back here ("we will do the boarding procedures") and then
@@ -453,6 +510,15 @@ private:
 	   open for the rest of the level to run it would be wrong. */
 	void StartBoardingHintWatch();
 	void PollBoardingHint();
+
+	/** Open the portal on the pad. bImmediate on a reload: never replay the wait. */
+	void OpenGrokPortal(bool bImmediate);
+	void ClearGrokPortal();
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UNiagaraComponent> GrokPortal;
+
+	FTimerHandle GrokPortalTimer;
 
 	FTimerHandle BoardingHintTimer;
 	bool bBoardingHintShown = false;
