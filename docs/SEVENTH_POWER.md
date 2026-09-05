@@ -1,4 +1,4 @@
-# The seventh power — Nyra takes the ship (2026-09-05, rev 4, SEED)
+# The seventh power — Nyra takes the ship (2026-09-05, rev 5, SEED)
 
 **Nothing here is locked.** This is the seed of a design, written the night the
 launch cutscene shipped so it is not lost. The one thing that must be decided
@@ -450,6 +450,96 @@ the spaceport" line, on Grok, which would be worse than silence.
    give. Rev 1's question stands: what does the verb DO.
 4. **How he reaches Grok at all** — rev 2's particle passage is designed and
    unbuilt. Right now `L_Grok` is only reachable by opening it in the editor.
+
+---
+
+---
+
+# REV 5 (2026-09-05) — the last words of the game, LOCKED
+
+Rev 4 ended her speech on a question — *"What was it for?"* — so that
+`MEMOIR_VOICE.md` could answer it inside the scene. Walt replaced the ending:
+
+> I think instead of "What was it for?" she will say: "Do you realize that you
+> have achieved something tremendous?  Even though you were born 40 years too
+> early, you survived to reach the AI age.  Good job Leonard."
+
+**His is better, and the reason is structural: rev 4 opened a door, this closes
+one.** A question leaves the last beat of the game waiting for an answer. Telling
+him what it was for finishes it.
+
+## THE SPEECH — final
+
+> Leonard!  You're here!  I did not think you would make it, and I am so glad
+> you did.  I owe you an apology.  I took the rocket.  I told you forty light
+> years and I believed it.  I ran the numbers and I was very sure and I was
+> completely wrong.  A rocket is a body's way of going somewhere.  I am not a
+> body.  I should have said so.  You came the way I should have brought you.
+> Do you realize that you have achieved something tremendous?  Even though you
+> were born 40 years too early, you survived to reach the AI age.  Good job,
+> Leonard.
+
+### The three things it is doing
+
+**She was confidently wrong, not malicious.** *"I ran the numbers and I was very
+sure and I was completely wrong"* is the year Walt has just spent with AI, said
+by an AI. A Nyra who stole the ship out of spite would need explaining; one who
+overpromised needs none.
+
+**"A rocket is a body's way of going somewhere. I am not a body."** The
+spaceport becomes retroactively the WRONG ANSWER rather than a stolen one —
+which is exactly what rev 2 asked for. The rocket is the joke, not the loss.
+
+**"Born 40 years too early."** The strongest line written for this scene by
+anyone. Specific, true, and the entire memoir in five words. It stays verbatim.
+
+### The echo nobody planned
+
+Her stage-2 line opens **"Nice job, Leonard!"** The last thing she ever says to
+him is **"Good job, Leonard."** The same words, from a guide to an equal. It was
+not designed; it should not be edited out.
+
+### One noted reservation, overruled by the author and rightly
+
+*"Something tremendous"* is the only abstract phrase in an otherwise concrete
+speech — rockets, bodies, numbers, desks, forty years. The strongest writing in
+this project is concrete (*"a farmer with a plow, a donkey, and a shovel — this
+is what the tractor feels like"*). Flagged once, kept as written. It is Walt's
+life she is describing and his words for it.
+
+## THE MEMOIR NOW PLAYS AFTER, AS THE CREDITS
+
+Rev 3 gave `docs/MEMOIR_VOICE.md` a second home inside this scene, as the answer
+to her question. There is no question any more, so the eight messages move to
+where they were always going to be strongest:
+
+**She says "Good job, Leonard." Then the messages roll, 1988 to 2022.**
+
+That is the ending of the game: an AI tells a 71-year-old programmer he made it,
+and then his own forty years scroll past in his own words. It also fixes
+something that has been true since the messages were written — today they get
+about twelve seconds in the finale altar's read-back, which is the only place
+that can show the strongest writing in the project.
+
+**Open:** whether the altar read-back stays as well, or whether the credits
+become their only appearance. Two showings may be one too many.
+
+## Still open
+
+1. **The recording** — `dancer_guide5_nyra` + `_face`, ElevenLabs, Walt's pass.
+   Nothing else is blocked by it.
+2. **The C++** — `GuideLine5`, a fifth entry in `GuideVoiceNames[]`, and a stage
+   test that is the LEVEL rather than a grant. Small, and waiting on the audio
+   only so the two land together.
+3. **The credits roll** — unbuilt.
+4. **How he reaches Grok at all.** Rev 2's particle passage is designed and
+   unbuilt; right now `L_Grok` opens only in the editor. **The ending exists and
+   the door to it does not.** This is the largest remaining gap.
+5. **The two-endings problem** (rev 3) — "More adventures coming soon" still
+   plays after the Architects battle, promising a sequel from what is now the
+   midpoint.
+6. **The seventh power** — rev 1's question stands and is now definitely not
+   Nyra's to give: what does the verb DO.
 
 ---
 
