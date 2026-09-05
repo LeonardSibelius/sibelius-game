@@ -825,8 +825,41 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
 		return true;
 	}
 
+	/* THE SHIP HAS GONE, AND C NOW MEANS THE PORTAL.
+
+	   This whole branch used to be two: a bare "that ship is already away" here, and a
+	   portal check further down that could never run because this returned first. Walt
+	   walked to an OPEN portal, pressed C, and was told the ship had left - which was true,
+	   unhelpful, and the entire point of the portal standing there.
+
+	   Merged, so there is exactly one place that answers C after a launch.
+
+	   AND THE RANGE IS MEASURED TO THE PORTAL, not to the structure. HideFlightParts()
+	   removes the rocket once the ship is away, and DistanceToStructure ignores hidden
+	   parts - so the bounds collapse to the ground works at the very moment the portal
+	   becomes the only thing worth walking to. Ask the door where the door is. */
 	if (bLaunched)
 	{
+		if (GrokPortal)
+		{
+			const float ToPortal = FVector::Dist2D(Pawn->GetActorLocation(),
+				GrokPortal->GetComponentLocation());
+			if (ToPortal <= GrokPortalRange)
+			{
+				UE_LOG(LogSibeliusGame, Display,
+					TEXT("[Spaceport] Entering the portal to %s (%.0f cm)."),
+					*GrokLevelName.ToString(), ToPortal);
+				UTravelTransitionSubsystem::Travel(this, GrokLevelName);
+				return true;
+			}
+
+			ASibeliusHUD::Toast(this,
+				TEXT("THE WAY TO GROK IS OPEN WHERE THE SHIP STOOD - WALK TO IT"),
+				4.0f, SibeliusToast::Info);
+			return true;
+		}
+
+		// Launched, but the portal has not opened yet - the toast is still playing.
 		ASibeliusHUD::Toast(this,
 			TEXT("COMPILE ERROR: THAT SHIP IS ALREADY AWAY"),
 			4.0f, SibeliusToast::Warn);
@@ -842,25 +875,6 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
 		{
 			Disembark(Pawn);
 		}
-		return true;
-	}
-
-	/* THE SHIP HAS GONE, AND C NOW MEANS THE PORTAL.
-
-	   Checked before everything below, because after a launch the pad is still "assembled"
-	   and he still has supplies - so the boarding path would happily run again on a hull
-	   that is no longer there. Once the way to Grok is open it is the only thing C does
-	   here. */
-	if (bLaunched && GrokPortal)
-	{
-		if (DistanceToStructure(Pawn->GetActorLocation()) > GrokPortalRange)
-		{
-			return false;   // not ours; let the build sites have it
-		}
-
-		UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Entering the portal to %s."),
-			*GrokLevelName.ToString());
-		UTravelTransitionSubsystem::Travel(this, GrokLevelName);
 		return true;
 	}
 
@@ -1179,7 +1193,7 @@ void ASpaceport::PollBoardingHint()
 		return;
 	}
 
-	if (bBoardingHintShown || bAboard || bLaunched || bLaunching || !bAssembled)
+	if (bAboard || bLaunched || bLaunching || !bAssembled)
 	{
 		World->GetTimerManager().ClearTimer(BoardingHintTimer);
 		return;
@@ -1193,9 +1207,20 @@ void ASpaceport::PollBoardingHint()
 
 	const float Away = DistanceToStructure(Player->GetActorLocation());
 
-	// The same radius the key itself uses, so what the hint promises is exactly what
-	// pressing C from where he is standing will do.
-	if (Away > BoardingRange)
+	/* RE-ARM WHEN HE WALKS AWAY. The hint is not once-per-save, it is once-per-approach -
+	   otherwise passing within range on some other errand spends it forever. */
+	if (bBoardingHintShown)
+	{
+		if (Away > BoardingHintRearmRange)
+		{
+			bBoardingHintShown = false;
+		}
+		return;
+	}
+
+	// A TIGHTER radius than the key: the hint should meet him at the pad, not shout across
+	// the district. See BoardingHintRange.
+	if (Away > BoardingHintRange)
 	{
 		/* AND IT SAYS HOW FAR, every five seconds, until it can stop saying it.
 
@@ -1218,11 +1243,11 @@ void ASpaceport::PollBoardingHint()
 	}
 
 	bBoardingHintShown = true;
-	World->GetTimerManager().ClearTimer(BoardingHintTimer);
+	// Timer keeps running: it is what re-arms the hint when he walks away again.
 
 	ASibeliusHUD::Toast(this,
 		TEXT("PRE-FLIGHT READY - PRESS C TO BOARD"),
-		6.0f, SibeliusToast::Prize);
+		8.0f, SibeliusToast::Prize);
 
 	UE_LOG(LogSibeliusGame, Display,
 		TEXT("[Spaceport] Hint shown at %.0f cm."), Away);

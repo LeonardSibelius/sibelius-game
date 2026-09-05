@@ -288,6 +288,26 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Boarding", meta = (ClampMin = "100.0"))
 	float BoardingRange = 12000.0f;
 
+	/* THE HINT NEEDS A MUCH TIGHTER RADIUS THAN THE KEY, and conflating them was a bug.
+
+	   BoardingRange is 120 m because the spaceport can land somewhere unreachable, so C has
+	   to work from wherever a player can actually stand. The HINT has the opposite
+	   requirement: it should fire when he arrives at the pad, not when he happens to pass
+	   within 120 m of it.
+
+	   Walt, playing a fresh game 2026-09-05: "When I exited uFoods, the C to board message
+	   popped up and disappeared too quickly... I had to remember to press C because there
+	   was no prompt." The uFoods street is inside 120 m of the lawn, so the one-shot hint
+	   spent itself on a doorway two errands early and was never available again at the
+	   place it was written for. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Boarding", meta = (ClampMin = "100.0"))
+	float BoardingHintRange = 3000.0f;
+
+	/* AND IT RE-ARMS WHEN HE LEAVES. A prompt shown once, at a glance, while walking past,
+	   is a prompt nobody read. If he wanders beyond this it can be offered again. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Boarding", meta = (ClampMin = "100.0"))
+	float BoardingHintRearmRange = 9000.0f;
+
 	/* ===================================================================================
 	   LAUNCH CUTSCENE — Unreal plays it, on THIS rocket, with Niagara (2026-09-03).
 
