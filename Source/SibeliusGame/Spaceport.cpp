@@ -72,6 +72,27 @@ namespace
 	   a doorway should look across a field is not a question code can answer, and a rebuild
 	   per guess is not a way to answer it. Travel out and back to re-open it with new
 	   values - the reload path opens it immediately. Negative = the actor's own. */
+	/* WHICH SYSTEM, AND WHICH WAY UP.
+
+	   NS_TeleporterHole is almost certainly a HOLE - a flat disc meant to lie on the ground
+	   and be stepped into. Seen from 160 m at eye level a horizontal disc is edge-on and
+	   effectively invisible, which is both "that tiny purple portal at the base" and "I see
+	   no portal anywhere". The vertical doorways in the pack are NS_ArchGate,
+	   NS_AnyWhereDoor and NS_GpuPortal.
+
+	   This knob should have existed the first time - sib.WormholeFX got one and this did
+	   not, so every candidate cost a rebuild. Bare name resolves under /Game/PortalVFX/NS/. */
+	static TAutoConsoleVariable<FString> CVarGrokPortalFX(
+		TEXT("sib.GrokPortalFX"), TEXT(""),
+		TEXT("Niagara system for the portal to Grok. Bare name (NS_ArchGate) or full path."),
+		ECVF_Cheat);
+
+	/** Stand a flat one up: 90 puts a ground disc vertical. Negative = leave it alone. */
+	static TAutoConsoleVariable<float> CVarGrokPortalPitch(
+		TEXT("sib.GrokPortalPitch"), -1.0f,
+		TEXT("Pitch in degrees for the Grok portal. 90 stands a ground disc up. Negative = none."),
+		ECVF_Cheat);
+
 	static TAutoConsoleVariable<float> CVarGrokPortalScale(
 		TEXT("sib.GrokPortalScale"), -1.0f,
 		TEXT("Scale of the portal to Grok. Negative = the actor's own."), ECVF_Cheat);
@@ -1741,7 +1762,27 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 		return;
 	}
 
-	UNiagaraSystem* System = GrokPortalSystem.Get();
+	UNiagaraSystem* System = nullptr;
+	const FString Override = CVarGrokPortalFX.GetValueOnGameThread();
+	if (!Override.IsEmpty())
+	{
+		FString Path = Override;
+		if (!Path.StartsWith(TEXT("/")))
+		{
+			Path = FString::Printf(TEXT("/Game/PortalVFX/NS/%s.%s"), *Override, *Override);
+		}
+		System = LoadObject<UNiagaraSystem>(nullptr, *Path);
+		if (!System)
+		{
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Spaceport] sib.GrokPortalFX '%s' did not load; using the default."),
+				*Override);
+		}
+	}
+	if (!System)
+	{
+		System = GrokPortalSystem.Get();
+	}
 	if (!System)
 	{
 		System = GrokPortalSystem.LoadSynchronous();
@@ -1758,9 +1799,12 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 	const float Up = (CVarGrokPortalUp.GetValueOnGameThread() >= 0.0f)
 		? CVarGrokPortalUp.GetValueOnGameThread() : GrokPortalOffset.Z;
 
+	const float Pitch = CVarGrokPortalPitch.GetValueOnGameThread();
+	const FRotator PortalRot = (Pitch >= 0.0f) ? FRotator(Pitch, 0.0f, 0.0f) : FRotator::ZeroRotator;
+
 	GrokPortal = UNiagaraFunctionLibrary::SpawnSystemAttached(
 		System, GetRootComponent(), NAME_None,
-		FVector(GrokPortalOffset.X, GrokPortalOffset.Y, Up), FRotator::ZeroRotator,
+		FVector(GrokPortalOffset.X, GrokPortalOffset.Y, Up), PortalRot,
 		EAttachLocation::KeepRelativeOffset, /*bAutoDestroy=*/false);
 
 	if (GrokPortal)
@@ -1778,8 +1822,8 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 		   anybody needs to be thrifty about. */
 		GrokPortal->SetSystemFixedBounds(FBox(FVector(-6000.0f), FVector(6000.0f)));
 		UE_LOG(LogSibeliusGame, Display,
-			TEXT("[Spaceport] Portal at +%.0f cm, scale %.1f, enterable from %.0f cm."),
-			Up, Scale, GrokPortalRange);
+			TEXT("[Spaceport] Portal '%s' at +%.0f cm, scale %.1f, pitch %.0f, from %.0f cm."),
+			*System->GetName(), Up, Scale, Pitch, GrokPortalRange);
 	}
 
 	ASibeliusHUD::Toast(this,
