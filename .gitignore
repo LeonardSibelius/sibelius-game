@@ -286,3 +286,15 @@ Content/Poly_Supermarket_01/
 # build-diag.log was untracked at the same time because it is the one that gets
 # regenerated, so it showed as modified forever and hid real changes in git status.
 /*.log
+
+# ---- Elite Landscapes: Alien Part IV (Velarion, bought 2026-09-04) -----------
+# Purchased vendor pack, 3.2 GB, and this repo is PUBLIC. It was NOT ignored on
+# arrival - the same near-miss as Poly_Supermarket_01, which was one commit away
+# from publishing a pack somebody paid for. Ignored before anything was staged.
+#
+# Six 8K landscape maps ship in it; docs/SEVENTH_POWER.md rev 3 wants exactly ONE
+# for Grok. Only that map gets a +MapsToCook line, so the cooker follows only its
+# references and the other five landscapes never reach the pak. A level hard-
+# references what it places, so this needs no DirectoriesToAlwaysCook rule - the
+# L_uFoods arrangement, not the Rocket_Launch_Pad one.
+Content/Elite_AlienPack_04/
