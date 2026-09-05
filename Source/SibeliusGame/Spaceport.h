@@ -519,7 +519,7 @@ private:
 	   lands where he was AIMING and not where he can WALK - his went behind a fence. If C
 	   could board a rocket from 120 m it can enter the door that replaced it from 120 m. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "100.0"))
-	float GrokPortalRange = 12000.0f;
+	float GrokPortalRange = 25000.0f;
 
 	/** Seconds after the launch before it opens — long enough for the toast to clear. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.0"))

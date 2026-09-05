@@ -854,8 +854,20 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
 	{
 		if (GrokPortal)
 		{
-			const float ToPortal = FVector::Dist2D(Pawn->GetActorLocation(),
-				GrokPortal->GetComponentLocation());
+			/* THE NEARER OF THE TWO, and the point measurement alone was a regression.
+
+			   Switching from DistanceToStructure to a straight line to the portal made this
+			   STRICTER, not looser: the assembled bounds are enormous (the ground apron
+			   alone spans ~45 m) and reach the player at the fence, while the portal is a
+			   single point 160 m out - which is exactly the SpawnAhead=16000 the catalog
+			   plants the spaceport at. Walt: "I got the 160 meters away message and walked
+			   up to the fence and I see no portal anywhere."
+
+			   Boarding worked from that fence because the bounds came to him. So does this,
+			   now: whichever of the two is nearer. */
+			const float ToPortal = FMath::Min(
+				FVector::Dist2D(Pawn->GetActorLocation(), GrokPortal->GetComponentLocation()),
+				DistanceToStructure(Pawn->GetActorLocation()));
 			if (ToPortal <= GrokPortalRange)
 			{
 				UE_LOG(LogSibeliusGame, Display,
@@ -1757,6 +1769,14 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 		// Not every system in the pack exposes the same overrides; setting one it does not
 		// have is a no-op rather than an error, so these are safe to attempt blind.
 		GrokPortal->SetVariableFloat(TEXT("ScalableSize"), Scale);
+
+		/* AND STOP IT BEING CULLED AT DISTANCE. A Niagara system carries its own bounds and
+		   they do NOT grow with the component's scale, so a portal meant to be seen from
+		   across a field vanishes long before the player is near enough to enter it - which
+		   is the other half of "I see no portal anywhere". Fixed bounds, generous, in local
+		   space: this is one effect standing alone on a lawn, not something whose culling
+		   anybody needs to be thrifty about. */
+		GrokPortal->SetSystemFixedBounds(FBox(FVector(-6000.0f), FVector(6000.0f)));
 		UE_LOG(LogSibeliusGame, Display,
 			TEXT("[Spaceport] Portal at +%.0f cm, scale %.1f, enterable from %.0f cm."),
 			Up, Scale, GrokPortalRange);
