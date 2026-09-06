@@ -8,8 +8,47 @@ Versions are `x.y.z` for a release and `x.y.z.N` for a fix to an already-shipped
 parent release heading, never a heading of its own.
 
 The seven Unreal-capability experiments are the exception: they occupy
-`0.9.7.1` through `0.9.7.7` as their own headings. They add content. 0.9.7
-stays the last shipped itch build until one of them is cooked.
+`0.9.7.1` through `0.9.7.7` as their own headings. They add content.
+
+**The numbering restarts at 1.0 below, and goes down rather than up.** itch has had
+1.1.0 through 1.4.0 — none of which reached this file, which is the gap the 1.0 entry
+closes. Walt's call, and his reason: this is the first build he would hand a stranger
+with no caveat, and Steam has no history to contradict it.
+
+## v1.0 — the release
+
+**The game has a beginning, a middle and an end, and it tells you what to do the whole
+way through.** Everything below 1.0 in this file is history; this is the version that
+goes to Steam.
+
+Since the changelog last ran (0.9.7.7), four itch builds added the second half of the
+game — Trans Human City, Jacob's Deli, the uFoods supermarket, the spaceport you
+Generate on an empty lawn, the launch, and the planet Grok where Nyra apologises. 1.0
+is those, plus the pass that made them playable by someone who is not Walt.
+
+- **The last third of the game guides you.** The gold objective line used to go silent
+  the moment the cathedral Synthesis was claimed — correct when the cathedral was the
+  end of the game, and wrong once four levels came after it. It now carries you from the
+  plaza to the deli, the lawn, the supermarket, the pad, the launch and the way out.
+  It never names the pad, because the pad is not where you can stand.
+- **The game ends instead of stopping.** Nyra says *"Good job, Leonard"* — and then
+  eight messages roll, 1988 to 2022, one for each of the employers Walt spent forty
+  years building systems for. Then the people who made it, then the eleven independent
+  artists whose work is in it, then two doors: back to the office, or begin again.
+- **The ghosts notice.** The AI apparitions have ignored you since you arrived in the
+  city. At ignition, every one of them turns to face the pad — so the walk back from the
+  launch goes through a city that has stopped and looked.
+- **She takes the ship, and you feel it.** The way to Grok no longer opens on a timer.
+  You go back to the sidewalk where she said *"see you there"*, find it empty, and the
+  answer arrives while you are standing on the spot she promised to be.
+- **And the way out is not something a body can see.** Hold **V**. Code Vision opened
+  the first door in this game, the glass behind your desk in the first minute; it opens
+  the last one too.
+- **The powers come a little easier.** The shrine trial's climb is shorter (2100 → 2200
+  rather than 2250). A fresh save has no sauce banked to buy a power outright, so a run
+  of bad luck had nothing underneath it.
+- **The Architects battle stops promising a sequel.** It was the end of the game when
+  that line was written. It is the midpoint now.
 
 ## v0.9.7.7 — Mrs. Hall's Crap Factory
 
