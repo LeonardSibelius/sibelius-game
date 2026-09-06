@@ -19,6 +19,10 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "EngineUtils.h"            // TActorIterator, for FindForPlayer
+#include "CodeVisionComponent.h"    // A5c: V is the key to the last door
+#include "Components/SkeletalMeshComponent.h" // A5b: the ghosts are found by mesh path
+#include "Engine/SkeletalMesh.h"
+#include "GameFramework/PlayerStart.h"        // A5a: the sidewalk where she said "see you there"
 #include "TravelTransitionSubsystem.h"        // C at the open portal leaves for Grok
 #include "NiagaraFunctionLibrary.h"
 #include "Components/InputComponent.h"        // skip keys during the launch cutscene
@@ -889,6 +893,20 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
 	   becomes the only thing worth walking to. Ask the door where the door is. */
 	if (bLaunched)
 	{
+		/* A DOOR HE CANNOT SEE IS NOT A DOOR HE CAN WALK THROUGH (docs/FUN_PLAN_2.md A5c).
+
+		   Gated on REVEALED and not merely on the component existing. Letting C work on an
+		   invisible portal would mean a player could stumble into the ending by pressing the
+		   key he happens to be holding, which throws away the beat — and worse, would look
+		   like the game teleporting him at random. */
+		if (GrokPortal && !bGrokPortalRevealed)
+		{
+			ASibeliusHUD::Toast(this,
+				TEXT("COMPILE ERROR: THERE IS NOTHING HERE A BODY CAN SEE"),
+				5.0f, SibeliusToast::Warn);
+			return true;
+		}
+
 		if (GrokPortal)
 		{
 			/* THE NEARER OF THE TWO, and the point measurement alone was a regression.
@@ -1767,7 +1785,14 @@ void ASpaceport::EndLaunch()
 		}
 	}
 
-	/* AND THE WAY OUT OPENS WHERE THE SHIP STOOD, once the toast above has had its say. */
+	/* AND THE WAY OUT OPENS WHEN HE HAS MISSED HER (docs/FUN_PLAN_2.md A5a).
+
+	   Two things are armed here and whichever lands first wins. The WATCH opens the way the
+	   moment he walks back to the sidewalk she promised to be on — that is the beat, and it
+	   only works because A4 has just taken her off it. The CLOCK inside OpenGrokPortal is
+	   the guarantee, now long rather than seven seconds, so a player who never goes back is
+	   never stranded. Both call the same function and it early-outs on the second one. */
+	StartGuideSearchWatch();
 	OpenGrokPortal(/*bImmediate=*/false);
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] launched."));
@@ -1877,6 +1902,23 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 
 	if (GrokPortal)
 	{
+		/* IT STANDS THERE UNSEEN (docs/FUN_PLAN_2.md A5c).
+
+		   Code Vision opened the first door in this game — the glass behind his desk, in the
+		   first minute — and it should open the last. It is also the only verb whose meaning
+		   fits: he does not travel to Grok in a body, and the way he takes is not a thing a
+		   body can see. Nyra says it from the other end, forty light years later: "A rocket
+		   is a body's way of going somewhere. I am not a body."
+
+		   Mechanically this is the AHiddenDoor pattern (HiddenDoor.cpp:126), which has been
+		   shipping since Chapter 1, so the player already knows the grammar: something is
+		   wrong here, hold V, now it is there. */
+		GrokPortal->SetVisibility(bGrokPortalRevealed);
+		if (!bGrokPortalRevealed)
+		{
+			BindPortalToCodeVision();
+		}
+
 		GrokPortal->SetWorldScale3D(FVector(Scale));
 		// Not every system in the pack exposes the same overrides; setting one it does not
 		// have is a no-op rather than an error, so these are safe to attempt blind.
@@ -1894,11 +1936,28 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 			*System->GetName(), *Where.ToCompactString(), Up, TowardWanted, Scale, GrokPortalRange);
 	}
 
-	ASibeliusHUD::Toast(this,
-		TEXT("A WAY HAS OPENED WHERE THE SHIP STOOD - PRESS C TO GO THROUGH"),
-		7.0f, SibeliusToast::Prize);
+	/* WHAT THE TOAST SAYS DEPENDS ON WHETHER HE CAN SEE IT. Telling a player to press C at
+	   a door that is not on his screen is the boarding bug again: an instruction naming
+	   something he cannot find. */
+	if (bGrokPortalRevealed)
+	{
+		ASibeliusHUD::Toast(this,
+			TEXT("A WAY HAS OPENED NEARBY - PRESS C TO GO THROUGH"),
+			7.0f, SibeliusToast::Prize);
+	}
+	else
+	{
+		// "NEARBY", not "where the ship stood" — it opens nine metres in front of HIM.
+		ASibeliusHUD::Toast(this,
+			TEXT("SOMETHING HAS OPENED NEARBY - HOLD V AND LOOK PROPERLY"),
+			7.0f, SibeliusToast::Prize);
+	}
 
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Grok portal open."));
+	// The city stops ignoring him at the same moment (SPACEPORT_PLAN, "The city reacts").
+	NoticeByTheGhosts();
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Grok portal open (revealed=%s)."),
+		bGrokPortalRevealed ? TEXT("yes") : TEXT("no"));
 }
 
 void ASpaceport::ClearGrokPortal()
@@ -1906,10 +1965,270 @@ void ASpaceport::ClearGrokPortal()
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().ClearTimer(GrokPortalTimer);
+		World->GetTimerManager().ClearTimer(GuideSearchTimer);
+		World->GetTimerManager().ClearTimer(PortalBindTimer);
 	}
 	if (GrokPortal)
 	{
 		GrokPortal->DestroyComponent();
 		GrokPortal = nullptr;
 	}
+	/* A DISCARDED SPACEPORT FORGETS THE SECRET TOO. RestoreBranchState(0) comes through
+	   here, which means the whole launch never happened — and a portal that reopens later
+	   already revealed would skip the beat without ever having played it. */
+	bGrokPortalRevealed = false;
+	PortalBindAttempts = 0;
+}
+
+/* ===================================================================================
+   HE GOES LOOKING FOR HER FIRST. See the header for why this replaced a seven-second
+   clock: the scene is about being left behind, and the clock never let him be.
+   =================================================================================== */
+
+void ASpaceport::StartGuideSearchWatch()
+{
+	UWorld* World = GetWorld();
+	if (!World || GrokPortal || World->GetTimerManager().IsTimerActive(GuideSearchTimer))
+	{
+		return;
+	}
+
+	// One second, like the boarding hint. A man walking a block is not a thing that needs
+	// sampling at frame rate, and this runs until it fires or the level unloads.
+	World->GetTimerManager().SetTimer(GuideSearchTimer, this,
+		&ASpaceport::PollGuideSearch, 1.0f, /*bLoop=*/true);
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Spaceport] Watching for him to go back to '%s' (within %.0f cm); the way opens on its own in %.0fs."),
+		*GuideStreetTag.ToString(), GuideSearchRange, GrokPortalDelay);
+}
+
+void ASpaceport::PollGuideSearch()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	if (GrokPortal || !bLaunched)
+	{
+		World->GetTimerManager().ClearTimer(GuideSearchTimer);
+		return;   // the fallback beat us to it, or the launch was undone
+	}
+
+	const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!Player)
+	{
+		return;
+	}
+
+	/* FIND THE MARKER EACH TIME rather than caching it at launch. It costs one actor walk a
+	   second on a level that is not otherwise doing anything, and caching a pointer into a
+	   level that a Test-Drive discard can rearrange is how stale-pointer bugs are made. */
+	const AActor* Marker = nullptr;
+	for (TActorIterator<APlayerStart> It(World); It; ++It)
+	{
+		if (It->PlayerStartTag == GuideStreetTag)
+		{
+			Marker = *It;
+			break;
+		}
+	}
+
+	if (!Marker)
+	{
+		/* NO MARKER, NO WATCH. Said once and loudly, because the symptom otherwise is "the
+		   portal took 75 seconds instead of opening when I got there", which looks like a
+		   tuning problem and is a missing PlayerStart. */
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Spaceport] No PlayerStart tagged '%s' in this level - the way to Grok will "
+			     "open on the fallback clock instead of when he goes looking."),
+			*GuideStreetTag.ToString());
+		World->GetTimerManager().ClearTimer(GuideSearchTimer);
+		return;
+	}
+
+	const float Away = FVector::Dist2D(Player->GetActorLocation(), Marker->GetActorLocation());
+	if (Away > GuideSearchRange)
+	{
+		return;
+	}
+
+	World->GetTimerManager().ClearTimer(GuideSearchTimer);
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Spaceport] He went back to look for her (%.0f cm from the marker). Opening the way."),
+		Away);
+
+	/* HE FOUND NOBODY, AND THAT IS THE BEAT. She is hidden (A4), the sidewalk is empty, and
+	   the answer arrives while he is standing on the spot she promised to be. */
+	OpenGrokPortal(/*bImmediate=*/true);
+}
+
+/* ===================================================================================
+   CODE VISION REVEALS THE WAY.
+   =================================================================================== */
+
+void ASpaceport::BindPortalToCodeVision()
+{
+	if (bGrokPortalRevealed)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	UCodeVisionComponent* CV = Pawn ? Pawn->FindComponentByClass<UCodeVisionComponent>() : nullptr;
+	if (CV)
+	{
+		CV->OnCodeVisionChanged.AddDynamic(this, &ASpaceport::HandleCodeVisionChanged);
+
+		// Snap to the current state: he may be holding V at the moment it opens, and a door
+		// that stays invisible while the power that reveals it is running would read as a
+		// broken door rather than a hidden one.
+		if (CV->IsCodeVisionActive())
+		{
+			RevealGrokPortal();
+		}
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Spaceport] Portal bound to Code Vision after %d attempt(s)."),
+			PortalBindAttempts + 1);
+		return;
+	}
+
+	/* RETRY, THEN GIVE UP VISIBLY. AHiddenDoor learned this: the pawn is not always there
+	   when a thing wants to bind to it. Unlike that door, the failure here is severe — an
+	   unrevealable portal is the last door of the game locked — so giving up REVEALS it
+	   rather than leaving it hidden. A missed beat beats a dead end. */
+	if (++PortalBindAttempts < 20)
+	{
+		World->GetTimerManager().SetTimer(PortalBindTimer, this,
+			&ASpaceport::BindPortalToCodeVision, 0.5f, /*bLoop=*/false);
+		return;
+	}
+
+	UE_LOG(LogSibeliusGame, Warning,
+		TEXT("[Spaceport] Could not bind the portal to Code Vision after %d attempts - "
+		     "revealing it outright so the way to Grok is never sealed."),
+		PortalBindAttempts);
+	RevealGrokPortal();
+}
+
+void ASpaceport::HandleCodeVisionChanged(bool bIsActive)
+{
+	if (bIsActive)
+	{
+		RevealGrokPortal();
+	}
+	// Releasing V does NOT hide it again. See bGrokPortalRevealed.
+}
+
+void ASpaceport::RevealGrokPortal()
+{
+	if (bGrokPortalRevealed)
+	{
+		return;
+	}
+	bGrokPortalRevealed = true;
+
+	if (GrokPortal)
+	{
+		GrokPortal->SetVisibility(true);
+	}
+
+	ASibeliusHUD::Toast(this,
+		TEXT("A WAY HAS OPENED NEARBY - PRESS C TO GO THROUGH"),
+		7.0f, SibeliusToast::Prize);
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] The way to Grok is revealed."));
+}
+
+/* ===================================================================================
+   THE CITY REACTS (docs/SPACEPORT_PLAN.md): "The AI ghosts have ignored him since he
+   arrived. The launch is the first thing that makes them stop."
+   =================================================================================== */
+
+void ASpaceport::NoticeByTheGhosts()
+{
+	UWorld* World = GetWorld();
+	const APawn* Player = World ? UGameplayStatics::GetPlayerPawn(this, 0) : nullptr;
+	if (!World || !Player)
+	{
+		return;
+	}
+
+	const FVector Him = Player->GetActorLocation();
+
+	AActor* Nearest = nullptr;
+	float NearestSq = GhostNoticeRange * GhostNoticeRange;
+	int32 Considered = 0;
+
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		AActor* Actor = *It;
+		if (!Actor || Actor == Player || Actor->IsHidden())
+		{
+			continue;
+		}
+
+		/* BY MESH ASSET PATH, NEVER BY ACTOR LABEL. Labels are editor-only data that the
+		   cook throws away, which is exactly how a cauldron ended up levitating in three
+		   shipped builds: a branch that read GetActorNameOrLabel() was right in PIE and
+		   always false in the packaged game. A path survives cooking. */
+		bool bIsGhost = false;
+		TArray<USkeletalMeshComponent*> Meshes;
+		Actor->GetComponents<USkeletalMeshComponent>(Meshes);
+		for (const USkeletalMeshComponent* Mesh : Meshes)
+		{
+			if (Mesh && Mesh->GetSkeletalMeshAsset()
+				&& Mesh->GetSkeletalMeshAsset()->GetPathName().Contains(GhostMeshMarker))
+			{
+				bIsGhost = true;
+				break;
+			}
+		}
+		if (!bIsGhost)
+		{
+			continue;
+		}
+
+		++Considered;
+		const float DistSq = FVector::DistSquared2D(Him, Actor->GetActorLocation());
+		if (DistSq < NearestSq)
+		{
+			NearestSq = DistSq;
+			Nearest = Actor;
+		}
+	}
+
+	if (Nearest)
+	{
+		/* A YAW, TELEPORTED, AND NOTHING ELSE TOUCHED. No animation change, no montage, no
+		   montage-shaped ambition. Turning a MetaHuman as simulated MOTION is what made
+		   Elise's hair explode; setting the rotation outright is the fix that shipped.
+
+		   And the worst case if these actors turn out to be rigged some other way is that a
+		   standing figure faces a different direction, which is not broken - just different.
+		   That is deliberate: nobody has confirmed what they are. */
+		const FVector ToHim = Him - Nearest->GetActorLocation();
+		Nearest->SetActorRotation(FRotator(0.0f, ToHim.Rotation().Yaw, 0.0f));
+
+		ASibeliusHUD::Toast(this,
+			TEXT("ONE OF THEM HAS STOPPED IGNORING YOU"),
+			5.0f, SibeliusToast::Info);
+	}
+
+	/* SAY WHAT WAS FOUND EITHER WAY. Nobody has confirmed what the blue ghosts are as
+	   actors, so the first playtest's log is the answer: a count of zero means
+	   GhostMeshMarker is wrong, not that the feature is broken. */
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[Spaceport] Ghosts: %d matched '%s' within %.0f cm; %s turned."),
+		Considered, *GhostMeshMarker, GhostNoticeRange,
+		Nearest ? *Nearest->GetName() : TEXT("none"));
 }

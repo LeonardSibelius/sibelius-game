@@ -135,11 +135,22 @@ public:
 	// ruin), 1200 -> 1500 was ~43% (Walt still kept losing). Raw stake barely
 	// helps past ~50% (the house edge eats long sessions); the generosity lever
 	// is a SHORT climb on a comfortable bankroll.
+	//
+	// 2026-09-05: THE CLIMB SHORTENED AGAIN, 2250 -> 2200. Walt, on a fresh NN save:
+	// "I am having a hard time getting powers." The odds had not moved — nothing had
+	// touched this file since 21 August — but a new save has no 150-sauce cauldron
+	// fallback to buy the power outright, so the same 38% loss rate now has nothing
+	// underneath it. Same lever as every previous move: halve the climb, not raise the
+	// stake, because the house edge is what punishes a long session.
+	//
+	// UNSIMULATED. The three numbers above came off a 100k-attempt run against the real
+	// par sheet; this one is a reasoned step in the direction those runs established and
+	// has NOT been measured. If it wants to be exact, that is the sim to re-run.
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
 	int64 TrialStartCredits = 2100;
 
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "150"))
-	int64 TrialTargetCredits = 2250;
+	int64 TrialTargetCredits = 2200;
 
 	// Walt: Gideon appears when Celestial Fortune pops up. Opening the trial
 	// rings the hall alarm — any RefuserSpawner in the level answers. They

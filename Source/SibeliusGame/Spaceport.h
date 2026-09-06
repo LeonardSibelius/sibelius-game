@@ -499,6 +499,13 @@ private:
 public:
 	bool IsGrokPortalOpen() const { return GrokPortal != nullptr; }
 
+	/* AND WHETHER HE HAS SEEN IT (docs/FUN_PLAN_2.md A5c).
+
+	   The portal stands invisible until he holds Code Vision. Both halves matter to the
+	   objective banner, which must say "hold [V]" while it is standing unseen and "[C] to
+	   go through" once it is not — so both are public, for the same reason HasLaunched is. */
+	bool IsGrokPortalRevealed() const { return bGrokPortalRevealed; }
+
 private:
 
 	/* WHICH SYSTEM. NS_TeleporterHole is Walt's pick out of the fourteen in Portal and
@@ -547,9 +554,80 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "100.0"))
 	float GrokPortalRange = 25000.0f;
 
-	/** Seconds after the launch before it opens — long enough for the toast to clear. */
+	/* ===================================================================================
+	   WHEN THE WAY OPENS, AND WHO IT OPENS FOR (docs/FUN_PLAN_2.md A5).
+
+	   IT USED TO OPEN ON A CLOCK. Seven seconds after the launch toast cleared, wherever he
+	   happened to be standing. That is a tidy beat and it throws away the only thing the
+	   scene is about: he has just been left behind, and he never gets a moment of BEING
+	   left behind. Nyra promised to ride the ship's computer to Grok with him, she took it
+	   without him, and the game replaced her with a door before he could miss her.
+
+	   SO HE GOES LOOKING FIRST. The way opens when he walks back to the sidewalk outside
+	   uFoods where she stood and said "see you there" — and finds nobody, because A4 took
+	   her off it. Walking to an empty spot is the whole beat; the portal is the answer to
+	   it, not a substitute for it.
+
+	   THE CLOCK STAYS AS A FALLBACK, much longer. A player who never goes back must not be
+	   stranded on a lawn with a banner and no door — docs/SPACEPORT_PLAN.md has cost this
+	   project four playtests' worth of "I walked around and nothing happened". The trigger
+	   is the beat; the timer is the guarantee.
+	   =================================================================================== */
+
+	/* Seconds after the launch before the way opens on its own, if he never goes back.
+
+	   75 WAS TOO LONG AND WALT PLAYED IT: he launched, walked, found no Nyra and no portal,
+	   and the log shows the fallback firing at exactly 75 s having never seen the marker.
+	   Seventy-five seconds of an empty city with a banner and nothing happening is worse
+	   than the seven-second clock this replaced — the beat is only a beat if it lands.
+
+	   The real fix is the banner naming uFoods (see ASibeliusHUD::CityObjective) so the
+	   proximity trigger is actually reachable; this is the safety net behind it, and a
+	   safety net should catch him sooner. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "0.0"))
-	float GrokPortalDelay = 7.0f;
+	float GrokPortalDelay = 45.0f;
+
+	/* WHERE SHE STOOD. The same marker UDancerAgentComponent::GuideStage3StartTag names, and
+	   the same one the uFoods return door aims at — one PlayerStart in L_City defines where
+	   he lands coming out of the shop, where she waited, and now where her absence is felt.
+	   They cannot drift apart because there is only one of them.
+
+	   IF THE MARKER IS MISSING the watch simply never fires and the fallback clock carries
+	   the whole feature. That is the graceful half: a missing nicety must never be a missing
+	   door. (The alternative, falling back to a default position, is how three coffee cups
+	   ended up at the world origin.) */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
+	FName GuideStreetTag = TEXT("uFoodsStreet");
+
+	/** How near that marker counts as having gone to look. Generous — he is looking for a
+	 *  person, not pressing a button, and the sidewalk is wide. Widened from 15 m after
+	 *  the first playtest walked the block and never tripped it. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "100.0"))
+	float GuideSearchRange = 2500.0f;
+
+	/* THE GHOSTS NOTICE HIM (docs/FUN_PLAN_2.md A5b, and SPACEPORT_PLAN's "The city
+	   reacts": "The AI ghosts have ignored him since he arrived. The launch is the first
+	   thing that makes them stop.")
+
+	   They are found by MESH ASSET PATH, never by actor label — labels are editor-only data
+	   that the cook throws away, which is exactly how the levitating cauldron shipped in
+	   three separate builds. A path survives cooking.
+
+	   FOUND OR NOT, THE FEATURE STILL WORKS: if nothing matches, the toast still fires and
+	   a log line says how many were considered. The turn is a yaw on a standing figure,
+	   teleported rather than simulated (the groom lesson), with no animation touched.
+
+	   THE FIRST GUESS WAS WRONG AND THE LOG SAID SO: "Ghosts: 0 matched 'Manny_Glow'".
+	   Manny_Glow is a MATERIAL — the glow that makes a mannequin a ghost — and this test
+	   reads the skeletal MESH path, so it could never match. The mesh is
+	   SKM_Manny_Simple, and the actors wearing it are the LookingStand* figures standing
+	   around the city. That is exactly why the count is logged rather than assumed. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
+	FString GhostMeshMarker = TEXT("SKM_Manny_Simple");
+
+	/** How near a ghost has to be to the player to be the one that turns. */
+	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "100.0"))
+	float GhostNoticeRange = 6000.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
 	FName GrokLevelName = TEXT("L_Grok");
@@ -571,10 +649,39 @@ private:
 	void OpenGrokPortal(bool bImmediate);
 	void ClearGrokPortal();
 
+	/** Watch for him walking back to where she stood. See GuideStreetTag. */
+	void StartGuideSearchWatch();
+	void PollGuideSearch();
+
+	/** Make the standing portal visible, permanently, and say so. Idempotent. */
+	void RevealGrokPortal();
+
+	/* CODE VISION IS THE KEY TO THE LAST DOOR (docs/FUN_PLAN_2.md A5c).
+
+	   UFUNCTION because OnCodeVisionChanged is a DYNAMIC multicast — a plain method cannot
+	   bind to it, and the compiler's complaint about that is not obvious. AHiddenDoor's
+	   HandleCodeVisionChanged is the same shape for the same reason. */
+	UFUNCTION()
+	void HandleCodeVisionChanged(bool bIsActive);
+
+	/** Bind to the player's Code Vision, retrying while the pawn is not ready. */
+	void BindPortalToCodeVision();
+
+	/** One ghost stops ignoring him. Safe and self-reporting when it finds nothing. */
+	void NoticeByTheGhosts();
+
 	UPROPERTY(Transient)
 	TObjectPtr<class UNiagaraComponent> GrokPortal;
 
 	FTimerHandle GrokPortalTimer;
+
+	/* HE HAS LOOKED PROPERLY, and it does not un-see. A player forced to hold V with one
+	   hand while pressing C with the other has been given a chore, not a secret. */
+	bool bGrokPortalRevealed = false;
+
+	FTimerHandle GuideSearchTimer;
+	FTimerHandle PortalBindTimer;
+	int32 PortalBindAttempts = 0;
 
 	FTimerHandle BoardingHintTimer;
 	bool bBoardingHintShown = false;

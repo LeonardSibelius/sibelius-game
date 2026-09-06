@@ -627,12 +627,32 @@ FString ASibeliusHUD::CityObjective() const
 	{
 		if (Port->IsGrokPortalOpen())
 		{
-			return TEXT("A way has opened where the ship stood. [C] to go through.");
+			/* STANDING, BUT NOT YET SEEN (docs/FUN_PLAN_2.md A5c). This line is what keeps
+			   the hidden portal from being a dead end — including for a player who quits and
+			   reloads, where the portal reopens hidden and there is otherwise nothing on
+			   screen to suggest holding V at an empty lawn. */
+			/* "NEARBY", NOT "WHERE THE SHIP STOOD". The portal opens nine metres in front of
+			   the PLAYER, on the line toward the pad — that standoff was Walt's own request
+			   so it could not land behind the fence. So it is wherever he happens to be, and
+			   telling him to look at the pad is an instruction pointing at the wrong place:
+			   the boarding bug, one scene later. */
+			if (!Port->IsGrokPortalRevealed())
+			{
+				return TEXT("Something has opened near you. Hold [V] and look properly.");
+			}
+			return TEXT("A way has opened near you. [C] to go through.");
 		}
 		if (Port->HasLaunched())
 		{
-			// She said she would call from Grok. She is also no longer on the sidewalk (A4).
-			return TEXT("The ship is away. She said she would call.");
+			/* SHE SAID SHE WOULD CALL, AND SHE HAS NOT (A4 + A5a).
+
+			   AND IT NAMES uFOODS, because the first playtest proved "go and look for her"
+			   is not an instruction. Walt walked toward the SPACEPORT — the obvious guess,
+			   since that is where the ship was — never went near the sidewalk, and stood in
+			   an empty city for the full 75-second fallback with nothing happening. The
+			   whole point of this banner is to stop the player having to remember, and that
+			   line asked him to remember where she had been standing two scenes ago. */
+			return TEXT("The ship is away. She is not answering — she was waiting outside uFoods.");
 		}
 		if (Port->IsAboard())
 		{
