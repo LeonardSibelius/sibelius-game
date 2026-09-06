@@ -1658,6 +1658,9 @@ bool ASpaceport::BeginLaunch(APawn* Pawn)
 	SetActorTickEnabled(true);
 	CutToLaunchShot(0);
 
+	// The city stops ignoring him at the moment the ship goes. See NoticeByTheGhosts.
+	NoticeByTheGhosts();
+
 	UE_LOG(LogSibeliusGame, Display,
 		TEXT("[Spaceport] ignition - Niagara %s, cameras %d."),
 		Plume && Plume->GetAsset() ? *Plume->GetAsset()->GetName() : TEXT("NONE"),
@@ -1953,9 +1956,6 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 			7.0f, SibeliusToast::Prize);
 	}
 
-	// The city stops ignoring him at the same moment (SPACEPORT_PLAN, "The city reacts").
-	NoticeByTheGhosts();
-
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Grok portal open (revealed=%s)."),
 		bGrokPortalRevealed ? TEXT("yes") : TEXT("no"));
 }
@@ -2157,16 +2157,14 @@ void ASpaceport::RevealGrokPortal()
 void ASpaceport::NoticeByTheGhosts()
 {
 	UWorld* World = GetWorld();
-	const APawn* Player = World ? UGameplayStatics::GetPlayerPawn(this, 0) : nullptr;
-	if (!World || !Player)
+	if (!World)
 	{
 		return;
 	}
 
-	const FVector Him = Player->GetActorLocation();
-
-	AActor* Nearest = nullptr;
-	float NearestSq = GhostNoticeRange * GhostNoticeRange;
+	const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
+	const FVector Pad = GetActorLocation();
+	int32 Turned = 0;
 	int32 Considered = 0;
 
 	for (TActorIterator<AActor> It(World); It; ++It)
@@ -2199,36 +2197,32 @@ void ASpaceport::NoticeByTheGhosts()
 		}
 
 		++Considered;
-		const float DistSq = FVector::DistSquared2D(Him, Actor->GetActorLocation());
-		if (DistSq < NearestSq)
+
+		/* A YAW, TELEPORTED, AND NOTHING ELSE TOUCHED. No animation change, no montage, no
+		   montage-shaped ambition. Turning a figure as simulated MOTION is what made Elise's
+		   hair explode; setting the rotation outright is the fix that shipped. These ghosts
+		   stand and look (the LookingStand* anims), so there is no dance to freeze either —
+		   the plan's "freezes and faces the pad" is one half already true.
+
+		   Worst case, if one of them turns out to be rigged some other way, is that a
+		   standing figure faces a different direction. Not broken — just different. */
+		const FVector ToPad = Pad - Actor->GetActorLocation();
+		if (ToPad.SizeSquared2D() > 1.0f)
 		{
-			NearestSq = DistSq;
-			Nearest = Actor;
+			Actor->SetActorRotation(FRotator(0.0f, ToPad.Rotation().Yaw, 0.0f));
+			++Turned;
 		}
 	}
 
-	if (Nearest)
-	{
-		/* A YAW, TELEPORTED, AND NOTHING ELSE TOUCHED. No animation change, no montage, no
-		   montage-shaped ambition. Turning a MetaHuman as simulated MOTION is what made
-		   Elise's hair explode; setting the rotation outright is the fix that shipped.
+	/* THE COUNT IS EVERY GHOST IN THE LEVEL, and the message now says so.
 
-		   And the worst case if these actors turn out to be rigged some other way is that a
-		   standing figure faces a different direction, which is not broken - just different.
-		   That is deliberate: nobody has confirmed what they are. */
-		const FVector ToHim = Him - Nearest->GetActorLocation();
-		Nearest->SetActorRotation(FRotator(0.0f, ToHim.Rotation().Yaw, 0.0f));
-
-		ASibeliusHUD::Toast(this,
-			TEXT("ONE OF THEM HAS STOPPED IGNORING YOU"),
-			5.0f, SibeliusToast::Info);
-	}
-
-	/* SAY WHAT WAS FOUND EITHER WAY. Nobody has confirmed what the blue ghosts are as
-	   actors, so the first playtest's log is the answer: a count of zero means
-	   GhostMeshMarker is wrong, not that the feature is broken. */
+	   The first wording claimed "%d matched within %.0f cm", which was two claims in one
+	   line and only one of them was true: the count was every ghost found, while the range
+	   applied to a separate nearest-only test. It read as "six were near you and none
+	   turned", which is not what the code did and would have sent the next reader hunting
+	   the wrong bug. This project has been bitten twice by a comment that described
+	   something other than the code beside it. */
 	UE_LOG(LogSibeliusGame, Display,
-		TEXT("[Spaceport] Ghosts: %d matched '%s' within %.0f cm; %s turned."),
-		Considered, *GhostMeshMarker, GhostNoticeRange,
-		Nearest ? *Nearest->GetName() : TEXT("none"));
+		TEXT("[Spaceport] Ghosts: %d in the level matched '%s'; %d turned to face the pad."),
+		Considered, *GhostMeshMarker, Turned);
 }

@@ -605,17 +605,34 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "100.0"))
 	float GuideSearchRange = 2500.0f;
 
-	/* THE GHOSTS NOTICE HIM (docs/FUN_PLAN_2.md A5b, and SPACEPORT_PLAN's "The city
+	/* THE GHOSTS NOTICE THE SHIP (docs/FUN_PLAN_2.md A5b, and SPACEPORT_PLAN's "The city
 	   reacts": "The AI ghosts have ignored him since he arrived. The launch is the first
 	   thing that makes them stop.")
+
+	   AT IGNITION, ALL OF THEM, FACING THE PAD — which is what SPACEPORT_PLAN said and not
+	   what the first build did. That one turned the single NEAREST ghost at the moment the
+	   portal opened, and the playtest log killed it: "Ghosts: 6 matched
+	   'SKM_Manny_Simple'; none turned." Six existed and not one was close enough, because
+	   A5a had just done its job and sent him to the uFoods sidewalk while the ghosts stand
+	   back in the plaza. The better A5a works, the further he is from any of them.
+
+	   Raising the range would not have fixed it. A figure turning 150 m away is a figure
+	   you cannot see turn. Moving the moment does: at ignition he is at the pad with the
+	   whole city between him and the errand he is about to walk, so every ghost turning
+	   toward the launch is something he walks THROUGH on the way back. Same code, right
+	   place — and the plan had the right place written down a week before I moved it.
+
+	   NO TOAST. The image is the payload. A line of text explaining that the city has
+	   noticed him would be telling instead of showing, and the HUD is held for the launch
+	   cutscene anyway.
 
 	   They are found by MESH ASSET PATH, never by actor label — labels are editor-only data
 	   that the cook throws away, which is exactly how the levitating cauldron shipped in
 	   three separate builds. A path survives cooking.
 
-	   FOUND OR NOT, THE FEATURE STILL WORKS: if nothing matches, the toast still fires and
-	   a log line says how many were considered. The turn is a yaw on a standing figure,
-	   teleported rather than simulated (the groom lesson), with no animation touched.
+	   FOUND OR NOT, THE FEATURE STILL WORKS: if nothing matches, nothing turns and a log
+	   line says how many were found. The turn is a yaw on a standing figure, teleported
+	   rather than simulated (the groom lesson), with no animation touched.
 
 	   THE FIRST GUESS WAS WRONG AND THE LOG SAID SO: "Ghosts: 0 matched 'Manny_Glow'".
 	   Manny_Glow is a MATERIAL — the glow that makes a mannequin a ghost — and this test
@@ -624,10 +641,6 @@ private:
 	   around the city. That is exactly why the count is logged rather than assumed. */
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
 	FString GhostMeshMarker = TEXT("SKM_Manny_Simple");
-
-	/** How near a ghost has to be to the player to be the one that turns. */
-	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok", meta = (ClampMin = "100.0"))
-	float GhostNoticeRange = 6000.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Spaceport|Grok")
 	FName GrokLevelName = TEXT("L_Grok");
