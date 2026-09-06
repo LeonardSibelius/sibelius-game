@@ -1697,11 +1697,11 @@ void ASpaceport::TickLaunch(float DeltaSeconds)
 		Rocket->SetRelativeLocationAndRotation(Loc, Rot);
 	}
 
-	// Camera cuts: cabin, wide, engines, track, sky.
+	// Camera cuts: cabin, wide, track, sky. Hold the wide view through ignition;
+	// the low engine shot (2) looks beneath the platform and is intentionally skipped.
 	int32 Wanted = 0;
 	if (LaunchElapsed >= 16.0f)      { Wanted = 4; }
 	else if (LaunchElapsed >= 10.0f) { Wanted = 3; }
-	else if (LaunchElapsed >= 5.5f)  { Wanted = 2; }
 	else if (LaunchElapsed >= 2.5f)  { Wanted = 1; }
 
 	if (Wanted != LaunchShot)

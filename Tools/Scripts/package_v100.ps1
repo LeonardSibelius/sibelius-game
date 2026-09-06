@@ -107,6 +107,25 @@ $checks = [ordered]@{
   # missing one looks exactly like a player who has not held V yet.
   "the way to Grok"     = "$cooked\PortalVFX\NS\NS_TeleporterHole.uasset"
 
+  # --- the enhancement (docs/PROTEIN_MACHINES.md) ---------------------------
+  # BOARDING NOW DEPENDS ON THIS, which is what makes these checks load-bearing rather
+  # than tidy: ASpaceport::Board and PreflightCompile both refuse without the enhancement
+  # grant, so anything that stops the office working stops the game being finishable.
+  #
+  # The materials reach the pak by LEVEL REFERENCE (L_City places the actor and a level
+  # hard-references what it places) — the L_uFoods arrangement, not a directory rule. If
+  # reference-following ever changes, the office ships as untextured geometry in a level
+  # the player MUST use, and PIE would never say so.
+  "the office"          = "$cooked\ProteinMachines\M_OfficeInterior.uasset"
+  "the office's navy"   = "$cooked\ProteinMachines\M_OfficeNavy.uasset"
+  "the protein display" = "$cooked\ProteinMachines\M_ProteinCyan.uasset"
+  "its bonds"           = "$cooked\ProteinMachines\M_ProteinBond.uasset"
+  # And her line about it, which arrives by DirectoriesToAlwaysCook on /Game/Audio/Dancers
+  # — the v0.7.4 arrangement exactly: found locally by PIE, absent from a shipped build.
+  # Without it she stands outside the deli saying nothing at the one beat that explains
+  # what the blue ghosts are.
+  "her protein speech"  = "$cooked\Audio\Dancers\dancer_protein_nyra.uasset"
+
   # --- the guide's voices ---------------------------------------------------
   "Nyra's spaceport speech" = "$cooked\Audio\Dancers\dancer_guide3_nyra.uasset"
   "the spaceport face"      = "$cooked\Audio\Dancers\dancer_guide3_nyra_face.uasset"
