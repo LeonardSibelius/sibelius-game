@@ -65,6 +65,11 @@ void UDancerAgentSubsystem::RestageGuides()
 	}
 }
 
+void UDancerAgentSubsystem::NotifyGuideTalkFinished(UDancerAgentComponent* Dancer)
+{
+	OnGuideTalkFinished.Broadcast(Dancer);
+}
+
 int32 UDancerAgentSubsystem::ScanForDancers()
 {
 	UWorld* World = GetWorld();

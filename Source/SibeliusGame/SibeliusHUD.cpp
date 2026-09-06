@@ -26,6 +26,7 @@
 #include "Spaceport.h"                        // A1: the city chain reads the pad's own state
 #include "SupplyCounter.h"                    // A1: "has he shopped" is a saved grant
 #include "DancerAgentComponent.h"             // A1: GrokTalkedGrant ends the Grok banner
+#include "GrokEndingSubsystem.h"              // A2: the banner keeps out of the credits' way
 
 // FUN-8: default OFF now that the player has real surfaces (Tab menu, sauce
 // counter, banners). H brings it back — it's Walt's debug view, not the UI.
@@ -573,16 +574,40 @@ FString ASibeliusHUD::CityObjective() const
 	FString Map = W->GetMapName();
 	Map.RemoveFromStart(W->StreamingLevelsPrefix);
 
-	/* GROK. One thing to do, and a line that stops once it is done — the stale-instruction
-	   rule that A4 exists to fix, applied here before it can happen. */
+	/* GROK, WHICH HAS THREE STATES AND NOT TWO (docs/FUN_PLAN_2.md A1 + A2).
+
+	   Before she has spoken: point at her, because she is the only thing here.
+	   While the ending rolls: say nothing. The memoir and the credits own the screen, and
+	     a gold line across the top of them is the "one channel, two speakers" collision
+	     this project has already hit at the cauldron and on Kaia's face.
+	   After the last card fades: the two doors, and keep them. There is nothing else to do
+	     on Grok, and a player who looked away during the credits would otherwise be left
+	     standing on an alien hillside with no stated way off it. */
 	if (Map.Contains(TEXT("Grok")))
 	{
 		const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
-		if (Progression && Progression->HasClaimedGrant(UDancerAgentComponent::GrokTalkedGrant))
+		if (!Progression || !Progression->HasClaimedGrant(UDancerAgentComponent::GrokTalkedGrant))
 		{
-			return FString();
+			return TEXT("Nyra is waiting. [E] to talk.");
 		}
-		return TEXT("Nyra is waiting. [E] to talk.");
+
+		if (const UGrokEndingSubsystem* Ending = W->GetSubsystem<UGrokEndingSubsystem>())
+		{
+			if (Ending->IsRunning())
+			{
+				return FString();
+			}
+			if (Ending->HasFinished())
+			{
+				return TEXT("[O] the office, one more time     [N] [N] begin again");
+			}
+		}
+
+		/* NEITHER RUNNING NOR FINISHED, but she has been heard: he quit on the hillside and
+		   came back, so the roll is not going to happen again (the grant is saved and the
+		   subsystem is session state). Give him the doors rather than nothing — arriving
+		   into silence is the bug this whole item exists to fix. */
+		return TEXT("[O] the office, one more time     [N] [N] begin again");
 	}
 
 	// uFOODS. 1,956 meshes, 286 price tags and exactly one counter. Say which.

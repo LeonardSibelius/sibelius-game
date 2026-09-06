@@ -947,18 +947,6 @@ void UDancerAgentComponent::Greet()
 		return;
 	}
 
-	/* HE HAS HEARD HER OUT (docs/FUN_PLAN_2.md A1/A4). Recorded at the START of the line
-	   rather than at the end: he has engaged her, and a player who wanders off mid-speech
-	   has still had the beat — re-arming the banner behind him would be the stale
-	   instruction problem again, pointing the other way. */
-	if (IsGuide() && GuideStage() >= 4)
-	{
-		if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
-		{
-			Prog->ClaimOneTimeGrant(GrokTalkedGrant);
-		}
-	}
-
 	/* SHE SPEAKS; THE HUD SHUTS UP (Walt, 2026-08-25).
 
 	   This used to post the greeting to the Presence subtitle channel - a line of text
@@ -1869,6 +1857,39 @@ void UDancerAgentComponent::BeginGreetingMotion()
 
 void UDancerAgentComponent::ResumeAfterGreeting()
 {
+	/* SHE GOT TO THE END OF IT (docs/FUN_PLAN_2.md A2).
+
+	   THIS FUNCTION IS THE NATURAL END AND NOTHING ELSE IS. It runs off GreetingTimer,
+	   and CancelGreeting — the F-press path, and the path every other interruption takes —
+	   clears that timer before doing anything. So arriving here means she finished
+	   speaking, which is precisely the thing the ending needs to know and precisely what
+	   EndTalkShot cannot tell you, since every cancel goes through there too.
+
+	   THE GRANT IS CLAIMED HERE RATHER THAN WHEN HE PRESSES E, and that ordering is the
+	   whole of it. Claimed at the start, an F-cancel would leave the objective banner
+	   silenced ("Nyra is waiting" gone) with no ending rolled and nothing on screen to say
+	   what to do — the stale-instruction bug of A4 wearing the opposite coat. Claimed at
+	   the end, a cancel records nothing: the banner still points at her, and pressing E
+	   again gives him the speech and the ending, which is the correct recovery. */
+	if (IsGuide() && GuideStage() >= 4)
+	{
+		if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+		{
+			Prog->ClaimOneTimeGrant(GrokTalkedGrant);
+		}
+	}
+
+	if (const UWorld* World = GetWorld())
+	{
+		if (UDancerAgentSubsystem* Dancers = World->GetSubsystem<UDancerAgentSubsystem>())
+		{
+			// Broadcast for EVERY guide, not just stage 4. The listener decides what it
+			// cares about; a channel that pre-filters is a channel the next feature has to
+			// widen. UGrokEndingSubsystem checks the stage at its end.
+			Dancers->NotifyGuideTalkFinished(this);
+		}
+	}
+
 	CancelGreeting(/*bResumeDance=*/true);
 }
 

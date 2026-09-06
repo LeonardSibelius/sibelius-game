@@ -29,6 +29,9 @@
 
 class UDancerAgentComponent;
 
+/** A guide finished saying her piece — she was not cut off. See NotifyGuideTalkFinished. */
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnGuideTalkFinished, UDancerAgentComponent*);
+
 UCLASS()
 class SIBELIUSGAME_API UDancerAgentSubsystem : public UWorldSubsystem
 {
@@ -36,6 +39,23 @@ class SIBELIUSGAME_API UDancerAgentSubsystem : public UWorldSubsystem
 
 public:
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+
+	/* SHE GOT TO THE END OF IT (docs/FUN_PLAN_2.md A2).
+
+	   Fired from UDancerAgentComponent::ResumeAfterGreeting, which is the NATURAL end of a
+	   talk and only that: CancelGreeting clears the timer that calls it, so an F press
+	   mid-sentence produces no event. That distinction is the whole reason this hangs here
+	   rather than on EndTalkShot, which every cancel path also runs through.
+
+	   It lives on the subsystem for the same reason RestageGuides does — the listener does
+	   not have to know what a dancer is, or when the runtime scan got round to attaching
+	   one. A component that does not exist yet at the listener's BeginPlay is the normal
+	   case here, not an edge case, so subscribing to a component directly would be a race
+	   the listener could not win. */
+	FOnGuideTalkFinished OnGuideTalkFinished;
+
+	/** Called by the component. Safe with a null world or no listeners. */
+	void NotifyGuideTalkFinished(UDancerAgentComponent* Dancer);
 
 	/**
 	 * Attach a UDancerAgentComponent to every dancing actor that lacks one, and return
