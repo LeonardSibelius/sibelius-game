@@ -149,6 +149,11 @@ private:
 	void DrawObjective();
 	FString ComputeObjective() const;
 
+	/* THE LAST THIRD OF THE GAME, WHICH HAD NO BANNER AT ALL (docs/FUN_PLAN_2.md A1).
+	   Empty string means "not one of those levels, or nothing left to do there", and
+	   ComputeObjective falls through to the office beats exactly as before. */
+	FString CityObjective() const;
+
 	// APPEAL_PLAN extra: which world am I in (forest name etc., small, top-center).
 	void DrawWorldName();
 

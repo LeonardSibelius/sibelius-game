@@ -180,6 +180,21 @@ AActor* UInteractorComponent::FindDancerByAim(const FVector& Start, const FVecto
 			continue;
 		}
 
+		/* A HIDDEN DANCER IS NOT THERE (docs/FUN_PLAN_2.md A4).
+
+		   This search is a cone and a line of sight over the registry — it never needs to
+		   HIT her, so hiding an actor does not remove her from it and switching her
+		   collision off does not either. Without this, a guide who has stood down after
+		   the launch is an invisible woman still answering E from across the street,
+		   which is a stranger bug than the one that made her stand down.
+
+		   Written as a general rule rather than a Nyra rule: nothing invisible should ever
+		   be talkable, whatever hid it. */
+		if (Owner->IsHidden())
+		{
+			continue;
+		}
+
 		// Her mesh bounds, so this tracks the pose rather than the actor origin.
 		const FVector AimPoint = Agent->GetAimPoint();
 		const FVector ToDancer = AimPoint - Start;

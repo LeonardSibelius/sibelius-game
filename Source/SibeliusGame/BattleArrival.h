@@ -95,8 +95,24 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory")
 	FText VictoryLine = NSLOCTEXT("Sibelius", "BattleWon", "AI has set you free.");
 
+	/* THE SECOND LINE IS NO LONGER A PROMISE ABOUT LATER (docs/FUN_PLAN_2.md A3).
+
+	   It said "More adventures coming soon", which was true the day it was written: this
+	   field was the last thing in the game. The battle is now the MIDPOINT — the city, the
+	   deli, the spaceport, the passage and Grok all come after it — so the line promised a
+	   sequel from the middle of the story, in a build the Steam page will be read against.
+
+	   What replaces it has to do two things. Say there is more NOW rather than later, and
+	   NOT NAME THE PLACE — because ChoiceLine, six seconds behind it, deliberately refuses
+	   to: "[>] somewhere you have never been", and the whole appeal of that door is that he
+	   cannot see through it yet. "There is a city" would answer the question the next line
+	   exists to ask.
+
+	   Walt's, if this one is not: "And you are not finished." / "There is more of it than
+	   you have seen." / empty, which lets the victory line stand on its own. The wording of
+	   an ending belongs to its author. */
 	UPROPERTY(EditAnywhere, Category = "Battle Arrival|Victory")
-	FText ComingSoonLine = NSLOCTEXT("Sibelius", "BattleSoon", "More adventures coming soon.");
+	FText ComingSoonLine = NSLOCTEXT("Sibelius", "BattleSoon", "Your story is not finished.");
 
 	/** A breath after the last one falls, so the line lands on a quiet field rather than
 	 *  over the sound of a body hitting the grass. */

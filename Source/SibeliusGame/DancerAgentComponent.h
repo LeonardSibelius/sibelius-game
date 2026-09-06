@@ -384,6 +384,45 @@ public:
 	   an unmoved guide is already correct, just standing somewhere older. */
 	void RestageGuide();
 
+	/* THE ERRAND ENDS WHEN THE SHIP DOES (docs/FUN_PLAN_2.md A4).
+
+	   GuideStage() had no concept of the launch. Stage 3 is "he has the supplies", which is
+	   a fact about HIM and stays true forever, so after the rocket left, walking back to
+	   the uFoods sidewalk found her still dancing and still saying GuideLine4: "Go back to
+	   the spaceport and we will do the boarding procedures." An instruction pointing at an
+	   empty pad, in the one moment the betrayal is supposed to land, spoken by the
+	   character who committed it — and the player most likely to walk back is the one who
+	   is lost.
+
+	   So she is not there. The pad is empty and so is the street, which is the whole of
+	   rev 1's premise (docs/SEVENTH_POWER.md) on screen instead of in a document.
+
+	   IT IS NOT A STAGE, and that is the design decision. A stage number picks her line and
+	   her recording (GetSpokenLine, GuideVoiceNames), and she has nothing to say here — a
+	   fifth stage would clamp to the fourth clip and play the Grok apology on a city
+	   sidewalk, which is worse than the bug it replaced. Absence is a different question
+	   from which errand she is on, so it is asked separately. */
+	bool HasShipLeft() const;
+
+	/** Hide or restore her body and her reachability. One direction is ever used in
+	    practice — a launched ship does not come back — but it is written both ways so the
+	    hide is not a one-way door if a Test-Drive discard ever needs to undo one. */
+	void SetGuidePresent(bool bPresent);
+
+	/* HE HAS HEARD HER OUT ON GROK.
+
+	   The objective banner needs to know when to stop saying "Nyra is waiting", and there
+	   was no record anywhere of this conversation having happened. A bool on the component
+	   would come back on a reload of a level he visits exactly once, which is the wrong
+	   answer in the one place it would ever show.
+
+	   ClaimedGrants is already the game's "this happened once, forever" record and is
+	   already saved, so this is additive: old saves default-fill to "not claimed", which
+	   reads correctly as "he has not spoken to her yet". No SaveVersion bump.
+
+	   docs/FUN_PLAN_2.md A2 will want this too, as the cue to roll the memoir. */
+	static const FName GrokTalkedGrant;
+
 private:
 	/** True while a restage is pending, so a second trigger does not stack timers. */
 	bool bRestagePending = false;

@@ -7,6 +7,7 @@
 #include "DancerAgentSubsystem.h"          // the aim-assist registry
 #include "PowerGrant.h"                    // SPINE: she hands the power over
 #include "SibeliusGameCharacter.h"         // HasVisitedDeli - the guide's stage gate
+#include "ProgressionSubsystem.h"          // the Grok conversation is recorded as a grant
 #include "Spaceport.h"                     // stage 2 asks the world whether one stands
 #include "SupplyCounter.h"                 // stage 3 asks the save whether he shopped
 #include "TimerManager.h"                  // the restage retry, waiting for him to look away
@@ -255,6 +256,11 @@ namespace
 	}
 
 }
+
+/* The one conversation on Grok, recorded once and forever. Named here rather than typed
+   at each use site for the reason ALegacyMachine::ClosedTicketGrant is: a grant key that
+   exists as a string literal in two files is a grant key that will differ in two files. */
+const FName UDancerAgentComponent::GrokTalkedGrant(TEXT("Grok.Talked"));
 
 UDancerAgentComponent::UDancerAgentComponent()
 {
@@ -941,6 +947,18 @@ void UDancerAgentComponent::Greet()
 		return;
 	}
 
+	/* HE HAS HEARD HER OUT (docs/FUN_PLAN_2.md A1/A4). Recorded at the START of the line
+	   rather than at the end: he has engaged her, and a player who wanders off mid-speech
+	   has still had the beat — re-arming the banner behind him would be the stale
+	   instruction problem again, pointing the other way. */
+	if (IsGuide() && GuideStage() >= 4)
+	{
+		if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+		{
+			Prog->ClaimOneTimeGrant(GrokTalkedGrant);
+		}
+	}
+
 	/* SHE SPEAKS; THE HUD SHUTS UP (Walt, 2026-08-25).
 
 	   This used to post the greeting to the Presence subtitle channel - a line of text
@@ -1151,8 +1169,82 @@ void UDancerAgentComponent::TryRestageNow()
 		*AgentName, GuideStage());
 }
 
+bool UDancerAgentComponent::HasShipLeft() const
+{
+	/* ASK THE WORLD, NEVER A SAVED BOOL — the AHintVolume rule that stage 2 already
+	   follows, and it is right in the three places a bool is wrong: after a load, after a
+	   Test-Drive discard that removed the spaceport, and on a New Game.
+
+	   It survives the reload of L_City that every door causes, because the launch lives on
+	   the branch state rather than on the actor's lifetime: ASpaceport::RestoreBranchState
+	   sets bLaunched at state 3 and re-opens the portal immediately for the same reason.
+
+	   AND IT IS FALSE ON GROK, without a level test, because there is no spaceport there.
+	   The arrival Nyra is a different actor in a different world and nothing here reaches
+	   her — which is what we want, since she is the one with something left to say. */
+	if (UWorld* World = GetWorld())
+	{
+		for (TActorIterator<ASpaceport> It(World); It; ++It)
+		{
+			if (It->HasLaunched())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void UDancerAgentComponent::SetGuidePresent(bool bPresent)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return;
+	}
+
+	Owner->SetActorHiddenInGame(!bPresent);
+	Owner->SetActorEnableCollision(bPresent);
+
+	/* AND THE COMPONENTS EXPLICITLY, not just the actor flag. A MetaHuman is a bag of
+	   parts — body, face, four grooms — and the hair on these actors has already ignored
+	   once what was done at the actor level (the talk-yaw groom explosion). Belt and
+	   braces costs one loop and the alternative is a floating head. */
+	TArray<UPrimitiveComponent*> Prims;
+	Owner->GetComponents<UPrimitiveComponent>(Prims);
+	for (UPrimitiveComponent* Prim : Prims)
+	{
+		if (Prim)
+		{
+			Prim->SetVisibility(bPresent, /*bPropagateToChildren=*/true);
+		}
+	}
+
+	if (!bPresent)
+	{
+		StopTalkVoice();   // she does not finish a sentence from inside the floor
+	}
+}
+
 void UDancerAgentComponent::ApplyGuideStage()
 {
+	/* SHE IS GONE ONCE THE SHIP IS (docs/FUN_PLAN_2.md A4). Tested BEFORE the stage
+	   early-out below, because stage 3 outlives its own reason: "he has the supplies" is
+	   true for the rest of the game, so without this she goes on sending him to board a
+	   rocket that left.
+
+	   Both callers funnel through here, and each is right for its case. BeginPlay covers
+	   the reload of L_City, where the spaceport restores to launched and she should simply
+	   never appear. RestageGuide covers the live launch, and it waits until she is unseen
+	   before calling this — so she is not deleted out of the frame in front of him. */
+	if (IsGuide() && HasShipLeft())
+	{
+		SetGuidePresent(false);
+		UE_LOG(LogSibeliusGame, Display,
+			TEXT("[Dancer] %s stood down: the ship has gone."), *AgentName);
+		return;
+	}
+
 	if (GuideStage() < 1)
 	{
 		return;   // stage 0 is the placed state: she is already where she should be

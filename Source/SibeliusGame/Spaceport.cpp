@@ -1748,6 +1748,25 @@ void ASpaceport::EndLaunch()
 			6.0f, SibeliusToast::Good);
 	}
 
+	/* AND THE GUIDE STANDS DOWN (docs/FUN_PLAN_2.md A4).
+
+	   Her stage-3 errand is "go back to the spaceport and we will do the boarding
+	   procedures", and the spaceport has just left without either of them. Until now
+	   nothing told her, so walking back to the uFoods sidewalk found her repeating it at
+	   an empty pad.
+
+	   Told the same way the assembly tells her, through the subsystem, so this class still
+	   does not need to know what a dancer is. RestageGuides waits until she is unseen
+	   before it changes anything — and she almost certainly is, since he is standing at
+	   the pad and she is a street away. */
+	if (const UWorld* World = GetWorld())
+	{
+		if (UDancerAgentSubsystem* Dancers = World->GetSubsystem<UDancerAgentSubsystem>())
+		{
+			Dancers->RestageGuides();
+		}
+	}
+
 	/* AND THE WAY OUT OPENS WHERE THE SHIP STOOD, once the toast above has had its say. */
 	OpenGrokPortal(/*bImmediate=*/false);
 

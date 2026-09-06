@@ -23,6 +23,9 @@
 #include "BranchPIEComponent.h"               // Test-Drive near-branchable hint
 #include "GameFramework/Character.h"
 #include "LegacyMachine.h"                    // First Ticket: the opening job is this machine
+#include "Spaceport.h"                        // A1: the city chain reads the pad's own state
+#include "SupplyCounter.h"                    // A1: "has he shopped" is a saved grant
+#include "DancerAgentComponent.h"             // A1: GrokTalkedGrant ends the Grok banner
 
 // FUN-8: default OFF now that the player has real surfaces (Tab menu, sauce
 // counter, banners). H brings it back — it's Walt's debug view, not the UI.
@@ -536,6 +539,97 @@ void ASibeliusHUD::DrawPlayerLayer()
 	}
 }
 
+/* THE CITY GETS A BANNER (docs/FUN_PLAN_2.md A1).
+
+   ComputeObjective went silent the moment Finale.Synthesis was claimed — "free play, no
+   nagging" — which was exactly right when the cathedral was the end of the game. There are
+   four levels after it now, and in all of them the only guidance a player gets is a
+   seven-second voice line and a toast that has already faded. Walt, playing his own game
+   on 2026-09-05: "the 'C' to board message popped up and disappeared too quickly... I had
+   to remember to press 'C' because there was no prompt." He had the developer on call.
+
+   FURTHEST-ALONG FIRST, the same order UDancerAgentComponent::GuideStage uses, so a player
+   who does things out of sequence is told where he actually is rather than the first thing
+   that happens to match.
+
+   EVERY CONDITION IS ASKED OF THE WORLD OR THE SAVE. No new state, no bools of its own:
+   the spaceport is found the way AHintVolume finds things, which is right after a load,
+   right after a Test-Drive discard that removed it, and right on a New Game.
+
+   AND IT NEVER NAMES THE PAD. Walt, four boarding playtests in: "please don't say Press C
+   at the pad to board... just say Press C to board." The pad sits 22 metres from the apron
+   with a fence between, so naming it sent him to a spot he could not reach.
+
+   KEEP THE LINES SHORT. DrawObjective renders at OverlayTextScale * 1.3 on one line with a
+   backing strip; this is read at 4K from across a desk by a 71-year-old. */
+FString ASibeliusHUD::CityObjective() const
+{
+	const UWorld* W = GetWorld();
+	if (!W)
+	{
+		return FString();
+	}
+
+	FString Map = W->GetMapName();
+	Map.RemoveFromStart(W->StreamingLevelsPrefix);
+
+	/* GROK. One thing to do, and a line that stops once it is done — the stale-instruction
+	   rule that A4 exists to fix, applied here before it can happen. */
+	if (Map.Contains(TEXT("Grok")))
+	{
+		const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+		if (Progression && Progression->HasClaimedGrant(UDancerAgentComponent::GrokTalkedGrant))
+		{
+			return FString();
+		}
+		return TEXT("Nyra is waiting. [E] to talk.");
+	}
+
+	// uFOODS. 1,956 meshes, 286 price tags and exactly one counter. Say which.
+	if (Map.Contains(TEXT("uFoods")))
+	{
+		return ASupplyCounter::HasSupplies(this)
+			? TEXT("You have what you need. Back out to the street.")
+			: TEXT("Supplies for the voyage — [E] at the counter.");
+	}
+
+	if (!Map.Contains(TEXT("City")))
+	{
+		return FString();   // the office, the deli, the cathedral: they keep their own beats
+	}
+
+	if (const ASpaceport* Port = ASpaceport::FindForPlayer(this))
+	{
+		if (Port->IsGrokPortalOpen())
+		{
+			return TEXT("A way has opened where the ship stood. [C] to go through.");
+		}
+		if (Port->HasLaunched())
+		{
+			// She said she would call from Grok. She is also no longer on the sidewalk (A4).
+			return TEXT("The ship is away. She said she would call.");
+		}
+		if (Port->IsAboard())
+		{
+			return TEXT("[C] to launch.");
+		}
+		if (ASupplyCounter::HasSupplies(this))
+		{
+			return TEXT("Back to the spaceport. [C] to board.");
+		}
+		return TEXT("Supplies before the voyage — uFoods is down the block.");
+	}
+
+	/* NO SPACEPORT STANDING. Either he has not built one yet, or a Test-Drive discard took
+	   it away — and both want the same line, which is the reason for asking the world
+	   rather than remembering that he built one once. */
+	if (ASibeliusGameCharacter::HasVisitedDeli(this))
+	{
+		return TEXT("The empty lawn across the street. Press [G] and ask for a SPACEPORT.");
+	}
+	return TEXT("Nyra is in the plaza. [E] to talk — the deli is behind her.");
+}
+
 FString ASibeliusHUD::ComputeObjective() const
 {
 	// APPEAL_PLAN point 2: a stranger should always know the ONE next thing.
@@ -562,6 +656,24 @@ FString ASibeliusHUD::ComputeObjective() const
 					return TEXT("Mrs. Hall's Refusers are loose — get close and FIGHT them [F]");
 				}
 			}
+		}
+	}
+
+	/* 0.5) THE CITY AND WHAT COMES AFTER IT (docs/FUN_PLAN_2.md A1).
+
+	   Above every office beat, because none of them can apply where it fires — the powers
+	   are all earned long before a player stands in Trans Human City — and above (1)'s
+	   all-powers early-out in particular, which returns an empty string and would silence
+	   the last third of the game. Below the refuser override at (0), which outranks
+	   everything by design: a wave is happening to you now.
+
+	   An empty return means "not one of those levels, or nothing left to do there", and
+	   everything below runs exactly as it did. */
+	{
+		const FString CityLine = CityObjective();
+		if (!CityLine.IsEmpty())
+		{
+			return CityLine;
 		}
 	}
 

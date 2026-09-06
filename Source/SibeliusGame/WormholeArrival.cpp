@@ -3,6 +3,7 @@
 #include "WormholeArrival.h"
 
 #include "SibeliusGame.h"   // LogSibeliusGame
+#include "SibeliusHUD.h"    // the arrival is a composed shot; the HUD stays out of it
 
 #include "NiagaraSystem.h"
 #include "NiagaraComponent.h"
@@ -162,6 +163,25 @@ void AWormholeArrival::BeginPlay()
 			TEXT("[Wormhole] No Niagara system resolved; arriving with no effect."));
 	}
 
+	/* AND THE HUD STAYS OUT OF IT (docs/FUN_PLAN_2.md A1).
+
+	   Grok has an objective banner now — "Nyra is waiting. [E] to talk." — and without
+	   this it would draw in gold across the arrival, which is the one shot in the last act
+	   that is composed rather than played. That is the "one channel, two speakers"
+	   collision this project has hit twice before (the cauldron over the Presence's
+	   greeting, and four HUD layers across Kaia's face).
+
+	   A LEASE, not a flag, for the reason ASibeliusHUD::HoldCinematic exists: it expires on
+	   its own if Finish never runs. A HUD stuck blank on the last screen of the game would
+	   be far worse than a banner that arrives a beat early. */
+	if (const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			HUD->HoldCinematic(PassageSeconds + 1.5f);   // +the pack's own 1 s fade-out
+		}
+	}
+
 	HoldPlayer(true);
 	bRunning = true;
 	Elapsed = 0.0f;
@@ -245,6 +265,19 @@ void AWormholeArrival::Finish()
 	}
 
 	HoldPlayer(false);
+
+	/* Give the HUD back at the same moment as his legs, rather than letting the lease run
+	   out on its own. It matters on a SKIP: he pressed Space to be here now, and a blank
+	   screen for the remaining five seconds of a passage he chose to cut is the feature
+	   arguing with him. */
+	if (const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			HUD->ReleaseCinematic();
+		}
+	}
+
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Wormhole] Arrived. Controls released."));
 }
 

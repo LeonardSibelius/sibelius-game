@@ -489,8 +489,17 @@ private:
 	   opening as it clears is a beat.
 	   =================================================================================== */
 
-	/** True once the portal stands and C will take him through. */
+	/** True once the portal stands and C will take him through.
+	 *
+	 *  PUBLIC, unlike the rest of this block: the objective banner asks it from outside
+	 *  (docs/FUN_PLAN_2.md A1), the same way it asks HasLaunched() and IsAboard(). It is a
+	 *  const observer of a pointer this class owns, so exposing it costs nothing — and the
+	 *  alternative was the HUD inferring "the portal must be up by now" from the launch
+	 *  plus GrokPortalDelay, which is a second copy of a rule that could disagree. */
+public:
 	bool IsGrokPortalOpen() const { return GrokPortal != nullptr; }
+
+private:
 
 	/* WHICH SYSTEM. NS_TeleporterHole is Walt's pick out of the fourteen in Portal and
 	   SavePoint VFX, after seeing them on Grok. HARD-REFERENCED in the constructor:
