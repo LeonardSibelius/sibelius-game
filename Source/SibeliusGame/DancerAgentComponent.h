@@ -638,6 +638,8 @@ private:
 	void StopTalkVoice();
 
 	/** Per-agent take if she has one, else the take every agent shares. */
+	/** Shared selection for audio and its matching optional facial performance. */
+	const TCHAR* TalkVoiceBase() const;
 	class USoundBase* FindTalkVoice() const;
 
 	/* ---------------------------------------------------------------------------

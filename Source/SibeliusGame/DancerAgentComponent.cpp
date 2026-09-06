@@ -1,3 +1,4 @@
+#include "ProteinMachine.h"
 // DancerAgentComponent.cpp — see header.
 
 #include "DancerAgentComponent.h"
@@ -1435,6 +1436,12 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	if (IsGuide())
 	{
 		const int32 Stage = GuideStage();
+		if (Stage > 0 && Stage < 4 && !AProteinMachine::IsEnhanced(this))
+		{
+			return AProteinMachine::HasMeal(this)
+				? TEXT("Now that there is fuel in your body, you may enter the Protein Machines Enhancement Station and be enhanced for space travel. You will love it. Those blue guys dancing on the corner had a little too much, so I am letting you only have one dose.")
+				: GuideLine;
+		}
 		Line = (Stage >= 4) ? GuideLine5
 			 : (Stage >= 3) ? GuideLine4
 			 : (Stage >= 2) ? GuideLine3
@@ -1445,13 +1452,25 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	return Line;
 }
 
+const TCHAR* UDancerAgentComponent::TalkVoiceBase() const
+{
+	if (!IsGuide()) return SharedVoiceName;
+	const int32 Stage = GuideStage();
+	if (Stage > 0 && Stage < 4 && !AProteinMachine::IsEnhanced(this))
+	{
+		// Visiting the deli alone is not enough. Both purchases qualify for the new take.
+		return AProteinMachine::HasMeal(this) ? TEXT("dancer_protein") : GuideVoiceBase(0);
+	}
+	return GuideVoiceBase(Stage);
+}
+
 USoundBase* UDancerAgentComponent::FindTalkVoice() const
 {
 	// LOAD_NoWarn|LOAD_Quiet: "not recorded yet" is an expected state, not a fault, and
 	// it must not spray the log every time the player talks to somebody.
 	// One switch decides both halves - the words and the recording - so a guide can
 	// never end up speaking the granting line or the other way round.
-	const TCHAR* const Base = IsGuide() ? GuideVoiceBase(GuideStage()) : SharedVoiceName;
+	const TCHAR* const Base = TalkVoiceBase();
 
 	const FString Own = AgentName.ToLower();
 	if (!Own.IsEmpty())
@@ -1473,7 +1492,7 @@ UAnimSequence* UDancerAgentComponent::FindTalkFace() const
 {
 	// Deliberately the same shape as FindTalkVoice, so the two can never disagree about
 	// which agent they are serving: her own take first, then the shared one.
-	const TCHAR* const Base = IsGuide() ? GuideVoiceBase(GuideStage()) : SharedVoiceName;
+	const TCHAR* const Base = TalkVoiceBase();
 
 	const FString Own = AgentName.ToLower();
 	if (!Own.IsEmpty())

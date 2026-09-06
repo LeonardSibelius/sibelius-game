@@ -10,11 +10,11 @@
 // He is out. Nyra walks him to a deli on a sunlit street and tells him to have some food
 // before he explores, and the only thing to spend forty years of distilled knowledge on
 // is a coffee. That is the whole point of it: it buys nothing, upgrades nothing, and
-// persists nowhere. It is the first purely pleasant thing the game lets him do.
+// originally persisted nowhere. Protein Machines Inc. now optionally records the meal.
 //
-// So: no stat, no unlock, no PurchaseCounts entry. FSauceShop is deliberately NOT used —
+// No stat upgrade or PurchaseCounts entry. FSauceShop is deliberately NOT used —
 // its entire apparatus exists to record and re-apply a lasting effect, and there isn't
-// one. This is UProgressionSubsystem::TrySpendSauce and a line of dialogue.
+// one. MealGrant records the authored burger/coffee milestone for the protein office.
 //
 // ---------------------------------------------------------------------------
 // "SURPRISINGLY ADEQUATE" is printed on the sign above Jacob's Downtown Deli, in
@@ -118,6 +118,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Coffee", meta = (ClampMin = "0"))
 	int32 Price = 10;
 
+	/** Optional saved meal milestone; stock is still replenished each visit. */
+	UPROPERTY(EditAnywhere, Category = "Coffee")
+	FName MealGrant;
+
 	/** Shown while he is looking at it; {0} becomes the price. */
 	UPROPERTY(EditAnywhere, Category = "Coffee")
 	FString PromptText = TEXT("Coffee — {0} Sauce [E]");
@@ -131,9 +135,8 @@ public:
 	FString TooPoorLine = TEXT("The coffee is {0} Sauce.  Come back when you have it.");
 
 	/* THE CUP IS TAKEN AND DOES NOT COME BACK — this visit. It is hidden rather than
-	   destroyed, and nothing is written to the save, so leaving and returning restocks
-	   the counter. That is what a cafe does, and a permanent record of one coffee would
-	   be a save field that means nothing to anybody. */
+	   destroyed, so leaving and returning restocks the counter. MealGrant persists only
+	   the fact that the player has consumed that type of food at least once. */
 	UPROPERTY(EditAnywhere, Category = "Coffee")
 	bool bTakenForThisVisit = false;
 };

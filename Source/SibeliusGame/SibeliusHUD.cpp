@@ -1,3 +1,4 @@
+#include "ProteinMachine.h"
 // SibeliusHUD.cpp — center reticle + developer overlay (SIB-39).
 
 #include "SibeliusHUD.h"
@@ -658,6 +659,12 @@ FString ASibeliusHUD::CityObjective() const
 		{
 			return TEXT("[C] to launch.");
 		}
+		if (!AProteinMachine::IsEnhanced(this))
+		{
+			return AProteinMachine::HasMeal(this)
+				? TEXT("Protein Machines Inc. beside the deli plaza. [E] to enhance for space travel.")
+				: TEXT("Have your burger AND coffee at Jacob's Downtown Deli. [E] at each item.");
+		}
 		if (ASupplyCounter::HasSupplies(this))
 		{
 			return TEXT("Back to the spaceport. [C] to board.");
@@ -670,6 +677,12 @@ FString ASibeliusHUD::CityObjective() const
 	   rather than remembering that he built one once. */
 	if (ASibeliusGameCharacter::HasVisitedDeli(this))
 	{
+		if (!AProteinMachine::IsEnhanced(this))
+		{
+			return AProteinMachine::HasMeal(this)
+				? TEXT("Protein Machines Inc. beside the deli plaza. [E] to enhance for space travel.")
+				: TEXT("Have your burger AND coffee at Jacob's Downtown Deli. [E] at each item.");
+		}
 		return TEXT("The empty lawn across the street. Press [G] and ask for a SPACEPORT.");
 	}
 	return TEXT("Nyra is in the plaza. [E] to talk — the deli is behind her.");

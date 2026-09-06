@@ -1,3 +1,4 @@
+#include "ProteinMachine.h"
 // ProgressionSmokeTestCommandlet.cpp — FUN-1/FUN-2 headless gate. See header.
 //
 // NAMED namespace + function-scoped `using` (unity-build safe), no variable
@@ -126,6 +127,20 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 			TEXT("SPINE: first use of Vision credits its memoir exactly once"));
 	}
 
+	// Protein office: neither individual purchase is sufficient, in either order.
+	{
+		FProgressionState Meal;
+		R.Check(!AProteinMachine::HasMeal(Meal), TEXT("protein: fresh save requires meal"));
+		Meal.Claim(AProteinMachine::BurgerGrant);
+		R.Check(!AProteinMachine::HasMeal(Meal), TEXT("protein: burger alone insufficient"));
+		Meal.Claim(AProteinMachine::CoffeeGrant);
+		R.Check(AProteinMachine::HasMeal(Meal), TEXT("protein: both purchases qualify"));
+		FProgressionState CoffeeFirst;
+		CoffeeFirst.Claim(AProteinMachine::CoffeeGrant);
+		R.Check(!AProteinMachine::HasMeal(CoffeeFirst), TEXT("protein: coffee alone insufficient"));
+		CoffeeFirst.Claim(AProteinMachine::BurgerGrant);
+		R.Check(AProteinMachine::HasMeal(CoffeeFirst), TEXT("protein: purchase order independent"));
+	}
 	// --- 3) Save round-trip on the sandbox slot: write -> load -> compare -> delete.
 	{
 		FSibeliusSaveIO::Delete(SandboxSlot); // pre-clean a crashed prior run
@@ -144,6 +159,9 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		   worth. The question here is "does sauce survive a round trip", not "is sauce
 		   123", so ask that instead and let the starting stake move freely. */
 		const int32 ExpectedSauce = Written->State.Sauce;
+		Written->State.Claim(AProteinMachine::BurgerGrant);
+		Written->State.Claim(AProteinMachine::CoffeeGrant);
+		Written->State.Claim(AProteinMachine::EnhancementGrant);
 		Written->State.Claim(TEXT("Smoke.GrantA"));
 		Written->State.Claim(TEXT("Smoke.GrantB"));
 		Written->State.RecordPurchase(TEXT("Budget.Generate"));
@@ -172,6 +190,9 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(Loaded != nullptr, TEXT("load from sandbox slot"));
 		if (Loaded)
 		{
+			R.Check(AProteinMachine::HasMeal(Loaded->State), TEXT("protein: meal survives save/load"));
+			R.Check(Loaded->State.HasClaimed(AProteinMachine::EnhancementGrant), TEXT("protein: enhancement survives save/load"));
+			R.Check(!Loaded->State.Claim(AProteinMachine::EnhancementGrant), TEXT("protein: repeated enhancement is idempotent"));
 			R.Check(Loaded->SaveVersion == UProgressionSaveGame::CurrentSaveVersion, TEXT("round-trip: SaveVersion stamped"));
 			R.Check(Loaded->State.Sauce == ExpectedSauce,
 				FString::Printf(TEXT("round-trip: sauce survives (%d)"), ExpectedSauce));

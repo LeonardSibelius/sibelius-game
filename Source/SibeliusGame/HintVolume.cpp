@@ -1,6 +1,7 @@
 // HintVolume.cpp — see the header for the conversation that caused it.
 
 #include "HintVolume.h"
+#include "ProteinMachine.h"
 
 #include "SibeliusGame.h"            // LogSibeliusGame
 #include "SibeliusHUD.h"
@@ -74,6 +75,7 @@ void AHintVolume::OnPlayerEnter(UPrimitiveComponent* /*OverlappedComp*/, AActor*
 	   the only hint in the game used the constructor's default (the deli grant) — and
 	   would have gated Phase E's "you have supplies" hint on having eaten a burger.
 	   A property the code ignores is worse than no property: it reads as configured. */
+	if (RequiresGrant == ASibeliusGameCharacter::DeliVisitedGrant && !AProteinMachine::IsEnhanced(this)) return;
 	if (!RequiresGrant.IsNone())
 	{
 		const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);

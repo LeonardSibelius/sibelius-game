@@ -1,3 +1,4 @@
+#include "ProteinMachine.h"
 // Spaceport.cpp — see the header for why this extends ABuildSite.
 
 #include "Spaceport.h"
@@ -988,6 +989,12 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
 	   the empty hold: Nyra sent him down the block for supplies, and the grant that
 	   records the purchase is the one gate boarding has.  Same shape of failure, same
 	   sentence structure — what is wrong, and where to go and fix it. */
+	if (!AProteinMachine::IsEnhanced(this))
+	{
+		ASibeliusHUD::Toast(this, TEXT("SPACE-TRAVEL ENHANCEMENT REQUIRED - VISIT PROTEIN MACHINES INC. BESIDE THE DELI PLAZA"), 5.0f, SibeliusToast::Warn);
+		return true;
+	}
+
 	if (!ASupplyCounter::HasSupplies(this))
 	{
 		ASibeliusHUD::Toast(this,
@@ -1027,6 +1034,7 @@ bool ASpaceport::PreflightCompile(APawn* Pawn)
    so the view is still guaranteed to be inside the room and not embedded in the seats. */
 bool ASpaceport::Board(APawn* Pawn)
 {
+	if (!AProteinMachine::IsEnhanced(this) || !ASupplyCounter::HasSupplies(this)) return false;
 	UWorld* World = GetWorld();
 	APlayerController* PC = IsValid(Pawn) ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
 	if (!World || !PC)
@@ -1268,6 +1276,7 @@ void ASpaceport::StartBoardingHintWatch()
 
 void ASpaceport::PollBoardingHint()
 {
+	if (!AProteinMachine::IsEnhanced(this)) return;
 	UWorld* World = GetWorld();
 	if (!World)
 	{

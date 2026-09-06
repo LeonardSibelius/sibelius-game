@@ -102,6 +102,11 @@ void ACoffeeCup::Interact_Implementation(AActor* Interactor)
 		return;
 	}
 
+	if (!MealGrant.IsNone())
+	{
+		Progression->ClaimOneTimeGrant(MealGrant);
+	}
+
 	bTakenForThisVisit = true;
 
 	// Visual AND collision together - the CV4/CV8 lesson the cathedral door records:
