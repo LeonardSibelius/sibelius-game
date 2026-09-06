@@ -1,22 +1,49 @@
-# Package the v1.1.0 SHIPPING Win64 build — "The Spaceport".
+# Package the v1.1.0 SHIPPING Win64 build — "Protein Machines".
 #
-# Content of 1.1.0: Generate stops being able to make only a lamp. A catalog row can now
-# name an ACTOR class, and the first one is a spaceport - type it on the lawn across from
-# Jacob's and a 120-metre launch complex materialises 160 metres out in the field, part
-# by part, out of a cyan apparition. It is PackDev's own composition, read out of their
-# showcase map rather than guessed. Test-Drive can branch it and discard it for free,
-# because it extends ABuildSite and inherited that.
+# ---------------------------------------------------------------------------
+# WHY THE NUMBER GOES DOWN.
 #
-# The rocket does not launch yet. That is Phase C.
+# itch has already had 1.1.0 through 1.4.0. This is 1.0 anyway, and it is Walt's call:
+# "It feels like a solid 1.0 version that can go onto Steam with no reservations."
 #
-
+# He is right that this is the first build he would hand a stranger without a caveat, and
+# Steam has no history to contradict it — nothing precedes this there. On itch the number
+# will read oddly for one release and then never matter again. Nothing breaks: butler
+# treats --userversion as a label and the itch app tracks build ids, not version strings.
+#
+# ---------------------------------------------------------------------------
+# WHAT IS IN IT THAT 1.4.0 DID NOT HAVE — all of it C++, none of it new assets.
+#
+# docs/FUN_PLAN_2.md Part A, entire:
+#
+#   A1  The last third of the game has an objective banner. ComputeObjective went silent
+#       the moment the Synthesis was claimed, which was right when the cathedral was the
+#       end; four levels come after it now.
+#   A2  The game ENDS instead of stopping. Nyra finishes, and the eight memoir messages
+#       roll, then the makers, then eleven artists, then the two doors.
+#   A3  The Architects battle stops promising a sequel from the midpoint.
+#   A4  Nyra stands down when the ship goes, instead of standing on the uFoods sidewalk
+#       telling him to go and board a rocket that left.
+#   A5  He goes looking for her and finds the sidewalk empty; the way that opens is not
+#       visible to a body until he holds V; and at ignition every ghost in the city turns
+#       to face the pad.
+#
+# Because it is all code, this script's asset checks are 1.4.0's carried forward. That is
+# the point of carrying them: the release that adds no assets is exactly the release where
+# a cook regression would go unnoticed.
+#
+# ONE CHECK IS NEW. A5b turns the city's ghosts by looking up SKM_Manny_Simple by asset
+# path at runtime. If that mesh ever stops cooking, the ghosts do not turn, nothing errors,
+# and the only symptom is a city that fails to react — the exact class of silent failure
+# this list exists for.
 $root    = "C:\Users\wpark\projects\sibelius-game"
 $version = "1.1.0"
 $outDir  = "C:\Users\wpark\builds\sibelius-v$version"
 $uat     = "C:\Program Files\Epic Games\UE_5.7\Engine\Build\BatchFiles\RunUAT.bat"
-$log     = "$root\pkg-vv110.log"
+$log     = "$root\pkg-v110.log"
 
-# The pak we are growing from, so the cost of the city is a number and not a feeling.
+# The pak we are growing from. This release should add ROUGHLY NOTHING — it is all C++ —
+# so a jump here means something got dragged into the cook that should not have been.
 $baselinePaks = "C:\Users\wpark\builds\sibelius-v1.0.0\Windows\SibeliusGame\Content\Paks"
 
 if (Test-Path $log) { Remove-Item $log -Force }
@@ -43,46 +70,76 @@ if ($code -ne 0) {
 # ---- verify the things this release cannot ship without ----------------------
 $cooked = "$root\Saved\Cooked\Windows\SibeliusGame\Content"
 $checks = [ordered]@{
+  # --- the world ------------------------------------------------------------
   "the city"            = "$cooked\Maps\L_City.umap"
   "the cafe"            = "$cooked\Maps\L_Cafe.umap"
   "the burger"          = "$cooked\Fab\Burger\burger\StaticMeshes\burger.uasset"
   "the ghosts' glow"    = "$cooked\Phantom\Manny_Glow.uasset"
-  "Nyra's guide voice"  = "$cooked\Audio\Dancers\dancer_guide_nyra.uasset"
-  # 1.1.0 - THE SPACEPORT, and every line of it is here because the whole thing reaches
-  # the pak by DIRECTORY RULE rather than by reference. Spaceport.cpp names these meshes
-  # by soft path, which the cooker does not follow; the catalog row names the class as a
-  # string; the apparition material is loaded on demand. Nothing in this feature is a
-  # package reference, so nothing in it is safe without checking.
+  # NEW IN 1.0 (A5b). The ghost turn finds these actors by MESH ASSET PATH at runtime -
+  # by path and not by label, because labels are editor-only data the cook throws away.
+  # No mesh, no turn, no error: the city just fails to react and nothing says why.
+  "the ghosts' bodies"  = "$cooked\Characters\Mannequins\Meshes\SKM_Manny_Simple.uasset"
   "the rocket"          = "$cooked\Rocket_Launch_Pad\Meshes\Rocket\SM_Rocket.uasset"
   "the launch pad"      = "$cooked\Rocket_Launch_Pad\Meshes\Environment\SM_Launch_Pad.uasset"
   "the pad's apron"     = "$cooked\Rocket_Launch_Pad\Meshes\Environment\SM_Ground.uasset"
-  "the rocket holder"   = "$cooked\Rocket_Launch_Pad\Meshes\Environment\SM_Rocket_Holder.uasset"
-  # Without this the spaceport still builds - in dead silence, with no fade, popping into
-  # existence one part at a time. Visible only to someone who knew what it should look like.
   "the materialise fx"  = "$cooked\AIApparition\M_materialise.uasset"
-  # The row that makes "spaceport" a word the game knows. A stale catalog is the one
-  # failure that looks exactly like the player typing the wrong thing.
   "the generate catalog"= "$cooked\Data\GenerateCatalog.uasset"
-  # 1.1.0 — the faces. Eight baked performances turn five agents from voices over still
-  # portraits into people saying their own words, and they cook ONLY because
-  # /Game/Audio/Dancers is in DirectoriesToAlwaysCook. Two spot-checks, one per kind.
-  "Nyra's guide face"   = "$cooked\Audio\Dancers\dancer_guide_nyra_face.uasset"
-  "Kaia's power face"   = "$cooked\Audio\Dancers\dancer_power_kaia_face.uasset"
-  # Her second speech, outside the deli - the newest thing in the build and therefore
-  # the likeliest to be missing.
-  "Nyra's 2nd speech"   = "$cooked\Audio\Dancers\dancer_guide2_nyra.uasset"
-  "Nyra's 2nd face"     = "$cooked\Audio\Dancers\dancer_guide2_nyra_face.uasset"
-  # THE HIGHEST-RISK ASSET IN THIS RELEASE. Every other animation is hard-referenced on
-  # a CDO; this one cannot be, because an FObjectFinder on it crashes the editor at
-  # startup. It reaches the pak by DirectoriesToAlwaysCook alone - the exact arrangement
-  # that shipped v0.7.4 with missing content and looked fine in PIE. Without it Nyra
-  # stands outside the deli in her bind pose.
   "the guide's idle"    = "$cooked\Characters\Retargeting\Combat\GS_Idle_MH.uasset"
   "the city's daylight" = "$cooked\Downtown_West\Maps\Sub-Levels\Daytime_Lighting.umap"
   "the meadow"          = "$cooked\Cinematics\L_Meadow.umap"
   "Greystone mesh"      = "$cooked\ParagonGreystone\Characters\Heroes\Greystone\Meshes\Greystone.uasset"
-  "Attack_PrimaryA"     = "$cooked\ParagonGreystone\Characters\Heroes\Greystone\Animations\Attack_PrimaryA_Montage.uasset"
   "Mrs. Hall's lines"   = "$cooked\Data\MrsHallStory.uasset"
+
+  # --- the shop -------------------------------------------------------------
+  "the supermarket"     = "$cooked\Maps\L_uFoods.umap"
+  "its floor"           = "$cooked\Poly_Supermarket_01\Meshes\Modular\SM_Floor_01_A.uasset"
+  "its walls"           = "$cooked\Poly_Supermarket_01\Meshes\Modular\SM_Wall_01.uasset"
+  "the till"            = "$cooked\Poly_Supermarket_01\Meshes\Modular\SM_Cashier_Table_01.uasset"
+  "the trolleys"        = "$cooked\Poly_Supermarket_01\Meshes\Props\SM_Cart_01.uasset"
+
+  # --- the ending -----------------------------------------------------------
+  "the planet"          = "$cooked\Maps\L_Grok.umap"
+  "her last words"      = "$cooked\Audio\Dancers\dancer_guide5_nyra.uasset"
+  "her mouth"           = "$cooked\Audio\Dancers\dancer_guide5_nyra_face.uasset"
+  # THE PORTAL. A gitignored purchased pack reached only by a hard reference from
+  # ASpaceport's constructor. Without it there is NO WAY TO GROK, and in 1.0 that is worse
+  # than it was in 1.4.0: the portal is now INVISIBLE until Code Vision reveals it, so a
+  # missing one looks exactly like a player who has not held V yet.
+  "the way to Grok"     = "$cooked\PortalVFX\NS\NS_TeleporterHole.uasset"
+
+  # --- the enhancement (docs/PROTEIN_MACHINES.md) ---------------------------
+  # BOARDING NOW DEPENDS ON THIS, which is what makes these checks load-bearing rather
+  # than tidy: ASpaceport::Board and PreflightCompile both refuse without the enhancement
+  # grant, so anything that stops the office working stops the game being finishable.
+  #
+  # The materials reach the pak by LEVEL REFERENCE (L_City places the actor and a level
+  # hard-references what it places) — the L_uFoods arrangement, not a directory rule. If
+  # reference-following ever changes, the office ships as untextured geometry in a level
+  # the player MUST use, and PIE would never say so.
+  "the office"          = "$cooked\ProteinMachines\M_OfficeInterior.uasset"
+  "the office's navy"   = "$cooked\ProteinMachines\M_OfficeNavy.uasset"
+  "the protein display" = "$cooked\ProteinMachines\M_ProteinCyan.uasset"
+  "its bonds"           = "$cooked\ProteinMachines\M_ProteinBond.uasset"
+  # And her line about it, which arrives by DirectoriesToAlwaysCook on /Game/Audio/Dancers
+  # — the v0.7.4 arrangement exactly: found locally by PIE, absent from a shipped build.
+  # Without it she stands outside the deli saying nothing at the one beat that explains
+  # what the blue ghosts are.
+  "her protein speech"  = "$cooked\Audio\Dancers\dancer_protein_nyra.uasset"
+  # AND HER MOUTH. Every other Nyra line ships with a baked _face; this one shipped
+  # without at first, and the doc that added it claimed "the existing audio-driven mouth
+  # motion remains available" — which is not so: bTalkMouthMotion is false because
+  # RigLogic replaces the morph array after our weights land. So the bake is the ONLY
+  # thing that moves her mouth here, and a missing one is a still face on one line out of
+  # five, which reads as broken rather than absent.
+  "her protein mouth"   = "$cooked\Audio\Dancers\dancer_protein_nyra_face.uasset"
+
+  # --- the guide's voices ---------------------------------------------------
+  "Nyra's spaceport speech" = "$cooked\Audio\Dancers\dancer_guide3_nyra.uasset"
+  "the spaceport face"      = "$cooked\Audio\Dancers\dancer_guide3_nyra_face.uasset"
+  "Nyra's boarding speech"  = "$cooked\Audio\Dancers\dancer_guide4_nyra.uasset"
+  "the boarding face"       = "$cooked\Audio\Dancers\dancer_guide4_nyra_face.uasset"
+  "Nyra's deli speech"      = "$cooked\Audio\Dancers\dancer_guide2_nyra.uasset"
+  "Kaia's power face"       = "$cooked\Audio\Dancers\dancer_power_kaia_face.uasset"
 }
 $missing = 0
 foreach ($k in $checks.Keys) {
@@ -94,7 +151,7 @@ if ($missing -gt 0) {
   exit 1
 }
 
-# ---- what did the city actually cost? ---------------------------------------
+# ---- size, which should barely move -----------------------------------------
 function PakGB($path) {
   if (-not (Test-Path $path)) { return $null }
   [math]::Round((Get-ChildItem $path -Recurse -File | Measure-Object Length -Sum).Sum / 1GB, 2)
@@ -106,22 +163,23 @@ $archive = [math]::Round((Get-ChildItem $outDir -Recurse -File | Measure-Object 
 
 Write-Output ""
 Write-Output "---------------- SIZE ----------------"
-Write-Output ("pak  v1.0.0  : {0} GB" -f $old)
-Write-Output ("pak  v1.1.0 : {0} GB" -f $new)
-if ($old -and $new) { Write-Output ("the city cost : {0} GB" -f [math]::Round($new - $old, 2)) }
+Write-Output ("pak  v1.0.0   : {0} GB" -f $old)
+Write-Output ("pak  v1.1.0   : {0} GB" -f $new)
+if ($old -and $new) {
+  $delta = [math]::Round($new - $old, 2)
+  Write-Output ("delta         : {0} GB   (expect ~0.00 - this release is all C++)" -f $delta)
+}
 Write-Output ("whole archive : {0} GB" -f $archive)
 Write-Output "--------------------------------------"
 
-# The ten biggest cooked folders, so if the number IS a surprise it says where to look.
-Write-Output ""
-Write-Output "biggest cooked folders:"
-Get-ChildItem $cooked -Directory |
-  ForEach-Object {
-    [PSCustomObject]@{
-      Folder = $_.Name
-      GB = [math]::Round((Get-ChildItem $_.FullName -Recurse -File -ErrorAction SilentlyContinue |
-            Measure-Object Length -Sum).Sum / 1GB, 2)
-    }
-  } | Sort-Object GB -Descending | Select-Object -First 10 | Format-Table -AutoSize
+# ---- THE PLUME, which can still go missing quietly --------------------------
+$plume = Get-ChildItem "$root\Saved\Cooked\Windows" -Recurse -Filter "Grid3D_Gas_ColoredSmoke.uasset" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($plume) {
+  Write-Output ""
+  Write-Output ("PLUME OK      : {0}" -f $plume.FullName.Replace("$root\Saved\Cooked\Windows\",''))
+} else {
+  Write-Output ""
+  Write-Output "PLUME MISSING : the launch will have no fire. Do NOT push to itch."
+}
 
 Write-Output "COOK VERIFIED. Archive: $outDir"

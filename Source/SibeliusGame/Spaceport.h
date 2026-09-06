@@ -660,6 +660,27 @@ private:
 
 	/** Open the portal on the pad. bImmediate on a reload: never replay the wait. */
 	void OpenGrokPortal(bool bImmediate);
+
+	/* THE FALLBACK CLOCK'S TARGET, AND WHY IT IS A MEMBER FUNCTION RATHER THAN A LAMBDA.
+
+	   It was `[this]() { OpenGrokPortal(true); }`, and that crashed the game at the last
+	   scene: EXCEPTION_ACCESS_VIOLATION in FSoftObjectPtr::Get() called from
+	   OpenGrokPortal, while Nyra was one word into her apology on Grok.
+
+	   A timer bound to a UOBJECT MEMBER FUNCTION is invalidated automatically when that
+	   object is destroyed. A timer holding a LAMBDA is not — the timer manager keeps a raw
+	   captured `this` and has no idea the actor has gone. Every other SetTimer in this file
+	   already used the member form; this one did not, and it was the only one that could
+	   outlive its actor.
+
+	   IT WAS LATENT FOR MONTHS AND I MADE IT FIRE. At GrokPortalDelay = 7 s the window was
+	   too small to hit. A5a raised it to 45 s AND added a second path that opens the portal
+	   early on proximity, leaving the clock pending — so the ordinary route became: open the
+	   way at ~30 s, walk through it at ~40 s, and have the timer come due on a destroyed
+	   spaceport while the player is on another planet. Widening a window is a change to a
+	   bug's likelihood even when it is not a change to its cause. */
+	void OpenGrokPortalOnTimer();
+
 	void ClearGrokPortal();
 
 	/** Watch for him walking back to where she stood. See GuideStreetTag. */

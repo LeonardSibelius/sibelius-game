@@ -294,6 +294,17 @@ void ASpaceport::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		DestroyLaunchRig();
 		bLaunching = false;
 	}
+
+	/* AND NOTHING OF THIS ACTOR'S IS LEFT TICKING. Member-function timers already
+	   invalidate themselves when the object dies, so after the OpenGrokPortalOnTimer fix
+	   this is redundant — which is exactly why it is here. It is the guard that would have
+	   caught the lambda, it costs one call on a level change, and the next timer someone
+	   adds gets it for free without having to know the rule. */
+	if (const UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearAllTimersForObject(this);
+	}
+
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -1829,10 +1840,21 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 	   the show happens once. */
 	if (!bImmediate && GrokPortalDelay > 0.0f)
 	{
-		World->GetTimerManager().SetTimer(GrokPortalTimer,
-			[this]() { OpenGrokPortal(true); }, GrokPortalDelay, false);
+		// MEMBER FUNCTION, NEVER A LAMBDA. See OpenGrokPortalOnTimer in the header: the
+		// lambda form kept a raw `this` that outlived the actor and crashed the game on
+		// Grok, one word into Nyra's last speech.
+		World->GetTimerManager().SetTimer(GrokPortalTimer, this,
+			&ASpaceport::OpenGrokPortalOnTimer, GrokPortalDelay, /*bLoop=*/false);
 		return;
 	}
+
+	/* THE WAY IS OPENING NOW, SO NOTHING MAY STILL BE WAITING TO OPEN IT.
+
+	   The proximity trigger (A5a) usually gets here first, which used to leave the fallback
+	   clock armed and pending behind it — the exact state that turned a latent dangling
+	   pointer into a reliable crash. Belt to the member-function braces: once the door is
+	   open there is no second opening to schedule. */
+	World->GetTimerManager().ClearTimer(GrokPortalTimer);
 
 	UNiagaraSystem* System = nullptr;
 	const FString Override = CVarGrokPortalFX.GetValueOnGameThread();
@@ -1967,6 +1989,11 @@ void ASpaceport::OpenGrokPortal(bool bImmediate)
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Spaceport] Grok portal open (revealed=%s)."),
 		bGrokPortalRevealed ? TEXT("yes") : TEXT("no"));
+}
+
+void ASpaceport::OpenGrokPortalOnTimer()
+{
+	OpenGrokPortal(/*bImmediate=*/true);
 }
 
 void ASpaceport::ClearGrokPortal()

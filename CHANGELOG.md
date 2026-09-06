@@ -15,6 +15,29 @@ The seven Unreal-capability experiments are the exception: they occupy
 closes. Walt's call, and his reason: this is the first build he would hand a stranger
 with no caveat, and Steam has no history to contradict it.
 
+## v1.1.0 — Protein Machines Inc.
+
+**The blue ghosts finally have a reason to be blue.** They took the space-travel
+enhancement, and they took too much of it.
+
+- **A new stop before the launch.** Protein Machines Inc. stands beside the deli plaza —
+  a walk-in enhancement office with a rotating molecular display. Eat your burger and
+  drink your coffee at Jacob's, then step in and press **E**. Boarding the rocket now
+  requires it: a body that has not been enhanced does not survive the trip.
+- **Nyra explains the ghosts.** A new recording, in her own voice, about enhancement for
+  space travel and the blue dancers who overdid it. The apparitions you have walked past
+  since you arrived in the city were people.
+- **The launch lost a camera.** One shot sat under the platform and showed six seconds of
+  blank surface. It is gone; the wide view holds through ignition.
+
+**Fixed — a crash at the last scene of the game.** Pressing **E** on Nyra on Grok could
+kill the game one word into her final speech. The fallback clock that opens the way to
+Grok was holding a raw pointer to the spaceport; once the way could also open early (1.0's
+"go and look for her"), the ordinary route left that clock pending, and it came due on a
+spaceport that no longer existed while the player was on another planet. It now uses a
+timer that cancels itself when its actor dies, and nothing is left pending once the way is
+open.
+
 ## v1.0 — the release
 
 **The game has a beginning, a middle and an end, and it tells you what to do the whole
