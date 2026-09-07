@@ -15,6 +15,37 @@ The seven Unreal-capability experiments are the exception: they occupy
 closes. Walt's call, and his reason: this is the first build he would hand a stranger
 with no caveat, and Steam has no history to contradict it.
 
+## v1.1.1 — The Sibelius Hotel
+
+**He finally builds something beautiful, and then his forty years answer to it.**
+
+- **Press G on Grok and a hotel appears.** After Nyra has said her piece, the last card
+  offers **[G]**, and the hillside gains a building — no loading screen, no travel, the
+  same sky and the same landscape. It is the Generate power, at the end of the game, on
+  another planet, making the one thing the whole memoir is about never being allowed to
+  make. Architecture by **DmitriyDryzhak**, now on the credits card with everyone else.
+- **The credits come after the hotel, not before it.** The eight messages to eight former
+  employers are about systems nobody kept; the hotel is the first thing built for its own
+  sake. So *"Something beautiful, at last"* is now the thing they answer to. Wander off
+  and they roll anyway — that writing is not going to sit behind an optional key press.
+
+**The living room gets the poker table, and the library is gone.**
+
+- **Video poker moved to the glass behind your desk**, where the door to the library used
+  to be — and it kept that door's trick. Hold **V** in the first minute and the deck
+  appears; Chapter 1's lesson is unchanged, the game is simply one level lighter.
+- **The Carousel of Fates and the library are cut.** A room nobody entered, and about
+  224 MB of download with it.
+
+**Fixed**
+
+- **Poker no longer deals a hand when you press E at something else.** The cabinet
+  answered any E press within 4.5 m rather than what you were aiming at — which was
+  harmless in a library of its own and constant in a living room.
+- **The cathedral door no longer "freezes" the game.** Opening poker and then travelling
+  left the controls locked to a card table that no longer existed. It was never a freeze;
+  the game was running perfectly and ignoring you.
+
 ## v1.1.0 — Protein Machines Inc.
 
 **The blue ghosts finally have a reason to be blue.** They took the space-travel
