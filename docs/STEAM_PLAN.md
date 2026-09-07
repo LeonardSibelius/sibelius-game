@@ -1,5 +1,7 @@
 # STEAM_PLAN — getting Leonard Sibelius onto Steam
 
+September 7, 2026 credit addition: **Sibelius Hotel — Elven architecture by DmitriyDryzhak**, https://www.fab.com/listings/1cb2369a-f53b-43fe-9c67-14790e3a4e15 . Included in the in-game artist credits; add to store credits when publishing the hotel update.
+
 Written 2026-08-26, the day v0.9.7.7 went to itch and Walt said he might be ready.
 State at the time: four public itch releases, 4.9 GB download, downloaded and played
 by other people on other machines.

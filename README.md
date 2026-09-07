@@ -125,6 +125,8 @@ The seven-chapter arc follows a software-engineering metaphor. **Ch1–Ch6 above
 
 ## Credits
 
+- Sibelius Hotel: **Elven architecture** by **DmitriyDryzhak** (Fab). https://www.fab.com/listings/1cb2369a-f53b-43fe-9c67-14790e3a4e15
+
 - Environment assets: **House Furniture** and **Modular House** by **QuadArt**, used with permission — https://fab.com/sellers/QuadArt
 - Cathedral: **Ultimate Gothic Cathedral** by **Ultima Store** (Fab, AI-usage permitted).
 - Stained glass materials: **Stained Glass 3D** by **twins-creators** (Fab, AI-usage permitted).

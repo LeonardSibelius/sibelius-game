@@ -1,5 +1,9 @@
 # Vendor packs — what a fresh clone does NOT get
 
+## Sibelius Hotel — added September 7, 2026
+
+**Elven architecture**, DmitriyDryzhak: https://www.fab.com/listings/1cb2369a-f53b-43fe-9c67-14790e3a4e15 . Install under `Content/ElvenArchitecture`, then run `Tools/Scripts/make_hotel_tile.py` to create `Content/Maps/L_SibeliusHotel_Generated.umap`. Both are Git-ignored. This architecture-only tile is revealed inside Grok by G and is included in packaging. See `docs/SIBELIUS_HOTEL.md`.
+
 `git clone` gives you a repo that **builds and runs, but is missing about 33 GB
 of purchased and downloaded content**. That content is git-ignored on purpose:
 it is licensed to the Epic account that bought it, this repo is public, and the

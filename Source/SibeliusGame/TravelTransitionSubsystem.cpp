@@ -213,6 +213,10 @@ void UTravelTransitionSubsystem::RemoveCover()
 
 FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 {
+	if (LevelName.Contains(TEXT("SibeliusHotel")))
+	{
+		return NSLOCTEXT("Travel", "GenerateHotel", "Generating the Sibelius Hotel...");
+	}
 	if (LevelName.Contains(TEXT("Poplar_Forest")) || LevelName.Contains(TEXT("Elsewhere")))
 	{
 		return NSLOCTEXT("Travel", "EnterForest", "Entering the Many Worlds...");

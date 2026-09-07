@@ -133,6 +133,26 @@ $checks = [ordered]@{
   # five, which reads as broken rather than absent.
   "her protein mouth"   = "$cooked\Audio\Dancers\dancer_protein_nyra_face.uasset"
 
+  # --- the epilogue (docs/SIBELIUS_HOTEL.md) --------------------------------
+  # THE HIGHEST-RISK CONTENT IN THE BUILD, and it looks like the lowest.
+  #
+  # L_SibeliusHotel_Generated is loaded by ULevelStreamingDynamic BY NAME at runtime. A
+  # name is a SOFT reference: the cooker does not follow it, so this map reaches the pak
+  # ONLY through its MapsToCook line. That is the v0.7.4 invisible-spaceport arrangement
+  # exactly — flawless in PIE, absent from the shipped game — and the failure here is
+  # silent, because a hotel that does not stream in looks identical to a hillside.
+  #
+  # The tile is gitignored (it is generated from a purchased pack into a public repo), so
+  # a clean checkout has to rebuild it with Tools/Scripts/make_hotel_tile.py BEFORE
+  # packaging. This check is what turns "forgot to regenerate" from a shipped bug into a
+  # failed package.
+  "the hotel"           = "$cooked\Maps\L_SibeliusHotel_Generated.umap"
+  # AND ITS ARCHITECTURE. The tile hard-references what it places, so these ride in with
+  # the map the way L_uFoods carries the supermarket — but ElvenArchitecture is a
+  # gitignored purchased pack, and an uninstalled one would cook a map full of nothing.
+  "the hotel's stone"   = "$cooked\ElvenArchitecture\Meshes\SM_Scene.uasset"
+  "its grounds"         = "$cooked\ElvenArchitecture\Meshes\SM_Grass.uasset"
+
   # --- the guide's voices ---------------------------------------------------
   "Nyra's spaceport speech" = "$cooked\Audio\Dancers\dancer_guide3_nyra.uasset"
   "the spaceport face"      = "$cooked\Audio\Dancers\dancer_guide3_nyra_face.uasset"

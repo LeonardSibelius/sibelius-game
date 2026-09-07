@@ -18,6 +18,7 @@
 #include "SwarmBenchSubsystem.h"
 #include "EngulfComponent.h"
 #include "GenerateComponent.h"    // Ch6 Generate driver
+#include "GrokEndingSubsystem.h"
 #include "SibeliusHUD.h"
 #include "BattleArrival.h"        // BattleWonGrant
 #include "ProgressionSubsystem.h"          // SIB-39 dev-overlay toggle
@@ -645,6 +646,10 @@ void ASibeliusGameCharacter::ToggleGameMenu()
 
 void ASibeliusGameCharacter::ToggleGenerate()
 {
+	if (UGrokEndingSubsystem* Ending = GetWorld()->GetSubsystem<UGrokEndingSubsystem>())
+	{
+		if (Ending->TryGenerateHotel()) { return; }
+	}
 	/* THE KEY ARRIVED — say so before anything can swallow it.
 
 	   "now G does nothing no matter how many times I press it" has two completely
