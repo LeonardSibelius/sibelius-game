@@ -82,6 +82,27 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	/* GIVE HIM HIS CONTROLS BACK NO MATTER HOW THIS ENDS.
+
+	   Walt, 2026-09-07: "now when i pass through the hidden cathedral door, the game
+	   freezes." It was not a freeze. The log:
+
+	       19:30:29.286  [PokerMachine] screen opened (stake 10).
+	       19:30:29.634  LoadMap: /Game/Maps/L_Cathedral
+
+	   E on the cathedral door also opened poker (the distance bind above), the level then
+	   travelled with the screen up, this actor was destroyed with the old world, and
+	   CloseScreen — "the one place input mode is restored" — never ran. He arrived in the
+	   cathedral in UIOnly mode with no UI to click: a game running perfectly and ignoring
+	   him, which is indistinguishable from a hang.
+
+	   AWormholeArrival learned this exact lesson and wrote it down: "a level torn down
+	   mid-passage would otherwise leave IgnoreMoveInput set on a controller that outlives
+	   this actor". Same rule, same fix, one actor later. Fixing the stray E press is not
+	   enough on its own - any travel with the screen open would do it, and a screen the
+	   player opened deliberately is the likeliest of all. */
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	/* SO IT CAN BE SEEN IN THE EDITOR, WHICH IS WHERE IT GETS PLACED.
 
 	   ApplyDeckVisual runs at BeginPlay, so until the game started this actor had no mesh

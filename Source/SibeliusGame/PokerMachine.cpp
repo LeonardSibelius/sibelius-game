@@ -16,6 +16,7 @@
 #include "PokerScreenWidget.h"
 #include "ProgressionSubsystem.h"
 #include "CodeVisionComponent.h"   // the cabinet inherits the library door's tutorial
+#include "InteractorComponent.h"   // ...and stands down where an aim tracer already exists
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogPokerMachine, Log, All);
@@ -57,6 +58,26 @@ APokerMachine::APokerMachine()
 	Glow->SetIntensity(2500.f);
 	Glow->SetAttenuationRadius(500.f);
 	Glow->CastShadows = false;
+}
+
+void APokerMachine::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// See the header. CloseScreen is idempotent-safe behind the bScreenOpen latch, and it
+	// is the only path that restores GameOnly and hides the cursor.
+	if (bScreenOpen)
+	{
+		UE_LOG(LogPokerMachine, Display,
+			TEXT("[PokerMachine] torn down with the screen open (%d) - restoring input."),
+			int32(EndPlayReason));
+		CloseScreen();
+	}
+
+	if (const UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearAllTimersForObject(this);
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void APokerMachine::OnConstruction(const FTransform& Transform)
@@ -200,6 +221,32 @@ void APokerMachine::TryEnableInput()
 			GetWorldTimerManager().SetTimer(InputRetryHandle, this, &APokerMachine::TryEnableInput, 0.25f, false);
 		}
 		return;
+	}
+
+	/* NOT IN A LEVEL THAT HAS AN INTERACTION TRACER (Walt, 2026-09-07: "poker keeps
+	   popping up").
+
+	   This raw bind exists for the LIBRARY, whose plain DefaultPawn has no tracer, so
+	   IInteractable::Interact never fired there. The header always said the office should
+	   use the IInteractable path instead — but nothing enforced it, so in the office BOTH
+	   paths were live, and this one asks only "is he within 450 cm", never "is he looking
+	   at me".
+
+	   That was harmless while the cabinet stood alone in a library. The moment it moved
+	   into the living room it became: press E for the legacy machine, a book, the cauldron,
+	   the cathedral door — and get poker as well, because all of them are inside 4.5 m of
+	   the deck.
+
+	   The tracer is the right arbiter: it asks what he is AIMING at. So where one exists,
+	   this bind stands down entirely and Interact_Implementation does the work. */
+	if (const APawn* Pawn = PC->GetPawn())
+	{
+		if (Pawn->FindComponentByClass<UInteractorComponent>())
+		{
+			UE_LOG(LogPokerMachine, Display,
+				TEXT("[PokerMachine] tracer level - raw E bind stood down; E is by aim."));
+			return;
+		}
 	}
 
 	EnableInput(PC);
