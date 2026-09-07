@@ -83,6 +83,13 @@ public:
 	/** Start the closing sequence now, whatever the state. Console: sib.GrokEnding.
 	 *  The only way to see this without playing six hours to reach Grok. */
 	void PlayEnding();
+	/** Handles G on Grok; returns false elsewhere so ordinary Generate still works. */
+	bool TryGenerateHotel();
+	/** Editor preview uses the real reveal without changing the player's saved grants. */
+	UFUNCTION(BlueprintCallable) void PreviewHotel();
+	UFUNCTION(BlueprintCallable) FString HotelStatus() const;
+	bool IsHotelGenerated() const { return bHotelGenerated; }
+	bool IsHotelGenerating() const { return bHotelRequested && !bHotelGenerated; }
 
 	/** Mid-roll. The objective banner stays out of the way while this is true. */
 	bool IsRunning() const { return bRunning && !bFinished; }
@@ -98,6 +105,43 @@ public:
 	bool HasFinished() const { return bFinished; }
 
 private:
+	/* THE OFFER COMES FIRST NOW (Walt, 2026-09-07).
+
+	   "i really would like to be given the option to G generate right after talking to
+	   Nyra, rather than waiting for all the credits. Make the credits appear after the
+	   hotel is generated."
+
+	   He is right, and it is a better ending than the one that was built. The memoir is
+	   forty years of systems nobody kept; the hotel is the first thing he was ever allowed
+	   to build for its own sake. Rolling the messages BEFORE it made them the finale and
+	   the hotel an afterthought. Rolling them AFTER means "Something beautiful, at last"
+	   is what the eight messages answer to.
+
+	   THE MEMOIR MUST NOT BECOME MISSABLE. It is the strongest writing in the project and
+	   it now sits behind a key press, so a player who never presses G would never see it.
+	   OfferEpilogue therefore arms a fallback: press G and the roll follows the hotel;
+	   press nothing and the roll comes anyway, with G still live afterwards. */
+	void OfferEpilogue();
+	bool bOffered = false;
+	FTimerHandle OfferTimer;
+
+	/** How long the offer stands before the memoir rolls without him. Generous: he is
+	 *  meant to look at the building, and the hotel takes a moment to notice. */
+	float EpilogueFallbackSeconds = 45.0f;
+
+	/** The hotel's own banner, and the beat before the memoir starts underneath it. */
+	float HotelBannerSeconds = 16.0f;
+
+	/** The last card, which drops the [G] line once there is nothing left to generate. */
+	FString DoorsCard() const;
+
+	void PrepareHotel();
+	UFUNCTION() void HotelLoaded();
+	UFUNCTION() void HotelShown();
+	UPROPERTY(Transient) TObjectPtr<class ULevelStreamingDynamic> HotelLevel;
+	bool bHotelRequested = false;
+	bool bHotelGenerated = false;
+	bool bHotelPreview = false;
 	void HandleGuideTalkFinished(UDancerAgentComponent* Dancer);
 	void AdvanceClosing();
 

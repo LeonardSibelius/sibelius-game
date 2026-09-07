@@ -574,6 +574,10 @@ FString ASibeliusHUD::CityObjective() const
 
 	FString Map = W->GetMapName();
 	Map.RemoveFromStart(W->StreamingLevelsPrefix);
+	if (Map == TEXT("L_SibeliusHotel"))
+	{
+		return TEXT("Sibelius Hotel — explore at your leisure.     [O] Return to the office");
+	}
 
 	/* GROK, WHICH HAS THREE STATES AND NOT TWO (docs/FUN_PLAN_2.md A1 + A2).
 
@@ -594,13 +598,18 @@ FString ASibeliusHUD::CityObjective() const
 
 		if (const UGrokEndingSubsystem* Ending = W->GetSubsystem<UGrokEndingSubsystem>())
 		{
+			if (Ending->IsHotelGenerated())
+			{
+				return TEXT("Explore the Sibelius Hotel ahead of Nyra.     [O] office");
+			}
+			if (Ending->IsHotelGenerating()) { return TEXT("Generating the Sibelius Hotel..."); }
 			if (Ending->IsRunning())
 			{
 				return FString();
 			}
 			if (Ending->HasFinished())
 			{
-				return TEXT("[O] the office, one more time     [N] [N] begin again");
+				return TEXT("[G] Generate the Sibelius Hotel     [O] office     [N] [N] begin again");
 			}
 		}
 
@@ -608,7 +617,7 @@ FString ASibeliusHUD::CityObjective() const
 		   came back, so the roll is not going to happen again (the grant is saved and the
 		   subsystem is session state). Give him the doors rather than nothing — arriving
 		   into silence is the bug this whole item exists to fix. */
-		return TEXT("[O] the office, one more time     [N] [N] begin again");
+		return TEXT("[G] Generate the Sibelius Hotel     [O] office     [N] [N] begin again");
 	}
 
 	// uFOODS. 1,956 meshes, 286 price tags and exactly one counter. Say which.

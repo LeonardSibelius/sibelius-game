@@ -13,6 +13,8 @@
 #include "HAL/IConsoleManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "Engine/LevelStreamingDynamic.h"
+#include "Misc/PackageName.h"
 
 namespace
 {
@@ -50,20 +52,22 @@ namespace
 		TEXT("The office and its furniture  -  QuadArt\n")
 		TEXT("The space port  -  PackDev\n")
 		TEXT("Grok  -  Velarion\n")
+		TEXT("Sibelius Hotel architecture  -  DmitriyDryzhak\n")
 		TEXT("The passage and the portal  -  Dr.Game\n")
 		TEXT("The cathedral  -  Ultima Store\n")
 		TEXT("Stained glass  -  twins-creators\n")
 		TEXT("Gideon, Greystone and Echo  -  Epic Games");
 
-	/* THE LAST CARD. Both keys are global and neither is bound here — see the header.
+	/* THE CARD OF KEYS LIVES IN UGrokEndingSubsystem::DoorsCard() NOW, not here.
 
-	   [O] is named first because it is the one he already knows: it has taken him home
-	   from every world since the Many Worlds door. N-N is named second and plainly,
-	   because a player who has just finished should be told how to start again rather than
-	   left to find it in the controls list. */
-	const TCHAR* const P_DoorsCard =
-		TEXT("[O]   the office, one more time\n")
-		TEXT("[N] [N]   begin again");
+	   It has to be built rather than written down, because [G] belongs on it only while
+	   there is still a hotel to generate — and since Walt's reordering that card is shown
+	   twice: once as the offer straight after Nyra speaks, and once at the end of the
+	   memoir roll, by which time the building is usually already standing.
+
+	   None of the keys are bound here in any case, for the reason ABattleArrival gives
+	   about its own pair: [O] is already global and N-N is already the player-facing New
+	   Game. This stages the offer and owns none of them. */
 
 	/* SEE IT WITHOUT PLAYING SIX HOURS TO GROK.
 
@@ -87,6 +91,12 @@ namespace
 void UGrokEndingSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
+	if (UWorld::RemovePIEPrefix(InWorld.GetMapName()) == TEXT("L_Grok"))
+	{
+		const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+		bHotelRequested = Progression && Progression->HasClaimedGrant(TEXT("Grok.HotelGenerated"));
+		PrepareHotel(); // Load invisibly during the speech; G is the visible reveal.
+	}
 
 	/* SUBSCRIBE IN EVERY WORLD, and let the event never come in most of them. The
 	   alternative — testing the map name here — would put a second copy of "which level is
@@ -118,8 +128,16 @@ void UGrokEndingSubsystem::Deinitialize()
 			Dancers->OnGuideTalkFinished.Remove(TalkFinishedHandle);
 		}
 		World->GetTimerManager().ClearTimer(ClosingTimer);
+		// The offer's fallback outlives nothing here, but a pending PlayEnding on a world
+		// being torn down is the same call into a dead HUD that ClosingTimer guards against.
+		World->GetTimerManager().ClearTimer(OfferTimer);
 	}
 	TalkFinishedHandle.Reset();
+	if (HotelLevel)
+	{
+		HotelLevel->OnLevelLoaded.RemoveDynamic(this, &UGrokEndingSubsystem::HotelLoaded);
+		HotelLevel->OnLevelShown.RemoveDynamic(this, &UGrokEndingSubsystem::HotelShown);
+	}
 
 	Super::Deinitialize();
 }
@@ -133,7 +151,208 @@ void UGrokEndingSubsystem::HandleGuideTalkFinished(UDancerAgentComponent* Dancer
 		return;
 	}
 
-	PlayEnding();
+	OfferEpilogue();
+}
+
+FString UGrokEndingSubsystem::DoorsCard() const
+{
+	/* DROP THE [G] LINE ONCE THERE IS NOTHING LEFT TO GENERATE. Offering a key that now
+	   only answers "already standing" is the kind of small lie a last screen should not
+	   tell. */
+	FString Card;
+	if (!bHotelGenerated)
+	{
+		Card += TEXT("[G]   Generate the Sibelius Hotel\n");
+	}
+	Card += TEXT("[O]   the office, one more time\n");
+	Card += TEXT("[N] [N]   begin again");
+	return Card;
+}
+
+void UGrokEndingSubsystem::OfferEpilogue()
+{
+	if (bOffered || bRunning)
+	{
+		return;
+	}
+	bOffered = true;
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0))
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			HUD->ShowBanner(DoorsCard(), EpilogueFallbackSeconds);
+		}
+	}
+
+	/* AND THE MEMOIR COMES ANYWAY IF HE NEVER PRESSES IT. The roll is the ending of the
+	   game; putting it behind an optional key would mean a player who walked off to look
+	   at the sky never saw a word of it. PlayEnding early-outs on bRunning, so whichever
+	   of the two paths arrives first wins and the other does nothing. */
+	World->GetTimerManager().SetTimer(OfferTimer, this,
+		&UGrokEndingSubsystem::PlayEnding, EpilogueFallbackSeconds, /*bLoop=*/false);
+
+	UE_LOG(LogSibeliusGame, Display,
+		TEXT("[GrokEnding] Offered the hotel. The memoir follows it, or follows %.0fs of silence."),
+		EpilogueFallbackSeconds);
+}
+
+bool UGrokEndingSubsystem::TryGenerateHotel()
+{
+	UWorld* World = GetWorld();
+	if (!World || UWorld::RemovePIEPrefix(World->GetMapName()) != TEXT("L_Grok"))
+	{
+		return false;
+	}
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
+	ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr;
+
+	/* EVERY REFUSAL SAYS SOMETHING (docs/SIBELIUS_HOTEL.md, and this project's oldest
+	   complaint about this exact key).
+
+	   These branches all returned a bare true, which tells ToggleGenerate "handled, stop
+	   here" — so on Grok, G opened nothing, built nothing and said nothing. The comment
+	   block immediately below the call site in ASibeliusGameCharacter::ToggleGenerate is
+	   about Walt's own bug report on this key: "now G does nothing no matter how many times
+	   I press it", and its rule is "say so before anything can swallow it".
+
+	   A silent key has two causes that look identical from the hillside — the feature is not
+	   ready for you yet, or the feature is broken — and the player cannot tell them apart.
+	   Each refusal now names which. */
+	/* G IS LIVE THE MOMENT SHE HAS FINISHED SPEAKING — it no longer waits for the roll,
+	   because the roll now waits for IT. If the fallback started the memoir first, G still
+	   works underneath it; the hotel simply appears while his forty years scroll past,
+	   which is not a bad accident. No banner during the roll, though: the credits own the
+	   screen, and a second speaker on it is a collision this HUD has hit twice. */
+	if (!Progression || !Progression->HasClaimedGrant(UDancerAgentComponent::GrokTalkedGrant))
+	{
+		if (HUD)
+		{
+			HUD->ShowBanner(TEXT("Nyra is waiting. Hear her out first."), 4.0f);
+		}
+		return true;
+	}
+	if (bHotelGenerated)
+	{
+		if (HUD)
+		{
+			HUD->ShowBanner(TEXT("The Sibelius Hotel is already standing. The entrance is ahead of Nyra."), 5.0f);
+		}
+		return true;
+	}
+	if (bHotelRequested)
+	{
+		if (HUD)
+		{
+			HUD->ShowBanner(TEXT("The Sibelius Hotel is on its way..."), 3.0f);
+		}
+		return true;
+	}
+	PrepareHotel();
+	if (!HotelLevel)
+	{
+		if (HUD) { HUD->ShowBanner(TEXT("The Sibelius Hotel is not installed."), 4.0f); }
+		return true;
+	}
+	bHotelRequested = true;
+	if (HUD) { HUD->ShowBanner(TEXT("Generating the Sibelius Hotel..."), 4.0f); }
+	HotelLoaded();
+	return true;
+}
+
+void UGrokEndingSubsystem::PrepareHotel()
+{
+	if (HotelLevel) { return; }
+	const FString Map(TEXT("/Game/Maps/L_SibeliusHotel_Generated"));
+	if (!FPackageName::DoesPackageExist(Map)) { return; }
+	// Entrance is 40 m ahead of the Grok arrival, facing into the landscape.
+	// The approach descends 5.25 m back toward Nyra without moving the player.
+	const FRotator Rotation(0.0f, 294.6f, 0.0f);
+	FVector Entrance = FVector(193891.4, 149016.0, -1000.0) + Rotation.RotateVector(FVector(4000, 0, 0));
+	const FVector Offset = Entrance - Rotation.RotateVector(FVector(1900, 500, 275.36388));
+	ULevelStreamingDynamic::FLoadLevelInstanceParams Params(GetWorld(), Map, FTransform(Rotation, Offset));
+	Params.bInitiallyVisible = false;
+	bool bSuccess = false;
+	HotelLevel = ULevelStreamingDynamic::LoadLevelInstance(Params, bSuccess);
+	if (!bSuccess) { HotelLevel = nullptr; return; }
+	HotelLevel->OnLevelLoaded.AddDynamic(this, &UGrokEndingSubsystem::HotelLoaded);
+	HotelLevel->OnLevelShown.AddDynamic(this, &UGrokEndingSubsystem::HotelShown);
+	HotelLoaded();
+}
+
+void UGrokEndingSubsystem::HotelLoaded()
+{
+	if (HotelLevel && bHotelRequested)
+	{
+		HotelLevel->SetShouldBeVisible(true);
+	}
+}
+
+void UGrokEndingSubsystem::HotelShown()
+{
+	bHotelGenerated = true;
+	if (UProgressionSubsystem* Progression = bHotelPreview ? nullptr : UProgressionSubsystem::Get(this))
+	{
+		Progression->ClaimOneTimeGrant(TEXT("Grok.HotelGenerated"));
+	}
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			/* SIXTEEN SECONDS, NOT EIGHT (Walt: "could you please make this menu last a
+			   little longer? it vanishes quickly").
+
+			   Three lines, and the middle one is the point of the whole epilogue — a man
+			   who spent forty years building systems nobody kept finally builds something
+			   beautiful. It is also the only time the game says where the entrance is.
+			   Eight seconds was less time than it takes to look up at the building. */
+			HUD->ShowBanner(TEXT("SIBELIUS HOTEL\nSomething beautiful, at last.\nThe entrance is ahead of Nyra."),
+				HotelBannerSeconds);
+		}
+	}
+
+	/* AND NOW THE MEMOIR, WITH THE HOTEL STANDING BEHIND IT.
+
+	   This is the whole of Walt's reordering. He built the thing; the eight messages about
+	   the systems that were never kept now read as the answer to it rather than the
+	   preamble. Held until the hotel's own banner has cleared so the two do not share the
+	   screen — ShowBanner and ShowMemoir are different channels drawn 90 px apart, and the
+	   memoir roll starts with a banner of its own. */
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(OfferTimer);   // the fallback is no longer needed
+		if (!bRunning)
+		{
+			World->GetTimerManager().SetTimer(OfferTimer, this,
+				&UGrokEndingSubsystem::PlayEnding, HotelBannerSeconds + 1.0f, /*bLoop=*/false);
+		}
+	}
+}
+
+void UGrokEndingSubsystem::PreviewHotel()
+{
+	if (!GetWorld() || GetWorld()->WorldType != EWorldType::PIE ||
+		UWorld::RemovePIEPrefix(GetWorld()->GetMapName()) != TEXT("L_Grok")) { return; }
+	bHotelPreview = true;
+	bHotelRequested = true;
+	PrepareHotel();
+	HotelLoaded();
+}
+
+FString UGrokEndingSubsystem::HotelStatus() const
+{
+	return FString::Printf(TEXT("world=%s type=%d package=%d requested=%d generated=%d stream=%d loaded=%d visible=%d"),
+		*GetWorld()->GetMapName(), int32(GetWorld()->WorldType),
+		FPackageName::DoesPackageExist(TEXT("/Game/Maps/L_SibeliusHotel_Generated")),
+		bHotelRequested, bHotelGenerated, HotelLevel != nullptr,
+		HotelLevel && HotelLevel->IsLevelLoaded(), HotelLevel && HotelLevel->IsLevelVisible());
 }
 
 void UGrokEndingSubsystem::PlayEnding()
@@ -221,7 +440,10 @@ void UGrokEndingSubsystem::AdvanceClosing()
 	{
 		if (HUD)
 		{
-			HUD->ShowBanner(P_DoorsCard, DoorsDwellSeconds);
+			// DoorsCard(), not the fixed string: by the time the roll ends the hotel is
+			// usually already standing, and offering [G] then would be a key that only
+			// answers "already standing".
+			HUD->ShowBanner(DoorsCard(), DoorsDwellSeconds);
 		}
 		/* AND THE OBJECTIVE BANNER PICKS THEM UP FROM HERE. This card fades; the two doors
 		   do not, so ASibeliusHUD::CityObjective reads HasFinished and keeps them on screen
