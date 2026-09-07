@@ -52,8 +52,49 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Poker Machine")
 	TObjectPtr<UPointLightComponent> Glow;
 
+	/* HIDDEN UNTIL HE LOOKS PROPERLY (Walt, 2026-09-06).
+
+	   The library level is being cut — he never went into it — and the poker cabinet moves
+	   to the spot the door to it occupied: the south sliding glass behind his spawn.
+
+	   THAT DOOR WAS THE CODE VISION TUTORIAL. The first two objectives in the game are
+	   "Vision [V] shows hidden doors. Turn around and look at the glass" and "Poker is
+	   through the glass behind you", and Tutorial.Poker is claimed by this actor when he
+	   plays. Standing a plainly visible cabinet there would tell a new player to hold V at
+	   something already in front of him, which teaches the opposite of the lesson.
+
+	   So the cabinet inherits the door's trick. Hold V and it appears; once seen it stays
+	   seen. Chapter 1 keeps its exact shape — hold V, something is there, go and use it —
+	   and the game loses a level instead of a lesson.
+
+	   Same mechanism as ASpaceport's Grok portal and AHiddenDoor before it, and the same
+	   two rules: it does NOT re-hide when V is released (a player holding V with one hand
+	   and pressing E with the other has been given a chore), and a failed bind REVEALS it
+	   rather than leaving it hidden, because an unreachable poker table is worse than an
+	   un-dramatic one.
+
+	   Off by default, so the cabinet in any other level behaves exactly as it always has. */
+	UPROPERTY(EditAnywhere, Category = "Poker Machine")
+	bool bHiddenUntilCodeVision = false;
+
+	bool IsRevealed() const { return bRevealed; }
+
 protected:
 	virtual void BeginPlay() override;
+
+	/* SO IT CAN BE SEEN IN THE EDITOR, WHICH IS WHERE IT GETS PLACED.
+
+	   ApplyDeckVisual runs at BeginPlay, so until the game started this actor had no mesh
+	   at all — an empty node in the viewport. That was harmless while the cabinet lived in
+	   a level nobody dragged it around in; it stopped being harmless the moment placing it
+	   by eye in the living room became the job, because you cannot nudge what you cannot
+	   see. OnConstruction runs in the editor and on spawn, so the deck is now there to aim
+	   at.
+
+	   IT DELIBERATELY DOES NOT APPLY THE HIDDEN STATE. bHiddenUntilCodeVision is a RUNTIME
+	   secret; hiding the cabinet in the editor too would put us straight back to placing an
+	   invisible object. ApplyRevealState stays in BeginPlay alone. */
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 	/** Replace the default cube with a standing poker deck (ace face, card aspect). */
 	void ApplyDeckVisual();
@@ -70,6 +111,22 @@ private:
 	void OnInteractKey();
 	bool IsPlayerNear(float Radius) const;
 	static constexpr float SitDownRadius = 450.0f;
+
+	/** Bind to the player's Code Vision, retrying while the pawn is not ready. */
+	void BindToCodeVision();
+
+	/** UFUNCTION because OnCodeVisionChanged is a DYNAMIC multicast. */
+	UFUNCTION()
+	void HandleCodeVisionChanged(bool bIsActive);
+
+	/** Show it for good. Idempotent. */
+	void Reveal();
+
+	void ApplyRevealState();
+
+	bool bRevealed = false;
+	int32 VisionBindAttempts = 0;
+	FTimerHandle VisionBindHandle;
 
 	int32 InputAttempts = 0;
 	FTimerHandle InputRetryHandle;

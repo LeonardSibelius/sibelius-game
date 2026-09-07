@@ -15,6 +15,8 @@
 #include "TimerManager.h"
 #include "PokerScreenWidget.h"
 #include "ProgressionSubsystem.h"
+#include "CodeVisionComponent.h"   // the cabinet inherits the library door's tutorial
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogPokerMachine, Log, All);
 
@@ -29,13 +31,39 @@ APokerMachine::APokerMachine()
 	CabinetMesh->SetupAttachment(SceneRoot);
 	CabinetMesh->SetCollisionProfileName(TEXT("BlockAll"));   // SC9: focus trace must land
 
+	/* THE DECK'S PROPORTIONS ARE A COMPONENT DEFAULT, NOT A RUNTIME WRITE.
+
+	   18 cm thick, 114 cm wide, 160 cm tall — a poker card's 2.5:3.5, standing on the
+	   floor with its centre at half height.
+
+	   They used to be set in ApplyDeckVisual, which runs at BeginPlay, so the code
+	   overwrote this component's transform every single time the game started. That was
+	   invisible while the cabinet sat in a level nobody adjusted it in. The moment Walt
+	   dragged it into place in the living room it became the whole problem: he moved it,
+	   saved, pressed Play, and watched it jump back up behind the curtain.
+
+	   A default belongs in the constructor. An instance's transform belongs to whoever
+	   placed it, and nothing at runtime may take it back. */
+	CabinetMesh->SetRelativeScale3D(FVector(0.18f, 1.14f, 1.60f));
+	CabinetMesh->SetRelativeLocation(FVector(0.f, 0.f, 80.f));
+
 	Glow = CreateDefaultSubobject<UPointLightComponent>(TEXT("Glow"));
 	Glow->SetupAttachment(SceneRoot);
-	Glow->SetRelativeLocation(FVector(0.f, 0.f, 140.f));
+	// 50 cm in FRONT of the deck at mid-height, so the felt green lands on the card face
+	// rather than inside it. ApplyDeckVisual used to move it here at BeginPlay; it is a
+	// default like the deck's own proportions, and defaults belong in the constructor.
+	Glow->SetRelativeLocation(FVector(50.f, 0.f, 80.f));
 	Glow->SetLightColor(FLinearColor(0.25f, 0.85f, 0.45f));   // felt green
 	Glow->SetIntensity(2500.f);
 	Glow->SetAttenuationRadius(500.f);
 	Glow->CastShadows = false;
+}
+
+void APokerMachine::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	// The deck, so the editor has something to show. NOT the reveal state — see the header.
+	ApplyDeckVisual();
 }
 
 void APokerMachine::BeginPlay()
@@ -43,6 +71,100 @@ void APokerMachine::BeginPlay()
 	Super::BeginPlay();
 	ApplyDeckVisual();
 	TryEnableInput();
+
+	// See bHiddenUntilCodeVision: in the living room this cabinet inherits the tutorial
+	// the library door used to carry. Everywhere else it is simply visible, as before.
+	ApplyRevealState();
+	if (bHiddenUntilCodeVision && !bRevealed)
+	{
+		BindToCodeVision();
+	}
+}
+
+/* ===================================================================================
+   HOLD V AND IT IS THERE — the Chapter 1 lesson, kept when the library was cut.
+   =================================================================================== */
+
+void APokerMachine::ApplyRevealState()
+{
+	const bool bVisible = (!bHiddenUntilCodeVision || bRevealed);
+
+	// Hide the BODY, not the actor. SetActorHiddenInGame would take the glow with it, and
+	// a felt-green light with nothing under it is a stranger sight than an empty corner.
+	if (CabinetMesh)
+	{
+		CabinetMesh->SetVisibility(bVisible, /*bPropagateToChildren=*/true);
+		// Collision follows visibility so the interactor's focus trace cannot land on an
+		// invisible cabinet — E must not work on something he has not found yet.
+		CabinetMesh->SetCollisionEnabled(bVisible
+			? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
+	}
+	if (Glow)
+	{
+		Glow->SetVisibility(bVisible);
+	}
+}
+
+void APokerMachine::Reveal()
+{
+	if (bRevealed)
+	{
+		return;
+	}
+	bRevealed = true;
+	ApplyRevealState();
+	UE_LOG(LogTemp, Display, TEXT("[Poker] Revealed by Code Vision."));
+}
+
+void APokerMachine::HandleCodeVisionChanged(bool bIsActive)
+{
+	if (bIsActive)
+	{
+		Reveal();
+	}
+	// Releasing V does NOT hide it again. See bHiddenUntilCodeVision.
+}
+
+void APokerMachine::BindToCodeVision()
+{
+	if (bRevealed)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	UCodeVisionComponent* CV = Pawn ? Pawn->FindComponentByClass<UCodeVisionComponent>() : nullptr;
+	if (CV)
+	{
+		CV->OnCodeVisionChanged.AddDynamic(this, &APokerMachine::HandleCodeVisionChanged);
+		if (CV->IsCodeVisionActive())
+		{
+			Reveal();   // he is already holding V as the level comes up
+		}
+		return;
+	}
+
+	/* RETRY, THEN GIVE UP BY REVEALING. AHiddenDoor's lesson: the pawn is not always there
+	   when something wants to bind to it. Unlike that door, failing here would hide the
+	   game's FIRST objective behind a power that can never fire, so the fallback shows the
+	   cabinet rather than concealing it. A missed flourish beats an unplayable tutorial. */
+	if (++VisionBindAttempts < 20)
+	{
+		World->GetTimerManager().SetTimer(VisionBindHandle, this,
+			&APokerMachine::BindToCodeVision, 0.5f, /*bLoop=*/false);
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[Poker] No Code Vision component after %d attempts - revealing the cabinet so "
+		     "the opening tutorial is never stuck."), VisionBindAttempts);
+	Reveal();
 }
 
 void APokerMachine::ApplyDeckVisual()
@@ -55,16 +177,16 @@ void APokerMachine::ApplyDeckVisual()
 	{
 		CabinetMesh->SetStaticMesh(Cube);
 	}
-	// 18cm thick, 114cm wide, 160cm tall — poker card 2.5:3.5. Center at half height.
-	CabinetMesh->SetRelativeScale3D(FVector(0.18f, 1.14f, 1.60f));
-	CabinetMesh->SetRelativeLocation(FVector(0.f, 0.f, 80.f));
+	/* NO TRANSFORM WRITES HERE. The deck's proportions moved to the constructor, where a
+	   default belongs — see the comment there. This function assigns the LOOK (mesh and
+	   material) and nothing else, so a cabinet someone placed by hand stays where they
+	   put it when the game starts.
+
+	   Walt found this the only way it can be found: he dragged it into the living room,
+	   saved, pressed Play, and it jumped back up behind the curtain. */
 	if (Ace)
 	{
 		CabinetMesh->SetMaterial(0, Ace);
-	}
-	if (Glow)
-	{
-		Glow->SetRelativeLocation(FVector(50.f, 0.f, 80.f));
 	}
 }
 
