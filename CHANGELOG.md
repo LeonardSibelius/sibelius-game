@@ -15,6 +15,21 @@ The seven Unreal-capability experiments are the exception: they occupy
 closes. Walt's call, and his reason: this is the first build he would hand a stranger
 with no caveat, and Steam has no history to contradict it.
 
+## v1.1.2 — Official Transhuman
+
+**There is a trophy in the hotel.**
+
+The front door of the Sibelius Hotel opens into a small entryway, and until now that
+entryway went nowhere. It has a golden trophy in it — walk into it and the screen says
+**OFFICIAL TRANSHUMAN**, and your save remembers it forever.
+
+It is the last thing you collect in the game, and the joke it makes is the one the whole
+memoir has been building to: a man whose forty years of work was never certified by
+anybody finally gets a certificate — from a hotel he generated himself, on a planet forty
+light years from the office.
+
+Golden Trophy by **Incg5764**, used under CC BY 4.0 and credited on the closing cards.
+
 ## v1.1.1 — The Sibelius Hotel
 
 **He finally builds something beautiful, and then his forty years answer to it.**

@@ -113,6 +113,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "0"))
 	int32 SauceReward = 25;
 
+	/* WHAT THE BANNER SAYS WHEN IT IS CLAIMED, if this shrine wants its own words.
+
+	   The attic key already had a line of its own, hardcoded inside the bGrantsKey branch.
+	   The Sibelius Hotel's trophy wants one too — "OFFICIAL TRANSHUMAN" — and a second
+	   hardcoded case would have made that a pattern rather than an exception, so it is a
+	   property now and the key's line moves onto it.
+
+	   Left empty, nothing extra is drawn and the shrine behaves exactly as before. World
+	   text is deliberately NOT an option here: the hotel proved twice that a sign against
+	   that architecture cannot be read at any size or colour, and the banner channel is the
+	   one that works. */
+	UPROPERTY(EditAnywhere, Category = "Power Grant")
+	FString ClaimBanner;
+
+	UPROPERTY(EditAnywhere, Category = "Power Grant", meta = (ClampMin = "0.5"))
+	float ClaimBannerSeconds = 6.0f;
+
 	// One-time claim key recorded in the progression save. None = derived:
 	// the verb name when bGrantsPower, else this actor's level name — override
 	// only if two shrines must share a claim.

@@ -98,10 +98,65 @@ STAIRS_SCALE  = 1.0
 # a re-run must never throw away a hand-adjusted pose.
 #
 # Find them in the Outliner as HotelStep_0 .. HotelStep_3. Delete one and it stays deleted.
-STEP_CUBES   = 8            # 4 more, asked for once the first four were placed
+STEP_CUBES   = 8
 STEP_SCALE   = unreal.Vector(3, 3, 0.3)     # 300 x 300 x 30 cm
-STEP_SPACING = 320.0                        # cm apart along the approach
-STEP_RISE    = 90.0                         # cm higher each one
+
+# THEY CLIMB A PLINTH NOW, NOT A GUESSED LINE (Walt: "the outcroppings are not the only
+# way into the hotel. I need to be able to get on those white cylinders with the gold
+# birds").
+#
+# The plinths ARE the entrance, and this script already knows exactly where they are — its
+# own dump measured them: Phoenix2 sits at (1493, 92, 279) and Phoenix at (1493, 1319, 279),
+# both with extent (137, 134, 212). So the flight can be built against one instead of laid
+# along a line nobody chose.
+#
+# RISE PER STEP IS THE NUMBER THAT MATTERS. A UE character steps up about 45 cm without
+# jumping; anything taller is a wall. 40 leaves margin, which is why there are eight cubes
+# and not three.
+# THE PLINTH FLIGHT IS A SECOND SET OF CUBES, NOT A REPLACEMENT FOR THE FIRST.
+#
+# A first draft of this rebuilt HotelStep_* in place — which would have destroyed the cubes
+# Walt had already dragged onto the outcroppings. He asked "i still have the cubes on the
+# outcroppings, right?" before running it, which is the only reason it did not happen.
+#
+# There are two ways into the hotel and he wants both: the outcroppings he placed by hand,
+# and a flight up a plinth. So the flight gets its OWN name. HotelStep_* is his, spawned
+# once and never touched again; HotelPlinth_* is this script's, rebuilt against the statue
+# whenever the tile is regenerated. Neither can eat the other.
+PLINTH_PREFIX  = 'HotelPlinth_'
+
+STEP_TARGET    = 'Phoenix2'   # which plinth to build up to; 'Phoenix' is the far one
+STEP_RISE_EACH = 40.0         # cm per step - keep under ~45 or he cannot walk up it
+STEP_RUN_EACH  = 130.0        # cm forward per step
+STEP_APPROACH  = -1.0         # which side to climb from along X: -1 approaches from lower X
+
+# THE TROPHY IN THE ENTRYWAY (Walt: "maybe some trophy in there that says 'Official
+# Transhuman' on it...").
+#
+# The front door opens into a small entryway that dead-ends, and the alternative to that
+# being a disappointment was either a hotel interior — a whole level, days, and another
+# pack, four days before the store page — or one object that makes the room the point.
+#
+# It is also the better joke. The city is Trans Human City, the blue ghosts are transhumans
+# who took too much of the treatment, and Leonard has spent the game becoming part AI. A
+# man whose forty years of work was never certified by anybody finally gets a certificate,
+# from a hotel he generated himself, on a planet.
+#
+# NO NEW ACTOR CLASS. APowerGrant is exactly this: a placeable thing you walk into, claimed
+# once ever, recorded in the save, with a glow and a spin and a sound. It only needed a
+# ClaimBanner property to say its own words.
+#
+# Golden Trophy by Incg5764, CC BY 4.0 — attribution is a LICENCE CONDITION here, not the
+# courtesy the other credits are. It is on the artists card for that reason.
+TROPHY_MESH   = '/Game/Trophy/golden_trophy/StaticMeshes/golden_trophy'
+TROPHY_LABEL  = 'TranshumanTrophy'
+TROPHY_BANNER = 'OFFICIAL TRANSHUMAN'
+TROPHY_GRANT  = 'Grok.Transhuman'
+TROPHY_SAUCE  = 100
+TROPHY_SCALE  = 3.0
+# Spawned once and never moved again, like HotelStep_*: where it lands is a guess this
+# script cannot check, and where it ends up is Walt's.
+TROPHY_LOC    = unreal.Vector(2100, APPROACH_Y, 300)
 
 SIGN_ENABLED = False
 SIGN_LOC   = unreal.Vector(2100, 200, 600)
@@ -227,6 +282,11 @@ def main():
     existing_steps = {a.get_actor_label(): a for a in actors.get_all_level_actors()
                       if a.get_actor_label().startswith('HotelStep_')}
 
+    # The plinth flight is rebuilt every run; HotelStep_* above is never touched.
+    for a in [x for x in actors.get_all_level_actors()
+              if x.get_actor_label().startswith(PLINTH_PREFIX)]:
+        actors.destroy_actor(a)
+
     # NEW CUBES ARRIVE BESIDE THE OLD ONES, NOT BACK AT THE ORIGINAL GUESS.
     #
     # The first four were spawned on a line this script picked blind and then dragged into
@@ -240,29 +300,102 @@ def main():
             anchor = (i, a.get_actor_location())
             break
 
-    spawned = 0
-    for i in range(STEP_CUBES):
-        label = 'HotelStep_%d' % i
-        if label in existing_steps:
-            continue          # already there, wherever he has since put it — leave it alone
-        if anchor:
-            n = i - anchor[0]
-            where = unreal.Vector(anchor[1].x + STEP_SPACING * n,
-                                  anchor[1].y,
-                                  anchor[1].z + STEP_RISE * n)
-        else:
-            where = unreal.Vector(RAMP_LOC.x + STEP_SPACING * i,
-                                  APPROACH_Y,
-                                  RAMP_LOC.z + STEP_RISE * i)
+    # WHERE THE FLIGHT LANDS. Read off the plinth itself rather than written down, so a
+    # re-generated tile cannot leave the stairs climbing to where a statue used to be.
+    target = None
+    for a in actors.get_all_level_actors():
+        if a.get_actor_label() == STEP_TARGET:
+            o, e = a.get_actor_bounds(False)
+            target = (o, e)
+            unreal.log('HOTEL_STEPTARGET %s centre=%s extent=%s' % (STEP_TARGET, o, e))
+            break
+    if target is None:
+        unreal.log_warning('HOTEL_STEPTARGET %s not found - steps fall back to the old line'
+                           % STEP_TARGET)
+
+    def make_cube(label, where):
         c = actors.spawn_actor_from_class(unreal.StaticMeshActor, where)
         c.set_actor_label(label)
         c.static_mesh_component.set_static_mesh(unreal.load_asset('/Engine/BasicShapes/Cube'))
         c.static_mesh_component.set_collision_profile_name('BlockAll')
         c.set_actor_scale3d(STEP_SCALE)
         c.set_mobility(unreal.ComponentMobility.MOVABLE)   # so he can drag it
+        return c
+
+    # HIS CUBES: spawned once, never moved again, wherever he has dragged them.
+    spawned = 0
+    for i in range(STEP_CUBES):
+        label = 'HotelStep_%d' % i
+        if label in existing_steps:
+            continue
+        if anchor:
+            n = i - anchor[0]
+            where = unreal.Vector(anchor[1].x + STEP_RUN_EACH * n,
+                                  anchor[1].y,
+                                  anchor[1].z + STEP_RISE_EACH * n)
+        else:
+            where = unreal.Vector(RAMP_LOC.x + STEP_RUN_EACH * i,
+                                  APPROACH_Y,
+                                  RAMP_LOC.z + STEP_RISE_EACH * i)
+        make_cube(label, where)
         spawned += 1
+
+    # THE PLINTH FLIGHT: rebuilt from the statue's measured bounds every run.
+    if target:
+        o, e = target
+        top_x = o.x + STEP_APPROACH * (e.x + STEP_RUN_EACH * 0.5)
+        for n in range(STEP_CUBES):
+            # n = 0 is the top step, level with the plinth; each one below steps out and down.
+            make_cube('%s%d' % (PLINTH_PREFIX, n),
+                      unreal.Vector(top_x + STEP_APPROACH * STEP_RUN_EACH * n,
+                                    o.y,
+                                    o.z - STEP_RISE_EACH * n))
+        unreal.log('HOTEL_PLINTH flight of %d up to %s, top at Z=%.0f, rise %.0f each'
+                   % (STEP_CUBES, STEP_TARGET, o.z, STEP_RISE_EACH))
     unreal.log('HOTEL_STEPS spawned=%d kept=%d (drag HotelStep_* into place, then Ctrl+S)'
                % (spawned, STEP_CUBES - spawned))
+    # THE TROPHY. Spawned once; a re-run leaves it wherever Walt dragged it.
+    trophy_cls = unreal.load_class(None, '/Script/SibeliusGame.PowerGrant')
+    have_trophy = any(a.get_actor_label() == TROPHY_LABEL
+                      for a in actors.get_all_level_actors())
+    if trophy_cls and not have_trophy:
+        mesh = unreal.load_asset(TROPHY_MESH)
+        if mesh is None:
+            unreal.log_warning('HOTEL_TROPHY %s did not load - is it imported and SAVED?'
+                               % TROPHY_MESH)
+        else:
+            t = actors.spawn_actor_from_class(trophy_cls, TROPHY_LOC)
+            t.set_actor_label(TROPHY_LABEL)
+            t.set_actor_scale3d(unreal.Vector(TROPHY_SCALE, TROPHY_SCALE, TROPHY_SCALE))
+
+            def setp(name, value):
+                # UE's Python STRIPS THE b FROM BOOLEANS - bGrantsPower is reached as
+                # "grants_power". Both spellings are tried because getting it wrong once
+                # already threw mid-script and left half the level unedited, and a property
+                # that fails to set should be a warning, not the end of the run.
+                for n in (name, 'b_' + name):
+                    try:
+                        t.set_editor_property(n, value)
+                        return True
+                    except Exception:
+                        pass
+                unreal.log_warning('HOTEL_TROPHY could not set %s' % name)
+                return False
+
+            # It grants no VERB and no key - it is a certificate, a banner and some sauce.
+            setp('grants_power', False)
+            setp('grants_key', False)
+            setp('slot_trial', False)
+            setp('grant_key', unreal.Name(TROPHY_GRANT))
+            setp('claim_banner', TROPHY_BANNER)
+            setp('sauce_reward', TROPHY_SAUCE)
+            for c in t.get_components_by_class(unreal.StaticMeshComponent):
+                c.set_static_mesh(mesh)
+            unreal.log('HOTEL_TROPHY placed at %s (drag it into the entryway, then Ctrl+S)'
+                       % TROPHY_LOC)
+    elif have_trophy:
+        unreal.log('HOTEL_TROPHY already placed - left where it is')
+
     if SIGN_ENABLED:
         sign=get('SibeliusHotelSign',unreal.TextRenderActor)
         sign.set_actor_location(SIGN_LOC,False,False)

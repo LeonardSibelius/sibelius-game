@@ -414,10 +414,26 @@ void APowerGrant::ClaimNow(APawn* Pawn)
 			Inv->Spend(EResourceType::Book, BookCost);
 		}
 		Inv->Add(EResourceType::Key, 1);
+	}
+
+	/* THE SHRINE'S OWN WORDS, if it has any. See ClaimBanner.
+
+	   This used to live inside the bGrantsKey branch as a hardcoded "THE ATTIC KEY", which
+	   was fine while it was the only one. The hotel trophy is the second, so the line moved
+	   out here and the key's text moved onto its own instance. */
+	/* AND THE KEY KEEPS ITS LINE WITHOUT A LEVEL EDIT. The attic key orb is already placed
+	   in L_Office_v02 with no ClaimBanner on it, so moving the text out of the branch would
+	   have silently taken its banner away — a regression in shipped behaviour, introduced
+	   while adding an unrelated feature. The hardcoded string survives as the fallback for
+	   exactly that instance; anything with its own words uses them instead. */
+	const FString Banner = !ClaimBanner.IsEmpty() ? ClaimBanner
+		: (bGrantsKey ? FString(TEXT("THE ATTIC KEY")) : FString());
+	if (!Banner.IsEmpty())
+	{
 		APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
 		if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
 		{
-			HUD->ShowBanner(TEXT("THE ATTIC KEY"), 4.0f);
+			HUD->ShowBanner(Banner, ClaimBanner.IsEmpty() ? 4.0f : ClaimBannerSeconds);
 		}
 	}
 	Progression->GrantSauce(SauceReward);

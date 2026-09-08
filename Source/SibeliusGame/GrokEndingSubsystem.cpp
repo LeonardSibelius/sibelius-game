@@ -53,6 +53,10 @@ namespace
 		TEXT("The space port  -  PackDev\n")
 		TEXT("Grok  -  Velarion\n")
 		TEXT("Sibelius Hotel architecture  -  DmitriyDryzhak\n")
+		// CC BY 4.0. This line is a LICENCE CONDITION, not the courtesy the rest are -
+		// the Golden Trophy may be shipped only if Incg5764 is credited. Do not remove it
+		// to shorten the card; remove the trophy instead.
+		TEXT("The Transhuman trophy  -  Incg5764\n")
 		TEXT("The passage and the portal  -  Dr.Game\n")
 		TEXT("The cathedral  -  Ultima Store\n")
 		TEXT("Stained glass  -  twins-creators\n")

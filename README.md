@@ -134,3 +134,4 @@ The seven-chapter arc follows a software-engineering metaphor. **Ch1–Ch6 above
 - Forest kit (purchased, **not used in the game** — do not delete): **Broadleaf Poplar Forest — PCG Biome** by **EasyBiomes** (Fab). https://www.fab.com/listings/61f2b0fc-5656-46b7-86ef-3c2100cebcb4
 - Forest watchers (same parking lot): **Paragon: Shinbi** by **Epic Games** (free).
 - The grounded sailboat: **VOL16 Boats** pack (Fab).
+- The Transhuman trophy in the Sibelius Hotel: **Golden Trophy** by **Incg5764** (Fab), used under **CC BY 4.0** — attribution is a licence condition here, not a courtesy, and the same credit appears in the game's own closing cards. https://www.fab.com/listings/01a268a0-4823-4c72-ad80-f5be9d69aa1f
