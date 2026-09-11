@@ -15,6 +15,24 @@ The seven Unreal-capability experiments are the exception: they occupy
 closes. Walt's call, and his reason: this is the first build he would hand a stranger
 with no caveat, and Steam has no history to contradict it.
 
+## v1.1.3 — The TVs work
+
+**The televisions in the living room and the bedroom turn on.**
+
+Walk up to either one and press **E**. Your browser opens on *Celestial Fortune*, the web
+slot machine, at leonardsibelius.com/celestial-fortune/ — a real five-reel game with a
+published paytable, running outside the memoir entirely.
+
+It is a small thing that says something the game has been circling for a while: the
+machines in this house are not props any more. The cabinet in the cathedral has been
+playable for months; now the ordinary furniture is too, and what comes out of it is a
+game that exists on its own, at its own address, for anyone — not only for a player who
+got far enough into the memoir to find the cathedral.
+
+The cabinet is unchanged. It still runs its own embedded copy and never needs the
+internet. The TVs are the opposite by design: they hand you off to the open web and let
+you come back when you are done.
+
 ## v1.1.2 — Official Transhuman
 
 **There is a trophy in the hotel.**
