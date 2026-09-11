@@ -22,7 +22,6 @@
 class USceneComponent;
 class UStaticMeshComponent;
 class USlotScreenWidget;
-class USlotWebScreenWidget;
 
 UCLASS()
 class SIBELIUSGAME_API ASlotCabinet : public AActor, public IInteractable
@@ -45,31 +44,24 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Slot Cabinet")
 	TObjectPtr<UStaticMeshComponent> CabinetMesh;
 
-	// Path A: open the REAL Celestial Fortune (Chromium) instead of the native
-	// S2 screen. The native screen stays as the dependency-free fallback.
+	// THE CHROMIUM PATH IS GONE (v1.1.3). This cabinet once had a second screen that
+	// embedded the real Celestial Fortune web build through UE's WebBrowserWidget.
+	// Walt switched it off on 2026-08-05 — the technician's panel edits the C++ par
+	// sheet, which drives the NATIVE screen only, so with the web screen on the
+	// cathedral machine and the machine the panel edited were two different machines —
+	// and it was removed entirely once the televisions took over that job.
 	//
-	// DEFAULT FLIPPED TO FALSE (Walt, 2026-08-05). The technician's panel edits the C++
-	// par sheet, which drives the NATIVE screen only — the web build's maths lives
-	// inside a minified JS bundle that cannot be edited from C++, gate-tested, or shown
-	// in a live report. With the web screen on, the cathedral machine and the machine
-	// the panel edits were two different machines.
+	// Removed with it: bUseWebScreen, WebGameURL, ResolveWebGameURL(), the WebScreen
+	// member, USlotWebScreenWidget, the WebBrowserWidget plugin, the WebBrowser build
+	// dependencies, the staged Content/WebGame/index.html, and 334 MB of Chromium that
+	// shipped in every build for a feature nobody could reach.
 	//
-	// The placed cabinet in L_Cathedral does not override this, so it follows the class
-	// default. The native screen is not a stub: it carries the 2026-07-17 facelift
-	// (spinning reels, win presentation, procedural sound) and its 9 symbol sprites are
-	// asserted by SlotSmokeTest.
-	UPROPERTY(EditAnywhere, Category = "Slot Cabinet")
-	bool bUseWebScreen = false;
-
-	// SW6/SIB-42: dev-machine FALLBACK only. At runtime ResolveWebGameURL()
-	// prefers the staged copy at Content/WebGame/index.html (packaged as a
-	// loose NonUFS file so Chromium can read it from disk on any machine);
-	// this property is the dev override when the staged copy is absent.
-	UPROPERTY(EditAnywhere, Category = "Slot Cabinet")
-	FString WebGameURL = TEXT("file:///C:/Users/wpark/projects/celestial-fortune/dist/index.html");
-
-	// Staged-first, dev-fallback URL resolution (PK1 in docs/sib-42-packaging-notes.md).
-	FString ResolveWebGameURL() const;
+	// The web game is still in the game — reached the way a person reaches a website,
+	// from the TVs in the living room and the bedroom (see InteractorComponent).
+	//
+	// The native screen is not a stub: it carries the 2026-07-17 facelift (spinning
+	// reels, win presentation, procedural sound) and its 9 symbol sprites are asserted
+	// by SlotSmokeTest.
 
 private:
 	void OpenScreen(APlayerController* PC);
@@ -90,9 +82,6 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<USlotScreenWidget> Screen;
-
-	UPROPERTY()
-	TObjectPtr<USlotWebScreenWidget> WebScreen;
 
 	TWeakObjectPtr<APlayerController> ScreenPC;
 	bool bScreenOpen = false;   // SC2 latch

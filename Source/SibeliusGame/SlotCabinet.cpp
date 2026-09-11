@@ -15,7 +15,6 @@
 #include "SlotGameModel.h"
 #include "SlotScreenWidget.h"
 #include "SlotTechPanelWidget.h"
-#include "SlotWebScreenWidget.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSlotCabinet, Log, All);
 
@@ -62,69 +61,43 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 	FInputModeUIOnly Mode;
 	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 
-	if (bUseWebScreen)
+	// The native S2 screen, model-driven and dependency-free. It used to be the
+	// fallback behind a Chromium path; that path was switched off on 2026-08-05 and
+	// removed in v1.1.3, because the technician's panel edits the C++ par sheet and
+	// the web build's maths lived inside a minified JS bundle no panel could reach.
+	// The web version of Celestial Fortune now lives where it belongs — on the open
+	// web, reached from the televisions in the house.
+	if (!Screen)
 	{
-		// Path A: the real Celestial Fortune in Chromium.
-		if (!WebScreen)
-		{
-			WebScreen = CreateWidget<USlotWebScreenWidget>(PC, USlotWebScreenWidget::StaticClass());
-			if (!WebScreen)
-			{
-				UE_LOG(LogSlotCabinet, Error, TEXT("[SlotCabinet] failed to create USlotWebScreenWidget."));
-				return;
-			}
-			WebScreen->OnClosed.BindUObject(this, &ASlotCabinet::CloseScreen);
-		}
-		WebScreen->AddToViewport(60);
-		WebScreen->LoadGame(ResolveWebGameURL());
-
-		// Focus the browser itself so Space reaches the page's spin handler (SW3).
-		if (TSharedPtr<SWidget> Focus = WebScreen->GetFocusTarget())
-		{
-			Mode.SetWidgetToFocus(Focus);
-		}
-		else
-		{
-			Mode.SetWidgetToFocus(WebScreen->TakeWidget());
-		}
-		PC->SetInputMode(Mode);
-		PC->bShowMouseCursor = true;
-	}
-	else
-	{
-		// Fallback: the native S2 screen (model-driven, dependency-free).
+		Screen = CreateWidget<USlotScreenWidget>(PC, USlotScreenWidget::StaticClass());
 		if (!Screen)
 		{
-			Screen = CreateWidget<USlotScreenWidget>(PC, USlotScreenWidget::StaticClass());
-			if (!Screen)
-			{
-				UE_LOG(LogSlotCabinet, Error, TEXT("[SlotCabinet] failed to create USlotScreenWidget."));
-				return;
-			}
-			Screen->OnClosed.BindUObject(this, &ASlotCabinet::CloseScreen);
-			Screen->OnTechPanelRequested.BindUObject(this, &ASlotCabinet::OpenTechPanel);
+			UE_LOG(LogSlotCabinet, Error, TEXT("[SlotCabinet] failed to create USlotScreenWidget."));
+			return;
 		}
-		if (!bSeeded)
-		{
-			// SC10: one seed per session; determinism stays the smoke test's business.
-			Screen->InitModel(static_cast<int32>(FDateTime::Now().GetTicks() & 0x7FFFFFFF));
-			bSeeded = true;
-
-			// The machine is the PLAYER'S machine from the moment they walk up — their
-			// saved dials applied to the current factory sheet. Doing this only when the
-			// panel opens would mean the first spins of every session ran the shipped
-			// par sheet while the panel claimed otherwise.
-			if (USlotGameModel* M = Screen->GetModel())
-			{
-				M->SetParSheet(USlotTechPanelWidget::ComposeSavedParSheet(this));
-			}
-		}
-		Screen->AddToViewport(60);
-		Mode.SetWidgetToFocus(Screen->TakeWidget());
-		PC->SetInputMode(Mode);
-		PC->bShowMouseCursor = true;
-		Screen->SetKeyboardFocus();
+		Screen->OnClosed.BindUObject(this, &ASlotCabinet::CloseScreen);
+		Screen->OnTechPanelRequested.BindUObject(this, &ASlotCabinet::OpenTechPanel);
 	}
+	if (!bSeeded)
+	{
+		// SC10: one seed per session; determinism stays the smoke test's business.
+		Screen->InitModel(static_cast<int32>(FDateTime::Now().GetTicks() & 0x7FFFFFFF));
+		bSeeded = true;
+
+		// The machine is the PLAYER'S machine from the moment they walk up — their
+		// saved dials applied to the current factory sheet. Doing this only when the
+		// panel opens would mean the first spins of every session ran the shipped
+		// par sheet while the panel claimed otherwise.
+		if (USlotGameModel* M = Screen->GetModel())
+		{
+			M->SetParSheet(USlotTechPanelWidget::ComposeSavedParSheet(this));
+		}
+	}
+	Screen->AddToViewport(60);
+	Mode.SetWidgetToFocus(Screen->TakeWidget());
+	PC->SetInputMode(Mode);
+	PC->bShowMouseCursor = true;
+	Screen->SetKeyboardFocus();
 
 	bScreenOpen = true;
 
@@ -138,23 +111,7 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 		}
 	}
 
-	UE_LOG(LogSlotCabinet, Display, TEXT("[SlotCabinet] screen opened (%s)."), bUseWebScreen ? TEXT("web") : TEXT("native"));
-}
-
-FString ASlotCabinet::ResolveWebGameURL() const
-{
-	// PK1: the staged copy ships with the game (NonUFS loose file — Chromium
-	// needs a real on-disk path, it cannot read out of a .pak). Works in
-	// editor AND packaged builds; the EditAnywhere URL is the dev fallback.
-	const FString Staged = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("WebGame/index.html"));
-	if (FPaths::FileExists(Staged))
-	{
-		FString Abs = FPaths::ConvertRelativePathToFull(Staged);
-		Abs.ReplaceInline(TEXT("\\"), TEXT("/"));
-		return FString::Printf(TEXT("file:///%s"), *Abs);
-	}
-	UE_LOG(LogSlotCabinet, Warning, TEXT("[SlotCabinet] no staged Content/WebGame/index.html — falling back to dev URL %s"), *WebGameURL);
-	return WebGameURL;
+	UE_LOG(LogSlotCabinet, Display, TEXT("[SlotCabinet] screen opened."));
 }
 
 void ASlotCabinet::OpenTechPanel()
@@ -254,7 +211,6 @@ void ASlotCabinet::CloseScreen()
 	}
 
 	if (Screen) { Screen->RemoveFromParent(); }
-	if (WebScreen) { WebScreen->RemoveFromParent(); }
 	if (APlayerController* PC = ScreenPC.Get())
 	{
 		PC->SetInputMode(FInputModeGameOnly());

@@ -29,9 +29,23 @@ playable for months; now the ordinary furniture is too, and what comes out of it
 game that exists on its own, at its own address, for anyone — not only for a player who
 got far enough into the memoir to find the cathedral.
 
-The cabinet is unchanged. It still runs its own embedded copy and never needs the
-internet. The TVs are the opposite by design: they hand you off to the open web and let
-you come back when you are done.
+**And the download is 334 MB smaller.**
+
+The cathedral cabinet used to be able to run Celestial Fortune inside the game, through an
+embedded copy of Chromium. That was switched off in August — the technician's panel edits
+the C++ par sheet, and the web build's maths lives inside a JavaScript bundle no panel can
+reach, so with it on you were tuning one machine and playing another. The cabinet has run
+its own native reels ever since.
+
+What nobody noticed is that the browser engine kept shipping anyway. Every build since
+August carried 334 MB of Chromium — `libcef.dll` alone is 229 MB — for a screen that could
+not be opened. It is gone now, along with the widget that used it and the 1.24 MB copy of
+the web game that was stapled into the install.
+
+The cabinet in the cathedral is otherwise untouched: same native reels, same technician's
+panel, same nine symbols. The web version of Celestial Fortune has simply moved to where
+it always belonged — on the open web, reached from the televisions, rather than bolted
+inside the install.
 
 ## v1.1.2 — Official Transhuman
 

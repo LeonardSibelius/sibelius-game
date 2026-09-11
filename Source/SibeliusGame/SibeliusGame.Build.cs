@@ -41,11 +41,11 @@ public class SibeliusGame : ModuleRules
 			"Niagara"
 		});
 
-		// SIB-34 Path A: the cathedral slot cabinet embeds the real Celestial
-		// Fortune web build via UE's Chromium widget (WebBrowserWidget plugin).
+		// WebBrowserWidget and WebBrowser were here until v1.1.3, for the cathedral
+		// cabinet's embedded Celestial Fortune. Removing them is what drops 334 MB of
+		// Chromium from the shipped build — the plugin stages libcef.dll and its
+		// resources whether or not a single line of code ever calls into them.
 		PrivateDependencyModuleNames.AddRange(new string[] {
-			"WebBrowserWidget",
-			"WebBrowser",
 			// Travel-door transition: animated loading screen during the blocking level load
 			// (registered on PreLoadMap in SibeliusGame.cpp).
 			"MoviePlayer",

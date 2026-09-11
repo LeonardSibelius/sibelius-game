@@ -12,6 +12,14 @@
 # why they are carried: the release that adds nothing is the release where a cook
 # regression would go unnoticed.
 #
+# AND THE CHROMIUM CABINET IS GONE. USlotWebScreenWidget, the WebBrowserWidget plugin, the
+# WebBrowser build dependencies, ASlotCabinet's bUseWebScreen / WebGameURL /
+# ResolveWebGameURL, the NonUFS "WebGame" staging rule, and Content/WebGame/index.html were
+# all removed. The path had been switched off since 2026-08-05 and the browser engine kept
+# shipping regardless — 334 MB of it, libcef.dll alone 229 MB, for a screen no player could
+# open. Expect the archive to SHRINK by about a third of a gigabyte; that is the one number
+# in the size block below that should move this time.
+#
 # ---------------------------------------------------------------------------
 # ONE CHECK IS NEW, AND IT GUARDS THE ONLY THING THIS RELEASE CAN LOSE SILENTLY.
 #
@@ -194,7 +202,23 @@ if ($officeText.Contains("CelestialFortuneWebTV")) {
   Write-Output "        Every television is dead and nothing will say so. Do NOT push."
   exit 1
 }
-# ---- size, which should barely move -----------------------------------------
+# ---- CHROMIUM MUST NOT COME BACK ---------------------------------------------
+# The 334 MB is staged by the PLUGIN, not by any code that calls into it, so it returns
+# the moment WebBrowserWidget is re-enabled in the .uproject — by a hand edit, by the
+# editor's plugin browser, or by a plugin that lists it as a dependency of its own. None
+# of those touch a line of our source, so nothing else in this script would notice.
+$cef = Get-ChildItem $outDir -Recurse -Directory -Filter "CEF3" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($cef) {
+  $cefMB = [math]::Round((Get-ChildItem $cef.FullName -Recurse -File | Measure-Object Length -Sum).Sum / 1MB, 0)
+  Write-Output ""
+  Write-Output "CHROMIUM IS BACK : $cefMB MB at $($cef.FullName)"
+  Write-Output "                   Something re-enabled WebBrowserWidget. Find it before pushing."
+  exit 1
+} else {
+  Write-Output "OK      no Chromium in the archive"
+}
+
+# ---- size, which should DROP by about 0.33 GB this time ----------------------
 function PakGB($path) {
   if (-not (Test-Path $path)) { return $null }
   [math]::Round((Get-ChildItem $path -Recurse -File | Measure-Object Length -Sum).Sum / 1GB, 2)
