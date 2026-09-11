@@ -14,6 +14,14 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "SibeliusHUD.h"   // the prompt draws on the HUD canvas so it survives packaging
+#include "HAL/PlatformProcess.h"
+#include "HAL/PlatformTime.h"
+
+namespace WebSlotInteraction
+{
+const FName TVTag(TEXT("CelestialFortuneWebTV"));
+bool IsTV(const AActor* Actor) { return Actor && Actor->ActorHasTag(TVTag); }
+}
 
 UInteractorComponent::UInteractorComponent()
 {
@@ -74,7 +82,7 @@ void UInteractorComponent::UpdateFocus()
 
 	auto IsInteractTarget = [](AActor* A) -> bool
 	{
-		return A && (A->Implements<UInteractable>()
+		return A && (WebSlotInteraction::IsTV(A) || A->Implements<UInteractable>()
 			|| A->FindComponentByClass<UDancerAgentComponent>() != nullptr);
 	};
 
@@ -127,7 +135,11 @@ void UInteractorComponent::UpdateFocus()
 	FocusedActor = Target;
 	if (Prompt.IsEmpty())
 	{
-		if (Target->Implements<UInteractable>())
+		if (WebSlotInteraction::IsTV(Target))
+		{
+			Prompt = NSLOCTEXT("Sibelius", "WebSlotTVPrompt", "E \u2014 Play Celestial Fortune web version");
+		}
+		else if (Target->Implements<UInteractable>())
 		{
 			Prompt = IInteractable::Execute_GetInteractionPrompt(Target);
 		}
@@ -237,6 +249,21 @@ void UInteractorComponent::TryInteract()
 		return;
 	}
 
+	if (WebSlotInteraction::IsTV(Target))
+	{
+		// Refresh the trace so pressing E cannot activate a TV after looking away.
+		UpdateFocus();
+		if (FocusedActor.Get() != Target) return;
+		// Prevent a held/repeated E from opening several browser tabs.
+		static double LastLaunch = -10.0;
+		const double Now = FPlatformTime::Seconds();
+		if (Now - LastLaunch < 2.0) return;
+		LastLaunch = Now;
+		FString Error;
+		FPlatformProcess::LaunchURL(TEXT("https://leonardsibelius.com/celestial-fortune/"), nullptr, &Error);
+		if (!Error.IsEmpty()) UE_LOG(LogTemp, Warning, TEXT("Web slot browser launch failed: %s"), *Error);
+		return;
+	}
 	if (Target->Implements<UInteractable>())
 	{
 		IInteractable::Execute_Interact(Target, GetOwner());
