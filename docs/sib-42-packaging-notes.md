@@ -63,6 +63,38 @@ later) and play start to finish: office bang → powers → cathedral → slot c
   don't stage. Fine — gates run pre-package, not post.
 - PK10 STALE SNAPSHOT. The staged index.html will silently lag the web repo.
   Loose end: a pre-package checklist item (re-copy dist → Content/WebGame).
+- PK23 (HIT, FIXED — and it will hit again). Removing the WebBrowserWidget plugin for
+  v1.1.3 compiled clean and then FAILED THE COOK, with a cook log that contained no error
+  at all and ended "Log file closed" as though nothing was wrong. UAT said only
+  `Error_UnknownCookFailure`. The real message was four lines buried mid-log:
+
+      LogWindows: Failed to load 'Binaries/Win64/UnrealEditor-SibeliusGame.dll' (126)
+      LogWindows:   Missing import: UnrealEditor-WebBrowserWidget.dll
+      ... The game module 'SibeliusGame' could not be loaded.
+
+  THE COOK RUNS THE EDITOR. `-run=Cook` is UnrealEditor-Cmd.exe, so it loads the EDITOR
+  DLLs — and this script (like every package_v*.ps1) passes `-nocompileeditor
+  -skipbuildeditor`, which is right for speed and wrong the moment an editor module's
+  DEPENDENCIES change. The editor DLLs on disk still imported
+  UnrealEditor-WebBrowserWidget.dll; the plugin that provided it was gone; the game module
+  failed to load; the cook died having cooked nothing.
+
+  FIX, and it is the runbook's step 1 that was skipped: rebuild the editor target before
+  packaging whenever C++ or plugins changed.
+
+      "C:\Program Files\Epic Games\UE_5.7\Engine\Build\BatchFiles\Build.bat" ^
+        SibeliusGameEditor Win64 Development -Project="<...>\SibeliusGame.uproject" -WaitMutex
+
+  WHY IT DOES NOT USUALLY BITE: Walt has the editor open most days, so the editor DLLs are
+  normally current and the package's skip flags cost nothing. It only bites after an
+  editor-closed session that changed module dependencies — which is exactly when nobody is
+  around to notice the editor is stale.
+
+  LESSON, distinct from PK14 (Smart App Control blocking a fresh DLL) and PK15 (any logged
+  Error fails a cook): here there was NO error to grep. A cook can fail with a clean log.
+  When the cook log looks innocent, search it for `Failed to load` and `Missing import` —
+  a dangling import in a stale DLL is not logged as an error, it is logged as a fact.
+
 - PK22 (TESTED — GOOD NEWS, the runtime-PCG question answered). Before wiring the
   "no two alike" door we had to know: does the EasyBiomes PCG forest GENERATE AT
   RUNTIME in a cooked build, or is ConductWorld an editor-only party trick? Proven YES
