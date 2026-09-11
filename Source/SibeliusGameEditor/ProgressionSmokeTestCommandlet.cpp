@@ -1,10 +1,10 @@
-#include "ProteinMachine.h"
 // ProgressionSmokeTestCommandlet.cpp — FUN-1/FUN-2 headless gate. See header.
 //
 // NAMED namespace + function-scoped `using` (unity-build safe), no variable
 // shadowing (warnings-as-errors). Editor-closed.
 
 #include "ProgressionSmokeTestCommandlet.h"
+#include "ProteinMachine.h"
 #include "ProgressionTypes.h"
 #include "ProgressionSaveGame.h"
 #include "SauceShop.h"

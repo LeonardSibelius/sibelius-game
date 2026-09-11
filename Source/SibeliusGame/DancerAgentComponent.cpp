@@ -1,8 +1,8 @@
-#include "ProteinMachine.h"
 // DancerAgentComponent.cpp — see header.
 
 #include "DancerAgentComponent.h"
 
+#include "ProteinMachine.h"
 #include "SibeliusHUD.h"
 #include "SibeliusGame.h"                  // LogSibeliusGame
 #include "DancerAgentSubsystem.h"          // the aim-assist registry

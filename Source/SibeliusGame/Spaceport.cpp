@@ -1,8 +1,8 @@
-#include "ProteinMachine.h"
 // Spaceport.cpp — see the header for why this extends ABuildSite.
 
 #include "Spaceport.h"
 
+#include "ProteinMachine.h"
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "DancerAgentSubsystem.h"   // tell the guides a spaceport now stands (Phase E)
 

@@ -1,7 +1,7 @@
-#include "ProteinMachine.h"
 // SibeliusHUD.cpp — center reticle + developer overlay (SIB-39).
 
 #include "SibeliusHUD.h"
+#include "ProteinMachine.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"                   // GetSmallFont
 #include "EngineUtils.h"                      // TActorIterator
