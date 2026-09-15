@@ -115,21 +115,52 @@ open an external web page. Neither creates content at runtime.
 this project and no way to test a minimum spec on it. A refund from someone whose
 machine could not run it costs more than the sale.
 
-| field | value | confidence |
-|---|---|---|
-| OS | Windows 10 64-bit | UE 5.7 target |
-| Graphics | Discrete GPU, DirectX 12 | known requirement |
-| Storage | **8 GB available space** | measured: v1.1.3 build is 7.8 GB on disk |
-| Processor | **decide** | never tested below the dev machine |
-| Memory | **decide** | never tested below the dev machine |
+**Minimum** — conservative, and **untested**. Walt's call, 2026-09-15: a plausible
+UE5 floor rather than the dev machine, on the reasoning that it can be raised if
+refunds come in, whereas buyers lost to an inflated minimum never show up as data.
+
+```
+OS:          Windows 10 64-bit
+Processor:   Intel Core i5-8400 / AMD Ryzen 5 2600
+Memory:      16 GB RAM
+Graphics:    NVIDIA GeForce GTX 1060 6 GB / AMD Radeon RX 580 8 GB
+DirectX:     Version 12
+Storage:     8 GB available space
+```
+
+**Recommended** — measured from the machine it was built and tested on, not
+estimated:
+
+```
+OS:          Windows 11 64-bit
+Processor:   Intel Core i7-14700KF
+Memory:      32 GB RAM
+Graphics:    NVIDIA GeForce RTX 5070 Ti
+DirectX:     Version 12
+Storage:     8 GB available space
+```
 
 **The 5 GB figure in `STEAM_PLAN.md` §3 is stale** — it predates the city, the
-spaceport and the hotel. 8 GB is the measured number, rounded up.
+spaceport and the hotel. 8 GB is the measured number, rounded up from 7.8 GB.
 
-Recommended spec is the machine it was built and tested on: **RTX 5070 Ti**.
+**The minimum row is the one to revisit.** Nothing below the i7-14700KF / RTX 5070 Ti
+has ever run this build, so the GTX 1060 line is an inference from what UE 5.7 games
+of this size generally need. If early refunds cite performance, raise it — that is
+cheaper than the reverse mistake.
 
-For Processor and Memory, state something you can defend rather than something
-flattering. Nothing below the dev machine has ever run this build.
+---
+
+## 4b. Content survey — gambling
+
+Walt's call, 2026-09-15: **declare it.** The game contains simulated gambling —
+*Celestial Fortune*, a five-reel slot machine with a published par sheet, and a video
+poker cabinet in the living room. Both are played with in-game Sauce. **No real
+money is wagered and nothing pays out in real currency.**
+
+The reasoning: under-declaring is the expensive failure, because it surfaces *after*
+launch, when the announcement has already been spent. Declaring simulated gambling
+costs almost nothing in visibility. The slot machine is also a headline feature in
+the store blurb, so a reviewer checking the claim would find it immediately.
 
 ---
 
