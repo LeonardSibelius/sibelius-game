@@ -1,0 +1,34 @@
+// SteamPipe app build script - Leonard Sibelius (5249380)
+//
+// Run with:  steamcmd +login <user> +run_app_build <full path to this file> +quit
+// The wrapper Tools/Scripts/steam_upload_v113.ps1 does that and checks the build first.
+//
+// "setlive" IS DELIBERATELY EMPTY. An empty value uploads the build without putting it
+// on any branch. You then pick it by build ID in Steamworks (SteamPipe > Builds) and set
+// it live yourself. Putting a branch name here means the upload publishes the moment it
+// finishes, which is the wrong default for a build nobody has run from Steam yet.
+//
+// "preview" "1" does a full dry run: it walks the content, reports what it WOULD upload,
+// and sends nothing. The wrapper's -Preview switch rewrites this line. Do that first -
+// it catches a wrong contentroot in seconds instead of after a 7.5 GB upload.
+
+"appbuild"
+{
+	"appid"			"5249380"
+	"desc"			"v1.1.3 The TVs work"
+
+	// Scratch space for chunk cache and logs. NOT in the repo, and not the build folder.
+	// SteamPipe writes a lot here and reuses it to make later uploads incremental.
+	"buildoutput"	"C:\Users\wpark\builds\steam_buildoutput"
+
+	// The packaged Win64 build, exactly as package_v113.ps1 archived it.
+	"contentroot"	"C:\Users\wpark\builds\sibelius-v1.1.3\Windows"
+
+	"setlive"		""
+	"preview"		"0"
+
+	"depots"
+	{
+		"5249381"	"depot_build_5249381.vdf"
+	}
+}
