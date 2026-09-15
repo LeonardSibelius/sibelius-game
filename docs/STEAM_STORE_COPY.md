@@ -168,15 +168,49 @@ three are reasoned through in `STEAM_PLAN.md` §3.
 
 ## 6. What still blocks the page
 
-Copy is not the bottleneck any more. Two things are:
+Nothing, as of 2026-09-15. Copy is done and so is the art.
 
-1. **Capsule art** — five sizes, `STEAM_PLAN.md` §5. Only the 920×430 header is
-   strictly required to submit. Kaia's face renders at any resolution through
-   `Tools/Scripts/render_kaia_intro.py`, which is the fastest route to a header.
-   Test the small capsule at 120×45 before settling; an unreadable title at thumbnail
-   size is the most common capsule mistake and it is invisible until it is live.
-2. **Screenshots** — already done. Eight, 16:9, all over 1920×1080, at
-   `C:\STEAM\screenshots_final\`.
+### Capsules — use `C:\STEAM\capsules_v2\`, and only that folder
+
+There are three generations on disk and they are **not** interchangeable:
+
+| folder | date | title treatment | use it? |
+|---|---|---|---|
+| `capsules` | 3 Sep | none — raw MRQ renders | source material only |
+| `capsules_final` | 3 Sep | thin, small, letterspaced | **no — fails at 120×45** |
+| `capsules_v2` | 9 Sep | large bold condensed, stacked | **yes** |
+
+The 3 September set sets the title in light letterspaced caps roughly 20 px tall on a
+920 px canvas. Shrunk to the 120×45 thumbnail Steam generates, it disappears — the
+exact failure `STEAM_PLAN.md` §5 warns about. `capsules_v2` fixes it, and
+`PROOF_small_at_120x45.png` in that folder is the test.
+
+`capsules_v2` now holds the complete set:
+
+| asset | file | origin |
+|---|---|---|
+| Header 920×430 | `library_header_920x430.jpg` | 9 Sep |
+| Small 462×174 | `small_capsule_462x174.jpg` | 9 Sep |
+| **Main 1232×706** | `main_capsule_1232x706.jpg` | **15 Sep** |
+| **Vertical 748×896** | `vertical_capsule_748x896.jpg` | **15 Sep** |
+| Library capsule 600×900 | `library_capsule_600x900.jpg` | 9 Sep |
+| Library hero 3840×1240 | `library_hero_3840x1240.jpg` | 9 Sep |
+| Library logo 1280×720 | `library_logo.png` | 9 Sep |
+
+**How the two new ones were made, in case they need redoing.** Both are crops of
+`C:\STEAM\Kaia1.jpg` (2541×1305) graded with `eq=brightness=-0.05:saturation=1.02`
+and `vignette=angle=PI/5`, with `library_logo.png` composited on top — the logo is the
+title lockup on a real alpha channel, ink bounds `crop=955:480:163:71`, so the
+lettering is the genuine artwork rather than a guessed font. Main crops
+`2276:1305:132:0`; vertical crops `1090:1305:700:0` to centre the face.
+
+**One flaw worth knowing about:** `library_hero_3840x1240.jpg` has the game's HUD
+crosshair visible in the middle of the sky. Valve does not forbid it, but it reads as
+unintentional. Re-shoot that frame with the HUD hidden if there is time.
+
+### Screenshots — done
+
+Eight, 16:9, all over 1920×1080, at `C:\STEAM\screenshots_final\`.
 
 **One question the form will ask that is not answered anywhere yet:** the content
 survey asks about gambling. This game has a slot machine with a published par sheet
