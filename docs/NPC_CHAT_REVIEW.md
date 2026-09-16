@@ -404,12 +404,23 @@ It deletes the reason for **reservation-before-dispatch, cross-instance atomic
 accounting and quota arbitration between players**. Those existed to ration a pool that
 empties for everyone; a spend cap empties for nobody until Walt says so.
 
-It does **not** delete the counter. Google Cloud budgets are *alerts*: they email, they
-do not brake. The only thing that will actually stop spending at $15 is a counter in the
-proxy that refuses to call upstream past its monthly allowance. With a single small
-instance — which 700 requests a day plainly is — a persisted counter is enough, and the
-distributed machinery is what was never needed. Set the Cloud budget alert anyway, as a
-backstop that tells you the counter is wrong.
+It keeps the counter, but not as the brake — and an earlier draft of this section had
+that backwards, so it is worth stating plainly.
+
+**Where the money actually stops (checked on ai.google.dev/gemini-api/docs/billing,
+2026-09-16).** Gemini API billing is managed in **AI Studio**, not the Google Cloud
+console; the docs say balance and transactions must be handled in the AI Studio Billing
+tab. AI Studio offers **project-level spending caps that are hard stops** — service
+pauses when the cap is reached, rather than sending an email about it. And new accounts
+default to **Prepay**: credits are bought in advance and drawn down in near real time,
+so a $15 prepay balance *is* a $15 ceiling by construction, with nothing to configure.
+
+So the ceiling is enforced by Google, twice over. The proxy's counter is belt-and-braces
+and still earns its place for a different reason: it stops at **our** number and shows
+the story-safe unavailable message, instead of letting players discover the limit as
+upstream errors mid-conversation. A persisted counter on a single small instance is
+enough for that — 700 requests a day is plainly one instance — and the distributed
+machinery is what was never needed.
 
 Also unchanged: deduplication, one request in flight per session, the kill switch, the
 story-safe unavailable message, and never falling back to anything that costs more.
@@ -428,10 +439,17 @@ applies. Re-check the terms before release; this is the kind of clause that move
 
 ### The one step only Walt can take
 
-Enable billing on the project and set the budget. Neither is something to automate, and
-nothing in the proxy should be able to change a tier or a project on its own. Verify
-afterwards that the project really is on the paid tier before any traffic — the handoff
-is right that a silent tier assumption is its own failure.
+Enable billing on the project and load the balance, at **aistudio.google.com/billing**:
+select or create a billing account, add a payment method, choose **Prepay** and load
+**$15**, optionally set a project-level cap at the same figure, then give it about ten
+minutes — tier upgrades usually reflect by then, though billing signals are not always
+real time. Confirm the project reads paid tier, and re-read **aistudio.google.com/rate-limit**
+afterwards: the paid RPM and RPD replace the 15 / 500 measured on the free tier, and the
+capacity note above should be updated with the new figures.
+
+None of that is something to automate, and nothing in the proxy should be able to change
+a tier or a project on its own. The API key belongs in the proxy's secret configuration
+and nowhere else — not in the repo, not in a config file that ships, not in a log.
 
 ---
 
