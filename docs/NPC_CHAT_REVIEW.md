@@ -17,7 +17,7 @@ rate-limit and billing facts were fetched from Google's documentation on 2026-09
 |---|---|
 | **Adopt** | The architecture. Unreal → HTTPS proxy → Gemini, key server-side only, one non-streaming call per player turn, mock service first, memories stored with the save. |
 | **Change** | The free tier. The quota is shared by every player at once, not granted per player. Price the paid tier before committing — about a cent per conversation, and it deletes most of the plan's engineering. |
-| **Blocking** | Steam. `docs/STEAM_PLAN.md` currently promises Valve "Live-Generated: None." This feature makes that false. The handoff never mentions Steam. |
+| **Deferred** | Steam. Chat is a 2.0 feature. v1.0 ships chat-free — locked by what is in review as of 2026-09-15 — and the disclosure change goes through Steam Support afterwards. The handoff never mentions Steam. |
 
 ---
 
@@ -45,10 +45,13 @@ dialog box. Chat needs its own exit; only authored speech may reach that functio
 
 ## Three things to change
 
-### 1. Shipping this flips the Steam AI disclosure — blocking
+### 1. Chat is a 2.0 feature, and Valve has a defined path for it
 
-`docs/STEAM_PLAN.md` §4 already worked this out and banked on the easy answer, and the
-handoff does not know that document exists. Runtime chat makes the answer wrong:
+**State of play, checked in Steamworks on 2026-09-15.** Leonard Sibelius (app 5249380)
+is unreleased with two requests awaiting support: the store page review filed Sep 9 and
+the product build review filed Sep 15, whose opening line describes the game as
+*single-player, offline, no servers, nothing to provision*. Three documents therefore
+now promise Valve a game that generates nothing at runtime:
 
 - `docs/STEAM_PLAN.md:375` — *"Live-generated — none. Nothing in this game creates
   content at runtime, which spares the extra questionnaire about guardrails against
@@ -56,14 +59,34 @@ handoff does not know that document exists. Runtime chat makes the answer wrong:
 - `docs/STEAM_PLAN.md:386` — the draft disclosure wording
 - `docs/STEAM_STORE_COPY.md:101` — the Live-Generated block
 
-Answering yes triggers the guardrails questionnaire, which asks what stops the
-generated text going somewhere Valve will not ship — in a game whose characters are
-licensed MetaHumans speaking commercially licensed ElevenLabs voices.
+**Decided 2026-09-15: v1.0 ships chat-free.** Leave all three alone while the reviews
+are in flight. Chat is 2.0.
 
-**Do this:** amend those three places as part of the go decision, not after the code
-works, and draft the guardrails answer at the same time — server-side system prompt,
-output length cap, safety settings left on, a refusal path that falls back to authored
-lines. That answer is also the proxy's safety spec, so writing it early is not overhead.
+**What the amendment actually costs, from Valve's own Content Survey documentation
+(checked 2026-09-15).** It is a support ticket, not a negotiation:
+
+- Live-generated content requires describing, in the survey, the guardrails that keep
+  the AI from generating illegal content. That description is also the proxy's safety
+  spec — server-side system prompt, output length cap, safety settings left on, a
+  refusal path that falls back to authored lines — so writing it is not wasted work.
+- After a build and store page are approved, some survey answers cannot be edited
+  without first contacting Steam Support. You send a summary of what changed, which
+  answer it affects, and instructions for a tester to reach the content. Same rhythm as
+  the two tickets already open.
+
+**The clause that bears on the tier decision.** Valve's FAQ addresses a game that calls
+a paid AI service per interaction directly: you are expected to manage access to that
+service on your players' behalf and to collect payment through a Steam-supported
+method. Four ways are offered — build the cost into the game's price, charge per
+interaction as microtransactions, sell a subscription, or sell a DLC that unlocks it.
+Absorbing it into the price is listed first and is the only one of the four consistent
+with the *no microtransactions* claim already sitting in the build review request. See
+correction 3.
+
+**The one absolute.** Valve does not ship live-generated AI in Adult Only sexual
+content. Not this game — but the chat characters are the dancers and the Presence, and
+`docs/THE_PRESENCE.md` writes them to be magnetic on purpose. The hard line belongs in
+the system prompt, and that text is substantially what goes in the guardrails field.
 
 ### 2. The quota is shared by the whole player base — change
 
@@ -109,6 +132,12 @@ times the capacity, and the paid tier also flips *content used to improve our pr
 to no, which quietly solves the privacy gap below. The handoff obeys "no paid services"
 as a constraint without ever pricing it, so nobody got to make that trade knowingly.
 
+Valve's own guidance points the same way. Its first suggested handling for a per-call
+AI service is to model the cost into the game's price and charge nothing extra, which
+is a capped monthly spend by another name. The free tier fits none of Valve's four
+options cleanly: a feature that goes dark whenever a shared pool empties is hard to
+describe to a reviewer asking how players get access to the service.
+
 ---
 
 ## Smaller gaps
@@ -141,8 +170,10 @@ The handoff's sequence, with the two gates it was missing moved to the front.
 
 1. **NEW.** Read the project's real allowance in AI Studio and price the paid
    alternative against it. Decide free vs. capped-paid here, before any proxy work.
-2. **NEW.** Amend the Steam AI disclosure in `STEAM_PLAN.md` and `STEAM_STORE_COPY.md`,
-   and draft the guardrails answer — it doubles as the proxy's safety spec.
+2. **NEW.** Draft the guardrails answer — it doubles as the proxy's safety spec. Do
+   **not** touch the survey or the three disclosure passages while the 1.0 reviews are
+   in flight; the amendment goes to Steam Support after 1.0 is approved, with a summary
+   of the change and tester instructions.
 3. Trace the E binding, greeting callbacks and save conventions. Confirm chat has an
    exit path that never reaches `ResumeAfterGreeting()`.
 4. Build the text UI against a mock service. Verify camera, input focus, cursor and
@@ -165,17 +196,17 @@ Steps 3 and 4 need no API access at all, so they can start before step 1 is answ
 
 ## Decisions that need Walt
 
-**Free tier, or a paid tier with a hard spend cap?** Free means the feature is dark for
-most players most of the time and their conversations feed product improvement.
-Capped-paid means about a cent a conversation, a ceiling you choose, and no training
-use. *Recommended: read the dashboard number first, then take capped-paid at $10–20 a
-month unless the free allowance surprises us. The cutoff behaviour survives either way.*
+**Free tier, or a paid tier with a hard spend cap?** Still open. Free means the feature
+is dark for most players most of the time and their conversations feed product
+improvement. Capped-paid means about a cent a conversation, a ceiling you choose, no
+training use, and an answer that fits Valve's first suggested model. *Recommended: read
+the dashboard number first, then take capped-paid at $10–20 a month unless the free
+allowance surprises us. The cutoff behaviour survives either way.*
 
-**Does chat ship to Steam, or stay an itch and experimental build?** Shipping it costs
-the disclosure amendment and the guardrails questionnaire. Holding it back keeps the
-store submission exactly as planned. *Recommended: build it behind an opt-in
-experimental toggle, run it on itch first, fold the disclosure change into a later store
-update rather than the first submission.*
+**Does chat ship to Steam, or stay an itch and experimental build?** *Decided
+2026-09-15: 1.0 ships chat-free.* Chat is built behind an opt-in experimental toggle and
+runs on itch first; the Steam disclosure amendment goes through Support as part of a
+later update. Nothing in the two in-flight reviews gets edited to accommodate it.
 
 ---
 
@@ -189,6 +220,11 @@ the numbers above.
   live in the AI Studio dashboard, not the docs)
 - Billing, including the March 2026 trial-credit exclusion —
   https://ai.google.dev/gemini-api/docs/billing
+- Valve's Content Survey — partner.steamgames.com/doc/gettingstarted/contentsurvey
+  (partner login required). Source for the guardrails requirement, the post-approval
+  edit path through Steam Support, the per-call AI service payment options, and the
+  Adult Only live-generated prohibition.
+- App 5249380 review state read from the Steamworks dashboard, 2026-09-15.
 
 A designed version of this review is published as a private artifact:
 https://claude.ai/artifact/T9bqzMZCcZ26TJAXmznnp6
