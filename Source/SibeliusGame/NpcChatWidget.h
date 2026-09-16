@@ -19,6 +19,8 @@
 #include "Blueprint/UserWidget.h"
 #include "NpcChatWidget.generated.h"
 
+class UBorder;
+class UButton;
 class UEditableTextBox;
 class UScrollBox;
 class UTextBlock;
@@ -59,6 +61,15 @@ public:
 	/** Everything the next conversation must not inherit. */
 	void ResetTranscript();
 
+	/**
+	 * Bottom band, or a column beside her face.
+	 *
+	 * Applied on open rather than at construction so the framing can be tuned in a
+	 * live session: change the console variable, close, reopen. A composition call
+	 * like this is made by eye, and an eye needs more than one look.
+	 */
+	void SetSidePanel(bool bSide);
+
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
@@ -67,6 +78,17 @@ protected:
 
 	UFUNCTION()
 	void HandleTextCommitted(const FText& Text, ETextCommit::Type Method);
+
+	/**
+	 * The Close button, which exists because Esc cannot be tested in PIE.
+	 *
+	 * The editor binds StopPlaySession to Escape (DebuggerCommands.cpp), so in Play In
+	 * Editor the key stops the session before this widget sees it. Esc still works in a
+	 * packaged build and is still handled below — but a way out that only exists in a
+	 * build nobody plays during development is a way out nobody has tested.
+	 */
+	UFUNCTION()
+	void HandleCloseClicked();
 
 private:
 	UPROPERTY()
@@ -83,6 +105,13 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UEditableTextBox> InputBox;
+
+	UPROPERTY()
+	TObjectPtr<UButton> CloseButton;
+
+	/** Held so SetSidePanel can reach the canvas slot that positions the whole card. */
+	UPROPERTY()
+	TObjectPtr<UBorder> Card;
 
 	// Held so a setter that arrives before RebuildWidget still lands.
 	FString PendingAgentName;

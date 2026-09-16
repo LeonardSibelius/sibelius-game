@@ -280,6 +280,31 @@ namespace
 {
 	constexpr float ChatHudLeaseRefresh = 2.0f;
 	constexpr float ChatHudLeaseSeconds = 5.0f;
+
+	/* THE CHAT FRAMING, AS THREE NUMBERS YOU CAN TURN WHILE PLAYING.
+
+	   Composition is judged by eye, and an eye needs more than one look — so these are
+	   console variables rather than constants or instance properties. Instance edits
+	   made during PIE evaporate when play stops; a cvar survives, and the panel picks
+	   all three up on the next open. None of them touch the authored greeting: the
+	   yaw and the wider FOV are applied only while a conversation is up. */
+	TAutoConsoleVariable<int32> CVarChatSidePanel(
+		TEXT("sib.Chat.SidePanel"),
+		1,
+		TEXT("1 puts the chat beside her face (camera yaws her off-centre); 0 is the bottom band."),
+		ECVF_Default);
+
+	TAutoConsoleVariable<float> CVarChatComposeYaw(
+		TEXT("sib.Chat.ComposeYaw"),
+		10.0f,
+		TEXT("Degrees of camera yaw during chat, to move her off-centre and clear a column for the text."),
+		ECVF_Default);
+
+	TAutoConsoleVariable<float> CVarChatFov(
+		TEXT("sib.Chat.Fov"),
+		46.0f,
+		TEXT("Field of view during chat. Wider than the talk close-up so an off-centre head is not cropped."),
+		ECVF_Default);
 }
 
 UDancerAgentComponent::UDancerAgentComponent()
@@ -793,11 +818,23 @@ void UDancerAgentComponent::UpdateTalkShot()
 		}
 	}
 
-	const FRotator CamRot = (LookAt - CamLoc).Rotation();
+	FRotator CamRot = (LookAt - CamLoc).Rotation();
+
+	/* THE CONVERSATION SHOT IS A DIFFERENT SHOT. Yawing the camera moves her across
+	   the frame without moving her, which clears a column for the text and leaves her
+	   whole face visible — the thing a full-width card under her chin cannot do. The
+	   greeting keeps its dead-centre portrait: every line here is behind bChatting. */
+	const bool bSideFraming = bChatting && CVarChatSidePanel.GetValueOnGameThread() != 0;
+	if (bSideFraming)
+	{
+		CamRot.Yaw += CVarChatComposeYaw.GetValueOnGameThread();
+	}
+
 	TalkCamera->SetActorLocationAndRotation(CamLoc, CamRot);
 	if (UCameraComponent* Cam = TalkCamera->GetCameraComponent())
 	{
-		Cam->SetFieldOfView(TalkCameraFOV);
+		// Wider while chatting, or an off-centre head loses an ear to the frame edge.
+		Cam->SetFieldOfView(bSideFraming ? CVarChatFov.GetValueOnGameThread() : TalkCameraFOV);
 	}
 }
 
@@ -1144,6 +1181,7 @@ void UDancerAgentComponent::BeginChat()
 		ChatWidget->AddToViewport(70);
 	}
 	ChatWidget->SetVisibility(ESlateVisibility::Visible);
+	ChatWidget->SetSidePanel(CVarChatSidePanel.GetValueOnGameThread() != 0);
 
 	// A conversation never inherits the last one. Memory arrives in step 5, deliberately,
 	// and until it does the panel must not imply that anything is being kept.

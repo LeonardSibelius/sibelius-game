@@ -4,9 +4,12 @@
 
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
+#include "Components/Button.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/EditableTextBox.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
 #include "Components/ScrollBox.h"
 #include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
@@ -39,7 +42,7 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 		UCanvasPanel* Canvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("ChatRoot"));
 		WidgetTree->RootWidget = Canvas;
 
-		UBorder* Card = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("ChatCard"));
+		Card = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("ChatCard"));
 		Card->SetBrushColor(CardColour);
 		Card->SetPadding(FMargin(20.0f, 16.0f));
 
@@ -64,7 +67,7 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 		StatusText->SetColorAndOpacity(FSlateColor(QuietColour));
 
 		InputBox = WidgetTree->ConstructWidget<UEditableTextBox>(UEditableTextBox::StaticClass(), TEXT("ChatInput"));
-		InputBox->SetHintText(FText::FromString(TEXT("Say something  -  Enter sends, Esc closes")));
+		InputBox->SetHintText(FText::FromString(TEXT("Say something  -  Enter sends, Close leaves")));
 
 		FEditableTextBoxStyle FieldStyle = InputBox->WidgetStyle;
 		FieldStyle.TextStyle.SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 20));
@@ -77,7 +80,34 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 		InputSize->SetMinDesiredHeight(40.0f);
 		InputSize->AddChild(InputBox);
 
-		Column->AddChildToVerticalBox(TitleText);
+		/* HER NAME AND THE WAY OUT, ON ONE LINE. The button is the only exit that can
+		   be exercised in PIE, so it is not a decoration — see HandleCloseClicked. */
+		UHorizontalBox* HeaderRow = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("ChatHeader"));
+
+		if (UHorizontalBoxSlot* TitleSlot = HeaderRow->AddChildToHorizontalBox(TitleText))
+		{
+			TitleSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+			TitleSlot->SetVerticalAlignment(VAlign_Center);
+		}
+
+		CloseButton = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("ChatClose"));
+		CloseButton->SetBackgroundColor(FLinearColor(0.18f, 0.20f, 0.24f, 0.95f));
+		CloseButton->OnClicked.AddDynamic(this, &UNpcChatWidget::HandleCloseClicked);
+
+		UTextBlock* CloseLabel = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ChatCloseLabel"));
+		CloseLabel->SetText(FText::FromString(TEXT("Close")));
+		CloseLabel->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 16));
+		CloseLabel->SetColorAndOpacity(FSlateColor(BodyColour));
+		CloseButton->AddChild(CloseLabel);
+
+		if (UHorizontalBoxSlot* CloseSlot = HeaderRow->AddChildToHorizontalBox(CloseButton))
+		{
+			CloseSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+			CloseSlot->SetVerticalAlignment(VAlign_Center);
+			CloseSlot->SetHorizontalAlignment(HAlign_Right);
+		}
+
+		Column->AddChildToVerticalBox(HeaderRow);
 		if (UVerticalBoxSlot* ScrollSlot = Column->AddChildToVerticalBox(Transcript))
 		{
 			ScrollSlot->SetPadding(FMargin(0.0f, 8.0f));
@@ -101,14 +131,7 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 		{
 			/* Anchors + zero offsets, not a point anchor and SetSize: the Journal and
 			   Generate panels both learned that a point anchor can resolve to a
-			   zero-size box.
-
-			   THE TOP EDGE IS THE WHOLE DESIGN HERE. At 0.56 the card cut across her
-			   mouth in the first walk-test — the exact complaint docs/DANCER_VOICE.md
-			   was written about, rebuilt in a different widget. The talk shot frames
-			   her at TalkCameraFOV on the head, so in practice her chin lands near
-			   two-thirds of the way down; starting below that keeps the whole face,
-			   and the panel still owns a clear band at the bottom. */
+			   zero-size box. The real position is chosen in SetSidePanel, on open. */
 			CardSlot->SetAnchors(FAnchors(0.20f, 0.66f, 0.80f, 0.96f));
 			CardSlot->SetOffsets(FMargin(0.0f));
 		}
@@ -219,10 +242,53 @@ void UNpcChatWidget::HandleTextCommitted(const FText& Text, ETextCommit::Type Me
 
 FReply UNpcChatWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
+	/* Kept for the packaged build, where nothing else owns Escape. In PIE the editor
+	   binds it to StopPlaySession and takes it first, which is why the Close button
+	   exists rather than this being the only way out. */
 	if (InKeyEvent.GetKey() == EKeys::Escape)
 	{
 		OnClose.ExecuteIfBound();
 		return FReply::Handled();
 	}
 	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
+void UNpcChatWidget::HandleCloseClicked()
+{
+	OnClose.ExecuteIfBound();
+}
+
+void UNpcChatWidget::SetSidePanel(bool bSide)
+{
+	if (!Card)
+	{
+		return;
+	}
+
+	UCanvasPanelSlot* CardSlot = Cast<UCanvasPanelSlot>(Card->Slot);
+	if (!CardSlot)
+	{
+		return;
+	}
+
+	/* TWO COMPOSITIONS, AND THE SIDE ONE IS WHY THE CAMERA MOVES TOO.
+
+	   Bottom band: the card owns a strip under her chin. It reads well and it costs
+	   the bottom of her face — at 38 degrees of FOV her head fills the middle of the
+	   frame, so there is nowhere else for a full-width card to go.
+
+	   Side column: the shot yaws her left of centre (UDancerAgentComponent's chat
+	   framing) and the text takes the cleared right third. Her whole face stays
+	   visible, and the column is TALLER than the band was, so the transcript gains
+	   lines rather than losing them. This only works because both halves move; a side
+	   panel over a centred face would sit on her hair. */
+	if (bSide)
+	{
+		CardSlot->SetAnchors(FAnchors(0.54f, 0.16f, 0.975f, 0.90f));
+	}
+	else
+	{
+		CardSlot->SetAnchors(FAnchors(0.20f, 0.66f, 0.80f, 0.96f));
+	}
+	CardSlot->SetOffsets(FMargin(0.0f));
 }
