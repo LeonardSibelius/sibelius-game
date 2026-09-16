@@ -15,7 +15,10 @@
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "CoreGlobals.h"          // GFrameCounter — see AdvanceTime
+#include "HAL/FileManager.h"
 #include "HAL/IConsoleManager.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogNpcChatSmoke, Log, All);
@@ -77,6 +80,46 @@ namespace NpcChatSmokeTestNS
 		const IConsoleVariable* Var = IConsoleManager::Get().FindConsoleVariable(Name);
 		return Var ? Var->GetInt() : Fallback;
 	}
+
+	/**
+	 * Does any config file THAT SHIPS set this console variable?
+	 *
+	 * The question that matters is not "is the switch off on this machine right now" —
+	 * a developer who puts sib.Chat.Enable=1 in the engine's own ConsoleVariables.ini
+	 * is doing the supported thing, and that file is machine-local and never packaged.
+	 * What must never happen is the switch being set in the project's Config/, because
+	 * that folder is in the repo and goes into the build. Commented lines do not count.
+	 */
+	bool ShippedConfigSets(const TCHAR* Token, FString& OutWhere)
+	{
+		TArray<FString> IniFiles;
+		IFileManager::Get().FindFilesRecursive(IniFiles, *FPaths::ProjectConfigDir(),
+			TEXT("*.ini"), /*Files=*/true, /*Directories=*/false);
+
+		for (const FString& IniFile : IniFiles)
+		{
+			TArray<FString> Lines;
+			if (!FFileHelper::LoadFileToStringArray(Lines, *IniFile))
+			{
+				continue;
+			}
+
+			for (const FString& RawLine : Lines)
+			{
+				const FString Line = RawLine.TrimStartAndEnd();
+				if (Line.IsEmpty() || Line.StartsWith(TEXT(";")) || Line.StartsWith(TEXT("#")))
+				{
+					continue;
+				}
+				if (Line.Contains(Token, ESearchCase::IgnoreCase))
+				{
+					OutWhere = FPaths::GetCleanFilename(IniFile) + TEXT(" -> ") + Line;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }
 
 UNpcChatSmokeTestCommandlet::UNpcChatSmokeTestCommandlet()
@@ -101,12 +144,37 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(Defaults && !Defaults->bChatEnabled,
 			TEXT("chat is OFF on the component default (1.0 ships chat-free)"));
 
-		// -1 would mean the variable is missing entirely, which is also a failure:
-		// the routing in TryInteract reads it, and a missing switch is not an off one.
-		R.Check(ReadCVarInt(TEXT("sib.Chat.Enable"), -1) == 0,
-			TEXT("sib.Chat.Enable exists and defaults to 0"));
+		// -1 means the variable is missing entirely, which is its own failure: the
+		// routing in TryInteract reads it, and a switch that does not exist is not an
+		// off one.
+		R.Check(ReadCVarInt(TEXT("sib.Chat.Enable"), -1) != -1,
+			TEXT("sib.Chat.Enable is registered"));
+
+		/* THE RIGHT QUESTION IS WHAT SHIPS, NOT WHAT THIS MACHINE HAS.
+
+		   This assertion used to read the variable's current value, and it went red the
+		   first time a developer enabled chat for a walk-test through the engine's
+		   machine-local ConsoleVariables.ini — a supported thing to do, with a file that
+		   is never packaged. A gate that fails for that is a gate people learn to
+		   ignore. What would really break the 1.0 promise is the switch set in the
+		   project's own Config/, which is in the repo and goes into the build. */
+		/* Searched FIRST, then the label is built. C++ does not order argument
+		   evaluation, so passing the search and a message that reads Offender as two
+		   arguments to Check printed the empty version even when it had found
+		   something — a gate that fails without naming the file it failed on. */
+		FString Offender;
+		const bool bShippedConfigEnables = ShippedConfigSets(TEXT("sib.Chat.Enable"), Offender);
+		R.Check(!bShippedConfigEnables,
+			bShippedConfigEnables
+				? FString::Printf(TEXT("no shipped config turns chat on (found %s)"), *Offender)
+				: FString(TEXT("no shipped config turns chat on")));
+
+		// Reported, not asserted: this one is about the environment this run happens in.
+		UE_LOG(LogNpcChatSmoke, Display, TEXT("  [note] sib.Chat.Enable reads %d in this process"),
+			ReadCVarInt(TEXT("sib.Chat.Enable"), -1));
+
 		R.Check(ReadCVarInt(TEXT("sib.Chat.MockFail"), -1) == 0,
-			TEXT("sib.Chat.MockFail defaults to 0 (no forced failures in a normal run)"));
+			TEXT("no forced failure is active in this environment"));
 	}
 
 	// --- 2) A standalone game instance, for the subsystem and a world to spawn into.
