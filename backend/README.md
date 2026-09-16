@@ -107,6 +107,22 @@ cannot spend past the cap and discover it afterwards.
   writing but has not been through Walt's ear, and invented backstory is not canon until
   it has.
 
+## Deployed
+
+**`https://sibelius-npc-chat.fly.dev`** — Fly.io, region `sjc`, one `shared-cpu-1x`
+256 MB machine, 1 GB encrypted volume at `/data` with scheduled snapshots. Live since
+2026-09-16.
+
+First remote call measured **1,288 ms** end to end against **957 ms** on localhost, so
+the extra hop costs roughly 330 ms — and 284 ms of that was the one-time TLS handshake,
+so a warm connection lands near 1,050 ms. Inside the 1.5 s p50 target.
+
+```bash
+curl https://sibelius-npc-chat.fly.dev/health   # mode, model, budget
+flyctl logs                                      # the [chat] ... usd=... line per request
+flyctl secrets set CHAT_DISABLED=1               # kill switch
+```
+
 ## Deploying (Fly.io)
 
 Chosen because this backend wants **one always-on process with a disk**, which is the

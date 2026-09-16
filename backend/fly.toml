@@ -1,62 +1,54 @@
 # Fly config for the NPC chat proxy.
 #
-# ONE MACHINE, ALWAYS ON, WITH A DISK — and each of those three is load-bearing.
+# `fly launch` rewrote this file and stripped the comments; the settings all survived.
+# They are restored here because each of the three below is load-bearing, and without
+# the reasoning someone will eventually "tidy" one of them.
 #
-#   One machine, because the spend ledger is a file and the dedup table and rate limiter
-#   live in memory. Two machines would make the $15 cap advisory rather than enforced.
-#   That is documented in README.md as the condition for this design being correct.
+#   ONE MACHINE (no scale, HA off). The spend ledger is a file and the dedup table and
+#   rate limiter live in memory. A second machine makes the $15 cap advisory.
 #
-#   Always on, because a cold start costs seconds and the latency target is a measured
-#   p50 of 957 ms. A player watching Kaia's face wait four seconds for a container is a
-#   worse outcome than the few dollars auto-stop would save.
+#   ALWAYS ON (auto_stop off, min 1). A cold start costs seconds against a measured p50
+#   of 957 ms. A player watching Kaia's face wait for a container is worse than the
+#   couple of dollars auto-stop saves.
 #
-#   With a disk, because a restart that reset the month's spend to zero would silently
+#   A DISK (the /data mount). A restart that reset the month's spend to zero would
 #   remove the only control that stops at OUR number rather than Google's.
+#
+# See docs/NPC_CHAT_REVIEW.md and backend/README.md.
 
-app = "sibelius-npc-chat"
-primary_region = "sjc"
+app = 'sibelius-npc-chat'
+primary_region = 'sjc'
 
 [build]
-
 [env]
-  PORT = "8787"
-  BUDGET_FILE = "/data/budget.json"
-  GEMINI_MODEL = "gemini-3.1-flash-lite"
-
-  # Our stops. Google's prepay balance sits behind them; see docs/NPC_CHAT_REVIEW.md.
-  MONTHLY_CAP_USD = "15"
-  DAILY_CAP_USD = "0.75"
-
-  # Measured at 18-40 output tokens a reply, so 512 is headroom rather than a target.
-  MAX_OUTPUT_TOKENS = "512"
-
-  # THINKING_BUDGET stays unset until the controls for this model are verified in its
-  # own docs. It is the largest single lever on cost.
-
-  PER_IP_PER_MINUTE = "12"
-  UPSTREAM_TIMEOUT_MS = "20000"
-
-  # The kill switch. Flip with: fly secrets set CHAT_DISABLED=1
-  CHAT_DISABLED = "0"
+  BUDGET_FILE = '/data/budget.json'
+  CHAT_DISABLED = '0'
+  DAILY_CAP_USD = '0.75'
+  GEMINI_MODEL = 'gemini-3.1-flash-lite'
+  MAX_OUTPUT_TOKENS = '512'
+  MONTHLY_CAP_USD = '15'
+  PER_IP_PER_MINUTE = '12'
+  PORT = '8787'
+  UPSTREAM_TIMEOUT_MS = '20000'
 
 [[mounts]]
-  source = "npcchat_data"
-  destination = "/data"
+  source = 'npcchat_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8787
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
 
   [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "15s"
-    method = "GET"
-    path = "/health"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '15s'
+    method = 'GET'
+    path = '/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
+  size = 'shared-cpu-1x'
+  memory = '256mb'
