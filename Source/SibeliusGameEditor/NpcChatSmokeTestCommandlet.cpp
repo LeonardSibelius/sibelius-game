@@ -347,6 +347,15 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			Agent->AgentName.Reset();
 			R.Check(Agent->ResolveChatId() == FName(TEXT("kaia")),
 				TEXT("identity: the stable id survives a display name going away"));
+
+			/* CANONICAL CASING, because this id goes on the wire to an allowlist. The
+			   first live round trip sent "Kaia" and worked only because that backend
+			   folds case before its lookup. FName comparison is case-insensitive, so
+			   this costs no already-saved conversation. */
+			Agent->ChatId = NAME_None;
+			Agent->AgentName = TEXT("Kaia");
+			R.Check(Agent->ResolveChatId().ToString() == TEXT("kaia"),
+				TEXT("identity: a display-name fallback is lowercased for the wire"));
 		}
 	}
 	else
@@ -581,6 +590,19 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			UrlVar->Set(TEXT("https://example.invalid/v1/npc-chat"));
 			R.Check(UNpcChatSubsystem::CurrentMode() == ENpcChatMode::Proxy,
 				TEXT("mode: proxy with a URL is proxy"));
+
+			/* THE ONE THE CONSOLE CAUSED. `sib.Chat.ProxyUrl http://host/path` sets the
+			   variable to "http:" because // opens a comment, and the failure then
+			   arrives as a network error indistinguishable from a dead server. */
+			UrlVar->Set(TEXT("http:"));
+			R.Check(!UNpcChatSubsystem::IsUsableProxyUrl(TEXT("http:")),
+				TEXT("url: a console-truncated URL is rejected, not dialled"));
+			R.Check(UNpcChatSubsystem::CurrentMode() == ENpcChatMode::Disabled,
+				TEXT("url: a truncated URL disables chat instead of failing as a connection"));
+			R.Check(!UNpcChatSubsystem::IsUsableProxyUrl(TEXT("127.0.0.1:8787/v1/npc-chat")),
+				TEXT("url: a scheme-less host is rejected"));
+			R.Check(UNpcChatSubsystem::IsUsableProxyUrl(TEXT("http://127.0.0.1:8787/v1/npc-chat")),
+				TEXT("url: a whole loopback URL is accepted"));
 
 			ModeVar->Set(SavedMode);
 			UrlVar->Set(*SavedUrl);

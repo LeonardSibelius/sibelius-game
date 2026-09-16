@@ -1090,8 +1090,15 @@ FName UDancerAgentComponent::ResolveChatId() const
 	/* AgentName is derived from the actor at BeginPlay, so it is stable for a PLACED
 	   dancer and only for a placed one. That is enough for Kaia, Nyra, Isla, Aisling
 	   and Elise; anything spawned at runtime needs ChatId set by hand, which is what
-	   the property's comment says and what this fallback quietly depends on. */
-	return AgentName.IsEmpty() ? NAME_None : FName(*AgentName);
+	   the property's comment says and what this fallback quietly depends on.
+
+	   LOWERCASED, because this id goes on the wire. The first proxy round trip sent
+	   "Kaia" where the backend's allowlist is keyed "kaia", and it only worked because
+	   that server happens to fold case before looking up. A display name is the wrong
+	   thing to key a service on anyway: it can carry a space, an inner capital or a
+	   translation. FName comparison is case-insensitive, so conversations already saved
+	   under "Kaia" still resolve - no memory is stranded by this. */
+	return AgentName.IsEmpty() ? NAME_None : FName(*AgentName.ToLower());
 }
 
 bool UDancerAgentComponent::HasAuthoredBusinessPending() const

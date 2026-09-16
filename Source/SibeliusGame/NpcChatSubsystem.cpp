@@ -79,10 +79,10 @@ ENpcChatMode UNpcChatSubsystem::CurrentMode()
 	const int32 Raw = FMath::Clamp(CVarChatMode.GetValueOnGameThread(), 0, 2);
 	const ENpcChatMode Configured = static_cast<ENpcChatMode>(Raw);
 
-	/* PROXY WITHOUT A URL IS DISABLED, NOT BROKEN. Answering "unavailable" is the right
-	   behaviour for an unconfigured build, and it is also what stops a half-configured
-	   release from spraying failed requests at nothing. */
-	if (Configured == ENpcChatMode::Proxy && ProxyUrl().IsEmpty())
+	/* PROXY WITHOUT A USABLE URL IS DISABLED, NOT BROKEN. Answering "unavailable" is the
+	   right behaviour for an unconfigured build, and it stops a half-configured release
+	   from spraying failed requests at nothing. */
+	if (Configured == ENpcChatMode::Proxy && !IsUsableProxyUrl(ProxyUrl()))
 	{
 		return ENpcChatMode::Disabled;
 	}
@@ -92,6 +92,43 @@ ENpcChatMode UNpcChatSubsystem::CurrentMode()
 FString UNpcChatSubsystem::ProxyUrl()
 {
 	return CVarChatProxyUrl.GetValueOnGameThread().TrimStartAndEnd();
+}
+
+bool UNpcChatSubsystem::IsUsableProxyUrl(const FString& Url)
+{
+	if (Url.IsEmpty())
+	{
+		return false;
+	}
+
+	/* THE CONSOLE EATS "//". UE's command parser treats a double slash as the start of a
+	   comment, so `sib.Chat.ProxyUrl http://host/path` sets the variable to "http:" and
+	   everything after is discarded. libcurl then rejects it - "Port number was not a
+	   decimal number" - and the player sees the NETWORK line, which is indistinguishable
+	   from the backend being down. That cost a round trip of guessing once.
+
+	   So the shape is checked, and a bad one is named in the log rather than left to
+	   fail as a phantom connection error. Set it with quotes, or from
+	   ConsoleVariables.ini, which the console tokenizer never touches. */
+	const bool bHasScheme = Url.StartsWith(TEXT("http://")) || Url.StartsWith(TEXT("https://"));
+	const int32 SchemeEnd = Url.Find(TEXT("://"));
+	const bool bHasHost = SchemeEnd != INDEX_NONE && Url.Len() > SchemeEnd + 3;
+
+	if (!bHasScheme || !bHasHost)
+	{
+		// Once per distinct value: a warning every frame would be its own problem.
+		static FString LastComplaint;
+		if (LastComplaint != Url)
+		{
+			LastComplaint = Url;
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Chat] ProxyUrl \"%s\" is not a usable http(s) URL - chat is disabled. ")
+				TEXT("The console treats // as a comment: quote the value, or set it in ConsoleVariables.ini."),
+				*Url);
+		}
+		return false;
+	}
+	return true;
 }
 
 bool UNpcChatSubsystem::IsMock()

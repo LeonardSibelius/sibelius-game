@@ -133,6 +133,15 @@ public:
 	/** The configured backend, or empty. Not a secret — the key never leaves the proxy. */
 	static FString ProxyUrl();
 
+	/**
+	 * Is that string something libcurl could actually dial?
+	 *
+	 * Exists because a mangled URL and a dead server produce the same player-facing
+	 * line, and only one of them is worth debugging. See the note on the console and
+	 * double slashes in the implementation.
+	 */
+	static bool IsUsableProxyUrl(const FString& Url);
+
 	// -----------------------------------------------------------------------
 	// THE CONTRACT (docs/GEMINI_3_1_FLASH_LITE_HANDOFF.md, step 2)
 	//
