@@ -254,6 +254,65 @@ its own slot with the same version-and-migrate discipline.
 
 ---
 
+## Steps 4-5 as walked — PIE, 2026-09-16
+
+Walked by Walt in `L_Office_v02` on Kaia, with `sib.Chat.Enable 1`. Reported green.
+Confirmed from screenshots: the panel opens on her recorded line, typing works with
+movement dead and the cursor back, a reply lands about a second later, and a saved
+conversation is replayed in order with the right speakers between the `what she
+remembers` and `now` markers — across a session boundary, which is the disk round trip
+and the whole of step 5.
+
+### Three things the walk-test decided
+
+**The panel moved twice, and the second move needed the camera.** It started as a
+full-width band at 0.56 of screen height and cut across her mouth — the complaint
+`docs/DANCER_VOICE.md` was written about, rebuilt in a different widget three weeks
+after the HUD was blanked to prevent it. Dropping the band to 0.66 cleared her mouth
+and still covered her chin, and Walt's own verdict was that dropping it further would
+not leave enough text space. He was right: the band could not win, because at
+`TalkCameraFOV` her head fills the middle of the frame and a full-width card has
+nowhere to go.
+
+The fix moves both halves. The chat shot yaws the camera 10 degrees so she sits left of
+centre and widens to 46 so an off-centre head keeps both ears; the card takes the
+cleared right column, which is TALLER than the band was. The transcript gained lines
+instead of losing them. Everything is behind `bChatting`, so the authored greeting keeps
+its dead-centre portrait. Tunable live: `sib.Chat.SidePanel`, `sib.Chat.ComposeYaw`,
+`sib.Chat.Fov`, re-read on each open.
+
+**Esc closes the play session, not the panel.** The editor binds `StopPlaySession` to
+Escape (`DebuggerCommands.cpp:362`) and takes the key before the widget sees it. Esc is
+still handled for the packaged build, where nothing else owns it, but a way out that can
+only be exercised in a build nobody plays during development is a way out nobody has
+tested — so the panel grew a **Close** button beside her name.
+
+**The gate learned to ask the right question.** `sib.Chat.Enable=1` went into the
+engine's own `ConsoleVariables.ini` so it survives editor restarts, and the gate went
+red instantly. It was wrong to: that file is machine-local and never packaged. The
+assertion now checks whether any file in the project's `Config/` sets the switch — the
+thing that would actually ship — and reports the process value as a note. Verified both
+ways.
+
+### Environment lessons, for the next person who loses an hour
+
+- The editor stalled twice at *Submitting global shader DDC Requests* with everything
+  idle: no shader workers, no errors, Zen healthy, 1.2 TB free. It cleared on its own
+  the third time. If it recurs, `-ddc=InstalledNoZenLocalFallback` drops Zen's local
+  cache out of the hierarchy and is the one-launch test for whether Zen is the cause.
+- A C++ build fails with *Unable to build while Live Coding is active* whenever the
+  editor is open, and Ctrl+Alt+F11 will not cover a change that adds a `UPROPERTY` or a
+  `UFUNCTION`. Close the editor for those.
+
+### Still unproven
+
+Esc closing the panel in a packaged build — untestable in PIE by construction. And the
+face rig: Isla logged `shape=**MISSING**` with mouth peak 0.00 during a greeting, which
+is consistent with `bTalkMouthMotion` shipping false and is the rig work rung three
+needs (see *Where Walt wants this to go*).
+
+---
+
 ## Decisions that need Walt
 
 **Free tier, or a paid tier with a hard spend cap?** Still open. Free means the feature
