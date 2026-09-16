@@ -436,9 +436,25 @@ So three mitigations that were prudence become load-bearing:
    alone cannot tell a launch from an attack.
 3. **Per-session and per-IP throttling**, for the same reason rather than the old one.
 
+**Three stops, and only two of them hold still.**
+
+| stop | amount | enforced by |
+|---|---:|---|
+| proxy counter | $15 / month | us, with the story-safe message |
+| prepay balance | $25 | Google, hard |
+| billing-account tier cap | $250 | Google, hard — **and it raises itself** |
+
 **Auto-reload stays off.** It is what makes $25 a ceiling instead of a suggestion; with
 it on, a runaway refills itself. Treat turning it on as a decision requiring the same
 thought as raising the cap.
+
+**Do not count the $250 as a safety net.** The tier panel states the promotion rule
+plainly: once $100 has been spent on the Gemini API and three days have passed since the
+first payment, the account moves to the next tier automatically, and Tier 2's cap is
+$2,000. At $15 a month that is roughly seven months away — but it means the tier cap is
+a throttle on new accounts, not a ceiling anyone chose, and it drifts upward without a
+decision. The two limits that never move on their own are the prepay balance with
+auto-reload off, and the counter we write. Those are the controls.
 
 **The cost graph is not a spend meter.** AI Studio warns that costs take hours and may
 take more than a day to appear, so it cannot show what a test run cost on the day it
