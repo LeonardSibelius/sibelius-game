@@ -153,6 +153,15 @@ public:
 	 */
 	static bool IsUsableProxyUrl(const FString& Url);
 
+	/** Exactly what was configured, before a scheme is supplied. For diagnostics. */
+	static FString ConfiguredProxyUrl();
+
+private:
+	/** Shape check on a URL that already has its scheme. */
+	static bool IsWholeUrl(const FString& Url);
+
+public:
+
 	// -----------------------------------------------------------------------
 	// THE CONTRACT (docs/GEMINI_3_1_FLASH_LITE_HANDOFF.md, step 2)
 	//

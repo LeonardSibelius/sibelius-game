@@ -627,8 +627,21 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 				TEXT("url: a console-truncated URL is rejected, not dialled"));
 			R.Check(UNpcChatSubsystem::CurrentMode() == ENpcChatMode::Disabled,
 				TEXT("url: a truncated URL disables chat instead of failing as a connection"));
-			R.Check(!UNpcChatSubsystem::IsUsableProxyUrl(TEXT("127.0.0.1:8787/v1/npc-chat")),
-				TEXT("url: a scheme-less host is rejected"));
+			/* SCHEME-LESS IS THE SUPPORTED FORM NOW, because "//" opens a comment in the
+			   console AND in ConsoleVariables.ini - there is no way to write a whole URL
+			   in either. Loopback gets http; anything else gets https, so a typo cannot
+			   quietly downgrade a remote backend to clear text. */
+			UrlVar->Set(TEXT("127.0.0.1:8787/v1/npc-chat"));
+			R.Check(UNpcChatSubsystem::IsUsableProxyUrl(TEXT("127.0.0.1:8787/v1/npc-chat")),
+				TEXT("url: a scheme-less loopback host is accepted"));
+			R.Check(UNpcChatSubsystem::ProxyUrl() == TEXT("http://127.0.0.1:8787/v1/npc-chat"),
+				TEXT("url: loopback is dialled over http"));
+			R.Check(UNpcChatSubsystem::CurrentMode() == ENpcChatMode::Proxy,
+				TEXT("url: a scheme-less value still resolves to proxy mode"));
+
+			UrlVar->Set(TEXT("chat.example.com/v1/npc-chat"));
+			R.Check(UNpcChatSubsystem::ProxyUrl() == TEXT("https://chat.example.com/v1/npc-chat"),
+				TEXT("url: a remote host is dialled over https, never clear text"));
 			R.Check(UNpcChatSubsystem::IsUsableProxyUrl(TEXT("http://127.0.0.1:8787/v1/npc-chat")),
 				TEXT("url: a whole loopback URL is accepted"));
 

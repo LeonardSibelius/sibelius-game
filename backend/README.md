@@ -30,8 +30,13 @@ Then point the game at it:
 
 ```
 sib.Chat.Mode 2
-sib.Chat.ProxyUrl http://127.0.0.1:8787/v1/npc-chat
+sib.Chat.ProxyUrl 127.0.0.1:8787/v1/npc-chat
 ```
+
+**Leave the scheme off.** `//` opens a comment in UE's console parser *and* in
+`ConsoleVariables.ini`, so a full URL is truncated to `http:` in both. The client
+supplies `http://` for loopback and `https://` for anything else, so a typo cannot
+downgrade a remote backend to clear text.
 
 ## Test it
 

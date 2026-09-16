@@ -98,16 +98,52 @@ ENpcChatMode UNpcChatSubsystem::CurrentMode()
 	/* PROXY WITHOUT A USABLE URL IS DISABLED, NOT BROKEN. Answering "unavailable" is the
 	   right behaviour for an unconfigured build, and it stops a half-configured release
 	   from spraying failed requests at nothing. */
-	if (Configured == ENpcChatMode::Proxy && !IsUsableProxyUrl(ProxyUrl()))
+	/* VALIDATE WHAT WAS CONFIGURED, NOT WHAT WE WOULD DIAL. Checking the normalised
+	   form let "http:" through: it has no "://", so a scheme was prepended and
+	   "https://http:" passed a shape test with "http:" as its host. The truncation
+	   signature only survives in the raw value. */
+	if (Configured == ENpcChatMode::Proxy && !IsUsableProxyUrl(ConfiguredProxyUrl()))
 	{
 		return ENpcChatMode::Disabled;
 	}
 	return Configured;
 }
 
-FString UNpcChatSubsystem::ProxyUrl()
+FString UNpcChatSubsystem::ConfiguredProxyUrl()
 {
 	return CVarChatProxyUrl.GetValueOnGameThread().TrimStartAndEnd();
+}
+
+FString UNpcChatSubsystem::ProxyUrl()
+{
+	/* THE SCHEME IS OPTIONAL, AND THAT IS NOT A CONVENIENCE - IT IS THE ONLY WAY TO
+	   CONFIGURE THIS AT ALL.
+
+	   "//" opens a comment in UE's console parser AND in ConsoleVariables.ini, so
+	   `sib.Chat.ProxyUrl http://host/path` becomes "http:" in both. That cost two
+	   rounds of debugging and a wrong workaround: the ini was recommended as the fix
+	   and it fails identically (LogConfig: CVar [[sib.Chat.ProxyUrl:http:]]).
+
+	   So the supported form has no double slash in it:
+
+	       sib.Chat.ProxyUrl=127.0.0.1:8787/v1/npc-chat
+
+	   Loopback gets http, everything else https - a remote backend holding an API key
+	   has no business being spoken to in clear text, and defaulting the other way would
+	   make a typo into a downgrade. A full URL still works when it can be set somewhere
+	   the comment rule does not apply. */
+	const FString Configured = ConfiguredProxyUrl();
+	if (Configured.IsEmpty() || Configured.Contains(TEXT("://")))
+	{
+		return Configured;
+	}
+
+	const bool bLoopback =
+		Configured.StartsWith(TEXT("127.0.0.1")) ||
+		Configured.StartsWith(TEXT("localhost")) ||
+		Configured.StartsWith(TEXT("[::1]"));
+
+	return (bLoopback ? TEXT("http://") : TEXT("https://")) + Configured;
 }
 
 bool UNpcChatSubsystem::IsUsableProxyUrl(const FString& Url)
@@ -116,6 +152,33 @@ bool UNpcChatSubsystem::IsUsableProxyUrl(const FString& Url)
 	{
 		return false;
 	}
+
+	/* THE TRUNCATION SIGNATURE. "http:" or "https:" with nothing after it is exactly
+	   what both parsers leave behind, and it must never be dialled or silently
+	   repaired - repairing it would invent a host nobody configured. */
+	if (!Url.Contains(TEXT("://")) &&
+		(Url.StartsWith(TEXT("http:")) || Url.StartsWith(TEXT("https:"))))
+	{
+		static FString LastTruncated;
+		if (LastTruncated != Url)
+		{
+			LastTruncated = Url;
+			UE_LOG(LogSibeliusGame, Warning,
+				TEXT("[Chat] ProxyUrl \"%s\" looks truncated - \"//\" opens a comment in both the ")
+				TEXT("console and ConsoleVariables.ini. Drop the scheme: sib.Chat.ProxyUrl=127.0.0.1:8787/v1/npc-chat"),
+				*Url);
+		}
+		return false;
+	}
+
+	// Scheme-less values are legal: ProxyUrl() supplies http for loopback, https
+	// otherwise. Validate the form that will actually be dialled.
+	const FString Dialled = Url.Contains(TEXT("://")) ? Url : ProxyUrl();
+	return IsWholeUrl(Dialled);
+}
+
+bool UNpcChatSubsystem::IsWholeUrl(const FString& Url)
+{
 
 	/* THE CONSOLE EATS "//". UE's command parser treats a double slash as the start of a
 	   comment, so `sib.Chat.ProxyUrl http://host/path` sets the variable to "http:" and
@@ -138,8 +201,7 @@ bool UNpcChatSubsystem::IsUsableProxyUrl(const FString& Url)
 		{
 			LastComplaint = Url;
 			UE_LOG(LogSibeliusGame, Warning,
-				TEXT("[Chat] ProxyUrl \"%s\" is not a usable http(s) URL - chat is disabled. ")
-				TEXT("The console treats // as a comment: quote the value, or set it in ConsoleVariables.ini."),
+				TEXT("[Chat] ProxyUrl resolves to \"%s\", which is not a usable http(s) URL - chat is disabled."),
 				*Url);
 		}
 		return false;

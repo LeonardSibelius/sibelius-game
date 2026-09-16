@@ -1393,7 +1393,15 @@ void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
 
 	if (ChatRequestId == 0)
 	{
-		ChatWidget->SetStatus(FText::FromString(TEXT("One at a time — she is still answering.")));
+		/* TWO DIFFERENT REFUSALS, AND THEY DESERVE DIFFERENT SENTENCES. A second Enter
+		   while she is answering is "one at a time". Everything else - chat disabled, a
+		   backend that was never configured - is the service being unavailable, and
+		   saying she is "still answering" there is a small lie that sent a real
+		   debugging session chasing a slow model that had never been called. */
+		const bool bBusy = Chat->IsBusy();
+		ChatWidget->SetStatus(FText::FromString(bBusy
+			? TEXT("One at a time — she is still answering.")
+			: TEXT("AI conversations are unavailable right now. You can still continue the story.")));
 		ChatWidget->FocusInput();
 		return;
 	}
