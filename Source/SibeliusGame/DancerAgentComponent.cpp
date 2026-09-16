@@ -1221,11 +1221,19 @@ void UDancerAgentComponent::BeginChat()
 		}
 	}
 
-	const FString Opening = GetSpokenLine();
-	if (!Opening.IsEmpty())
-	{
-		ChatWidget->AppendTurn(AgentName, Opening);
-	}
+	/* HER SPOKEN LINE IS DELIBERATELY NOT PRINTED, and this is the second time this
+	   project has landed on the same rule.
+
+	   PlayTalkVoice is already running it above - 7.97 seconds of Kaia saying she has
+	   granted you a power. Appending the same sentence to the transcript delivered it
+	   twice at once, in two forms, and the text won: the player reads it in a quarter
+	   of a second and starts typing over the voice. docs/DANCER_VOICE.md removed the
+	   HUD subtitle for exactly this reason - "the line is a RECORDING now" - and the
+	   panel had quietly reintroduced it.
+
+	   So the voice carries her opening and the transcript starts empty. What the
+	   transcript holds is the conversation: what the player typed, and what the service
+	   answered. Do not add this back without muting the clip. */
 
 	/* UIOnly, focused on the live text box. In UIOnly the game never sees E or Esc, so
 	   the panel closes itself — which is also what keeps a stray E from restarting her
