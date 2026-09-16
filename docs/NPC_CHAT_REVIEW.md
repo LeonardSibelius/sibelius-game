@@ -406,6 +406,45 @@ Walt's call, on the measured numbers. `gemini-3.1-flash-lite`, paid tier, with a
 ceiling of **$15 per month**. The cutoff rule is unchanged in spirit — stop when it runs
 out — it is now a spend cap rather than somebody else's quota wall.
 
+### Billing is live, and the constraint has changed (2026-09-16)
+
+Paid tier activated on `walt-parkman-agent`: billing account `…692239`, **Prepay with
+$25 loaded and auto-reload OFF**, billing-account tier cap $250, credits expiring a year
+from purchase. The rate-limit page now reads **Tier 1**.
+
+| `gemini-3.1-flash-lite` | free tier | Tier 1 |
+|---|---:|---:|
+| requests per minute | 15 | **1,000** |
+| input tokens per minute | 250K | **1M** |
+| requests per day | 500 | **10,000** |
+
+**Money is now the only constraint, and that is a bigger change than the numbers look.**
+Ten thousand requests a day is roughly 300,000 a month; $15 buys about 20,600. The rate
+limit sits some fifteen times above what the budget can afford, so every limiter in the
+design is now protecting a wallet rather than a quota.
+
+**The free tier was also a shield, and it is gone.** At 500 requests a day nobody could
+do much harm to a public endpoint. At 1,000 requests a minute, a $25 balance is 34,000
+replies — **about thirty-five minutes of sustained abuse**. Nothing upstream will stop
+that now; the only thing between a scraper and the balance is our own proxy.
+
+So three mitigations that were prudence become load-bearing:
+
+1. **A monthly counter at $15**, stopping with the story-safe message.
+2. **A daily sub-cap** — recommend about $0.75, roughly 1,000 replies or 100
+   conversations. Without one, a single bad day empties the month, and a monthly cap
+   alone cannot tell a launch from an attack.
+3. **Per-session and per-IP throttling**, for the same reason rather than the old one.
+
+**Auto-reload stays off.** It is what makes $25 a ceiling instead of a suggestion; with
+it on, a runaway refills itself. Treat turning it on as a decision requiring the same
+thought as raising the cap.
+
+**The cost graph is not a spend meter.** AI Studio warns that costs take hours and may
+take more than a day to appear, so it cannot show what a test run cost on the day it
+ran. The proxy must record the token counts that come back on every response — already
+asked for in the handoff as telemetry, and now the only real-time view of spend.
+
 ### What $15 buys, and the caveat that decides whether it is true
 
 At $0.25 per million input and $1.50 per million output, a reply of 2,000 input and 150
