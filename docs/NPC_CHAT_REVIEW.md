@@ -194,6 +194,66 @@ Steps 3 and 4 need no API access at all, so they can start before step 1 is answ
 
 ---
 
+## Step 3 as built — the E binding traced (2026-09-15)
+
+| step | where |
+|---|---|
+| `InteractAction` bound on `ETriggerEvent::Started` | `SibeliusGameCharacter.cpp:291` |
+| `DoInteract()`, early-out on `AreCameraPowersSuspended()` | `SibeliusGameCharacter.cpp:431` |
+| `UInteractorComponent::TryInteract()` | `InteractorComponent.cpp:243` |
+| TV special case, else `IInteractable` → `Execute_Interact`, else find `UDancerAgentComponent` → `Greet()` | `InteractorComponent.cpp:273` |
+
+Dancers are reached by the **fallback** branch — they do not implement `IInteractable`.
+Give a chat-capable agent that interface and greeting stops silently.
+
+`Greet()` forks at once: `HasPowerToGive()` sends E to `PowerGrant->RequestTrial(PC)`
+and returns, because the slot trial takes the camera. Only the second branch talks —
+stop voice, `PlayTalkVoice()`, `PlayTalkFace()` (adjacent on purpose: one start time for
+both clocks), `TalkHoldSeconds`, `HUD->HoldCinematic()`, `BeginGreetingMotion()`,
+`BeginTalkShot()`.
+
+**The safety question is answered by control flow, not by care.**
+`ResumeAfterGreeting()` has exactly one entry point, the `GreetingTimer` callback, armed
+at `:1838` and `:1873`. There is no direct call anywhere in the codebase. `CancelGreeting()`
+clears that timer as its first act (`:1919`). So **any exit routed through
+`CancelGreeting()` cannot reach the grant** — `EndPlay` (`:423`), `ResumeAfterGreeting`
+(`:1912`) and `ShuffleDance` (`:2011`, from `SlapComponent`) already rely on this.
+
+### Three hazards the handoff could not have known about
+
+1. **The HUD lease is a timer sized to a voice clip.** `HoldCinematic(TalkHoldSeconds +
+   TalkCameraBlendIn)` is about seven seconds; a conversation is minutes. When it lapses
+   the crosshair, objective banner and sauce counter return *on top of* the close-up —
+   the exact bug `docs/DANCER_VOICE.md` was written to fix. Chat needs its own
+   open-ended hold, released on close.
+2. **`LockTalkInput()` is not enough for a typing UI.** It sets only `SetIgnoreMoveInput`
+   and `SetIgnoreLookInput` (`:855`). Input mode and cursor are untouched, so chat adds
+   new state with a restore obligation that `EndTalkShot()` will not discharge.
+3. **`bGreeting` without a timer is a loaded gun.** Reusing `BeginGreetingMotion()` for
+   the dance crawl means a second E press takes the `if (bGreeting)` branch at `:1835`
+   and arms the timer — the grant reachable again from a state that never intended it.
+
+### The hook
+
+Split the pose work from the timer work: `EnterTalkPose(bool bArmTimer)` holding today's
+`:1843-1871`, with `BeginGreetingMotion()` passing `true`. `BeginChat()` then calls
+`BeginTalkShot()` + `EnterTalkPose(false)` and raises `bChatting`, so the timer is never
+armed and the grant is unreachable by construction. `Greet()` early-returns to focus the
+open widget while `bChatting`, closing hazard 3. `EndChat()` closes the widget, restores
+input mode and cursor, releases the HUD hold, then calls `CancelGreeting(true)` for the
+shared teardown — which already handles the never-was-greeting case through its
+`bWasGreeting` early-out.
+
+### Save conventions, for step 5
+
+`UProgressionSaveGame` is its own slot, `CurrentSaveVersion = 1`, stamped on write with 0
+meaning blank, every persisted field `UPROPERTY(SaveGame)`, and `UProgressionSubsystem`
+the only runtime writer. Conversation memory does **not** belong in that slot — it is
+deliberately separate from the deploy save so earned powers survive a clear. Memory wants
+its own slot with the same version-and-migrate discipline.
+
+---
+
 ## Decisions that need Walt
 
 **Free tier, or a paid tier with a hard spend cap?** Still open. Free means the feature
