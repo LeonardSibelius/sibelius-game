@@ -375,6 +375,57 @@ in the mock. Reading beats waiting for step 6.
 
 ---
 
+## The latency target (2026-09-16)
+
+Neither handoff sets one. `GEMINI_3_1_FLASH_LITE_HANDOFF.md` proposes a 20-second
+backend deadline and a 25-second client timeout, and those are right — as **failure
+boundaries**. They catch a dead connection. They say nothing about what a conversation
+is allowed to cost, so the first real measurement would have had nothing to fail
+against.
+
+The shot decides the number. She is framed at `TalkCameraFOV` with her face filling
+frame and the HUD blacked out; the player has pressed Enter and is watching her. In
+that frame a pause reads as hesitation long before it reads as a computer working.
+
+| Measured keypress to visible reply | Verdict |
+|---|---|
+| **p50 ≤ 1.5 s** | the target |
+| **p95 ≤ 3 s** | acceptable |
+| **> 5 s** | a design failure, not a slow request |
+
+**Measured client-side, from the keypress to the text appearing** — not the provider's
+own latency figure. Server-side timing hides the two network hops, the proxy's work and
+Unreal's HTTP thread, which is most of what the player actually waits through.
+
+### If it misses, these are the levers, cheapest first
+
+1. **Thinking budget.** The most likely cause of a slow short reply, and 3.1 Flash-Lite's
+   controls must be checked rather than copied from another model — the handoff is right
+   about that.
+2. **Output cap.** 512 tokens is the suggested start for a reply meant to be one to three
+   sentences. A lower cap is faster, but not below what a complete answer needs.
+3. **Context size.** Sixteen turns of history plus a profile is the prompt. Trimming to
+   eight halves the input and is invisible to a player mid-conversation.
+4. **Proxy region.** A backend far from the player adds a round trip twice.
+5. **Streaming.** The real fix for *perceived* latency — first words in half a second
+   make three seconds tolerable. The handoff defers it to a later version, which is the
+   right call for a first connection, but this is the lever to reach for if p95 will not
+   come down.
+
+### Two notes for whoever implements it
+
+The mock's `sib.Chat.MockDelay` default of 1.1 s was chosen to sit at this target, so
+the panel has always been tuned against a realistic wait rather than an instant one.
+Keep it there when the proxy lands; a mock that answers instantly hides every waiting-
+state problem the real service will have.
+
+And if p95 settles above roughly 2.5 s, the waiting state needs to be more than a static
+"thinking" line — at that length a motionless panel under a motionless face reads as a
+hang. That is a UI change, not a service one, and it is cheaper than chasing the last
+second out of the model.
+
+---
+
 ## Decisions that need Walt
 
 **Free tier, or a paid tier with a hard spend cap?** Still open, but no longer a guess —
