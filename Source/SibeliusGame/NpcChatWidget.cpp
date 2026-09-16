@@ -58,10 +58,6 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 		Transcript = WidgetTree->ConstructWidget<UScrollBox>(UScrollBox::StaticClass(), TEXT("ChatScroll"));
 		Transcript->AddChild(TranscriptBox);
 
-		USizeBox* ScrollSize = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("ChatScrollSize"));
-		ScrollSize->SetHeightOverride(210.0f);
-		ScrollSize->AddChild(Transcript);
-
 		StatusText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ChatStatus"));
 		StatusText->SetText(PendingStatus);
 		StatusText->SetFont(FCoreStyle::GetDefaultFontStyle("Italic", 16));
@@ -82,9 +78,16 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 		InputSize->AddChild(InputBox);
 
 		Column->AddChildToVerticalBox(TitleText);
-		if (UVerticalBoxSlot* ScrollSlot = Column->AddChildToVerticalBox(ScrollSize))
+		if (UVerticalBoxSlot* ScrollSlot = Column->AddChildToVerticalBox(Transcript))
 		{
 			ScrollSlot->SetPadding(FMargin(0.0f, 8.0f));
+
+			/* FILL, NOT A FIXED HEIGHT. The card is a fraction of screen height, so a
+			   transcript pinned at 210px fits a 1080p window and overflows a short
+			   one — and the thing it overflows into is her face. Filling makes the
+			   title, status and input take their natural height and gives the
+			   transcript whatever the band has left, at any resolution. */
+			ScrollSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 		}
 		Column->AddChildToVerticalBox(StatusText);
 		if (UVerticalBoxSlot* InputSlot = Column->AddChildToVerticalBox(InputSize))
@@ -96,10 +99,17 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 
 		if (UCanvasPanelSlot* CardSlot = Canvas->AddChildToCanvas(Card))
 		{
-			// Anchors + zero offsets, not a point anchor and SetSize: the Journal and
-			// Generate panels both learned that a point anchor can resolve to a
-			// zero-size box. Lower third, so her face keeps the frame.
-			CardSlot->SetAnchors(FAnchors(0.20f, 0.56f, 0.80f, 0.95f));
+			/* Anchors + zero offsets, not a point anchor and SetSize: the Journal and
+			   Generate panels both learned that a point anchor can resolve to a
+			   zero-size box.
+
+			   THE TOP EDGE IS THE WHOLE DESIGN HERE. At 0.56 the card cut across her
+			   mouth in the first walk-test — the exact complaint docs/DANCER_VOICE.md
+			   was written about, rebuilt in a different widget. The talk shot frames
+			   her at TalkCameraFOV on the head, so in practice her chin lands near
+			   two-thirds of the way down; starting below that keeps the whole face,
+			   and the panel still owns a clear band at the bottom. */
+			CardSlot->SetAnchors(FAnchors(0.20f, 0.66f, 0.80f, 0.96f));
 			CardSlot->SetOffsets(FMargin(0.0f));
 		}
 	}
