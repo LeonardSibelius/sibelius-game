@@ -1356,21 +1356,37 @@ void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
 		return;
 	}
 
+	/* SEND FIRST, THEN RECORD. THE ORDER IS A CONTRACT, NOT A STYLE CHOICE.
+
+	   When the proxy lands it will build the request's recent-turn list out of this
+	   same store. If the player's line were already in the store at the moment Send is
+	   called, it would travel twice — once as `message`, once as the tail of the
+	   history — and the symptom is a character who echoes herself with no obvious
+	   cause. Recording after the send makes the invariant true whoever assembles the
+	   history: AT THE MOMENT OF Send, THE STORE HOLDS ONLY PRIOR TURNS.
+
+	   It also fixes a smaller thing. The transcript used to gain a "You:" line before
+	   anyone knew the send was accepted, so a refused send left her looking like she
+	   had been spoken to and had ignored it. */
+	FOnNpcChatReply Reply;
+	Reply.BindUObject(this, &UDancerAgentComponent::HandleChatReply);
+
+	// The STABLE id, the same one memory is keyed by — not AgentName, which is a
+	// display name derived from the actor. They match today and would diverge the
+	// first time a spawned dancer sets ChatId, which is the whole reason it exists.
+	ChatRequestId = Chat->Send(ResolveChatId().ToString(), PlayerLine, Reply);
+
+	if (ChatRequestId == 0)
+	{
+		ChatWidget->SetStatus(FText::FromString(TEXT("One at a time — she is still answering.")));
+		ChatWidget->FocusInput();
+		return;
+	}
+
 	ChatWidget->AppendTurn(TEXT("You"), PlayerLine);
 	Chat->RecordTurn(ResolveChatId(), /*bFromPlayer=*/true, PlayerLine);
 	ChatWidget->SetInputEnabled(false);
 	ChatWidget->SetStatus(FText::FromString(FString::Printf(TEXT("%s is thinking..."), *AgentName)));
-
-	FOnNpcChatReply Reply;
-	Reply.BindUObject(this, &UDancerAgentComponent::HandleChatReply);
-	ChatRequestId = Chat->Send(AgentName, PlayerLine, Reply);
-
-	if (ChatRequestId == 0)
-	{
-		ChatWidget->SetInputEnabled(true);
-		ChatWidget->SetStatus(FText::FromString(TEXT("One at a time — she is still answering.")));
-		ChatWidget->FocusInput();
-	}
 }
 
 void UDancerAgentComponent::HandleChatReply(const FString& Reply, ENpcChatFailure Failure)

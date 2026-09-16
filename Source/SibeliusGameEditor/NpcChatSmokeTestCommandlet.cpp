@@ -331,6 +331,22 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			}
 
 			R.Check(!Agent->IsChatting(), TEXT("routing: no conversation is open on a fresh dancer"));
+
+			/* --- IDENTITY. One id reaches the service and the save file, or a
+			   conversation is remembered under a name the provider never saw.
+			   AgentName is a DISPLAY name derived from the actor; ChatId is the
+			   stable one, and it exists because the finale altar spawns a dancer
+			   whose actor name changes every session. */
+			R.Check(Agent->ResolveChatId() == FName(TEXT("GateKaia")),
+				TEXT("identity: a blank ChatId falls back to AgentName"));
+
+			Agent->ChatId = FName(TEXT("kaia"));
+			R.Check(Agent->ResolveChatId() == FName(TEXT("kaia")),
+				TEXT("identity: an explicit ChatId wins over the display name"));
+
+			Agent->AgentName.Reset();
+			R.Check(Agent->ResolveChatId() == FName(TEXT("kaia")),
+				TEXT("identity: the stable id survives a display name going away"));
 		}
 	}
 	else
@@ -420,6 +436,21 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(Chat->GetHistory(Kaia).Num() == 0, TEXT("forget: one agent forgets"));
 		R.Check(Chat->GetHistory(Nyra).Num() == 1, TEXT("forget: the others do not"));
 
+		/* THE SERVICE NEVER WRITES MEMORY. Ordering is the component's business - it
+		   sends, then records, so the store holds only prior turns at send time - and
+		   that is only true while Send itself stays out of the store. Lock it down
+		   here so the proxy cannot quietly start recording as well and double every
+		   player line in the next request. */
+		Chat->ForgetAll();
+		Chat->RecordTurn(Kaia, true, TEXT("a prior turn"));
+		FOnNpcChatReply Untouched;
+		const int32 QuietId = Chat->Send(TEXT("kaia"), TEXT("this must not be recorded"), Untouched);
+		R.Check(Chat->GetHistory(Kaia).Num() == 1,
+			TEXT("memory: Send does not write to the store - the component owns the order"));
+		Chat->Cancel(QuietId);
+
+		Chat->ForgetAll();
+		Chat->RecordTurn(Nyra, true, TEXT("and this"));
 		Chat->ForgetAll();
 		R.Check(Chat->GetHistory(Nyra).Num() == 0, TEXT("forget: all of them forget"));
 		R.Check(!FSibeliusSaveIO::Has(UNpcChatSubsystem::SlotName()),
