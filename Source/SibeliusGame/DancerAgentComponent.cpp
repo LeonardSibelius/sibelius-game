@@ -14,6 +14,7 @@
 #include "TimerManager.h"                  // the restage retry, waiting for him to look away
 #include "NpcChatWidget.h"                  // step 4: the typed conversation panel
 #include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
+#include "NpcChatSaveGame.h"                // FNpcChatTurn — what she remembers
 #include "Blueprint/UserWidget.h"           // CreateWidget
 #include "Engine/GameInstance.h"            // GetSubsystem<UNpcChatSubsystem>
 #include "Framework/Application/SlateApplication.h" // hand the keyboard back on close
@@ -1035,6 +1036,27 @@ void UDancerAgentComponent::Greet()
 // in review describe a game that generates nothing at runtime.
 // ---------------------------------------------------------------------------
 
+UNpcChatSubsystem* UDancerAgentComponent::GetChatSubsystem() const
+{
+	const UWorld* World = GetWorld();
+	UGameInstance* GI = World ? World->GetGameInstance() : nullptr;
+	return GI ? GI->GetSubsystem<UNpcChatSubsystem>() : nullptr;
+}
+
+FName UDancerAgentComponent::ResolveChatId() const
+{
+	if (!ChatId.IsNone())
+	{
+		return ChatId;
+	}
+
+	/* AgentName is derived from the actor at BeginPlay, so it is stable for a PLACED
+	   dancer and only for a placed one. That is enough for Kaia, Nyra, Isla, Aisling
+	   and Elise; anything spawned at runtime needs ChatId set by hand, which is what
+	   the property's comment says and what this fallback quietly depends on. */
+	return AgentName.IsEmpty() ? NAME_None : FName(*AgentName);
+}
+
 bool UDancerAgentComponent::HasAuthoredBusinessPending() const
 {
 	// The slot trial owns E while she still has a power in hand.
@@ -1130,8 +1152,28 @@ void UDancerAgentComponent::BeginChat()
 
 	if (UNpcChatSubsystem::IsMock())
 	{
+		// This line used to say nothing was saved. Step 5 made that false, and a
+		// reassurance that has quietly stopped being true is worse than none.
 		ChatWidget->AppendTurn(FString(),
-			TEXT("Placeholder replies. Nothing is saved, and nothing leaves this machine."));
+			TEXT("Placeholder replies. Saved on this machine only, and nothing leaves it."));
+	}
+
+	/* SHE PICKS UP WHERE SHE LEFT OFF. The replayed turns are what she is about to be
+	   given as context when the proxy lands, so showing them is not decoration — it is
+	   the player seeing exactly what she remembers, which is the thing the review asks
+	   to be made legible rather than implied. */
+	if (UNpcChatSubsystem* Memory = GetChatSubsystem())
+	{
+		const TArray<FNpcChatTurn>& Remembered = Memory->GetHistory(ResolveChatId());
+		if (Remembered.Num() > 0)
+		{
+			ChatWidget->AppendTurn(FString(), TEXT("--- what she remembers ---"));
+			for (const FNpcChatTurn& Turn : Remembered)
+			{
+				ChatWidget->AppendTurn(Turn.bFromPlayer ? TEXT("You") : AgentName, Turn.Text);
+			}
+			ChatWidget->AppendTurn(FString(), TEXT("--- now ---"));
+		}
 	}
 
 	const FString Opening = GetSpokenLine();
@@ -1198,6 +1240,12 @@ void UDancerAgentComponent::CloseChatUI()
 			}
 		}
 		ChatRequestId = 0;
+	}
+
+	// A failed write stays dirty, so this is also the retry for a mid-conversation one.
+	if (UNpcChatSubsystem* Memory = GetChatSubsystem())
+	{
+		Memory->SaveNow();
 	}
 
 	if (ChatWidget)
@@ -1271,6 +1319,7 @@ void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
 	}
 
 	ChatWidget->AppendTurn(TEXT("You"), PlayerLine);
+	Chat->RecordTurn(ResolveChatId(), /*bFromPlayer=*/true, PlayerLine);
 	ChatWidget->SetInputEnabled(false);
 	ChatWidget->SetStatus(FText::FromString(FString::Printf(TEXT("%s is thinking..."), *AgentName)));
 
@@ -1301,6 +1350,16 @@ void UDancerAgentComponent::HandleChatReply(const FString& Reply, ENpcChatFailur
 	{
 		ChatWidget->AppendTurn(AgentName, Reply);
 		ChatWidget->SetStatus(FText::GetEmpty());
+
+		/* WRITTEN AT THE END OF EACH EXCHANGE, not only on close. A conversation is
+		   minutes long and the game can be quit from inside one; a memory that only
+		   survived a tidy exit would be missing exactly when the player expects it,
+		   and the write is a few hundred bytes. */
+		if (UNpcChatSubsystem* Memory = GetChatSubsystem())
+		{
+			Memory->RecordTurn(ResolveChatId(), /*bFromPlayer=*/false, Reply);
+			Memory->SaveNow();
+		}
 	}
 	else
 	{

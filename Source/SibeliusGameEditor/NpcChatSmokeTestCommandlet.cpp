@@ -7,6 +7,8 @@
 
 #include "DancerAgentComponent.h"
 #include "NpcChatSubsystem.h"
+#include "NpcChatSaveGame.h"
+#include "SibeliusSaveIO.h"
 #include "PowerGrant.h"
 
 #include "Engine/Engine.h"
@@ -266,6 +268,94 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 	else
 	{
 		R.Check(false, TEXT("routing: the standalone game instance has a world"));
+	}
+
+	// --- 8) MEMORY (step 5). Bounded, round-tripped through the real save path, and
+	// erasable — against a sandbox slot, never a player's own file.
+	if (Chat)
+	{
+		const FName Kaia(TEXT("GateKaia"));
+		const FName Nyra(TEXT("GateNyra"));
+
+		Chat->ForgetAll();
+		R.Check(Chat->GetHistory(Kaia).Num() == 0, TEXT("memory: an agent starts with nothing"));
+
+		Chat->RecordTurn(Kaia, true, TEXT("first thing"));
+		Chat->RecordTurn(Kaia, false, TEXT("her answer"));
+		Chat->RecordTurn(Nyra, true, TEXT("a different agent"));
+
+		R.Check(Chat->GetHistory(Kaia).Num() == 2, TEXT("memory: turns accumulate"));
+		R.Check(Chat->GetHistory(Kaia)[0].bFromPlayer && !Chat->GetHistory(Kaia)[1].bFromPlayer,
+			TEXT("memory: who said what survives"));
+		R.Check(Chat->GetHistory(Nyra).Num() == 1,
+			TEXT("memory: agents do not share a history"));
+
+		/* THE BOUND HOLDS AND KEEPS THE RIGHT END. Dropping the newest would be the
+		   easy bug and the invisible one: she would answer as if the conversation had
+		   stopped several turns ago. */
+		for (int32 i = 0; i < UNpcChatSubsystem::MaxTurnsKept + 6; ++i)
+		{
+			Chat->RecordTurn(Kaia, i % 2 == 0, FString::Printf(TEXT("turn %d"), i));
+		}
+		const TArray<FNpcChatTurn>& Bounded = Chat->GetHistory(Kaia);
+		R.Check(Bounded.Num() == UNpcChatSubsystem::MaxTurnsKept,
+			FString::Printf(TEXT("memory: history is bounded to %d turns (got %d)"),
+				UNpcChatSubsystem::MaxTurnsKept, Bounded.Num()));
+		R.Check(Bounded.Num() > 0 && Bounded.Last().Text == FString::Printf(
+				TEXT("turn %d"), UNpcChatSubsystem::MaxTurnsKept + 5),
+			TEXT("memory: the bound drops the oldest, never the newest"));
+		R.Check(!Bounded.ContainsByPredicate([](const FNpcChatTurn& T){ return T.Text == TEXT("first thing"); }),
+			TEXT("memory: the oldest turn really is gone"));
+
+		// --- 9) The real serialization path, on a sandbox slot.
+		{
+			const FString Sandbox = TEXT("NpcChatSmokeSandbox");
+			UNpcChatSaveGame* Written = Chat->BuildSaveObject();
+			R.Check(Written && Written->SaveVersion == UNpcChatSaveGame::CurrentSaveVersion,
+				TEXT("save: the written object is stamped with the current version"));
+			R.Check(FSibeliusSaveIO::Commit(Written, Sandbox), TEXT("save: commits to the sandbox slot"));
+
+			UNpcChatSaveGame* ReadBack = Cast<UNpcChatSaveGame>(FSibeliusSaveIO::Load(Sandbox));
+			R.Check(ReadBack != nullptr, TEXT("save: loads back as the right class"));
+
+			if (ReadBack)
+			{
+				R.Check(ReadBack->SaveVersion == UNpcChatSaveGame::CurrentSaveVersion,
+					TEXT("save: the version survives the round trip"));
+				R.Check(Chat->ApplySaveObject(ReadBack), TEXT("save: a current-version save is accepted"));
+				R.Check(Chat->GetHistory(Kaia).Num() == UNpcChatSubsystem::MaxTurnsKept,
+					TEXT("save: the bounded history survives the round trip"));
+				R.Check(Chat->GetHistory(Nyra).Num() == 1,
+					TEXT("save: a second agent's history survives with it"));
+				R.Check(Chat->GetHistory(Nyra)[0].Text == TEXT("a different agent"),
+					TEXT("save: the text itself survives (nested struct in a map recurses)"));
+
+				/* A VERSION THIS BUILD CANNOT READ IS REFUSED WHOLE. Half a memory is
+				   worse than none: she would answer from a conversation she only
+				   partly has. */
+				ReadBack->SaveVersion = UNpcChatSaveGame::CurrentSaveVersion + 99;
+				R.Check(!Chat->ApplySaveObject(ReadBack), TEXT("save: a future version is refused"));
+				R.Check(Chat->GetHistory(Kaia).Num() == 0, TEXT("save: a refused load leaves nothing half-read"));
+
+				ReadBack->SaveVersion = 0;
+				R.Check(!Chat->ApplySaveObject(ReadBack), TEXT("save: a blank (version 0) object is refused"));
+			}
+
+			R.Check(FSibeliusSaveIO::Delete(Sandbox), TEXT("save: sandbox slot cleaned up"));
+			R.Check(!FSibeliusSaveIO::Has(Sandbox), TEXT("save: sandbox slot is really gone"));
+		}
+
+		// --- 10) Forgetting, which a player is entitled to ask for.
+		Chat->RecordTurn(Kaia, true, TEXT("remember this"));
+		Chat->RecordTurn(Nyra, true, TEXT("and this"));
+		Chat->ForgetCharacter(Kaia);
+		R.Check(Chat->GetHistory(Kaia).Num() == 0, TEXT("forget: one agent forgets"));
+		R.Check(Chat->GetHistory(Nyra).Num() == 1, TEXT("forget: the others do not"));
+
+		Chat->ForgetAll();
+		R.Check(Chat->GetHistory(Nyra).Num() == 0, TEXT("forget: all of them forget"));
+		R.Check(!FSibeliusSaveIO::Has(UNpcChatSubsystem::SlotName()),
+			TEXT("forget: the real slot is deleted, not emptied"));
 	}
 
 	/* TEAR THE WORLD DOWN, NOT JUST THE GAME INSTANCE (the exit-3 lesson).

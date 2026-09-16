@@ -3,6 +3,8 @@
 #include "NpcChatSubsystem.h"
 
 #include "Engine/GameInstance.h"
+#include "SibeliusSaveIO.h"       // the same disk path Progression uses
+#include "UObject/Package.h"       // GetTransientPackage
 #include "HAL/IConsoleManager.h"
 #include "TimerManager.h"
 #include "SibeliusGame.h"
@@ -145,7 +147,7 @@ FString UNpcChatSubsystem::ComposeMockReply(const FString& CharacterId, const FS
 		TEXT("You said: \"{0}\". I heard it. I am not allowed to say much yet."),
 		TEXT("\"{0}\" - ask me again when I am wired to something that can think."),
 		TEXT("I am a placeholder standing where {1} will answer you about \"{0}\"."),
-		TEXT("That is worth remembering. It will not be, yet: nothing here is saved."),
+		TEXT("That is worth remembering, and now it is — the last few exchanges, on this machine."),
 		TEXT("I granted you a power. Conversation is the part I am still learning."),
 	};
 
@@ -160,4 +162,174 @@ FString UNpcChatSubsystem::ComposeMockReply(const FString& CharacterId, const FS
 	Args.Add(FStringFormatArg(Trimmed));
 	Args.Add(FStringFormatArg(CharacterId));
 	return FString::Format(Lines[Pick], Args);
+}
+
+// ---------------------------------------------------------------------------
+// WHAT SHE REMEMBERS (step 5)
+// ---------------------------------------------------------------------------
+
+void UNpcChatSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+	LoadFromDisk();
+}
+
+void UNpcChatSubsystem::LoadFromDisk()
+{
+	Histories.Reset();
+	bDirty = false;
+
+	if (!FSibeliusSaveIO::Has(SlotName()))
+	{
+		return;   // never talked to anybody. Not an error.
+	}
+
+	const UNpcChatSaveGame* Save = Cast<UNpcChatSaveGame>(FSibeliusSaveIO::Load(SlotName()));
+	if (!ApplySaveObject(Save))
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Chat] conversation slot could not be read; starting with no memories"));
+	}
+}
+
+bool UNpcChatSubsystem::ApplySaveObject(const UNpcChatSaveGame* Save)
+{
+	Histories.Reset();
+	bDirty = false;
+
+	if (!Save)
+	{
+		return false;
+	}
+
+	/* A VERSION THIS BUILD DOES NOT KNOW IS NOT A VERSION TO GUESS AT.
+
+	   0 is a blank or garbage object; anything above CurrentSaveVersion was written by
+	   a later build, and reading it half-way would mean an agent who remembers some of
+	   a conversation. Forgetting is the honest failure here, and the save is left on
+	   disk untouched so a newer build can still read it. */
+	if (Save->SaveVersion <= 0 || Save->SaveVersion > UNpcChatSaveGame::CurrentSaveVersion)
+	{
+		UE_LOG(LogSibeliusGame, Warning,
+			TEXT("[Chat] conversation save version %d is not readable by this build (expects 1..%d)"),
+			Save->SaveVersion, UNpcChatSaveGame::CurrentSaveVersion);
+		return false;
+	}
+
+	Histories = Save->Histories;
+
+	// Trust nothing about the bound: an older save, a hand-edited file or a future
+	// change to MaxTurnsKept all arrive here, and the panel should not be handed
+	// forty turns because the file had them.
+	for (TPair<FName, FNpcChatHistory>& Pair : Histories)
+	{
+		const int32 Excess = Pair.Value.Turns.Num() - MaxTurnsKept;
+		if (Excess > 0)
+		{
+			Pair.Value.Turns.RemoveAt(0, Excess, EAllowShrinking::Yes);
+			bDirty = true;
+		}
+	}
+
+	return true;
+}
+
+UNpcChatSaveGame* UNpcChatSubsystem::BuildSaveObject() const
+{
+	UNpcChatSaveGame* Save = NewObject<UNpcChatSaveGame>(GetTransientPackage());
+	Save->SaveVersion = UNpcChatSaveGame::CurrentSaveVersion;
+	Save->Histories = Histories;
+	return Save;
+}
+
+const TArray<FNpcChatTurn>& UNpcChatSubsystem::GetHistory(FName ChatId) const
+{
+	if (const FNpcChatHistory* Found = Histories.Find(ChatId))
+	{
+		return Found->Turns;
+	}
+
+	static const TArray<FNpcChatTurn> Empty;
+	return Empty;
+}
+
+void UNpcChatSubsystem::RecordTurn(FName ChatId, bool bFromPlayer, const FString& Text)
+{
+	if (ChatId.IsNone() || Text.IsEmpty())
+	{
+		return;
+	}
+
+	FNpcChatHistory& History = Histories.FindOrAdd(ChatId);
+
+	FNpcChatTurn Turn;
+	Turn.bFromPlayer = bFromPlayer;
+	Turn.Text = Text;
+	History.Turns.Add(MoveTemp(Turn));
+
+	const int32 Excess = History.Turns.Num() - MaxTurnsKept;
+	if (Excess > 0)
+	{
+		// Oldest out of the front. The most recent exchange is the one she needs.
+		History.Turns.RemoveAt(0, Excess, EAllowShrinking::Yes);
+	}
+
+	bDirty = true;
+}
+
+void UNpcChatSubsystem::SaveNow()
+{
+	if (!bDirty)
+	{
+		return;   // walking up to a dancer and away again is no reason to touch disk
+	}
+
+	if (FSibeliusSaveIO::Commit(BuildSaveObject(), SlotName()))
+	{
+		bDirty = false;
+	}
+	else
+	{
+		// Kept dirty on purpose: the next close tries again rather than silently
+		// dropping what she was told.
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Chat] could not write the conversation slot"));
+	}
+}
+
+void UNpcChatSubsystem::ForgetCharacter(FName ChatId)
+{
+	if (Histories.Remove(ChatId) > 0)
+	{
+		bDirty = true;
+		SaveNow();
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] %s forgets everything"), *ChatId.ToString());
+	}
+}
+
+void UNpcChatSubsystem::ForgetAll()
+{
+	Histories.Reset();
+	bDirty = false;
+
+	/* DELETE THE SLOT RATHER THAN WRITE AN EMPTY ONE. "Forget everything" should leave
+	   nothing on disk to recover, which is the answer a player asking for it expects,
+	   and it is also what makes a new game start genuinely fresh. */
+	FSibeliusSaveIO::Delete(SlotName());
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] every agent forgets everything"));
+}
+
+namespace
+{
+	/** Player-facing erasure. The panel will grow a button; the console is the start. */
+	FAutoConsoleCommand ChatForgetCommand(
+		TEXT("sib.Chat.Forget"),
+		TEXT("Make the AI agents forget every saved conversation. No argument, no undo."),
+		FConsoleCommandWithWorldDelegate::CreateStatic([](UWorld* World)
+		{
+			UGameInstance* GI = World ? World->GetGameInstance() : nullptr;
+			if (UNpcChatSubsystem* Chat = GI ? GI->GetSubsystem<UNpcChatSubsystem>() : nullptr)
+			{
+				Chat->ForgetAll();
+			}
+		}));
 }

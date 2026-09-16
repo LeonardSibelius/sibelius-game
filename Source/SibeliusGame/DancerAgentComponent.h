@@ -565,6 +565,22 @@ public:
 	bool bChatEnabled = false;
 
 	/**
+	 * WHO SHE IS, ACROSS PLAYTHROUGHS AND LEVELS. The key her conversations are saved
+	 * under (docs/NPC_CHAT_REVIEW.md, step 5).
+	 *
+	 * Left blank it falls back to AgentName, which is right for the placed dancers and
+	 * is the reason this property exists rather than a hard-coded derivation: the
+	 * finale altar SPAWNS a dancer, and an id taken from a transient actor's name
+	 * ("BP_Dancer_Kaia_C_2") would give her a new memory every session. Set it by hand
+	 * on anything spawned, and on anything that should share memory across levels.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer|Chat")
+	FName ChatId;
+
+	/** ChatId, or AgentName when it is unset. None when she has neither. */
+	FName ResolveChatId() const;
+
+	/**
 	 * Open a typed conversation with this agent.
 	 *
 	 * DELIBERATELY NOT A PATH THROUGH Greet(). Greet arms GreetingTimer, and that timer
@@ -818,6 +834,9 @@ private:
 
 	/** Enter in the panel: one request, and the field greys until it answers. */
 	void HandleChatSend(const FString& PlayerLine);
+
+	/** The game instance's chat service, or null headless / during teardown. */
+	class UNpcChatSubsystem* GetChatSubsystem() const;
 
 	/** Esc in the panel. */
 	void HandleChatClose();

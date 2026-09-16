@@ -3,6 +3,7 @@
 #include "ProgressionSubsystem.h"
 #include "ProgressionSaveGame.h"
 #include "SaveSubsystem.h"
+#include "NpcChatSubsystem.h"   // step 5: a new playthrough is a fresh memory
 #include "SibeliusGame.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -242,6 +243,18 @@ void UProgressionSubsystem::ResetProgression()
 	{
 		Saves->DeleteSave(SlotName);
 	}
+	/* A FRESH STATE IS A FRESH PLAYTHROUGH, so the agents forget too (step 5).
+
+	   Conversations are keyed to a playthrough, not to a person at a desk. Leaving
+	   them behind would have Kaia open a brand-new game by following up on something
+	   the previous one told her — the single most broken-feeling outcome the memory
+	   feature can produce. The one line of coupling from 1.0 code to the chat
+	   subsystem; it moves inside the SIB_NPC_CHAT guard when that arrives. */
+	if (UNpcChatSubsystem* Chat = GetGameInstance() ? GetGameInstance()->GetSubsystem<UNpcChatSubsystem>() : nullptr)
+	{
+		Chat->ForgetAll();
+	}
+
 	OnSauceChanged.Broadcast(State.Sauce, 0);
 	UE_LOG(LogSibeliusGame, Display, TEXT("Progression: RESET to fresh state"));
 }
