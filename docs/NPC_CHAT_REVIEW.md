@@ -316,13 +316,38 @@ needs (see *Where Walt wants this to go*).
 ## The measured allowance, and the tier call (2026-09-16)
 
 `docs/GEMINI_3_1_FLASH_LITE_HANDOFF.md` did the thing correction 2 asked for: it read
-the dashboard. Project `walt-parkman-agent`, free tier, `gemini-3.1-flash-lite`:
+the dashboard. **Confirmed first-hand on the same dashboard later that day** — these are
+read values, not quoted ones. Project `walt-parkman-agent`, free tier, zero usage on
+every model:
 
-| Observed | |
+| `gemini-3.1-flash-lite`, free tier | |
 |---|---:|
 | requests per minute | 15 |
 | input tokens per minute | 250,000 |
 | **requests per day** | **500** |
+
+The neighbours explain why this model rather than another:
+
+| Model, free tier | RPM | RPD |
+|---|---:|---:|
+| Gemini 3.1 Flash Lite | 15 | **500** |
+| Gemini 3.5 Flash Lite | 15 | **500** |
+| Gemini 2.5 Flash Lite | 10 | 20 |
+| Gemini 3 / 3.5 / 3.6 / 3.7 / 3.8 Flash | 5 | 20 |
+
+**3.1 and 3.5 Flash-Lite are identical on the free tier and are not identical paid** —
+$0.25 / $1.50 against $0.30 / $2.50. Having chosen capped paid, 3.1 buys the same
+measured capacity for about forty per cent less output cost. The handoff picked right;
+this is the reason.
+
+The other rows matter as a fallback plan: **every full Flash model in the family allows
+twenty requests a day.** If Flash-Lite ever disappoints on reply quality there is no
+free-tier model to fall back to, only a more expensive paid one. Budget for that before
+treating a model swap as a cheap fix.
+
+One practical note for whoever re-checks this: the dashboard hides most models until the
+**All models** toggle is flipped. The default view showed a single unrelated row, which
+is an easy way to conclude the model is missing entirely.
 
 Its own arithmetic: 450 usable after a testing reserve, ten replies per conversation,
 **45 conversations per day across every player who owns the game.** Not 45 each. That is
