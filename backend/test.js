@@ -1,0 +1,163 @@
+// test.js — the backend's gate. `node test.js`, exit 0 or 1.
+//
+// Runs against a REAL http server in mock mode: same parsing, same routing, same
+// dedup, same budget arithmetic, no provider. Every failure branch the game can show a
+// player is reachable here without spending a request, which is the point.
+
+import { createApp } from "./server.js";
+import { createBudget } from "./budget.js";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+let failures = 0;
+const check = (ok, label) => {
+  console.log(`  [${ok ? "PASS" : "FAIL"}] ${label}`);
+  if (!ok) failures += 1;
+};
+
+const scratch = mkdtempSync(join(tmpdir(), "npcchat-"));
+let uuidSeed = 0;
+const uuid = () => `00000000-0000-4000-8000-${String(++uuidSeed).padStart(12, "0")}`;
+
+const app = createApp({
+  mock: true,
+  stateFile: join(scratch, "budget.json"),
+  monthlyCapUsd: 15,
+  dailyCapUsd: 0.75,
+  perIpPerMinute: 12,
+});
+
+await new Promise((resolve) => app.server.listen(0, resolve));
+const base = `http://127.0.0.1:${app.server.address().port}`;
+
+const post = async (body) => {
+  const res = await fetch(`${base}/v1/npc-chat`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return { code: res.status, payload: await res.json() };
+};
+
+const ask = (over = {}) => ({
+  requestId: uuid(),
+  characterId: "kaia",
+  message: "do you remember me?",
+  storyContext: { locationId: "/Game/L_Office_v02", unlockedFacts: [] },
+  recentTurns: [],
+  ...over,
+});
+
+console.log("=== NPC chat backend contract ===");
+
+// --- the happy path
+{
+  const { code, payload } = await post(ask());
+  check(code === 200 && payload.status === "ok" && payload.reply, "a valid request gets a reply");
+  check(typeof payload.requestId === "string", "the reply echoes the request id");
+}
+
+// --- validation speaks the contract, never a stack trace
+{
+  const cases = [
+    [ask({ characterId: "someone-else" }), "an unknown character is refused"],
+    [ask({ message: "" }), "an empty message is refused"],
+    [ask({ message: "x".repeat(1001) }), "an over-long message is refused"],
+    [ask({ recentTurns: Array(17).fill({ role: "user", text: "hi" }) }), "too many turns is refused"],
+    [ask({ recentTurns: [{ role: "narrator", text: "hi" }] }), "an unknown turn role is refused"],
+    [ask({ requestId: "short" }), "a missing request id is refused"],
+  ];
+  for (const [body, label] of cases) {
+    const { code, payload } = await post(body);
+    check(code === 400 && payload.status === "unavailable", label);
+  }
+}
+
+// --- dedup: the guarantee the whole budget rests on
+{
+  const body = ask();
+  const first = await post(body);
+  const replay = await post(body);
+  check(
+    replay.code === 200 && replay.payload.reply === first.payload.reply,
+    "the same id with the same content replays, it does not call again"
+  );
+
+  const conflict = await post({ ...body, message: "different words, same id" });
+  check(conflict.code === 409, "the same id with different content is a conflict");
+}
+
+// --- every failure the player can be shown, reachable without a provider
+{
+  for (const reason of ["quota", "network", "timeout", "blocked", "service"]) {
+    const { payload } = await post(ask({ message: `__fail:${reason}__ hello` }));
+    check(
+      payload.status === "unavailable" && payload.reason === reason,
+      `a ${reason} failure arrives as its own reason`
+    );
+  }
+  const { payload } = await post(ask({ message: "__fail:empty__ hello" }));
+  check(payload.reason === "service", "an empty generation is a service failure, not an empty reply");
+}
+
+// --- health without secrets
+{
+  const res = await fetch(`${base}/health`);
+  const payload = await res.json();
+  const text = JSON.stringify(payload);
+  check(res.status === 200 && payload.budget, "health reports the budget");
+  check(!/apiKey|GEMINI_API_KEY|AIza/i.test(text), "health leaks no credential");
+}
+
+/* AWAITED, AND NO process.exit() AFTERWARDS. Closing the socket and exiting in the same
+   tick trips a libuv assertion on Windows - the run prints every PASS and then dies with
+   exit 127, which is the worst shape a gate can take: green log, red CI. Let the loop
+   drain and set exitCode instead. */
+await new Promise((resolve) => app.server.close(resolve));
+
+// --- the budget, exercised directly: the arithmetic that decides when to stop
+{
+  const budget = createBudget({
+    file: join(scratch, "b2.json"),
+    monthlyCapUsd: 1,
+    dailyCapUsd: 0.1,
+    maxOutputTokens: 512,
+  });
+
+  check(budget.check(2000) === null, "a fresh budget affords a call");
+
+  // A reservation is the worst case, then the real usage replaces it. Without the
+  // reconcile, every call would be billed at its maximum output forever.
+  const handle = budget.reserve(2000);
+  const reservedDay = budget.status().daySpentUsd;
+  const actual = budget.settle(handle, { inputTokens: 2000, outputTokens: 150 });
+  check(actual > 0 && budget.status().daySpentUsd < reservedDay, "the real cost replaces the reservation");
+
+  check(
+    Math.abs(actual - (2000 / 1e6) * 0.25 - (150 / 1e6) * 1.5) < 1e-9,
+    "cost matches Flash-Lite pricing"
+  );
+
+  const released = createBudget({
+    file: join(scratch, "b3.json"),
+    monthlyCapUsd: 1,
+    dailyCapUsd: 0.1,
+    maxOutputTokens: 512,
+  });
+  const h = released.reserve(2000);
+  released.release(h);
+  check(released.status().daySpentUsd === 0, "a released reservation costs nothing");
+
+  // The daily cap is the one that stops a single bad afternoon emptying the month.
+  const tight = createBudget({
+    file: join(scratch, "b4.json"),
+    monthlyCapUsd: 15,
+    dailyCapUsd: 0.0001,
+    maxOutputTokens: 512,
+  });
+  check(tight.check(2000) === "day", "the daily cap refuses before the monthly one is touched");
+}
+
+console.log(`=== ${failures} failure(s) ===`);
+process.exitCode = failures === 0 ? 0 : 1;

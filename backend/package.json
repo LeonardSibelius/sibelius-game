@@ -1,0 +1,13 @@
+{
+  "name": "sibelius-npc-chat-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "NPC chat proxy for Leonard Sibelius. Owns the Gemini key, the model, the character instructions and the spend cap.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "mock": "node --env-file-if-exists=.env server.js",
+    "test": "node test.js"
+  }
+}
