@@ -177,6 +177,34 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			TEXT("no forced failure is active in this environment"));
 	}
 
+	/* --- SANDBOX THE STORE BEFORE ANYTHING CAN WRITE TO IT.
+
+	   Set before the game instance exists, because creating it constructs the subsystem
+	   and the subsystem loads on Initialize. Everything after this point - RecordTurn,
+	   SaveNow, ForgetCharacter, ForgetAll - lands on a slot nobody plays.
+
+	   This is not hypothetical tidiness. An earlier version of this gate ran ForgetAll
+	   against the live slot and deleted a real conversation history minutes before a
+	   walk-test, and the missing memories looked like a bug in the feature. */
+	const FString RealSlot = TEXT("NpcChat");
+	const bool bRealSlotExistedBefore = FSibeliusSaveIO::Has(RealSlot);
+	UNpcChatSubsystem::SetSlotNameForTesting(TEXT("NpcChatSmokeSandbox"));
+
+	/* AND THE GATE OWNS ITS MODE, for the same reason it owns its slot.
+
+	   ConsoleVariables.ini is read by this commandlet as well as the editor, so a
+	   developer who points their machine at a local backend - which is the supported
+	   way to walk-test - would otherwise send every behavioural assertion below down
+	   the HTTP path and fail fifteen of them. Ambient configuration is the subject of
+	   exactly one check in this gate, the shipped-config one above. Everywhere else it
+	   is an input to control, not a condition to inherit. */
+	IConsoleVariable* GateModeVar = IConsoleManager::Get().FindConsoleVariable(TEXT("sib.Chat.Mode"));
+	IConsoleVariable* GateUrlVar = IConsoleManager::Get().FindConsoleVariable(TEXT("sib.Chat.ProxyUrl"));
+	const int32 AmbientMode = GateModeVar ? GateModeVar->GetInt() : 1;
+	const FString AmbientUrl = GateUrlVar ? GateUrlVar->GetString() : FString();
+	if (GateModeVar) { GateModeVar->Set(1); }
+	if (GateUrlVar) { GateUrlVar->Set(TEXT("")); }
+
 	// --- 2) A standalone game instance, for the subsystem and a world to spawn into.
 	UGameInstance* GI = NewObject<UGameInstance>(GEngine);
 	if (!GI)
@@ -609,6 +637,26 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			R.Check(UNpcChatSubsystem::CurrentMode() != ENpcChatMode::Proxy,
 				TEXT("mode: restored to the environment's setting"));
 		}
+	}
+
+	// --- 14) THE GATE LEAVES NO FOOTPRINTS. Asserted, not assumed.
+	{
+		FSibeliusSaveIO::Delete(UNpcChatSubsystem::SlotName());
+		R.Check(!FSibeliusSaveIO::Has(TEXT("NpcChatSmokeSandbox")),
+			TEXT("sandbox: the gate's own slot is cleaned up"));
+
+		UNpcChatSubsystem::SetSlotNameForTesting(FString());
+		if (GateModeVar) { GateModeVar->Set(AmbientMode); }
+		if (GateUrlVar) { GateUrlVar->Set(*AmbientUrl); }
+		R.Check(UNpcChatSubsystem::SlotName() == RealSlot,
+			TEXT("sandbox: the slot name is handed back to the real one"));
+
+		/* THE ASSERTION THAT MATTERS. A player's conversations must be exactly as this
+		   run found them - present if they were present, absent if they were absent. */
+		R.Check(FSibeliusSaveIO::Has(RealSlot) == bRealSlotExistedBefore,
+			bRealSlotExistedBefore
+				? TEXT("sandbox: the player's conversation slot survived the gate")
+				: TEXT("sandbox: the gate did not create a conversation slot"));
 	}
 
 	/* TEAR THE WORLD DOWN, NOT JUST THE GAME INSTANCE (the exit-3 lesson).

@@ -74,6 +74,22 @@ namespace
 	constexpr float ChatHttpTimeoutSeconds = 25.0f;
 }
 
+namespace
+{
+	/** Empty except inside a gate. See SetSlotNameForTesting. */
+	FString GChatSlotOverride;
+}
+
+FString UNpcChatSubsystem::SlotName()
+{
+	return GChatSlotOverride.IsEmpty() ? FString(TEXT("NpcChat")) : GChatSlotOverride;
+}
+
+void UNpcChatSubsystem::SetSlotNameForTesting(const FString& InSlotName)
+{
+	GChatSlotOverride = InSlotName;
+}
+
 ENpcChatMode UNpcChatSubsystem::CurrentMode()
 {
 	const int32 Raw = FMath::Clamp(CVarChatMode.GetValueOnGameThread(), 0, 2);

@@ -122,7 +122,18 @@ public:
 	bool ApplySaveObject(const UNpcChatSaveGame* Save);
 
 	/** The slot conversations live in. Deliberately not the Progression slot. */
-	static const TCHAR* SlotName() { return TEXT("NpcChat"); }
+	static FString SlotName();
+
+	/**
+	 * Point the store at a sandbox slot, for gates only.
+	 *
+	 * EXISTS BECAUSE THE GATE ATE A PLAYER'S CONVERSATIONS. ForgetAll and SaveNow are
+	 * the functions under test, and calling them against the live slot deleted real
+	 * saved history minutes before a walk-test — the empty "what she remembers" block
+	 * was the gate's doing, not a bug in memory. ProgressionSmokeTest had this right
+	 * from the start: "a sandbox slot so the gate can never touch a real player save."
+	 */
+	static void SetSlotNameForTesting(const FString& InSlotName);
 
 	/** True while the service is the canned one. The panel says so, so nobody demos a mock. */
 	static bool IsMock();
