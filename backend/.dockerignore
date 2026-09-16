@@ -1,0 +1,8 @@
+# NEVER bake the key into an image. Secrets come from `fly secrets set`, which puts
+# them in the environment at runtime and never in a layer anyone can pull.
+.env
+.state/
+node_modules/
+test.js
+README.md
+fly.toml

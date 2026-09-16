@@ -107,11 +107,53 @@ cannot spend past the cap and discover it afterwards.
   writing but has not been through Walt's ear, and invented backstory is not canon until
   it has.
 
-## Deploying
+## Deploying (Fly.io)
 
-Unresolved, deliberately. It needs HTTPS, secret storage, outbound HTTP and a writable
-path for the ledger. Whatever host is chosen: keep the key in that host's secret store,
-never in the repo or the game; use a separate staging endpoint with a small cap; and
-verify a packaged client carries no key and no universal backend secret before release.
+Chosen because this backend wants **one always-on process with a disk**, which is the
+cheapest thing to buy and the hardest thing to get from a serverless host. About $3 a
+month: ~$2 for a `shared-cpu-1x` 256 MB machine and $0.15/GB for the volume.
 
-The kill switch is `CHAT_DISABLED=1` — it answers unavailable and calls nobody.
+`fly.toml` and the `Dockerfile` are in this folder. From here:
+
+```bash
+fly launch --no-deploy --copy-config          # reuses fly.toml, does not overwrite it
+fly volumes create npcchat_data --size 1 --region sjc
+fly secrets set GEMINI_API_KEY=...            # from your shell, never from the repo
+fly deploy
+```
+
+`fly secrets set` puts the key in the runtime environment and never in an image layer;
+`.dockerignore` keeps `.env` out of the build for the same reason. Nothing else needs to
+be secret — the model, the caps and the endpoint are all public config in `fly.toml`.
+
+Then point the game at it:
+
+```
+sib.Chat.ProxyUrl=sibelius-npc-chat.fly.dev/v1/npc-chat
+```
+
+No scheme, as always — and because the host is not loopback, the client dials it over
+**https** on its own.
+
+Check it with `fly logs` (the `[chat] … usd=…` line per request) and
+`curl https://sibelius-npc-chat.fly.dev/health`.
+
+### Three things about this config that are load-bearing
+
+- **`min_machines_running = 1` and `auto_stop_machines = false`.** A cold start costs
+  seconds against a measured p50 of 957 ms. A player watching Kaia's face wait for a
+  container is worse than the couple of dollars auto-stop saves.
+- **One machine.** The ledger is a file and the dedup table is in memory, so a second
+  machine makes the $15 cap advisory. If this ever needs to scale, both move to shared
+  state first.
+- **The volume.** A restart that reset the month's spend to zero would remove the only
+  control that stops at *our* number instead of Google's.
+
+### Staging
+
+The review asks for a separate staging endpoint with a small cap. That is a second app
+— `fly launch --name sibelius-npc-chat-staging` with `DAILY_CAP_USD=0.10` — at the same
+couple of dollars. Point a test build at it and leave production alone.
+
+The kill switch is `fly secrets set CHAT_DISABLED=1` — it answers unavailable, calls
+nobody, and takes effect on the restart that setting a secret triggers.
