@@ -457,6 +457,138 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			TEXT("forget: the real slot is deleted, not emptied"));
 	}
 
+	// --- 11) THE CONTRACT (step 6). Proved without a server, a network or a spent
+	// request - which is the entire reason BuildRequestJson and ParseReplyJson are
+	// pure statics rather than code buried inside an HTTP callback.
+	{
+		TArray<FNpcChatTurn> Turns;
+		FNpcChatTurn Said;
+		Said.bFromPlayer = true;
+		Said.Text = TEXT("an earlier player line");
+		Turns.Add(Said);
+		FNpcChatTurn Answered;
+		Answered.bFromPlayer = false;
+		Answered.Text = TEXT("an earlier reply");
+		Turns.Add(Answered);
+
+		const FString Body = UNpcChatSubsystem::BuildRequestJson(
+			TEXT("11111111-2222-3333-4444-555555555555"),
+			TEXT("kaia"), TEXT("do you remember?"), TEXT("/Game/L_Office_v02"), Turns);
+
+		R.Check(Body.Contains(TEXT("\"requestId\":\"11111111-2222-3333-4444-555555555555\"")),
+			TEXT("contract: the request carries its UUID"));
+		R.Check(Body.Contains(TEXT("\"characterId\":\"kaia\"")),
+			TEXT("contract: the request carries the stable character id"));
+		R.Check(Body.Contains(TEXT("\"message\":\"do you remember?\"")),
+			TEXT("contract: the request carries the player's message"));
+		R.Check(Body.Contains(TEXT("\"locationId\":\"/Game/L_Office_v02\"")),
+			TEXT("contract: storyContext carries the location"));
+
+		/* The fact list is EMPTY and present. Spoiler filtering lands with the profiles;
+		   until then an empty allowlist is the honest shape, and shipping the field now
+		   means the backend contract does not change when it fills. */
+		R.Check(Body.Contains(TEXT("\"unlockedFacts\":[]")),
+			TEXT("contract: unlockedFacts ships empty until spoiler filtering exists"));
+
+		R.Check(Body.Contains(TEXT("\"role\":\"user\"")) && Body.Contains(TEXT("\"role\":\"model\"")),
+			TEXT("contract: prior turns carry provider-vocabulary roles"));
+		R.Check(Body.Contains(TEXT("an earlier player line")) && Body.Contains(TEXT("an earlier reply")),
+			TEXT("contract: prior turns carry their text"));
+		R.Check(!Body.Contains(TEXT("\"recentTurns\":[]")),
+			TEXT("contract: recentTurns is populated when history exists"));
+	}
+
+	// --- 12) Reading the backend's answer. Every branch a real service will produce.
+	{
+		FString Reply;
+		ENpcChatFailure Failure = ENpcChatFailure::None;
+
+		R.Check(UNpcChatSubsystem::ParseReplyJson(
+				TEXT("{\"status\":\"ok\",\"requestId\":\"x\",\"reply\":\"I remember.\"}"), Reply, Failure)
+			&& Reply == TEXT("I remember.") && Failure == ENpcChatFailure::None,
+			TEXT("parse: a well-formed ok yields the reply"));
+
+		/* AN EMPTY REPLY IS NOT AN ANSWER. It is also the shape an output cap eaten by
+		   thinking arrives in, so this branch will earn its keep the first time the
+		   token budget is set too low. */
+		R.Check(!UNpcChatSubsystem::ParseReplyJson(
+				TEXT("{\"status\":\"ok\",\"reply\":\"   \"}"), Reply, Failure),
+			TEXT("parse: an empty ok is a failure, not an empty speech bubble"));
+
+		R.Check(!UNpcChatSubsystem::ParseReplyJson(
+				TEXT("{\"status\":\"unavailable\",\"reason\":\"quota\"}"), Reply, Failure)
+			&& Failure == ENpcChatFailure::Quota,
+			TEXT("parse: a declared quota failure keeps its reason"));
+
+		R.Check(!UNpcChatSubsystem::ParseReplyJson(
+				TEXT("{\"status\":\"unavailable\",\"reason\":\"blocked\"}"), Reply, Failure)
+			&& Failure == ENpcChatFailure::Blocked,
+			TEXT("parse: a declared blocked failure keeps its reason"));
+
+		R.Check(!UNpcChatSubsystem::ParseReplyJson(
+				TEXT("{\"status\":\"unavailable\",\"reason\":\"something-new\"}"), Reply, Failure)
+			&& Failure == ENpcChatFailure::Service,
+			TEXT("parse: an unrecognised reason becomes Service, not a new player-facing category"));
+
+		R.Check(!UNpcChatSubsystem::ParseReplyJson(TEXT("not json at all"), Reply, Failure)
+			&& Failure == ENpcChatFailure::Service,
+			TEXT("parse: malformed JSON is a Service failure"));
+
+		R.Check(!UNpcChatSubsystem::ParseReplyJson(TEXT("{\"status\":\"teapot\"}"), Reply, Failure),
+			TEXT("parse: an unknown status is refused"));
+
+		R.Check(UNpcChatSubsystem::FailureFromHttpCode(429) == ENpcChatFailure::Quota
+			&& UNpcChatSubsystem::FailureFromHttpCode(504) == ENpcChatFailure::Timeout
+			&& UNpcChatSubsystem::FailureFromHttpCode(0) == ENpcChatFailure::Network
+			&& UNpcChatSubsystem::FailureFromHttpCode(500) == ENpcChatFailure::Service,
+			TEXT("parse: transport status codes map to reasons"));
+	}
+
+	// --- 13) MODES. An unconfigured build must be honestly unavailable.
+	if (Chat)
+	{
+		IConsoleVariable* ModeVar = IConsoleManager::Get().FindConsoleVariable(TEXT("sib.Chat.Mode"));
+		IConsoleVariable* UrlVar = IConsoleManager::Get().FindConsoleVariable(TEXT("sib.Chat.ProxyUrl"));
+		R.Check(ModeVar && UrlVar, TEXT("mode: sib.Chat.Mode and sib.Chat.ProxyUrl exist"));
+
+		if (ModeVar && UrlVar)
+		{
+			const int32 SavedMode = ModeVar->GetInt();
+			const FString SavedUrl = UrlVar->GetString();
+
+			ModeVar->Set(1);
+			R.Check(UNpcChatSubsystem::CurrentMode() == ENpcChatMode::Mock && UNpcChatSubsystem::IsMock(),
+				TEXT("mode: 1 is mock, and IsMock agrees"));
+
+			ModeVar->Set(0);
+			R.Check(UNpcChatSubsystem::CurrentMode() == ENpcChatMode::Disabled && !UNpcChatSubsystem::IsMock(),
+				TEXT("mode: 0 is disabled"));
+
+			FOnNpcChatReply Ignored;
+			R.Check(Chat->Send(TEXT("kaia"), TEXT("anyone there?"), Ignored) == 0 && !Chat->IsBusy(),
+				TEXT("mode: disabled refuses before an id is spent"));
+
+			/* THE ONE THAT PROTECTS A RELEASE. Proxy with no URL is Disabled, not a
+			   half-configured build firing requests at nothing - and crucially not a
+			   silent fallback to canned lines dressed up as a character talking. */
+			ModeVar->Set(2);
+			UrlVar->Set(TEXT(""));
+			R.Check(UNpcChatSubsystem::CurrentMode() == ENpcChatMode::Disabled,
+				TEXT("mode: proxy without a URL is disabled, never mock"));
+			R.Check(!UNpcChatSubsystem::IsMock(),
+				TEXT("mode: an unconfigured proxy build never claims to be the mock"));
+
+			UrlVar->Set(TEXT("https://example.invalid/v1/npc-chat"));
+			R.Check(UNpcChatSubsystem::CurrentMode() == ENpcChatMode::Proxy,
+				TEXT("mode: proxy with a URL is proxy"));
+
+			ModeVar->Set(SavedMode);
+			UrlVar->Set(*SavedUrl);
+			R.Check(UNpcChatSubsystem::CurrentMode() != ENpcChatMode::Proxy,
+				TEXT("mode: restored to the environment's setting"));
+		}
+	}
+
 	/* TEAR THE WORLD DOWN, NOT JUST THE GAME INSTANCE (the exit-3 lesson).
 
 	   InitializeStandalone creates a world and has no implicit counterpart, so without

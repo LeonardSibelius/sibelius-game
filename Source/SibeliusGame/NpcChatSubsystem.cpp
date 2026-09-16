@@ -3,6 +3,16 @@
 #include "NpcChatSubsystem.h"
 
 #include "Engine/GameInstance.h"
+#include "Engine/World.h"
+#include "HttpModule.h"
+#include "Interfaces/IHttpRequest.h"
+#include "Interfaces/IHttpResponse.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
+#include "Policies/CondensedJsonPrintPolicy.h"
+#include "Misc/Guid.h"
 #include "SibeliusSaveIO.h"       // the same disk path Progression uses
 #include "UObject/Package.h"       // GetTransientPackage
 #include "HAL/IConsoleManager.h"
@@ -34,13 +44,162 @@ namespace
 		0,
 		TEXT("Force the mock chat service to fail: 1 quota, 2 network, 3 timeout, 4 blocked, 5 service."),
 		ECVF_Default);
+
+	/**
+	 * 0 disabled, 1 mock, 2 proxy.
+	 *
+	 * DEFAULTS TO MOCK IN DEVELOPMENT AND DISABLED IN SHIPPING, deliberately. A packaged
+	 * build that somehow reached this code with no backend configured must say the
+	 * feature is unavailable, not serve five canned lines as though a character were
+	 * talking. Off is honest; canned is a lie with a friendly face.
+	 */
+	TAutoConsoleVariable<int32> CVarChatMode(
+		TEXT("sib.Chat.Mode"),
+#if UE_BUILD_SHIPPING
+		0,
+#else
+		1,
+#endif
+		TEXT("Chat service: 0 disabled, 1 mock (canned), 2 proxy (real backend)."),
+		ECVF_Default);
+
+	/** The backend endpoint. Public by design - the API key lives on the far side. */
+	TAutoConsoleVariable<FString> CVarChatProxyUrl(
+		TEXT("sib.Chat.ProxyUrl"),
+		TEXT(""),
+		TEXT("HTTPS endpoint for the NPC chat backend, e.g. https://host/v1/npc-chat"),
+		ECVF_Default);
+
+	/** Client deadline. The backend's own is shorter; this catches a dead connection. */
+	constexpr float ChatHttpTimeoutSeconds = 25.0f;
+}
+
+ENpcChatMode UNpcChatSubsystem::CurrentMode()
+{
+	const int32 Raw = FMath::Clamp(CVarChatMode.GetValueOnGameThread(), 0, 2);
+	const ENpcChatMode Configured = static_cast<ENpcChatMode>(Raw);
+
+	/* PROXY WITHOUT A URL IS DISABLED, NOT BROKEN. Answering "unavailable" is the right
+	   behaviour for an unconfigured build, and it is also what stops a half-configured
+	   release from spraying failed requests at nothing. */
+	if (Configured == ENpcChatMode::Proxy && ProxyUrl().IsEmpty())
+	{
+		return ENpcChatMode::Disabled;
+	}
+	return Configured;
+}
+
+FString UNpcChatSubsystem::ProxyUrl()
+{
+	return CVarChatProxyUrl.GetValueOnGameThread().TrimStartAndEnd();
 }
 
 bool UNpcChatSubsystem::IsMock()
 {
-	// One place to answer it, because the panel, the logs and eventually the smoke gate
-	// all need the same answer. When the proxy lands this becomes a config read.
-	return true;
+	// One place to answer it, because the panel, the logs and the smoke gate all need
+	// the same answer - and the panel's "placeholder replies" notice depends on it.
+	return CurrentMode() == ENpcChatMode::Mock;
+}
+
+ENpcChatFailure UNpcChatSubsystem::FailureFromReason(const FString& Reason)
+{
+	// The allowlist from the contract. Anything else is Service on purpose: an
+	// unrecognised reason is a backend we do not understand, not a new player-facing
+	// category to invent copy for.
+	if (Reason.Equals(TEXT("quota"), ESearchCase::IgnoreCase))   { return ENpcChatFailure::Quota; }
+	if (Reason.Equals(TEXT("network"), ESearchCase::IgnoreCase)) { return ENpcChatFailure::Network; }
+	if (Reason.Equals(TEXT("timeout"), ESearchCase::IgnoreCase)) { return ENpcChatFailure::Timeout; }
+	if (Reason.Equals(TEXT("blocked"), ESearchCase::IgnoreCase)) { return ENpcChatFailure::Blocked; }
+	return ENpcChatFailure::Service;
+}
+
+ENpcChatFailure UNpcChatSubsystem::FailureFromHttpCode(int32 StatusCode)
+{
+	if (StatusCode == 429) { return ENpcChatFailure::Quota; }
+	if (StatusCode == 408 || StatusCode == 504) { return ENpcChatFailure::Timeout; }
+	if (StatusCode == 0) { return ENpcChatFailure::Network; }
+	return ENpcChatFailure::Service;
+}
+
+FString UNpcChatSubsystem::BuildRequestJson(
+	const FString& RequestId,
+	const FString& CharacterId,
+	const FString& Message,
+	const FString& LocationId,
+	const TArray<FNpcChatTurn>& RecentTurns)
+{
+	const TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
+	Root->SetStringField(TEXT("requestId"), RequestId);
+	Root->SetStringField(TEXT("characterId"), CharacterId);
+	Root->SetStringField(TEXT("message"), Message);
+
+	/* storyContext carries a LOCATION and nothing else yet. The allowlisted fact list
+	   arrives with the character profiles; sending unfiltered save state would hand the
+	   model spoilers the player has not earned, which is the one thing the review is
+	   most insistent about. An empty array is the honest placeholder. */
+	const TSharedRef<FJsonObject> Story = MakeShared<FJsonObject>();
+	Story->SetStringField(TEXT("locationId"), LocationId);
+	Story->SetArrayField(TEXT("unlockedFacts"), TArray<TSharedPtr<FJsonValue>>());
+	Root->SetObjectField(TEXT("storyContext"), Story);
+
+	TArray<TSharedPtr<FJsonValue>> Turns;
+	Turns.Reserve(RecentTurns.Num());
+	for (const FNpcChatTurn& Turn : RecentTurns)
+	{
+		const TSharedRef<FJsonObject> TurnObject = MakeShared<FJsonObject>();
+		// "user" and "model" rather than "player" and "agent": the contract speaks the
+		// provider's vocabulary so the backend never has to translate roles.
+		TurnObject->SetStringField(TEXT("role"), Turn.bFromPlayer ? TEXT("user") : TEXT("model"));
+		TurnObject->SetStringField(TEXT("text"), Turn.Text);
+		Turns.Add(MakeShared<FJsonValueObject>(TurnObject));
+	}
+	Root->SetArrayField(TEXT("recentTurns"), Turns);
+
+	/* CONDENSED, NOT PRETTY. Every byte crosses the wire on every turn, and the default
+	   writer indents with tabs and spaces a colon. Nobody reads this body by eye except
+	   in a gate, and the gate is happier with the shape the server actually receives. */
+	FString Body;
+	const TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> Writer =
+		TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&Body);
+	FJsonSerializer::Serialize(Root, Writer);
+	return Body;
+}
+
+bool UNpcChatSubsystem::ParseReplyJson(const FString& Body, FString& OutReply, ENpcChatFailure& OutFailure)
+{
+	OutReply.Reset();
+	OutFailure = ENpcChatFailure::Service;
+
+	TSharedPtr<FJsonObject> Root;
+	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Body);
+	if (!FJsonSerializer::Deserialize(Reader, Root) || !Root.IsValid())
+	{
+		return false;   // malformed: Service, and never shown verbatim
+	}
+
+	const FString Status = Root->GetStringField(TEXT("status"));
+	if (Status.Equals(TEXT("ok"), ESearchCase::IgnoreCase))
+	{
+		const FString Reply = Root->GetStringField(TEXT("reply")).TrimStartAndEnd();
+		if (Reply.IsEmpty())
+		{
+			/* AN EMPTY REPLY IS A FAILURE, NOT AN ANSWER. It is also the shape a
+			   thinking budget that ate the whole output allowance arrives in, so this
+			   branch will earn its keep the first time the output cap is set too low. */
+			return false;
+		}
+		OutReply = Reply;
+		OutFailure = ENpcChatFailure::None;
+		return true;
+	}
+
+	if (Status.Equals(TEXT("unavailable"), ESearchCase::IgnoreCase))
+	{
+		OutFailure = FailureFromReason(Root->GetStringField(TEXT("reason")));
+		return false;
+	}
+
+	return false;   // unknown status
 }
 
 int32 UNpcChatSubsystem::Send(const FString& CharacterId, const FString& Message, FOnNpcChatReply OnReply)
@@ -59,10 +218,33 @@ int32 UNpcChatSubsystem::Send(const FString& CharacterId, const FString& Message
 		return 0;
 	}
 
+	const ENpcChatMode Mode = CurrentMode();
+	if (Mode == ENpcChatMode::Disabled)
+	{
+		/* REFUSED BEFORE AN ID IS SPENT. The panel shows the unavailable line, and the
+		   player never waits on something that was never going to answer. */
+		UE_LOG(LogSibeliusGame, Verbose, TEXT("[Chat] %s: send refused, chat is disabled"), *CharacterId);
+		return 0;
+	}
+
 	InFlightId = NextRequestId++;
 	PendingReply = OnReply;
 	PendingCharacterId = CharacterId;
 	PendingMessage = Message;
+
+	if (Mode == ENpcChatMode::Proxy)
+	{
+		if (!SendOverHttp(InFlightId, CharacterId, Message))
+		{
+			// Could not even be dispatched. Answer now rather than leave the panel
+			// waiting on a request that does not exist.
+			CompleteRequest(InFlightId, FString(), ENpcChatFailure::Network);
+			return 0;
+		}
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] %s: request %d sent (proxy)"),
+			*CharacterId, InFlightId);
+		return InFlightId;
+	}
 
 	const float Delay = FMath::Max(0.05f, CVarChatMockDelay.GetValueOnGameThread());
 
@@ -90,6 +272,16 @@ void UNpcChatSubsystem::Cancel(int32 RequestId)
 	{
 		GI->GetTimerManager().ClearTimer(MockTimer);
 	}
+
+	if (PendingHttp.IsValid())
+	{
+		/* CANCELLING THE TRANSPORT DOES NOT UNSPEND THE REQUEST. The backend may already
+		   have called the provider and been charged, which is exactly why nothing here
+		   retries afterwards: a replay would pay twice for one thought. */
+		PendingHttp->CancelRequest();
+		PendingHttp.Reset();
+	}
+	PendingUuid.Reset();
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] request %d cancelled"), RequestId);
 
@@ -162,6 +354,127 @@ FString UNpcChatSubsystem::ComposeMockReply(const FString& CharacterId, const FS
 	Args.Add(FStringFormatArg(Trimmed));
 	Args.Add(FStringFormatArg(CharacterId));
 	return FString::Format(Lines[Pick], Args);
+}
+
+// ---------------------------------------------------------------------------
+// THE PROXY TRANSPORT (step 6)
+// ---------------------------------------------------------------------------
+
+TArray<FNpcChatTurn> UNpcChatSubsystem::RecentTurnsFor(const FString& CharacterId) const
+{
+	/* The store holds ONLY PRIOR TURNS at this moment - the component sends before it
+	   records, deliberately (DancerAgentComponent::HandleChatSend). Reverse that order
+	   and the current message ships twice, and she starts echoing herself. */
+	return GetHistory(FName(*CharacterId));
+}
+
+FString UNpcChatSubsystem::CurrentLocationId() const
+{
+	const UGameInstance* GI = GetGameInstance();
+	const UWorld* World = GI ? GI->GetWorld() : nullptr;
+	return World ? UWorld::RemovePIEPrefix(World->GetMapName()) : FString();
+}
+
+bool UNpcChatSubsystem::SendOverHttp(int32 RequestId, const FString& CharacterId, const FString& Message)
+{
+	const FString Url = ProxyUrl();
+	if (Url.IsEmpty())
+	{
+		return false;   // CurrentMode already guards this; belt and braces
+	}
+
+	// A fresh UUID per attempt, for the backend to dedup on. Deliberately NOT the local
+	// request id: one is our bookkeeping, the other belongs to the contract.
+	PendingUuid = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
+
+	const FString Body = BuildRequestJson(PendingUuid, CharacterId, Message,
+		CurrentLocationId(), RecentTurnsFor(CharacterId));
+
+	PendingHttp = FHttpModule::Get().CreateRequest();
+	PendingHttp->SetURL(Url);
+	PendingHttp->SetVerb(TEXT("POST"));
+	PendingHttp->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+	PendingHttp->SetTimeout(ChatHttpTimeoutSeconds);
+	PendingHttp->SetContentAsString(Body);
+
+	/* WEAK, AND MATCHED BY ID. A reply can land after the panel closed, after travel, or
+	   during teardown. A weak pointer plus the id check makes every one of those a no-op
+	   instead of a crash or a line arriving in somebody else's conversation. */
+	TWeakObjectPtr<UNpcChatSubsystem> WeakThis(this);
+	PendingHttp->OnProcessRequestComplete().BindLambda(
+		[WeakThis, RequestId](FHttpRequestPtr, FHttpResponsePtr Response, bool bConnectedOk)
+		{
+			UNpcChatSubsystem* Self = WeakThis.Get();
+			if (!Self)
+			{
+				return;
+			}
+
+			if (!bConnectedOk || !Response.IsValid())
+			{
+				Self->CompleteRequest(RequestId, FString(), ENpcChatFailure::Network);
+				return;
+			}
+
+			const int32 Code = Response->GetResponseCode();
+			const FString Content = Response->GetContentAsString();
+
+			if (Code < 200 || Code > 299)
+			{
+				// The body may still carry a declared reason; prefer it to the status.
+				ENpcChatFailure Failure = FailureFromHttpCode(Code);
+				FString Unused;
+				ENpcChatFailure Declared = ENpcChatFailure::Service;
+				if (!ParseReplyJson(Content, Unused, Declared) && Declared != ENpcChatFailure::Service)
+				{
+					Failure = Declared;
+				}
+				UE_LOG(LogSibeliusGame, Warning, TEXT("[Chat] request %d failed, HTTP %d"),
+					RequestId, Code);
+				Self->CompleteRequest(RequestId, FString(), Failure);
+				return;
+			}
+
+			FString Reply;
+			ENpcChatFailure Failure = ENpcChatFailure::None;
+			if (ParseReplyJson(Content, Reply, Failure))
+			{
+				Self->CompleteRequest(RequestId, Reply, ENpcChatFailure::None);
+			}
+			else
+			{
+				Self->CompleteRequest(RequestId, FString(), Failure);
+			}
+		});
+
+	if (!PendingHttp->ProcessRequest())
+	{
+		PendingHttp.Reset();
+		PendingUuid.Reset();
+		return false;
+	}
+	return true;
+}
+
+void UNpcChatSubsystem::CompleteRequest(int32 RequestId, const FString& Reply, ENpcChatFailure Failure)
+{
+	// The mock's rule, shared: an answer for a request nobody is waiting on is dropped,
+	// not handed to whoever happens to be listening now.
+	if (RequestId != InFlightId)
+	{
+		return;
+	}
+
+	FOnNpcChatReply Callback = PendingReply;
+
+	InFlightId = 0;
+	PendingReply.Unbind();
+	PendingCharacterId.Reset();
+	PendingMessage.Reset();
+	PendingHttp.Reset();
+	PendingUuid.Reset();
+
+	Callback.ExecuteIfBound(Reply, Failure);
 }
 
 // ---------------------------------------------------------------------------

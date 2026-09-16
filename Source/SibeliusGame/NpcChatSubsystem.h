@@ -35,6 +35,22 @@ enum class ENpcChatFailure : uint8
 	Service     // 5xx, malformed, anything else
 };
 
+/**
+ * Where replies come from.
+ *
+ * EXPLICIT, AND NOT INFERRED FROM WHETHER A URL HAPPENS TO BE SET. A packaged build with
+ * no configuration must be honestly unavailable rather than quietly serving canned lines
+ * as though they were a character talking — that is the difference between a feature that
+ * is off and a feature that is lying.
+ */
+UENUM()
+enum class ENpcChatMode : uint8
+{
+	Disabled,   // say so, call nothing
+	Mock,       // canned lines, for walk-tests and gates
+	Proxy       // the real backend, which owns the key and the model
+};
+
 /** Reply text (empty on failure) and why, if it failed. */
 DECLARE_DELEGATE_TwoParams(FOnNpcChatReply, const FString& /*Reply*/, ENpcChatFailure /*Failure*/);
 
@@ -111,9 +127,58 @@ public:
 	/** True while the service is the canned one. The panel says so, so nobody demos a mock. */
 	static bool IsMock();
 
+	/** The mode this process will actually use, after the URL check. */
+	static ENpcChatMode CurrentMode();
+
+	/** The configured backend, or empty. Not a secret — the key never leaves the proxy. */
+	static FString ProxyUrl();
+
+	// -----------------------------------------------------------------------
+	// THE CONTRACT (docs/GEMINI_3_1_FLASH_LITE_HANDOFF.md, step 2)
+	//
+	// Both halves are pure and static so the gate can prove them without a
+	// network, a server or a single spent request. That is the whole reason
+	// they are not buried inside the HTTP callback.
+	// -----------------------------------------------------------------------
+
+	/** The POST body: requestId, characterId, message, storyContext, recentTurns. */
+	static FString BuildRequestJson(
+		const FString& RequestId,
+		const FString& CharacterId,
+		const FString& Message,
+		const FString& LocationId,
+		const TArray<FNpcChatTurn>& RecentTurns);
+
+	/**
+	 * Read a backend response. Returns true only for a well-formed `ok` carrying text.
+	 *
+	 * Anything else — a declared failure, an unknown status, malformed JSON, an empty
+	 * reply — comes back false with a reason, because a player must never be shown an
+	 * empty speech bubble and told it was an answer.
+	 */
+	static bool ParseReplyJson(const FString& Body, FString& OutReply, ENpcChatFailure& OutFailure);
+
+	/** Map the allowlisted reason strings; anything unrecognised is Service. */
+	static ENpcChatFailure FailureFromReason(const FString& Reason);
+
+	/** Map a transport-level HTTP status to a reason. */
+	static ENpcChatFailure FailureFromHttpCode(int32 StatusCode);
+
 private:
 	/** Fired off the mock's timer; drops itself if the id was cancelled meanwhile. */
 	void DeliverMockReply(int32 RequestId);
+
+	/** Start a real request. Returns false if it could not even be dispatched. */
+	bool SendOverHttp(int32 RequestId, const FString& CharacterId, const FString& Message);
+
+	/** Finish one: match the id, map the outcome, hand it to whoever is still listening. */
+	void CompleteRequest(int32 RequestId, const FString& Reply, ENpcChatFailure Failure);
+
+	/** The turns already in the store for this character — never the one being sent. */
+	TArray<FNpcChatTurn> RecentTurnsFor(const FString& CharacterId) const;
+
+	/** The level the player is standing in, for the server to allowlist. */
+	FString CurrentLocationId() const;
 
 	/** A canned line in the agents' register, folding in what the player actually said. */
 	FString ComposeMockReply(const FString& CharacterId, const FString& Message) const;
@@ -138,4 +203,10 @@ private:
 	FString PendingMessage;
 
 	FTimerHandle MockTimer;
+
+	/** The live HTTP request, so Cancel can actually stop it. */
+	TSharedPtr<class IHttpRequest, ESPMode::ThreadSafe> PendingHttp;
+
+	/** The UUID sent to the backend for this request, for dedup on its side. */
+	FString PendingUuid;
 };

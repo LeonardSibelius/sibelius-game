@@ -46,6 +46,11 @@ public class SibeliusGame : ModuleRules
 		// Chromium from the shipped build — the plugin stages libcef.dll and its
 		// resources whether or not a single line of code ever calls into them.
 		PrivateDependencyModuleNames.AddRange(new string[] {
+			// NPC chat step 6: the proxy transport. HTTP for the call, Json for the
+			// contract. JsonUtilities is deliberately absent - the bodies are small and
+			// hand-built, and a struct reflector would hide the shape from the gate.
+			"HTTP",
+			"Json",
 			// Travel-door transition: animated loading screen during the blocking level load
 			// (registered on PreLoadMap in SibeliusGame.cpp).
 			"MoviePlayer",
