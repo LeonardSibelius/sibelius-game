@@ -375,6 +375,66 @@ in the mock. Reading beats waiting for step 6.
 
 ---
 
+## DECIDED 2026-09-16: capped paid, $15 a month
+
+Walt's call, on the measured numbers. `gemini-3.1-flash-lite`, paid tier, with a hard
+ceiling of **$15 per month**. The cutoff rule is unchanged in spirit — stop when it runs
+out — it is now a spend cap rather than somebody else's quota wall.
+
+### What $15 buys, and the caveat that decides whether it is true
+
+At $0.25 per million input and $1.50 per million output, a reply of 2,000 input and 150
+output tokens costs $0.000725.
+
+| output tokens per reply | cost per reply | replies / month | ≈ conversations / day |
+|---|---:|---:|---:|
+| 150 (thinking off or minimal) | $0.000725 | 20,600 | **69** |
+| 600 (thinking left on) | $0.0014 | 10,700 | **36** |
+
+**Read the second row before trusting the first.** With thinking left running, $15 a
+month buys *fewer* daily requests than the free tier's 500 — the decision would still be
+right for the data terms and the absent shared pool, but it would buy no extra capacity
+at all. So the thinking controls are not a tuning detail here; they are what makes this
+budget mean 69 conversations instead of 36. Measure real token usage in the staged smoke
+test before treating either row as fact.
+
+### What this does and does not delete
+
+It deletes the reason for **reservation-before-dispatch, cross-instance atomic
+accounting and quota arbitration between players**. Those existed to ration a pool that
+empties for everyone; a spend cap empties for nobody until Walt says so.
+
+It does **not** delete the counter. Google Cloud budgets are *alerts*: they email, they
+do not brake. The only thing that will actually stop spending at $15 is a counter in the
+proxy that refuses to call upstream past its monthly allowance. With a single small
+instance — which 700 requests a day plainly is — a persisted counter is enough, and the
+distributed machinery is what was never needed. Set the Cloud budget alert anyway, as a
+backstop that tells you the counter is wrong.
+
+Also unchanged: deduplication, one request in flight per session, the kill switch, the
+story-safe unavailable message, and never falling back to anything that costs more.
+
+### Two consequences worth carrying forward
+
+**Steam.** Absorbing the cost into the game's price is the first of Valve's four listed
+handlings for a per-call AI service, and the only one consistent with the *no
+microtransactions* claim already in the build review request. The 2.0 disclosure
+amendment now has a clean answer to the payment question.
+
+**Data handling.** The paid tier flips *content used to improve our products* to no.
+Players must still be told their messages are sent to Google, but the sentence that
+worried this review — confiding in a character, on a tier that trains on it — no longer
+applies. Re-check the terms before release; this is the kind of clause that moves.
+
+### The one step only Walt can take
+
+Enable billing on the project and set the budget. Neither is something to automate, and
+nothing in the proxy should be able to change a tier or a project on its own. Verify
+afterwards that the project really is on the paid tier before any traffic — the handoff
+is right that a silent tier assumption is its own failure.
+
+---
+
 ## The latency target (2026-09-16)
 
 Neither handoff sets one. `GEMINI_3_1_FLASH_LITE_HANDOFF.md` proposes a 20-second
@@ -428,9 +488,10 @@ second out of the model.
 
 ## Decisions that need Walt
 
-**Free tier, or a paid tier with a hard spend cap?** Still open, but no longer a guess —
-the allowance is measured at 500 requests a day, about 45 conversations for the whole
-player base. See *The measured allowance, and the tier call* above. Free means the feature
+**Free tier, or a paid tier with a hard spend cap?** *Decided 2026-09-16: capped paid at
+$15 a month.* See *DECIDED: capped paid* above for what it buys, what it deletes from
+the plan, and the thinking-budget caveat that decides which of those two capacity
+figures is the real one. Free means the feature
 is dark for most players most of the time and their conversations feed product
 improvement. Capped-paid means about a cent a conversation, a ceiling you choose, no
 training use, and an answer that fits Valve's first suggested model. *Recommended: read
