@@ -313,9 +313,73 @@ needs (see *Where Walt wants this to go*).
 
 ---
 
+## The measured allowance, and the tier call (2026-09-16)
+
+`docs/GEMINI_3_1_FLASH_LITE_HANDOFF.md` did the thing correction 2 asked for: it read
+the dashboard. Project `walt-parkman-agent`, free tier, `gemini-3.1-flash-lite`:
+
+| Observed | |
+|---|---:|
+| requests per minute | 15 |
+| input tokens per minute | 250,000 |
+| **requests per day** | **500** |
+
+Its own arithmetic: 450 usable after a testing reserve, ten replies per conversation,
+**45 conversations per day across every player who owns the game.** Not 45 each. That is
+the number correction 2 was estimating in the hundreds, and it landed at the bottom of
+the range.
+
+**Model correction to this document.** The cost table above uses Gemini 3.5 Flash-Lite
+at $0.30 / $2.50 per million tokens. 3.1 Flash-Lite is **cheaper** — $0.25 in, $1.50 out
+— and is the model the newer handoff selects. The per-conversation figure improves
+slightly; the argument does not change.
+
+### What the quota machinery is defending, priced
+
+500 requests a day, at 2,000 input and 150 output tokens each, costs on the paid tier:
+
+```
+500 x (2,000 x $0.25/M  +  150 x $1.50/M)  =  500 x $0.000725  =  $0.36 / day
+```
+
+**About $11 a month.** That is the sum protected by the atomic cross-instance
+accounting, reservation-before-dispatch, distributed deduplication, session-token
+issuance and global limiter in section 5 of that handoff. And $11 a month of paid
+Flash-Lite buys roughly the same 500 calls a day — with no shared pool for one player's
+afternoon to empty, no product-improvement use of what players type, and an answer that
+matches the first of Valve's four listed models for a per-call AI service.
+
+### Recommendation
+
+**Capped paid, $10–15 a month.** Section 5 then collapses to a counter and a ceiling,
+and keeps only the parts that are about correctness rather than thrift: deduplication,
+one request in flight, the kill switch, and the story-safe unavailable message. The
+cutoff behaviour Walt asked for is unchanged — it is a spend cap instead of a quota
+wall.
+
+If the free tier is kept anyway, that is a legitimate call, but then two things follow:
+ship it labelled experimental and expect it dark for most players most of the time, and
+build a single-instance counter rather than distributed accounting. Forty-five
+conversations a day does not justify infrastructure that could serve forty-five
+thousand.
+
+**Still Walt's call. Nothing is decided here.**
+
+### Two defects it found in the step 4-5 code
+
+Both verified and fixed on 2026-09-16 (`a6dd2f73`): `HandleChatSend` sent `AgentName` to
+the service while memory was keyed by `ResolveChatId()`, and the player's turn was
+recorded *before* the send, which would have put the current message into the request
+twice once a real transport built its history from the same store. Neither was visible
+in the mock. Reading beats waiting for step 6.
+
+---
+
 ## Decisions that need Walt
 
-**Free tier, or a paid tier with a hard spend cap?** Still open. Free means the feature
+**Free tier, or a paid tier with a hard spend cap?** Still open, but no longer a guess —
+the allowance is measured at 500 requests a day, about 45 conversations for the whole
+player base. See *The measured allowance, and the tier call* above. Free means the feature
 is dark for most players most of the time and their conversations feed product
 improvement. Capped-paid means about a cent a conversation, a ceiling you choose, no
 training use, and an answer that fits Valve's first suggested model. *Recommended: read
