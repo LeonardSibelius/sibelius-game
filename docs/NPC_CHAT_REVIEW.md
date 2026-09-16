@@ -533,6 +533,54 @@ and nowhere else — not in the repo, not in a config file that ships, not in a 
 
 ---
 
+## MEASURED 2026-09-16: the first live conversation
+
+Kaia answered over the real proxy, on the paid tier, in `L_Office_v02`. Six calls, all
+successful, no quota, network, timeout or blocked. These numbers replace the estimates
+above — where they disagree, this section is the one that was measured.
+
+| | predicted | measured |
+|---|---|---|
+| latency p50 | ≤ 1.5 s target | **957 ms** |
+| latency p95 | ≤ 3 s target | **1,317 ms** |
+| output tokens per reply | 150 assumed, 600 feared | **18–40, median 32** |
+| input tokens per turn | ~2,000 assumed | **798–884, median 829** |
+| cost per turn | $0.000725 | **$0.000253** |
+| what $15/month buys | 20,600 replies (69 conversations/day) | **59,000 replies (~200/day)** |
+
+**The thinking-budget caveat resolved in our favour.** The whole capacity question hung
+on output length, and the answer is 32 tokens — a fifth of the optimistic estimate,
+because the profile's one-to-three-sentence rule does the work no cost engineering
+could. Thinking is unset; if it is ever enabled this table must be re-measured before
+the budget is trusted again.
+
+**The profile is the cost, not the memory.** Input barely moved across the session —
+801, 816, 842, 884, 798, 846 — because Kaia's instructions are roughly 790 of those
+tokens and two conversations of history barely register. Two consequences: the 16-turn
+history cap is nowhere near binding on price, and anyone lengthening `characters.js`
+is spending on every single turn forever.
+
+### What the session proved that a number cannot
+
+Asked about a US cabinet secretary — a person outside the game entirely — she said she
+did not have enough information to form an opinion and returned the conversation to the
+room. That is the context rule and the character rule holding together on a question the
+profile never anticipated, and it is the check this review cared about most: no invented
+world knowledge leaking into a character who is supposed to know only what she is told.
+
+She also used his name unprompted in the first sentence of every conversation. See the
+profile note on why that matters.
+
+### Corrected expectations elsewhere in this document
+
+The cost table under correction 3 and the two capacity rows under *DECIDED* were written
+before any call existed. They are left in place as the reasoning that led here, but the
+figures above supersede them. The $15 cap now looks conservative rather than tight: at
+the measured rate it would take roughly two hundred ten-turn conversations a day, every
+day, to reach it.
+
+---
+
 ## The latency target (2026-09-16)
 
 Neither handoff sets one. `GEMINI_3_1_FLASH_LITE_HANDOFF.md` proposes a 20-second
