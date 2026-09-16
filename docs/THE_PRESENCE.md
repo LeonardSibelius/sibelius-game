@@ -90,3 +90,12 @@ systems, the scattered UI text was her all along:
 - Appearance brief for the Creator session (age? era of dress? the
   70s-tech world suggests something timeless rather than futuristic).
 - Does she appear ONLY in the temple at first, or also at the cathedral?
+
+---
+
+## The embodiment thread continues (2026-09-15)
+
+Walt's hope for real-time voice and face animation — AI agents who appear to be
+speaking to you, a player who feels he is making a human-like friend — is recorded in
+`docs/NPC_CHAT_REVIEW.md`, along with what the game already has toward it and what each
+rung costs. The plan for typed conversations lives in the same pair of documents.

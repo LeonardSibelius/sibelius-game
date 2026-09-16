@@ -210,6 +210,51 @@ later update. Nothing in the two in-flight reviews gets edited to accommodate it
 
 ---
 
+## Where Walt wants this to go (2026-09-15)
+
+Recorded in his words, before implementation starts. Nothing here is scheduled and none
+of it gates the work above.
+
+> I hope that in the future there will be real-time voice and face animation tools
+> available that I can build into the game such that the AI agents appear to be
+> speaking to you and the player can feel he is making a human-like friend.
+
+This is the ladder the handoff's memory section is already climbing, and the one
+`docs/THE_PRESENCE.md` set the rule for — *seduction through attention, not skin; she
+remembers what you did and speaks to you like you matter.* Typed chat with memory is
+rung one. Voice is rung two. A face that moves with the voice is rung three.
+
+**Most of rung three is already built, and it is only pointed the wrong way in time.**
+The staging for a character who speaks to you exists: `BeginTalkShot()` frames her at
+38° of FOV, the HUD goes fully dark for the length of the shot, and the hold follows
+the clip. What is baked rather than live is the two artifacts that shot plays.
+
+| piece | today | what the hope needs |
+|---|---|---|
+| voice | ElevenLabs clips made by hand, shipped in the build, chosen by `FindTalkVoice()` | streaming TTS inside the reply's latency budget |
+| face | MetaHuman Animator solved `kaia_intro` offline — 766 keys on `CTRL_expressions_jawOpen`, 79 of 162 speech curves | the same Anim Sequence produced at runtime |
+| mouth fallback | envelope-driven lip layer, built and measured, `bTalkMouthMotion` ships `false` because the rig ate it | a rig change, or the Animator route above |
+
+`docs/DANCER_VOICE.md` already recorded the opening: RigLogic *consumes* the Anim
+Sequence that MetaHuman Animator writes, and these Face components are `leaderpose=no`,
+so they can evaluate their own animation. Unproven, but the door is open.
+
+**What rungs two and three cost beyond the tools existing.** Each adds a live-generated
+category to the Steam disclosure — generated speech, generated animation — each adds a
+per-reply cost on top of the text call, and both have to land inside the few seconds a
+player will wait while looking at a face. The decisions recorded above (one call per
+turn, capped spend, guardrails text) get re-opened at each rung rather than inherited.
+
+**One design note.** The friend feeling is carried further by memory than by fidelity.
+One recorded line and a dark HUD already land at 48 cm. A character who remembers what
+you told her last week and asks about it will read as a friend in plain text; a
+perfectly lip-synced character who starts every conversation from nothing will not.
+Rung one does most of the work, which is lucky, because it is the only cheap rung. The
+handoff's own framing is the one to keep: believable attentiveness from a fictional
+character, without claiming the AI literally has feelings.
+
+---
+
 ## Sources
 
 Checked 2026-09-15. These are the pages that move; re-check them rather than trusting
