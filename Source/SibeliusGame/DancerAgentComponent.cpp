@@ -12,6 +12,11 @@
 #include "Spaceport.h"                     // stage 2 asks the world whether one stands
 #include "SupplyCounter.h"                 // stage 3 asks the save whether he shopped
 #include "TimerManager.h"                  // the restage retry, waiting for him to look away
+#include "NpcChatWidget.h"                  // step 4: the typed conversation panel
+#include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
+#include "Blueprint/UserWidget.h"           // CreateWidget
+#include "Engine/GameInstance.h"            // GetSubsystem<UNpcChatSubsystem>
+#include "Framework/Application/SlateApplication.h" // hand the keyboard back on close
 
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
@@ -262,6 +267,19 @@ namespace
    at each use site for the reason ALegacyMachine::ClosedTicketGrant is: a grant key that
    exists as a string literal in two files is a grant key that will differ in two files. */
 const FName UDancerAgentComponent::GrokTalkedGrant(TEXT("Grok.Talked"));
+
+/* THE CHAT HUD LEASE, REFRESHED RATHER THAN HELD.
+
+   HoldCinematic is a lease on purpose (SibeliusHUD.h: "never two restore paths that can
+   disagree"), and Greet sizes it to a voice clip. A conversation outlives that by
+   minutes, so chat re-takes a short lease on a repeat: the HUD stays down while the
+   panel is open, and if this component dies mid-conversation the last lease runs out on
+   its own. Refresh must be comfortably shorter than the lease or the HUD strobes. */
+namespace
+{
+	constexpr float ChatHudLeaseRefresh = 2.0f;
+	constexpr float ChatHudLeaseSeconds = 5.0f;
+}
 
 UDancerAgentComponent::UDancerAgentComponent()
 {
@@ -930,6 +948,22 @@ void UDancerAgentComponent::Greet()
 
 	   The slot trial takes the camera. Talk close-up only happens when she has
 	   nothing left to give — the "[E] talk to Kaia" prompt. */
+
+	/* A SECOND E WITH THE PANEL OPEN MEANS "I AM TALKING TO HER", not "say it again".
+
+	   Restarting the recording under an open conversation would play her voice over
+	   the typing — and, the real hazard, EnterTalkPose's already-greeting branch would
+	   arm GreetingTimer from a chat state that never intended a grant. Hand the field
+	   back and stop. */
+	if (bChatting)
+	{
+		if (ChatWidget)
+		{
+			ChatWidget->FocusInput();
+		}
+		return;
+	}
+
 	if (HasPowerToGive())
 	{
 		const AActor* Owner = GetOwner();
@@ -991,6 +1025,311 @@ void UDancerAgentComponent::Greet()
 
 	BeginGreetingMotion();
 	BeginTalkShot();
+}
+
+// ---------------------------------------------------------------------------
+// TYPED CONVERSATION (docs/NPC_CHAT_REVIEW.md, step 4 — mock service)
+//
+// The whole of this section is reachable only when bChatEnabled or sib.Chat.Enable is
+// on, and both are off by default: 1.0 ships chat-free because the store submissions
+// in review describe a game that generates nothing at runtime.
+// ---------------------------------------------------------------------------
+
+bool UDancerAgentComponent::HasAuthoredBusinessPending() const
+{
+	// The slot trial owns E while she still has a power in hand.
+	if (HasPowerToGive())
+	{
+		return true;
+	}
+
+	/* THE GRANT IS CLAIMED AT THE END OF THE RECORDING, so "she has spoken" is a fact
+	   in the save rather than a fact about this frame. Until Grok.Talked is claimed, E
+	   belongs to the authored line — open a chat window in its place and the objective
+	   banner is left pointing at a dancer who can no longer hand anything over. */
+	if (IsGuide() && GuideStage() >= 4)
+	{
+		if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+		{
+			return !Prog->HasClaimedGrant(GrokTalkedGrant);
+		}
+		// No subsystem is not a licence to skip the speech.
+		return true;
+	}
+
+	return false;
+}
+
+void UDancerAgentComponent::BeginChat()
+{
+	if (bChatting)
+	{
+		if (ChatWidget)
+		{
+			ChatWidget->FocusInput();
+		}
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	if (!World || !PC)
+	{
+		return;
+	}
+
+	/* HER RECORDED LINE OPENS THE CONVERSATION. It costs nothing — no grant, no timer —
+	   and it means the window arrives on her voice rather than on silence and a text
+	   field. Voice then face, adjacent, for the same reason Greet does it that way. */
+	StopTalkVoice();
+	bMouthDiagLogged = false;
+	const float VoiceSeconds = PlayTalkVoice();
+	PlayTalkFace();
+	TalkHoldSeconds = FMath::Max(GreetingSeconds, VoiceSeconds + TalkTailSeconds);
+
+	bChatting = true;
+	EnterTalkPose(/*bArmTimer=*/false);
+	BeginTalkShot();
+
+	// First lease now, then on the repeat — otherwise the HUD is up for two seconds
+	// while the camera is already on her face.
+	TickChatHudLease();
+	World->GetTimerManager().SetTimer(
+		ChatHudTimer, this, &UDancerAgentComponent::TickChatHudLease,
+		ChatHudLeaseRefresh, /*bLoop=*/true);
+
+	if (!ChatWidget)
+	{
+		ChatWidget = CreateWidget<UNpcChatWidget>(PC, UNpcChatWidget::StaticClass());
+		if (ChatWidget)
+		{
+			ChatWidget->OnSend.BindUObject(this, &UDancerAgentComponent::HandleChatSend);
+			ChatWidget->OnClose.BindUObject(this, &UDancerAgentComponent::HandleChatClose);
+		}
+	}
+
+	if (!ChatWidget)
+	{
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Chat] %s: panel failed to create"), *AgentName);
+		bChatting = false;
+		CancelGreeting(/*bResumeDance=*/true);
+		return;
+	}
+
+	if (!ChatWidget->IsInViewport())
+	{
+		// Above the Generate panel's 60: nothing else should be over a close-up.
+		ChatWidget->AddToViewport(70);
+	}
+	ChatWidget->SetVisibility(ESlateVisibility::Visible);
+
+	// A conversation never inherits the last one. Memory arrives in step 5, deliberately,
+	// and until it does the panel must not imply that anything is being kept.
+	ChatWidget->ResetTranscript();
+	ChatWidget->SetAgentName(AgentName);
+
+	if (UNpcChatSubsystem::IsMock())
+	{
+		ChatWidget->AppendTurn(FString(),
+			TEXT("Placeholder replies. Nothing is saved, and nothing leaves this machine."));
+	}
+
+	const FString Opening = GetSpokenLine();
+	if (!Opening.IsEmpty())
+	{
+		ChatWidget->AppendTurn(AgentName, Opening);
+	}
+
+	/* UIOnly, focused on the live text box. In UIOnly the game never sees E or Esc, so
+	   the panel closes itself — which is also what keeps a stray E from restarting her
+	   line underneath an open conversation. */
+	FInputModeUIOnly Mode;
+	if (TSharedPtr<SWidget> InputSlate = ChatWidget->GetInputSlate())
+	{
+		Mode.SetWidgetToFocus(InputSlate);
+	}
+	else
+	{
+		Mode.SetWidgetToFocus(ChatWidget->TakeWidget());
+	}
+	PC->SetInputMode(Mode);
+	PC->SetShowMouseCursor(true);
+	ChatWidget->FocusInput();
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] %s: conversation opened"), *AgentName);
+}
+
+void UDancerAgentComponent::TickChatHudLease()
+{
+	if (!bChatting)
+	{
+		return;
+	}
+	if (ASibeliusHUD* HUD = GetSibeliusHUD())
+	{
+		HUD->HoldCinematic(ChatHudLeaseSeconds);
+	}
+}
+
+void UDancerAgentComponent::CloseChatUI()
+{
+	if (!bChatting)
+	{
+		return;
+	}
+	bChatting = false;
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->GetTimerManager().ClearTimer(ChatHudTimer);
+	}
+
+	/* CANCEL BEFORE ANYTHING ELSE. A reply still in flight when the player closes the
+	   window must never land in the next conversation, and must never be replayed —
+	   an uncertain request may already have been spent. */
+	if (ChatRequestId != 0)
+	{
+		if (UGameInstance* GI = World ? World->GetGameInstance() : nullptr)
+		{
+			if (UNpcChatSubsystem* Chat = GI->GetSubsystem<UNpcChatSubsystem>())
+			{
+				Chat->Cancel(ChatRequestId);
+			}
+		}
+		ChatRequestId = 0;
+	}
+
+	if (ChatWidget)
+	{
+		// Collapsed, not removed: a callback must never destroy the widget calling it.
+		ChatWidget->SetVisibility(ESlateVisibility::Collapsed);
+		ChatWidget->SetInputEnabled(true);
+	}
+
+	if (APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr)
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->SetShowMouseCursor(false);
+	}
+
+	/* GIVE THE KEYBOARD BACK TO THE GAME, not just the input mode.
+
+	   SetInputMode changes how the player controller routes input; it does not move
+	   Slate's keyboard focus, which is still in a collapsed text box. That exact
+	   omission is why Generate needed pressing twice for the whole life of the feature
+	   (SibeliusGameCharacter::CloseGenerate, 2026-09-02). Guarded on IsInitialized so
+	   the headless gates, which have no Slate application, do not fault here. */
+	if (FSlateApplication::IsInitialized())
+	{
+		FSlateApplication::Get().SetAllUserFocusToGameViewport();
+	}
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] %s: conversation closed"), *AgentName);
+}
+
+void UDancerAgentComponent::EndChat()
+{
+	if (!bChatting)
+	{
+		return;
+	}
+	CloseChatUI();
+
+	// The shared teardown: camera home, input unlocked, face handed back, dance resumed.
+	// CancelGreeting clears GreetingTimer first, so this cannot reach the grant.
+	CancelGreeting(/*bResumeDance=*/true);
+}
+
+void UDancerAgentComponent::HandleChatClose()
+{
+	EndChat();
+}
+
+void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
+{
+	if (!bChatting || !ChatWidget)
+	{
+		return;
+	}
+
+	// Belt and braces with the subsystem's own refusal: the field is greyed while a
+	// request is out, so this is only reachable if something got past that.
+	if (ChatRequestId != 0)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	UGameInstance* GI = World ? World->GetGameInstance() : nullptr;
+	UNpcChatSubsystem* Chat = GI ? GI->GetSubsystem<UNpcChatSubsystem>() : nullptr;
+	if (!Chat)
+	{
+		ChatWidget->SetStatus(FText::FromString(
+			TEXT("AI conversations are unavailable right now. You can still continue the story.")));
+		return;
+	}
+
+	ChatWidget->AppendTurn(TEXT("You"), PlayerLine);
+	ChatWidget->SetInputEnabled(false);
+	ChatWidget->SetStatus(FText::FromString(FString::Printf(TEXT("%s is thinking..."), *AgentName)));
+
+	FOnNpcChatReply Reply;
+	Reply.BindUObject(this, &UDancerAgentComponent::HandleChatReply);
+	ChatRequestId = Chat->Send(AgentName, PlayerLine, Reply);
+
+	if (ChatRequestId == 0)
+	{
+		ChatWidget->SetInputEnabled(true);
+		ChatWidget->SetStatus(FText::FromString(TEXT("One at a time — she is still answering.")));
+		ChatWidget->FocusInput();
+	}
+}
+
+void UDancerAgentComponent::HandleChatReply(const FString& Reply, ENpcChatFailure Failure)
+{
+	// The window closed while this was in flight. The subsystem drops cancelled ids,
+	// so arriving here at all means something raced; drop it again rather than draw it.
+	if (!bChatting || !ChatWidget)
+	{
+		return;
+	}
+
+	ChatRequestId = 0;
+
+	if (Failure == ENpcChatFailure::None)
+	{
+		ChatWidget->AppendTurn(AgentName, Reply);
+		ChatWidget->SetStatus(FText::GetEmpty());
+	}
+	else
+	{
+		/* ONE SENTENCE PER REASON, none of them the provider's. The quota line does not
+		   promise a daily reset — the limiting quota may have another duration — and
+		   nothing here retries. */
+		const TCHAR* Line = TEXT("AI conversations are unavailable right now. You can still continue the story.");
+		switch (Failure)
+		{
+		case ENpcChatFailure::Quota:
+			Line = TEXT("She has nothing left to say today. The story continues without her.");
+			break;
+		case ENpcChatFailure::Network:
+			Line = TEXT("No connection. AI conversations need one; the story does not.");
+			break;
+		case ENpcChatFailure::Timeout:
+			Line = TEXT("She took too long to answer. Try once more, or walk away.");
+			break;
+		case ENpcChatFailure::Blocked:
+			Line = TEXT("She will not answer that one.");
+			break;
+		default:
+			break;
+		}
+		ChatWidget->SetStatus(FText::FromString(Line));
+	}
+
+	ChatWidget->SetInputEnabled(true);
+	ChatWidget->FocusInput();
 }
 
 bool UDancerAgentComponent::IsGuide() const
@@ -1818,6 +2157,13 @@ ASibeliusHUD* UDancerAgentComponent::GetSibeliusHUD() const
 
 void UDancerAgentComponent::BeginGreetingMotion()
 {
+	// The authored greeting ends itself: the timer IS the end of the line, and
+	// ResumeAfterGreeting is what the grant and the ending subsystem hang off.
+	EnterTalkPose(/*bArmTimer=*/true);
+}
+
+void UDancerAgentComponent::EnterTalkPose(bool bArmTimer)
+{
 	USkeletalMeshComponent* Mesh = FindDanceMesh();
 	if (!Mesh)
 	{
@@ -1834,9 +2180,12 @@ void UDancerAgentComponent::BeginGreetingMotion()
 	// from the top of the line, so the hold is the whole clip again, not what was left.
 	if (bGreeting)
 	{
-		World->GetTimerManager().SetTimer(
-			GreetingTimer, this, &UDancerAgentComponent::ResumeAfterGreeting,
-			TalkHoldSeconds > 0.0f ? TalkHoldSeconds : GreetingSeconds, /*bLoop=*/false);
+		if (bArmTimer)
+		{
+			World->GetTimerManager().SetTimer(
+				GreetingTimer, this, &UDancerAgentComponent::ResumeAfterGreeting,
+				TalkHoldSeconds > 0.0f ? TalkHoldSeconds : GreetingSeconds, /*bLoop=*/false);
+		}
 		return;
 	}
 
@@ -1869,9 +2218,18 @@ void UDancerAgentComponent::BeginGreetingMotion()
 		Mesh->bPauseAnims = true;
 	}
 
-	World->GetTimerManager().SetTimer(
-		GreetingTimer, this, &UDancerAgentComponent::ResumeAfterGreeting,
-		HoldSeconds, /*bLoop=*/false);
+	/* THE ONE LINE CHAT MUST NOT REACH. Arming this timer is the only way to reach
+	   ResumeAfterGreeting, which claims GrokTalkedGrant and tells the ending subsystem
+	   a guide finished speaking. A conversation ends when the player closes it, not on
+	   a clock, so chat calls EnterTalkPose(false) and this is skipped — the grant is
+	   then unreachable from a chat window by control flow rather than by care.
+	   See docs/NPC_CHAT_REVIEW.md, step 3. */
+	if (bArmTimer)
+	{
+		World->GetTimerManager().SetTimer(
+			GreetingTimer, this, &UDancerAgentComponent::ResumeAfterGreeting,
+			HoldSeconds, /*bLoop=*/false);
+	}
 }
 
 void UDancerAgentComponent::ResumeAfterGreeting()
@@ -1914,6 +2272,14 @@ void UDancerAgentComponent::ResumeAfterGreeting()
 
 void UDancerAgentComponent::CancelGreeting(bool bResumeDance)
 {
+	/* EVERY INTERRUPTION COMES THROUGH HERE — F, a shuffle, EndPlay, the level being
+	   torn down — so this is where an open chat window has to be taken down too.
+	   CloseChatUI never calls back into this function, so the two cannot recurse, and
+	   it early-outs when there was no conversation. Without this line, a dancer
+	   destroyed mid-conversation would leave the player in UIOnly with a cursor and no
+	   way back. */
+	CloseChatUI();
+
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().ClearTimer(GreetingTimer);

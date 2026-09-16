@@ -63,6 +63,11 @@ class ACameraActor;
 class UAnimSequence;
 class USoundWave;
 class USkeletalMeshComponent;
+class UNpcChatWidget;
+
+// Forward-declared rather than included: NpcChatSubsystem.h has no business being
+// pulled into every translation unit that touches a dancer.
+enum class ENpcChatFailure : uint8;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SIBELIUSGAME_API UDancerAgentComponent : public UActorComponent
@@ -549,6 +554,43 @@ public:
 	void Greet();
 
 	/**
+	 * Typed conversation on E. OFF, and it stays off for 1.0 (docs/NPC_CHAT_REVIEW.md).
+	 *
+	 * The store submissions in review describe a game that generates nothing at runtime,
+	 * so the shipping build must not be able to reach this. A default of false means the
+	 * feature is present and walkable behind one bool rather than living on a branch
+	 * nobody merges. `sib.Chat.Enable 1` turns it on for a test run.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer|Chat")
+	bool bChatEnabled = false;
+
+	/**
+	 * Open a typed conversation with this agent.
+	 *
+	 * DELIBERATELY NOT A PATH THROUGH Greet(). Greet arms GreetingTimer, and that timer
+	 * is the one and only way to reach ResumeAfterGreeting — which claims
+	 * GrokTalkedGrant and tells the ending subsystem a guide finished speaking. Chat
+	 * takes the same pose and the same camera through EnterTalkPose(false), so the timer
+	 * is never armed and the grant is unreachable from a chat window by construction
+	 * rather than by care.
+	 */
+	void BeginChat();
+
+	/** Close it and hand back camera, input, cursor, keyboard focus and HUD. */
+	void EndChat();
+
+	bool IsChatting() const { return bChatting; }
+
+	/**
+	 * True while the authored game still owns E on this agent — a power waiting in the
+	 * slot trial, or a guide whose speech has not been heard to the end. Chat must not
+	 * intercept either: the grant is claimed at the END of the recording, so a chat
+	 * window opening in its place would leave the objective banner pointing at a dancer
+	 * who can no longer hand anything over.
+	 */
+	bool HasAuthoredBusinessPending() const;
+
+	/**
 	 * This agent hands over a power (docs/SPINE.md). Called by APowerGrant::BindToAgent —
 	 * the grant keeps the trial, the stake, the claim and the Refuser alarm; she is only
 	 * the way it is asked for.
@@ -740,6 +782,55 @@ private:
 	void BeginGreetingMotion();
 	void ResumeAfterGreeting();
 
+	/**
+	 * The talk pose itself: save the dance, drop it to TalkDanceSpeed, raise bGreeting.
+	 *
+	 * bArmTimer is the entire reason this is split out of BeginGreetingMotion. The
+	 * authored greeting passes true and ends itself when GreetingTimer fires; chat
+	 * passes false and ends when the player closes the window. Nothing else about the
+	 * pose differs, and keeping one body for it means her dance is restored the same
+	 * way on both paths.
+	 */
+	void EnterTalkPose(bool bArmTimer);
+
+	/**
+	 * Keep the HUD hidden for as long as the window is open.
+	 *
+	 * HoldCinematic is a LEASE, sized in Greet to the length of a voice clip — about
+	 * seven seconds. A conversation is minutes, and when that lease lapsed the
+	 * crosshair, the objective and the sauce counter came back on top of the close-up.
+	 * Re-leasing on a short repeat keeps the screen clean AND keeps the lease's own
+	 * safety property: if this component dies mid-conversation the last lease expires
+	 * on its own and the HUD returns. A flag would get stuck; a lease cannot.
+	 */
+	void TickChatHudLease();
+
+	/**
+	 * Tear down the window, the input mode, the cursor, the keyboard focus and the
+	 * in-flight request — everything chat added, and nothing the greeting owns.
+	 *
+	 * Separate from EndChat so CancelGreeting can call it on the paths that were never
+	 * a player closing a panel: EndPlay, level travel, F, the actor being destroyed
+	 * mid-sentence. EndChat is CloseChatUI plus the shared teardown; this half must
+	 * never call back into CancelGreeting or the two would recurse.
+	 */
+	void CloseChatUI();
+
+	/** Enter in the panel: one request, and the field greys until it answers. */
+	void HandleChatSend(const FString& PlayerLine);
+
+	/** Esc in the panel. */
+	void HandleChatClose();
+
+	/**
+	 * The service answered, or did not.
+	 *
+	 * Failures print one sentence each and never the provider's own error text. Quota
+	 * exhaustion in particular says so and stops — no retry loop, no second request,
+	 * no fallback to anything that costs money (docs/NPC_CHAT_REVIEW.md, correction 3).
+	 */
+	void HandleChatReply(const FString& Reply, ENpcChatFailure Failure);
+
 	/** CDO can be stale after a hot-reload; load the bow if the pointer is still empty. */
 	void EnsureGreetingAnim();
 
@@ -757,6 +848,26 @@ private:
 
 	/** True while the talk/greet hold is up — extra E refreshes the line, F cancels. */
 	bool bGreeting = false;
+
+	/**
+	 * True while the chat window is open.
+	 *
+	 * Guards the loaded gun: chat leaves bGreeting true with NO timer armed, and a
+	 * second E arriving in that state would take BeginGreetingMotion's already-greeting
+	 * branch and arm one — putting the grant back within reach of a window that never
+	 * intended it. Greet() checks this first and refocuses the panel instead.
+	 */
+	bool bChatting = false;
+
+	/** The open panel. Created once per agent, hidden rather than destroyed. */
+	UPROPERTY()
+	TObjectPtr<class UNpcChatWidget> ChatWidget;
+
+	/** Re-leases the cinematic HUD hold while the panel is open. See TickChatHudLease. */
+	FTimerHandle ChatHudTimer;
+
+	/** In-flight chat request, or 0. Cancelled on every exit so a late reply is dropped. */
+	int32 ChatRequestId = 0;
 
 	/** The dance she was on when E was pressed, so resume is the same move. */
 	TObjectPtr<UAnimSequence> SavedDance;

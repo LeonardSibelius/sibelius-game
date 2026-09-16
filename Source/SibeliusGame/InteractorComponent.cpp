@@ -7,6 +7,7 @@
 #include "DancerAgentSubsystem.h"
 #include "Camera/CameraComponent.h"
 #include "CollisionQueryParams.h"
+#include "HAL/IConsoleManager.h"   // sib.Chat.Enable
 #include "Engine/EngineTypes.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -241,6 +242,28 @@ AActor* UInteractorComponent::FindDancerByAim(const FVector& Start, const FVecto
 	return Best;
 }
 
+namespace
+{
+	/**
+	 * Typed conversation, off by default.
+	 *
+	 * Two switches on purpose: the per-agent bChatEnabled for a level that wants one
+	 * talkative dancer, and this console variable for a whole-session test run. Both
+	 * default to off because the Steam submissions in review describe a game that
+	 * generates nothing at runtime.
+	 */
+	TAutoConsoleVariable<int32> CVarChatEnable(
+		TEXT("sib.Chat.Enable"),
+		0,
+		TEXT("1 lets E open a typed conversation with an AI agent (mock service)."),
+		ECVF_Default);
+
+	bool IsChatAvailable(const UDancerAgentComponent* Agent)
+	{
+		return Agent && (Agent->bChatEnabled || CVarChatEnable.GetValueOnGameThread() != 0);
+	}
+}
+
 void UInteractorComponent::TryInteract()
 {
 	AActor* Target = FocusedActor.Get();
@@ -270,6 +293,19 @@ void UInteractorComponent::TryInteract()
 	}
 	else if (UDancerAgentComponent* Agent = Target->FindComponentByClass<UDancerAgentComponent>())
 	{
-		Agent->Greet();
+		/* AUTHORED FIRST, ALWAYS (docs/NPC_CHAT_REVIEW.md, step 4).
+
+		   A power still in her hand, or a guide speech not yet heard to the end, owns
+		   E — HasAuthoredBusinessPending says which. Only once the authored game has
+		   nothing left to do here can a typed conversation have the key, and even then
+		   only when chat is switched on, which it is not in a shipping 1.0 build. */
+		if (IsChatAvailable(Agent) && !Agent->HasAuthoredBusinessPending())
+		{
+			Agent->BeginChat();
+		}
+		else
+		{
+			Agent->Greet();
+		}
 	}
 }
