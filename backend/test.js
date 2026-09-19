@@ -4,7 +4,7 @@
 // dedup, same budget arithmetic, no provider. Every failure branch the game can show a
 // player is reachable here without spending a request, which is the point.
 
-import { createApp } from "./server.js";
+import { createApp, LIMITS } from "./server.js";
 import { createBudget } from "./budget.js";
 import { getCharacter, knownCharacterIds } from "./characters.js";
 import { mkdtempSync } from "node:fs";
@@ -100,7 +100,10 @@ console.log("=== NPC chat backend contract ===");
     [ask({ characterId: "someone-else" }), "an unknown character is refused"],
     [ask({ message: "" }), "an empty message is refused"],
     [ask({ message: "x".repeat(1001) }), "an over-long message is refused"],
-    [ask({ recentTurns: Array(17).fill({ role: "user", text: "hi" }) }), "too many turns is refused"],
+    [
+      ask({ recentTurns: Array(LIMITS.maxTurns + 1).fill({ role: "user", text: "hi" }) }),
+      "a body past maxTurns is refused",
+    ],
     [ask({ recentTurns: [{ role: "narrator", text: "hi" }] }), "an unknown turn role is refused"],
     [ask({ requestId: "short" }), "a missing request id is refused"],
   ];
@@ -108,6 +111,48 @@ console.log("=== NPC chat backend contract ===");
     const { code, payload } = await post(body);
     check(code === 400 && payload.status === "unavailable", label);
   }
+}
+
+/* --- the four limits have to agree with each other, and with the game.
+   BUILT, NOT ESTIMATED. A worst-case body carrying exactly promptTurns turns at
+   turnChars each, plus a full-length message, has to survive the bodyBytes check at
+   the socket. Arithmetic done in a comment is how the old pair went wrong: 16 turns of
+   2000 characters against a 32,768-byte door, a limit no client could reach. */
+{
+  const worst = {
+    requestId: uuid(),
+    characterId: "kaia",
+    message: "x".repeat(LIMITS.messageChars),
+    storyContext: { locationId: "/Game/Maps/L_City", unlockedFacts: [] },
+    recentTurns: Array(LIMITS.promptTurns).fill({
+      role: "user",
+      text: "x".repeat(LIMITS.turnChars),
+    }),
+  };
+  const size = Buffer.byteLength(JSON.stringify(worst), "utf8");
+  check(size < LIMITS.bodyBytes, `a full-size prompt fits the door (${size} < ${LIMITS.bodyBytes} bytes)`);
+
+  /* UNpcChatSubsystem::MaxTurnsKept, written down because it cannot be imported from
+     here. The headroom IS the feature, and a check that compared the server to itself
+     would go on passing the day the two drift back together. */
+  const clientKeeps = 16;
+  check(
+    LIMITS.promptTurns > clientKeeps,
+    `the server keeps more turns than the game sends (${LIMITS.promptTurns} > ${clientKeeps})`
+  );
+  check(LIMITS.maxTurns > LIMITS.promptTurns, "there is room between trimming and refusing");
+}
+
+// --- a client that remembers too much is trimmed, not turned away
+{
+  const over = LIMITS.promptTurns + 4;
+  const { code, payload } = await post(
+    ask({ recentTurns: Array(over).fill({ role: "user", text: "hi" }) })
+  );
+  check(
+    code === 200 && payload.status === "ok",
+    `${over} turns is trimmed to ${LIMITS.promptTurns}, not refused`
+  );
 }
 
 // --- dedup: the guarantee the whole budget rests on

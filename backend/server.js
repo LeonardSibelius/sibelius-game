@@ -12,10 +12,44 @@ import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens } from "./gemini.js";
 import { getCharacter, knownCharacterIds } from "./characters.js";
 
-const LIMITS = {
-  bodyBytes: 32 * 1024,
+/**
+ * THE DOOR MUST ADMIT EVERYTHING THE PROMPT CAN USE.
+ *
+ * That is the invariant these four numbers have to satisfy, and before this block was
+ * written they did not: the old pair allowed 16 turns of 2000 characters, which is
+ * 32,000 characters of history alone, against a 32,768-byte body. A client sending the
+ * limit it was told about would have been hung up on at the socket. Nothing hit it
+ * because real turns are one to three sentences, but a limit you cannot reach is not a
+ * limit, it is a trap with a long fuse. `node test.js` now checks the arithmetic.
+ *
+ * The margin assumes mostly-ASCII dialogue. A body of multibyte text reaches bodyBytes
+ * first and is destroyed at the socket, which the game reads as a network failure.
+ */
+export const LIMITS = {
+  bodyBytes: 64 * 1024,
   messageChars: 1000,
-  recentTurns: 16,
+
+  /**
+   * Turns the prompt is actually built from — and what the budget pays for.
+   *
+   * DELIBERATELY ABOVE WHAT THE CLIENT KEEPS. UNpcChatSubsystem::MaxTurnsKept is 16, and
+   * until now this number was 16 too: exactly equal, zero headroom, so raising the bound
+   * on the game side would have 400'd every request from the next build onward. The
+   * player would have seen the generic "unavailable" line, which names nothing and points
+   * nowhere. Extra room here costs nothing while the client stays under it.
+   */
+  promptTurns: 24,
+
+  /**
+   * Turns a body may carry at all before it is refused as malformed rather than trimmed.
+   *
+   * Far above promptTurns on purpose. Anything between the two is a client that remembers
+   * more than this server will pay for, which is a budget question, not a validity one —
+   * handleChat keeps the most recent promptTurns and says so in the log. Only a payload
+   * this far out is a bug or an attack.
+   */
+  maxTurns: 64,
+
   turnChars: 2000,
 };
 
@@ -88,7 +122,7 @@ export function createApp(options = {}) {
 
     const turns = body.recentTurns ?? [];
     if (!Array.isArray(turns)) return "recentTurns";
-    if (turns.length > LIMITS.recentTurns) return "too many recentTurns";
+    if (turns.length > LIMITS.maxTurns) return "too many recentTurns";
     for (const turn of turns) {
       if (!turn || (turn.role !== "user" && turn.role !== "model")) return "turn role";
       if (typeof turn.text !== "string" || turn.text.length > LIMITS.turnChars) return "turn text";
@@ -135,7 +169,19 @@ export function createApp(options = {}) {
     if (limited) return { http: 429, payload: unavailable("quota"), detail: limited };
 
     const character = getCharacter(body.characterId);
-    const turns = (body.recentTurns ?? []).map((turn) => ({
+
+    /* TRIMMED, NOT REFUSED. The oldest turns go, which is the same thing the client
+       already does to its own store — so a client that remembers more than this server
+       pays for loses the end of a conversation it was going to lose anyway, instead of
+       losing the message the player just typed. The log names both numbers, because a
+       silent trim is how a prompt quietly stops containing what you think it does. */
+    const offered = body.recentTurns ?? [];
+    const recent = offered.slice(-LIMITS.promptTurns);
+    if (recent.length < offered.length) {
+      console.log(`[chat] trimmed history ${offered.length} -> ${recent.length} turns`);
+    }
+
+    const turns = recent.map((turn) => ({
       role: turn.role,
       parts: [{ text: turn.text }],
     }));

@@ -96,6 +96,13 @@ public:
 	 * A bound, not a budget: it is what the panel replays today and what will fit in a
 	 * prompt tomorrow. Unbounded history would grow the cost of every future request
 	 * until a token ceiling chose the limit instead of this line.
+	 *
+	 * THE BACKEND HAS ITS OWN NUMBER AND IT IS NOT THIS ONE. backend/server.js keeps the
+	 * most recent LIMITS.promptTurns (24) and refuses outright past LIMITS.maxTurns (64).
+	 * Raising this to anything up to 24 needs no backend change; past that the extra
+	 * turns are trimmed away server-side and the player silently converses with less
+	 * history than the panel is showing him. The two were once both 16 - exactly equal,
+	 * so a bump here 400'd every request and the player read "unavailable".
 	 */
 	static constexpr int32 MaxTurnsKept = 16;
 
