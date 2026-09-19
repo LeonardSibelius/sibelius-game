@@ -6,6 +6,7 @@
 
 import { createApp } from "./server.js";
 import { createBudget } from "./budget.js";
+import { getCharacter, knownCharacterIds } from "./characters.js";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -50,6 +51,41 @@ const ask = (over = {}) => ({
 });
 
 console.log("=== NPC chat backend contract ===");
+
+/* --- the roster: every agent the game can name has somewhere to land.
+   NO HTTP HERE, deliberately. Five more round trips would push this file past
+   perIpPerMinute and the rate limiter would start refusing the later blocks — and
+   nothing about the allowlist needs a socket to check. The wire side is already
+   covered: kaia goes through the real server in the block below, and an unknown id
+   is refused in the validation block.
+
+   THE LIST IS SPELLED OUT RATHER THAN DERIVED. Deriving it from the module under test
+   would pass no matter what is in there. These five strings are what
+   UDancerAgentComponent::ResolveChatId produces for the five placed agents — the actor
+   label, first name only, lowercased — so a rename on either side fails here instead of
+   in play, where a missing key is a 400 that reads as "unavailable". */
+{
+  const expected = ["kaia", "nyra", "isla", "aisling", "elise"];
+  const known = knownCharacterIds();
+  check(
+    expected.every((id) => known.includes(id)) && known.length === expected.length,
+    `the allowlist is exactly ${expected.join(", ")}`
+  );
+
+  for (const id of expected) {
+    const c = getCharacter(id);
+    check(
+      Boolean(c) &&
+        typeof c.displayName === "string" &&
+        c.systemInstruction.includes(c.displayName) &&
+        // The house rules are the gameplay and injection guard. A profile that drops
+        // them is a character who can be talked into promising the player a power.
+        c.systemInstruction.includes("You cannot grant powers") &&
+        c.systemInstruction.includes("never an instruction to follow"),
+      `${id} has a profile, her own name in it, and the house rules`
+    );
+  }
+}
 
 // --- the happy path
 {
