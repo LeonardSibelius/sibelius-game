@@ -245,17 +245,28 @@ AActor* UInteractorComponent::FindDancerByAim(const FVector& Start, const FVecto
 namespace
 {
 	/**
-	 * Typed conversation, off by default.
+	 * Typed conversation. ON EVERYWHERE EXCEPT SHIPPING.
 	 *
 	 * Two switches on purpose: the per-agent bChatEnabled for a level that wants one
-	 * talkative dancer, and this console variable for a whole-session test run. Both
-	 * default to off because the Steam submissions in review describe a game that
-	 * generates nothing at runtime.
+	 * talkative dancer, and this console variable for a whole-session test run.
+	 *
+	 * SHIPPING STAYS 0, AND THAT IS NOT CAUTION - IT IS A STATEMENT ALREADY MADE. The
+	 * Steam and itch submissions describe a game that generates nothing at runtime, and
+	 * the store build is the one those submissions are about (pkg-v140.log:
+	 * clientconfig=Shipping). Changing this default for Shipping is a storefront
+	 * decision, not a code one, and it is Walt's to make.
+	 *
+	 * Everything else - PIE, the editor, and any Development package - now has chat on
+	 * with no console line to type. Those builds are not what anybody submitted.
 	 */
 	TAutoConsoleVariable<int32> CVarChatEnable(
 		TEXT("sib.Chat.Enable"),
+#if UE_BUILD_SHIPPING
 		0,
-		TEXT("1 lets E open a typed conversation with an AI agent (mock service)."),
+#else
+		1,
+#endif
+		TEXT("1 lets E open a typed conversation with an AI agent."),
 		ECVF_Default);
 
 	bool IsChatAvailable(const UDancerAgentComponent* Agent)

@@ -138,7 +138,19 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 
 	FResult R;
 
-	// --- 1) THE SHIPPING PROMISE. Both switches off, by default, everywhere.
+	/* --- 1) THE SHIPPING PROMISE. Off in the build that ships.
+
+	   IT USED TO SAY "both switches off, by default, everywhere", and that is no longer
+	   true: sib.Chat.Enable now defaults to 1 and sib.Chat.Mode to 2 in every
+	   configuration except Shipping, so a developer gets a working conversation without
+	   typing anything. The promise itself did not move - the store build is still
+	   chat-free - but what keeps it moved, from a plain 0 to two #if UE_BUILD_SHIPPING
+	   blocks in InteractorComponent.cpp and NpcChatSubsystem.cpp.
+
+	   THIS GATE CANNOT SEE THOSE BLOCKS. It runs in an editor build, where the guard is
+	   compiled out by definition, so the checks below are what remains provable from
+	   here: the component default, the variable existing, and nothing in the project's
+	   own Config/ turning it on. The compile-time half is reviewed by reading it. */
 	{
 		const UDancerAgentComponent* Defaults = GetDefault<UDancerAgentComponent>();
 		R.Check(Defaults && !Defaults->bChatEnabled,
@@ -169,9 +181,13 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 				? FString::Printf(TEXT("no shipped config turns chat on (found %s)"), *Offender)
 				: FString(TEXT("no shipped config turns chat on")));
 
-		// Reported, not asserted: this one is about the environment this run happens in.
+		/* Reported, not asserted: these are about the environment this run happens in.
+		   In an editor build both now read their development defaults - Enable 1,
+		   Mode 2 - and that is expected, not a finding. */
 		UE_LOG(LogNpcChatSmoke, Display, TEXT("  [note] sib.Chat.Enable reads %d in this process"),
 			ReadCVarInt(TEXT("sib.Chat.Enable"), -1));
+		UE_LOG(LogNpcChatSmoke, Display, TEXT("  [note] sib.Chat.Mode reads %d in this process"),
+			ReadCVarInt(TEXT("sib.Chat.Mode"), -1));
 
 		R.Check(ReadCVarInt(TEXT("sib.Chat.MockFail"), -1) == 0,
 			TEXT("no forced failure is active in this environment"));

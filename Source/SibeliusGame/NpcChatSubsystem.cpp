@@ -48,26 +48,53 @@ namespace
 	/**
 	 * 0 disabled, 1 mock, 2 proxy.
 	 *
-	 * DEFAULTS TO MOCK IN DEVELOPMENT AND DISABLED IN SHIPPING, deliberately. A packaged
-	 * build that somehow reached this code with no backend configured must say the
-	 * feature is unavailable, not serve five canned lines as though a character were
-	 * talking. Off is honest; canned is a lie with a friendly face.
+	 * DEFAULTS TO PROXY IN DEVELOPMENT AND DISABLED IN SHIPPING. It was mock in
+	 * development until the backend existed; it does now, it is deployed, and mock's
+	 * job is finished. Mock was built so the panel, the failure copy and the cancel
+	 * path could be walked without spending a request - all of that has been walked,
+	 * and a default that serves canned lines is now the thing standing between Walt
+	 * and the actual feature. `sib.Chat.Mode 1` still gets it back.
+	 *
+	 * SHIPPING STAYS 0. A packaged store build that reached this code with no backend
+	 * configured must say the feature is unavailable rather than serve canned lines as
+	 * though a character were talking - off is honest, canned is a lie with a friendly
+	 * face. And the store submissions describe a game that generates nothing at
+	 * runtime, which is a promise this default keeps. See CVarChatEnable in
+	 * InteractorComponent.cpp, which is guarded the same way and for the same reason.
+	 *
+	 * WHAT THIS COSTS. Every PIE conversation now spends real money on Walt's key
+	 * instead of nothing. The ceiling is not here, it is the backend's: $0.75 a day and
+	 * $15 a month, refused server-side before Google is called. That is the design
+	 * working, but it is a real change from a default that could not cost anything.
 	 */
 	TAutoConsoleVariable<int32> CVarChatMode(
 		TEXT("sib.Chat.Mode"),
 #if UE_BUILD_SHIPPING
 		0,
 #else
-		1,
+		2,
 #endif
 		TEXT("Chat service: 0 disabled, 1 mock (canned), 2 proxy (real backend)."),
 		ECVF_Default);
 
-	/** The backend endpoint. Public by design - the API key lives on the far side. */
+	/**
+	 * The backend endpoint. Public by design - the API key lives on the far side.
+	 *
+	 * DEFAULTED, AND WITHOUT A SCHEME. Typing this every session was the actual
+	 * complaint, and a default is the only fix that survives closing the editor. The
+	 * missing "//" is not a typo: it opens a comment in UE's console parser AND in
+	 * ConsoleVariables.ini, which is the two-round-of-debugging lesson recorded on
+	 * ProxyUrl() below. Loopback gets http, everything else https, so this resolves to
+	 * https://sibelius-npc-chat.fly.dev/v1/npc-chat.
+	 *
+	 * SAFE IN SHIPPING even though it is not guarded: CurrentMode() is 0 there, so
+	 * nothing ever dials it. A shipping build would need sib.Chat.Mode 2 typed by hand,
+	 * which is the deliberate extra step.
+	 */
 	TAutoConsoleVariable<FString> CVarChatProxyUrl(
 		TEXT("sib.Chat.ProxyUrl"),
-		TEXT(""),
-		TEXT("HTTPS endpoint for the NPC chat backend, e.g. https://host/v1/npc-chat"),
+		TEXT("sibelius-npc-chat.fly.dev/v1/npc-chat"),
+		TEXT("Endpoint for the NPC chat backend. No scheme: '//' opens a comment."),
 		ECVF_Default);
 
 	/** Client deadline. The backend's own is shorter; this catches a dead connection. */
