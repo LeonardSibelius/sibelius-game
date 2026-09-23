@@ -14,7 +14,6 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "SibeliusHUD.h"   // the prompt draws on the HUD canvas so it survives packaging
-#include "HAL/PlatformProcess.h"
 #include "HAL/PlatformTime.h"
 
 namespace WebSlotInteraction
@@ -137,7 +136,7 @@ void UInteractorComponent::UpdateFocus()
 	{
 		if (WebSlotInteraction::IsTV(Target))
 		{
-			Prompt = NSLOCTEXT("Sibelius", "WebSlotTVPrompt", "E \u2014 Play Celestial Fortune web version");
+			Prompt = NSLOCTEXT("Sibelius", "WebSlotTVPrompt", "E \u2014 Celestial Fortune web version");
 		}
 		else if (Target->Implements<UInteractable>())
 		{
@@ -254,14 +253,17 @@ void UInteractorComponent::TryInteract()
 		// Refresh the trace so pressing E cannot activate a TV after looking away.
 		UpdateFocus();
 		if (FocusedActor.Get() != Target) return;
-		// Prevent a held/repeated E from opening several browser tabs.
-		static double LastLaunch = -10.0;
+		/* SHOW THE ADDRESS, NEVER OPEN IT (Steam review, build 25330029, 2026-09-22).
+		   The TV used to LaunchURL the web game, and Steam failed the build for it:
+		   a game may not send players out of Steam to play somewhere else. So the TV
+		   now puts the address on screen and the player decides what to do with it. */
+		// Prevent a held/repeated E from stacking the same toast.
+		static double LastShown = -10.0;
 		const double Now = FPlatformTime::Seconds();
-		if (Now - LastLaunch < 2.0) return;
-		LastLaunch = Now;
-		FString Error;
-		FPlatformProcess::LaunchURL(TEXT("https://leonardsibelius.com/celestial-fortune/"), nullptr, &Error);
-		if (!Error.IsEmpty()) UE_LOG(LogTemp, Warning, TEXT("Web slot browser launch failed: %s"), *Error);
+		if (Now - LastShown < 2.0) return;
+		LastShown = Now;
+		ASibeliusHUD::Toast(this, TEXT("Celestial Fortune web version:  leonardsibelius.com/celestial-fortune"),
+			8.0f, SibeliusToast::Prize);
 		return;
 	}
 	if (Target->Implements<UInteractable>())
