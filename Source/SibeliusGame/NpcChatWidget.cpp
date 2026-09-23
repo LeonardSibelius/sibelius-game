@@ -125,6 +125,24 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 			InputSlot->SetPadding(FMargin(0.0f, 8.0f, 0.0f, 0.0f));
 		}
 
+		/* WHERE THE WORDS GO, EVERY TIME THE PANEL IS OPEN (docs/STEAM_AI_CHAT_DISCLOSURE.md).
+		   The Steam live-generated disclosure says players are told their messages go to
+		   Google, and the characters are written to be confided in (NPC_CHAT_REVIEW.md,
+		   Data handling). A one-time notice is the one a player forgets or never sees after
+		   a reinstall; a quiet line under the field is always true and costs one row. In
+		   the mock service nothing leaves the machine, but the mock is a development
+		   tool and the line describes the game players get. */
+		UTextBlock* ProviderNote = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ChatProviderNote"));
+		ProviderNote->SetText(NSLOCTEXT("Sibelius", "NpcChatProviderNote",
+			"Replies are written live by an AI (Google Gemini). What you type is sent to Google to generate them."));
+		ProviderNote->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 12));
+		ProviderNote->SetColorAndOpacity(FSlateColor(QuietColour));
+		ProviderNote->SetAutoWrapText(true);
+		if (UVerticalBoxSlot* NoteSlot = Column->AddChildToVerticalBox(ProviderNote))
+		{
+			NoteSlot->SetPadding(FMargin(0.0f, 6.0f, 0.0f, 0.0f));
+		}
+
 		Card->SetContent(Column);
 
 		if (UCanvasPanelSlot* CardSlot = Canvas->AddChildToCanvas(Card))

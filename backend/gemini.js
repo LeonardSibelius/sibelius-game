@@ -7,6 +7,30 @@
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 /**
+ * THE FILTERS ARE SET HERE BECAUSE THE DEFAULT IS OFF.
+ *
+ * Google's safety-settings page, checked 2026-09-22: "If the threshold is not set, the
+ * default block threshold is Off for Gemini 2.5 and 3 models." Until this list existed
+ * every request went out with no adjustable filter at all, and the only safety net was
+ * the non-adjustable child-safety protection plus the house rules in characters.js —
+ * which a model can be talked out of. The Steam Content Survey's live-generated answer
+ * says replies are provider-filtered (docs/STEAM_AI_CHAT_DISCLOSURE.md); this is what
+ * makes that sentence true, and test.js fails if it goes missing.
+ *
+ * Sexual content is the strictest line on purpose: every character's rules say "never
+ * sexual", Valve refuses live-generated sexual content outright, and a false positive
+ * costs one "She will not answer that one." Whatever the filter blocks arrives as
+ * finishReason SAFETY or a promptFeedback blockReason, which generate() below already
+ * turns into the `blocked` reason.
+ */
+export const SAFETY_SETTINGS = [
+  { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+  { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+  { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_LOW_AND_ABOVE" },
+  { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+];
+
+/**
  * A rough token count for budgeting BEFORE the call, when nobody knows the real one.
  *
  * Four characters per token is the usual English approximation. It only feeds the
@@ -36,6 +60,7 @@ export async function generate({
   const body = {
     systemInstruction: { parts: [{ text: systemInstruction }] },
     contents,
+    safetySettings: SAFETY_SETTINGS,
     generationConfig: {
       maxOutputTokens,
       // One candidate: we show one reply and paying for alternatives nobody reads is

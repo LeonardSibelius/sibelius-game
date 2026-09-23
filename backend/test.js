@@ -7,6 +7,7 @@
 import { createApp, LIMITS } from "./server.js";
 import { createBudget } from "./budget.js";
 import { getCharacter, knownCharacterIds } from "./characters.js";
+import { generate, SAFETY_SETTINGS } from "./gemini.js";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -180,6 +181,48 @@ console.log("=== NPC chat backend contract ===");
   }
   const { payload } = await post(ask({ message: "__fail:empty__ hello" }));
   check(payload.reason === "service", "an empty generation is a service failure, not an empty reply");
+}
+
+// --- the provider filters: the Steam disclosure promises them, and the default is OFF
+{
+  let sent = null;
+  const fakeFetch = (reply) => async (_url, init) => {
+    sent = JSON.parse(init.body);
+    return { ok: true, status: 200, json: async () => reply };
+  };
+  const call = (reply) =>
+    generate({
+      apiKey: "test",
+      model: "test-model",
+      systemInstruction: "rules",
+      contents: [{ role: "user", parts: [{ text: "hello" }] }],
+      maxOutputTokens: 64,
+      fetchImpl: fakeFetch(reply),
+    });
+
+  await call({ candidates: [{ content: { parts: [{ text: "Hi, Leonard." }] }, finishReason: "STOP" }] });
+  const categories = (sent?.safetySettings ?? []).map((s) => s.category);
+  for (const category of [
+    "HARM_CATEGORY_HARASSMENT",
+    "HARM_CATEGORY_HATE_SPEECH",
+    "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+    "HARM_CATEGORY_DANGEROUS_CONTENT",
+  ]) {
+    check(categories.includes(category), `every request sets a threshold for ${category}`);
+  }
+  check(
+    (sent?.safetySettings ?? []).every((s) => s.threshold !== "OFF" && s.threshold !== "BLOCK_NONE"),
+    "no filter is switched off"
+  );
+  check(
+    Array.isArray(sent?.safetySettings) && sent.safetySettings.length === SAFETY_SETTINGS.length,
+    "the request carries exactly the declared filters"
+  );
+
+  const filtered = await call({ candidates: [{ finishReason: "SAFETY" }] });
+  check(!filtered.ok && filtered.failure === "blocked", "a filtered reply is `blocked`, never shown");
+  const refusedPrompt = await call({ promptFeedback: { blockReason: "SAFETY" } });
+  check(!refusedPrompt.ok && refusedPrompt.failure === "blocked", "a filtered prompt is `blocked`");
 }
 
 // --- health without secrets
