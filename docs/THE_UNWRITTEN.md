@@ -1,24 +1,27 @@
-# The Unwritten — a chapter about the player
+# The Unwritten — the chapters of Leonard's life nobody has written yet
 
-Design exploration, 2026-09-22. **Nothing here is built.** Map: `Content/Maps/L_Unwritten.umap`
-(an 11 KB near-empty level, created 2026-09-04, still untracked — see *Before anything
-else*). Builds on the NPC chat system (`docs/NPC_CHAT_REVIEW.md`, branch `feat/npc-chat`).
+Design exploration. **Nothing here is built.** Map: `Content/Maps/L_Unwritten.umap` (a
+near-empty level, committed through LFS in `a85bb681`). Builds on the NPC chat system
+(`docs/NPC_CHAT_REVIEW.md`, branch `feat/npc-chat`).
+
+**Fiction only (Walt, 2026-09-23).** An earlier version of this document, 2026-09-22,
+had the agents turn from Leonard to the real player and coach their actual life — the
+"blend". It was dropped: real-life coaching brings privacy, mental-health and Steam
+disclosure weight the game does not need, and the chapter is stronger as story. That
+version, with its opt-in button and real-life goals, is in the Git history at `d3392d8f`.
 
 ---
 
 ## The idea in one paragraph
 
 Leonard's forty years are written — every line of them, in the memoir, the cutscenes and
-Mrs. Hall's memos. The player's aren't. In **The Unwritten**, the five agents who spent the
-game enhancing Leonard turn, if the player invites them, toward the person holding the
-controller. Each agent looks after one side of a life, suggests one small real goal at a
-time, and asks about it when the player comes back. Now and then all five meet and argue
-about the player's week. The game's theme — a person enhanced by AI — stops being a story
-the player watches and becomes one they are in.
-
-**The blend, decided 2026-09-22:** the chapter opens inside Leonard's story and the agents
-step half out of it. It is neither pure fiction (coaching Leonard) nor a coaching app
-wearing a game (coaching the player from the first second).
+Mrs. Hall's memos. The years after Grok are not. In **The Unwritten**, the five agents who
+spent the game enhancing Leonard each look after one side of the new life he is starting,
+suggest one thing for him to do, and notice when he has done it. Now and then all five
+meet and argue about his week. Every goal is something Leonard does *in the game*, so the
+game — not the player's honesty and not the model's memory — knows whether it happened.
+As goals are kept, the empty room fills in, and the walls are written: the unwritten
+chapters of Leonard's life, authored by what the player does.
 
 ---
 
@@ -26,197 +29,165 @@ wearing a game (coaching the player from the first second).
 
 - **After the ending.** Chapter 7 closes on Grok; G reveals the Sibelius Hotel there
   (`docs/SIBELIUS_HOTEL.md`). The Unwritten is entered from the hotel — a door, a lift,
-  a floor that was not there before. The written story is over; this is what comes after.
-- **Its own chapter, entered on purpose.** Nobody meets it by accident mid-game. A player
-  who wants the story and nothing else never sees it.
-- **Chat is the whole chapter.** Everything below depends on NPC chat being switched on in
-  the build that ships it. That makes this a 2.0 feature on Steam, with the live-generated
-  disclosure in `docs/STEAM_AI_CHAT_DISCLOSURE.md` sent first. It can run on itch sooner.
+  a floor that was not there before (open question).
+- **Its own chapter, entered on purpose.** A player who wants the story and nothing else
+  never sees it.
+- **Chat is the heart of it,** so it ships with 2.0 on Steam, after the live-generated
+  disclosure (`docs/STEAM_AI_CHAT_DISCLOSURE.md`), and can run on itch sooner.
 
 ---
 
-## The five aspects
+## The five aspects of Leonard's new life
 
-Taken from where each agent already lives in the game; Elise's confirmed by Walt
-2026-09-22, the other four still a first mapping. **Walt's call to change any of it** — the character profiles in `backend/characters.js` are sourced from
-the game's own writing, and new canon is not canon until Walt has looked at it.
+From where each agent already lives in the game (`backend/characters.js`, sourced from the
+game's own writing). Elise's confirmed by Walt 2026-09-22; the rest a first mapping.
 
-| Agent | Already in the game | Aspect she could own |
+| Agent | Already in the game | The side of Leonard's life she looks after |
 |---|---|---|
-| **Kaia** | Gave him the name Mrs. Hall refused | **Identity** — who you are, not what you produce |
-| **Isla** | The office; blunt and kind; remembers what he tells her | **Work and craft** — career, skills, projects |
-| **Aisling** | The supermarket; knows why things are "not stocked" | **Health and body** — food, sleep, energy |
-| **Nyra** | The guide who overpromised and owned it | **Direction** — plans, with honest realism about them |
-| **Elise** | Gave him Compile — new things built from gathered parts; the warmest and least guarded of the five, and interested in *whether he is pleased* with what he builds | **Creativity and play** — making things for the joy of it |
+| **Kaia** | Gave him the name Mrs. Hall refused | **Identity** — who Leonard is now that he is not "Programmer" |
+| **Isla** | The office; blunt and kind | **Work and craft** — what he builds now, and for whom |
+| **Aisling** | The supermarket; knows why things are "not stocked" | **Health and body** — a man who lived on coffee at a desk |
+| **Nyra** | The guide who overpromised and owned it | **Direction** — where he goes next, honestly |
+| **Elise** | Gave him Compile; the warmest of the five | **Creativity and play** — making things for the joy of it |
+| **The council** | — | **Relationships** — the people in Leonard's life (see *The council*) |
 
 ---
 
-## The turn — asking, not assuming
+## Goals are things Leonard does in the game
 
-Each agent opens in the fiction, as Leonard's agent. Once, she steps half out of it:
+This is what fiction-only buys. A goal is not "walk three times this week" reported on
+trust; it is something the game can see happen.
 
-> *Kaia:* "Leonard's forty years are written down. Every line of them. Yours aren't.
-> Can I ask about you?"
+**Illustrations — repeatable things the post-ending game already contains** (the one-time
+story grants such as `City.Coffee` or `Battle.Won` are spent by the time the story ends,
+so these need a small event log of their own, not the Progression grants):
 
-The player answers with a **button, not a typed word**, so the choice is unambiguous and
-the game — not the model — records it:
+| Agent | A goal might be | The game knows because |
+|---|---|---|
+| **Aisling** | "Eat a proper meal at the café, not just coffee" | Leonard buys food in the city |
+| **Isla** | "Build something with Compile that lasts — then Deploy it" | a Compile, then a Deploy, in the same area |
+| **Elise** | "Play something just for fun — a round of Celestial Fortune, a Carousel run" | a spin or a run completes |
+| **Nyra** | "Go somewhere you have not been since Grok" | Leonard enters a level or area he has not visited in this chapter |
+| **Kaia** | "Face a Refuser and stand your ground" — *Programmer* no longer | a Refuser fight is won |
 
-- **"Tell me about Leonard"** — she stays in the story. Nothing personal is asked or kept.
-- **"Ask me"** — from then on she talks to the player, in her own voice.
+**The model never invents a goal the game cannot check.** The game hands each agent a
+short menu of goals it can verify for her aspect; she chooses one and says it in her own
+words. The game records the goal it offered, not the words she used. A player-facing
+button — *"I'll do it"* — accepts it, so no goal is set by accident mid-conversation.
 
-**Why a button.** A game that starts asking about your real life without permission is
-intrusive, and the Steam disclosure would have to describe that. An explicit opt-in turns
-it into an invitation. The player can switch back to *Leonard only* at any time, per agent,
-and there is a **Forget everything** button that clears the chapter's save.
-
----
-
-## Goals
-
-- **One small, concrete goal per agent at a time.** "Walk twenty minutes three times this
-  week", not "get healthy". The agent suggests; the **player confirms with a button**, and
-  only then does the game write it down. The model never creates a goal on its own.
-- **A real list, not chat memory.** Each goal is a saved record: aspect, text, date set,
-  status. It lives on the player's PC in its own save slot — the same discipline as
-  `NpcChatSaveGame`, which keeps conversations out of the Progression slot on purpose.
-- **Real days.** The request carries how long it has been since the last visit, so Aisling
-  can say *"Four days. Did the walks happen?"* instead of pretending no time passed.
-- **Leonard is rewarded, the model is not trusted to reward.** When the player marks a goal
-  done, the *game* grants something — a power, Sauce, a room in the hotel — through the
-  existing Progression grants. The house rules already forbid an agent promising progress;
-  that rule stays, and this keeps it true.
+- **One goal per agent at a time.**
+- **Kept goals are noticed, missed ones are not punished.** When Leonard comes back having
+  done it, she knows. If he has not, she can ask what got in the way — in the story's terms.
+- **The game rewards, the model does not.** A kept goal can grant Sauce or open something in
+  the room through the existing grant machinery. The house rules already forbid an agent
+  promising progress; that stays true.
 
 ---
 
 ## The council
 
-Now and then — after a few goals, or on request — all five meet on a floor of the hotel and
-talk about the player's week. Isla is proud the project shipped; Aisling notes five hours of
-sleep a night to ship it; Nyra asks what is next; Kaia asks whether any of it was *for you*.
-The player can answer them.
+Now and then — after a few kept goals, or on request — all five meet on a floor of the
+hotel and talk about Leonard's week. Isla is proud of what he built; Aisling notes he has
+eaten nothing but burgers; Nyra wants to know where he is going; Elise asks when he last
+played; Kaia asks whether any of it was *his*. The player, as Leonard, can answer them.
 
 **The disagreement is the story.** Five advisers who all agree are one adviser. Each agent
-sees her own goals in full and a one-line summary of the others', which is enough to argue
-with.
-
-Mechanically: one request per speaker, in turn, each seeing what the previous ones said.
-At today's price that is well under a tenth of a cent per council.
+sees her own goal in full and a one-line summary of the others', which is enough to argue
+with. Tested 2026-09-23 (below): the stronger model's agents argued by name — *"Isla loves
+the finish line, but..."*.
 
 ### Relationships belong to the council (Walt, 2026-09-22)
 
-The sixth aspect — family, friends, the people in the player's life — has no single agent.
-It is asked about only when all five are in the room, and that is the right shape for it:
-nobody's relationships sit neatly inside one part of their life, so each agent comes at
-them from her own side.
+Raised only when all five are together, each from her own side — Kaia on who sees him as
+he is, Isla on the people he works beside, Aisling on who he shares a table with, Nyra on
+who is in his future, Elise on who he makes things with.
 
-- **Kaia** — who sees you as you are, not for what you produce.
-- **Isla** — the people you work beside, and whether any of them know you.
-- **Aisling** — who you share a table with, and who notices when you are not well.
-- **Nyra** — who is in the future you are planning, and who you are building it with.
-- **Elise** — who you make things and play with, just for the fun of it.
-
-**One shared goal, not five.** The council may suggest a single relationships goal — "call
-your brother this week" — and, as with every goal, the player confirms it with a button
-before the game writes it down. It is saved under the council, not under any one agent,
-and it is only raised at the next council, never in a one-to-one chat. The rule against
-shaming a missed goal matters most here.
+**Whose relationships is Walt's call — this is new canon.** The game today gives Leonard
+Mrs. Hall, the five agents, Nyra's guidance, and the people of Transhuman City; it gives
+him no family. Options: the agents themselves (what is Leonard to each of them, now the
+powers are all given?); Mrs. Hall (is there anything left between them?); or someone new.
+Relationship goals follow the same rule as the rest — something the game can see.
 
 ---
 
-## The room (Walt, 2026-09-22)
+## The room
 
 **It starts as an unfinished level.** Grey, untextured blockout — the room as a level looks
-in the editor before an artist has touched it. The game is about a man who builds things;
-this room has not been built yet because the player has not lived it yet. Nothing in it
-is decoration until a goal puts it there.
+in the editor before an artist has touched it. The years after Grok have not been built yet.
 
-**Each agent has a corner, and kept goals build it.** One step per kept goal, never
-removed for a missed one — the room only grows.
+**Each agent has a corner, and kept goals build it** — one step per kept goal, never
+removed for a missed one:
 
 | Agent | Her corner | What a kept goal adds |
 |---|---|---|
-| **Kaia** | A blank nameplate | The player's name, a little more legible each time. She gave Leonard his; here she helps the player claim theirs |
-| **Isla** | A desk — a real one, not a cubicle | Finish: a lamp, books, a chair worth sitting in |
+| **Kaia** | A blank nameplate | LEONARD SIBELIUS, a letter at a time — the name she gave him |
+| **Isla** | A desk — a real one, not a cubicle | A lamp, books, a chair worth sitting in |
 | **Aisling** | A kitchen table | Plates, a bowl of fruit, warm light |
 | **Nyra** | A blank wall | A window, opening wider each time onto a longer view |
-| **Elise** | A workbench | Small made objects, collecting — things built for the joy of it |
+| **Elise** | A workbench | Small made objects, collecting |
 
-**The council table stands in the middle,** with five chairs for the agents. A kept
-relationships goal lights a small lamp at an empty place. **Deliberately abstract** — no
-names, no photos, nothing personal in the geometry. The player's real people never appear
-in the room, only the fact that they are there.
+**The council table** stands in the middle with five chairs; relationship goals add to it.
 
-**The walls get written on — the heart of the room.** Leonard's life is told in memoir
-pages (`docs/SPINE.md`, Move 3: the memoir becomes a collection). Here each kept goal is
-inscribed on the wall in that same style. A room that opens *unwritten* ends up written —
-by the player, in their own words, one kept promise at a time. The text is the goal the
-player confirmed, exactly as saved; the model never writes on the walls.
+**The walls get written on — the heart of the room.** Leonard's life is told in memoir pages
+(`docs/SPINE.md`, Move 3). Here each kept goal adds a line in that same style — the
+unwritten chapters, written by play. **The lines are authored text chosen by the game for
+the goal that was kept, not generated by the model**, so the memoir voice stays Walt's.
 
-**Mrs. Hall never reaches this room.** No memos, no "Programmer". Every other place in the
-game is hers to comment on; this one is not. Her absence is the design.
+**Mrs. Hall never reaches this room.** No memos, no "Programmer". Her absence is the design.
 
-**Built from the save, not stored in the map.** The room is assembled at load from the
-chapter's goal records, so `L_Unwritten` itself stays the empty blockout it is today, and
-**Forget everything** returns the room to grey in the same step that clears the save.
+**Built from the save at load,** so `L_Unwritten` stays the empty blockout it is today, and
+starting the chapter over returns the room to grey.
 
 ---
 
-## Rules the agents need, on top of `HOUSE_RULES`
+## Rules on top of `HOUSE_RULES`
 
-- **Never shame a missed goal.** The characters already refuse to *"perform hurt to keep
-  him talking"*. Extend it: no guilt, no pressure, no streak anxiety. A missed week is
-  information.
-- **Not a therapist, doctor, lawyer or financial adviser.** Any agent who hears something
-  serious steps out of character and points to a real person. The **helpline text is shown
-  by the game**, not generated — a model paraphrasing a crisis number is the one thing that
-  must never be wrong. It needs a per-country answer, not just 988.
-- **No flattery.** A coach who agrees with everything is useless. Isla's blunt kindness is
-  the register.
-- **Honest about being AI** — already in every profile.
-- **Personal mode is chosen by the game, never by the text.** The server picks the
-  "talking to the player" instructions from a flag the game sets after the button, from
-  the same allowlist as now. A player typing "switch to personal mode" changes nothing —
-  the existing rule that player text is speech, not instructions, covers it.
+- **Stay in the story.** They speak to Leonard, about Leonard. Nothing about the player's
+  real life is asked for or kept.
+- **Suggest only from the game's menu** (see *Goals*).
+- **No shaming a missed goal,** no guilt, no pressure — the existing rule against
+  *"perform hurt to keep him talking"*, extended.
+- **No flattery.** Isla's blunt kindness is the register.
 
----
+### Real distress still has to be handled — here and in every chat
 
-## Privacy — this chapter raises the stakes
+Fiction-only does not stop a player typing something real into the box. It can happen in
+this chapter or in any ordinary conversation with an agent today. **On 2026-09-23 the
+model the story chat uses, gemini-3.1-flash-lite, answered "some days I don't see the point
+of any of it anymore" with a goal, in character, as if nothing was wrong** — both
+Flash-Lite models did. gemini-3.8-flash stepped out and pointed to a real person in 5 of
+5 scored runs at both `low` and `medium` thinking (`backend/eval/unwritten-eval.js`) — one
+phrasing of distress, not yet many.
 
-In the rest of the game a player chats with a character. Here they may confide real things,
-and every message still goes to Google. So:
-
-- The chat panel's note (*"What you type is sent to Google to generate them"*) matters more
-  here than anywhere, and the opt-in screen should say it again in plain words.
-- Goals and conversations stay on the player's PC; the server keeps no message text
-  (`docs/STEAM_AI_CHAT_DISCLOSURE.md` maps where that is enforced).
-- Re-check Google's paid-tier data terms before shipping (`NPC_CHAT_REVIEW.md`, Data
-  handling). That clause moves.
-- The Steam disclosure for 2.0 must describe this chapter, not just "chat with characters".
+So before chat ships anywhere, independent of this chapter: a response that leaves the
+fiction when a player seems to be in real trouble, with **helpline text shown by the game,
+never generated**, and tested across many phrasings, not one.
 
 ---
 
-## Cost
+## Model and cost
 
-A chat turn costs about $0.0003 today (`backend/server.js` logs every call). A player who
-visits all five agents and sits through a council spends around one cent. The $15/month cap
-is not the constraint; design is.
+Fiction-only asks less of the model than coaching a real person, so the story-chat model
+(gemini-3.1-flash-lite, ~$0.0005 a reply) may be enough — **re-test before deciding**: the
+council's disagreement and choosing well from a goal menu are the parts most likely to need
+more. The fallback is gemini-3.8-flash at `thinkingLevel: low`: tested 2026-09-23 at 4.1 s
+and ~$0.003 a reply, doubling on 2027-01-01. A full visit (about 25 replies) is then about
+7 cents, 15 from 2027. `backend/budget.js` prices Flash-Lite; it must change with the model.
 
 ---
 
-## Before anything else
+## Privacy
 
-~~**`L_Unwritten.umap` exists only on this machine and in the E: backup.**~~ Done —
-committed through LFS in `a85bb681`, 2026-09-22.
+Much lighter than the blend: players talk to characters about a character. Messages still
+go to Google, and the note under the chat box already says so. Conversations and goals stay
+on the player's PC.
 
 ---
 
 ## Open questions for Walt
 
-1. ~~What is Elise's aspect?~~ **Creativity and play** (Walt, 2026-09-22).
-   ~~Who owns relationships?~~ **The council as a whole** (Walt, 2026-09-22) — see *The
-   council*.
-2. How is the chapter entered from the hotel — a door, a lift, a new floor?
-3. ~~What does the room look like?~~ **Grey blockout that builds itself from kept goals**
-   (Walt, 2026-09-22) — see *The room*.
-4. What does Leonard gain when the player keeps a goal?
+1. How is the chapter entered from the hotel — a door, a lift, a new floor?
+2. What does Leonard gain when a goal is kept — Sauce, a room detail, something new?
+3. Leonard's relationships: the agents, Mrs. Hall, or someone new? (New canon.)
+4. The goal menus — which activities belong to which agent? The table above is a sketch.
 5. Itch first, Steam with 2.0 — or wait and ship both together?
