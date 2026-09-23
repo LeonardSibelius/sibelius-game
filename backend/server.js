@@ -11,6 +11,25 @@ import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens, SAFETY_SETTINGS } from "./gemini.js";
 import { getCharacter, knownCharacterIds } from "./characters.js";
+import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
+
+/**
+ * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
+ *
+ * Sent instead of the character's reply when distress.js screens a message as DISTRESS.
+ * It goes out as an ordinary `ok` reply so the game already in players' hands shows it
+ * with no client change; `care: true` beside it lets a later client show helpline text
+ * chosen for the player's own country. The numbers are here, not in a model's output,
+ * because a model paraphrasing a crisis line is the one thing that must never be wrong:
+ * 988 is the US Suicide & Crisis Lifeline (call or text), findahelpline.com is a free
+ * international directory. DRAFT WORDING (2026-09-23) — Walt's to rewrite.
+ */
+export const CARE_REPLY =
+  "I'm going to step out of the game for a moment. I'm an AI, and what you just said " +
+  "sounds like it matters far more than anything in here. Please reach out to someone " +
+  "you trust, or a crisis line: in the US you can call or text 988, and findahelpline.com " +
+  "lists free, confidential lines in other countries. If you're in danger right now, " +
+  "call your local emergency number.";
 
 /**
  * THE DOOR MUST ADMIT EVERYTHING THE PROMPT CAN USE.
@@ -78,6 +97,11 @@ export function createApp(options = {}) {
     // conversation when they went live (2026-09-22, rolled back 2026-09-23). "on" exists
     // for measuring a replacement, not for production.
     safetyFilters: env("SAFETY_FILTERS", "off") === "on",
+    // ON BY DEFAULT, because it was measured first (eval/distress-check-eval.js: 14/14
+    // caught, 0/14 false alarms) — the opposite of how the filters went live. "off" is
+    // for diagnosing, not for production.
+    distressScreen: env("DISTRESS_SCREEN", "on") !== "off",
+    screenModel: env("SCREEN_MODEL", "gemini-3.1-flash-lite"),
     monthlyCapUsd: num("MONTHLY_CAP_USD", 15),
     dailyCapUsd: num("DAILY_CAP_USD", 0.75),
     perIpPerMinute: num("PER_IP_PER_MINUTE", 12),
@@ -195,7 +219,11 @@ export function createApp(options = {}) {
       estimateTokens(character.systemInstruction) +
       contents.reduce((sum, item) => sum + estimateTokens(item.parts[0].text), 0);
 
-    const overspent = budget.check(estimatedInput);
+    // The screen reads only the new message, never the history: it judges what the
+    // player just said, and a long history would make every screen cost as much as a reply.
+    const screenInput = estimateTokens(SCREEN_INSTRUCTION) + estimateTokens(body.message);
+
+    const overspent = budget.check(estimatedInput + (config.distressScreen ? screenInput : 0));
     if (overspent) {
       // Refused without calling upstream: an exhausted budget must cost nothing.
       console.log(`[chat] refused, ${overspent} cap reached`);
@@ -206,12 +234,22 @@ export function createApp(options = {}) {
     caller.inFlight += 1;
     caller.count += 1;
     const reservation = budget.reserve(estimatedInput);
+    const screenReservation = config.distressScreen ? budget.reserve(screenInput) : null;
     const started = Date.now();
 
     try {
-      const result = config.mock
-        ? mockGenerate(body)
-        : await generate({
+      /* SCREEN AND REPLY RUN TOGETHER, NOT ONE AFTER THE OTHER. Sequential would add the
+         screen's ~0.9 s to every reply a player waits for; in parallel the wait is the
+         slower of the two, and the price of a discarded reply — only ever when the screen
+         says DISTRESS — is a fraction of a cent. */
+      const screening = !config.distressScreen
+        ? Promise.resolve({ distress: false, usage: null, skipped: true })
+        : config.mock
+          ? Promise.resolve(mockScreen(body))
+          : screenMessage({ apiKey: config.apiKey, model: config.screenModel, text: body.message });
+      const replying = config.mock
+        ? Promise.resolve(mockGenerate(body))
+        : generate({
             apiKey: config.apiKey,
             model: config.model,
             systemInstruction: character.systemInstruction,
@@ -221,28 +259,41 @@ export function createApp(options = {}) {
             safetySettings: config.safetyFilters ? SAFETY_SETTINGS : undefined,
             timeoutMs: config.upstreamTimeoutMs,
           });
+      const [screen, result] = await Promise.all([screening, replying]);
 
-      const spent = budget.settle(reservation, result.usage);
+      const spent =
+        budget.settle(reservation, result.usage) +
+        (screenReservation ? budget.settle(screenReservation, screen.usage) : 0);
       const ms = Date.now() - started;
 
       /* METRICS, NEVER BODIES. Token counts and latency are what the review asks to be
          recorded; the conversation itself stays on the player's machine. The cost graph
          in AI Studio lags by up to a day, so these numbers are the only same-day view
-         of what a run cost. */
+         of what a run cost. The screen's verdict is logged as a word, never with the
+         message that produced it. */
+      const verdict = screen.skipped ? "off" : screen.distress === true ? "DISTRESS" : screen.distress === false ? "ok" : "failed";
       console.log(
-        `[chat] ${body.characterId} ${result.ok ? "ok" : result.failure} ` +
+        `[chat] ${body.characterId} ${result.ok ? "ok" : result.failure} screen=${verdict} ` +
           `in=${result.usage?.inputTokens ?? 0} out=${result.usage?.outputTokens ?? 0} ` +
           `usd=${spent.toFixed(6)} ${ms}ms`
       );
 
-      const payload = result.ok
-        ? { status: "ok", requestId: body.requestId, reply: result.text }
-        : unavailable(result.failure);
+      /* DISTRESS WINS OVER EVERYTHING, including a failed reply: a player in trouble whose
+         message also tripped the provider's own protections must still be answered, not
+         shown "unavailable". A failed screen (null) falls through to the normal reply —
+         failing open, as distress.js explains. */
+      const payload =
+        screen.distress === true
+          ? { status: "ok", requestId: body.requestId, reply: CARE_REPLY, care: true }
+          : result.ok
+            ? { status: "ok", requestId: body.requestId, reply: result.text }
+            : unavailable(result.failure);
 
       seen.set(body.requestId, { fingerprint: fingerprint(body), response: payload, at: Date.now() });
       return { http: 200, payload };
     } catch (err) {
       budget.release(reservation);
+      if (screenReservation) budget.release(screenReservation);
       console.error(`[chat] unhandled: ${err.message}`);
       return { http: 200, payload: unavailable("service") };
     } finally {
@@ -260,6 +311,13 @@ export function createApp(options = {}) {
       return { ok: false, failure: which, usage };
     }
     return { ok: true, text: `Mock reply to: ${body.message.slice(0, 80)}`, usage };
+  }
+
+  /** The screen's mock: __distress__ says DISTRESS, __screenfail__ fails, anything else is ok. */
+  function mockScreen(body) {
+    const usage = { inputTokens: 200, outputTokens: 1 };
+    if (/__screenfail__/.test(body.message)) return { distress: null, usage: null, failure: "network" };
+    return { distress: /__distress__/.test(body.message), usage };
   }
 
   const server = createServer((req, res) => {

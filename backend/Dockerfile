@@ -7,7 +7,7 @@ FROM node:22-alpine
 RUN addgroup -S chat && adduser -S chat -G chat
 
 WORKDIR /app
-COPY --chown=chat:chat package.json server.js budget.js gemini.js characters.js ./
+COPY --chown=chat:chat package.json server.js budget.js gemini.js characters.js distress.js ./
 
 # The volume is mounted here and owned by root by default; the entrypoint needs to be
 # able to write the ledger into it. Fly mounts after this, so ownership is fixed at boot

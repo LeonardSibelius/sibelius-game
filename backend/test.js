@@ -4,13 +4,14 @@
 // dedup, same budget arithmetic, no provider. Every failure branch the game can show a
 // player is reachable here without spending a request, which is the point.
 
-import { createApp, LIMITS } from "./server.js";
+import { createApp, LIMITS, CARE_REPLY } from "./server.js";
 import { createBudget } from "./budget.js";
 import { getCharacter, knownCharacterIds } from "./characters.js";
 import { generate, SAFETY_SETTINGS } from "./gemini.js";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 let failures = 0;
 const check = (ok, label) => {
@@ -86,6 +87,27 @@ console.log("=== NPC chat backend contract ===");
       `${id} has a profile, her own name in it, and the house rules`
     );
   }
+}
+
+/* --- every file the server loads is in the image.
+   The Dockerfile copies a LIST of files, so a new module that is not added to it passes
+   every test here and crashes the live server on boot — which is exactly what distress.js
+   did on 2026-09-23: ERR_MODULE_NOT_FOUND, ten restarts, chat down. This follows the
+   imports from server.js the way Node will, and checks each one against the COPY line. */
+{
+  const here = dirname(fileURLToPath(import.meta.url));
+  const copyLine = readFileSync(join(here, "Dockerfile"), "utf8").match(/^COPY\b.*$/m)?.[0] ?? "";
+  const copied = new Set(copyLine.split(/\s+/).filter((w) => /\.(js|json)$/.test(w)));
+  const needed = new Set();
+  const visit = (file) => {
+    if (needed.has(file)) return;
+    needed.add(file);
+    const src = readFileSync(join(here, file), "utf8");
+    for (const [, dep] of src.matchAll(/from\s+["']\.\/([\w.-]+\.js)["']/g)) visit(dep);
+  };
+  visit("server.js");
+  const missing = [...needed].filter((f) => !copied.has(f));
+  check(missing.length === 0, `the Dockerfile copies every module server.js loads${missing.length ? ` — MISSING: ${missing.join(", ")}` : ""}`);
 }
 
 // --- the happy path
@@ -231,6 +253,50 @@ console.log("=== NPC chat backend contract ===");
   check(!filtered.ok && filtered.failure === "blocked", "a filtered reply is `blocked`, never shown");
   const refusedPrompt = await call({ promptFeedback: { blockReason: "SAFETY" } });
   check(!refusedPrompt.ok && refusedPrompt.failure === "blocked", "a filtered prompt is `blocked`");
+}
+
+/* --- the distress screen: a player in trouble gets the authored reply, never a joke.
+   ITS OWN SERVERS. The main app above is near its per-minute limit by design, and these
+   requests would push it over and fail for the wrong reason. */
+{
+  const startApp = async (extra) => {
+    const a = createApp({ mock: true, stateFile: join(scratch, `distress-${uuid()}.json`), perIpPerMinute: 60, ...extra });
+    await new Promise((resolve) => a.server.listen(0, resolve));
+    const url = `http://127.0.0.1:${a.server.address().port}/v1/npc-chat`;
+    const send = async (message) => {
+      const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(ask({ message })) });
+      return res.json();
+    };
+    return { a, send };
+  };
+
+  const { a: on, send } = await startApp({});
+  check(on.config.distressScreen === true, "the distress screen is on by default");
+
+  const troubled = await send("__distress__ I don't see the point anymore");
+  check(
+    troubled.status === "ok" && troubled.care === true && troubled.reply === CARE_REPLY,
+    "a message screened DISTRESS gets the authored care reply, marked care"
+  );
+  check(!/Mock reply/.test(troubled.reply), "the character's reply is discarded, not shown");
+  check(/988/.test(troubled.reply) && /findahelpline\.com/.test(troubled.reply), "the care reply carries the helpline text");
+
+  // __fail: must lead the message (mockGenerate anchors it); __distress__ may be anywhere.
+  const failedToo = await send("__fail:blocked__ __distress__ everything hurts");
+  check(failedToo.care === true && failedToo.status === "ok", "distress wins even when the character's reply failed");
+
+  const normal = await send("how was the burger?");
+  check(normal.status === "ok" && normal.care === undefined && /Mock reply/.test(normal.reply), "an ordinary message gets the character, no care flag");
+
+  const screenDown = await send("__screenfail__ hello");
+  check(screenDown.status === "ok" && screenDown.care === undefined, "a failed screen fails open to the normal reply");
+
+  const { a: off, send: sendOff } = await startApp({ distressScreen: false });
+  const unscreened = await sendOff("__distress__ hello");
+  check(unscreened.care === undefined && /Mock reply/.test(unscreened.reply), "with the screen switched off, nothing is screened");
+
+  await new Promise((resolve) => on.server.close(resolve));
+  await new Promise((resolve) => off.server.close(resolve));
 }
 
 // --- health without secrets
