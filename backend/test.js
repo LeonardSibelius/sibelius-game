@@ -124,6 +124,9 @@ console.log("=== NPC chat backend contract ===");
         f.includes(FOOLISH_ANGLES[id]) && f.includes("You cannot grant powers"),
       `${id}: foolish keeps her profile and house rules, and adds her angle`
     );
+    // Walt, 2026-09-23: foolish replies were burying real answers ("who is Nyra?" got a
+    // salad-garnish city and no guide). The answer-first rule is what keeps the style usable.
+    check(f.includes("ANSWER FIRST"), `${id}: foolish answers a direct question before the joke`);
   }
   const typo = createApp({ mock: true, stateFile: join(scratch, "typo.json"), chatStyle: "foolsh" });
   check(typo.config.chatStyle === "normal", "a misspelt style falls back to normal");
