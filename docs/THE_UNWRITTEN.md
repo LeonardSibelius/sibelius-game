@@ -123,6 +123,44 @@ shaming a missed goal matters most here.
 
 ---
 
+## The room (Walt, 2026-09-22)
+
+**It starts as an unfinished level.** Grey, untextured blockout — the room as a level looks
+in the editor before an artist has touched it. The game is about a man who builds things;
+this room has not been built yet because the player has not lived it yet. Nothing in it
+is decoration until a goal puts it there.
+
+**Each agent has a corner, and kept goals build it.** One step per kept goal, never
+removed for a missed one — the room only grows.
+
+| Agent | Her corner | What a kept goal adds |
+|---|---|---|
+| **Kaia** | A blank nameplate | The player's name, a little more legible each time. She gave Leonard his; here she helps the player claim theirs |
+| **Isla** | A desk — a real one, not a cubicle | Finish: a lamp, books, a chair worth sitting in |
+| **Aisling** | A kitchen table | Plates, a bowl of fruit, warm light |
+| **Nyra** | A blank wall | A window, opening wider each time onto a longer view |
+| **Elise** | A workbench | Small made objects, collecting — things built for the joy of it |
+
+**The council table stands in the middle,** with five chairs for the agents. A kept
+relationships goal lights a small lamp at an empty place. **Deliberately abstract** — no
+names, no photos, nothing personal in the geometry. The player's real people never appear
+in the room, only the fact that they are there.
+
+**The walls get written on — the heart of the room.** Leonard's life is told in memoir
+pages (`docs/SPINE.md`, Move 3: the memoir becomes a collection). Here each kept goal is
+inscribed on the wall in that same style. A room that opens *unwritten* ends up written —
+by the player, in their own words, one kept promise at a time. The text is the goal the
+player confirmed, exactly as saved; the model never writes on the walls.
+
+**Mrs. Hall never reaches this room.** No memos, no "Programmer". Every other place in the
+game is hers to comment on; this one is not. Her absence is the design.
+
+**Built from the save, not stored in the map.** The room is assembled at load from the
+chapter's goal records, so `L_Unwritten` itself stays the empty blockout it is today, and
+**Forget everything** returns the room to grey in the same step that clears the save.
+
+---
+
 ## Rules the agents need, on top of `HOUSE_RULES`
 
 - **Never shame a missed goal.** The characters already refuse to *"perform hurt to keep
@@ -167,8 +205,8 @@ is not the constraint; design is.
 
 ## Before anything else
 
-**`L_Unwritten.umap` exists only on this machine and in the E: backup.** It is untracked,
-not ignored, and the system SSD is failing (`stornvme` 129). Commit it before building on it.
+~~**`L_Unwritten.umap` exists only on this machine and in the E: backup.**~~ Done —
+committed through LFS in `a85bb681`, 2026-09-22.
 
 ---
 
@@ -178,7 +216,7 @@ not ignored, and the system SSD is failing (`stornvme` 129). Commit it before bu
    ~~Who owns relationships?~~ **The council as a whole** (Walt, 2026-09-22) — see *The
    council*.
 2. How is the chapter entered from the hotel — a door, a lift, a new floor?
-3. What does the room look like? The Unwritten could be literally blank — white walls,
-   unfinished geometry that fills in as goals are kept.
+3. ~~What does the room look like?~~ **Grey blockout that builds itself from kept goals**
+   (Walt, 2026-09-22) — see *The room*.
 4. What does Leonard gain when the player keeps a goal?
 5. Itch first, Steam with 2.0 — or wait and ship both together?
