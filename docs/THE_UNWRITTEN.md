@@ -165,11 +165,46 @@ not personal data.
 
 ---
 
+## Shipping it — version 2.0 (Walt, 2026-09-23)
+
+**Steam only; no itch.** Two storefronts would mean two upload routines and two store pages
+for one free game. Steam has the players and updates the game for them. If an itch page
+already exists, point it at Steam.
+
+**Not yet.** v1.1.4 (BuildID 25471988) is still in Steam's review queue, and a new build
+now could restart or muddle that review. The steps, in order:
+
+1. **Wait for v1.1.4 to clear review.**
+2. **Install the WD Green SN3000** and reinstall Windows (`RECOVERY_NOTES.txt` on D:).
+   Package 2.0 on a healthy drive, not the failing Patriot.
+3. **Merge `feat/npc-chat` into `main`.** Chat and the council live only on the branch.
+4. **Turn chat on in the packaged build.** Both switches are off in Shipping on purpose:
+   `sib.Chat.Enable` (`InteractorComponent.cpp`) and `sib.Chat.Mode` (`NpcChatSubsystem.cpp`),
+   each behind `#if UE_BUILD_SHIPPING`. The NPC chat gate's "no shipped config turns chat on"
+   check has to change in the same commit, or it stops meaning anything.
+5. **Set the real budget.** `DAILY_CAP_USD` ($0.75) and `MONTHLY_CAP_USD` ($15) on Fly are
+   sized for Walt testing. $0.75 a day is about 300 council turns (or 1,500 single chats)
+   **across all players**. Once it runs out, everyone sees "nothing left to say today"
+   until the next day. Pick the numbers for real players before the public gets it.
+6. **Package v2.0.0** and upload it with `"setlive" ""`, as always
+   (`Tools/Steam/app_build_5249380.vdf`, `desc` "v2.0.0 The agents talk").
+7. **Put it on a private beta branch first.** In Steamworks, create a password-protected
+   branch (e.g. `council`) and set the build live there only. Walt and anyone he picks play
+   2.0 through Steam; the public still gets v1.1.4.
+8. **Update Steam's AI content disclosure.** The store answers now say the game generates
+   nothing at runtime; 2.0 needs the live-generated section filled in, with the guardrails.
+   Start from `docs/STEAM_AI_CHAT_DISCLOSURE.md` — marked NOT READY TO SEND. Bring it up
+   to date first: the council, the foolish style, the care reply. Steam reviews this too.
+9. **Make 2.0 public:** set it live on the default branch once the disclosure is approved.
+
+---
+
 ## Open questions for Walt
 
-1. How is the chapter entered from the hotel — a door, a lift, a new floor?
-2. Which facts should the council get to roast? The list above is everything already
+1. Which facts should the council get to roast? The list above is everything already
    recorded; fewer may be funnier.
-3. Leonard's relationships: the agents, Mrs. Hall, or someone new? (New canon.)
-4. Does the council meet whenever the player sits down, or only now and then?
-5. Itch first, Steam with 2.0 — or wait and ship both together?
+2. Leonard's relationships: the agents, Mrs. Hall, or someone new? (New canon.)
+3. The real daily and monthly budget for 2.0 (step 5 above).
+
+*Answered: the chapter is entered from the Tab menu or any agent's Council button, not
+from the hotel; the council meets whenever the player opens it; Steam only, no itch.*
