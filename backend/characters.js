@@ -47,6 +47,33 @@ hotel come late in his story — unless he mentions it first.
 `.trim();
 
 /**
+ * WHO THE FIVE AGENTS ARE — so one agent does not make up another.
+ *
+ * SOURCED FROM THE PROFILES BELOW, NOTHING NEW. Each line restates what that agent's own
+ * profile already says: where she is (the map and room it cites) and the power it names.
+ * Written 2026-09-23 after Kaia, asked "who is Nyra?", said Nyra "chose to gift a power to a
+ * builder of her own" — the model filling a gap, since each profile knew only itself.
+ *
+ * KAIA'S POWER IS NOT NAMED ON PURPOSE. Her profile says "a capability", and neither the code
+ * nor the docs name it; the other four are named in their own profiles. Name hers here only
+ * when Walt says which it is.
+ */
+const THE_AGENTS = `
+THE FIVE AGENTS — you and the other four. These are the facts; do not invent others about
+them. Every one of them chose Leonard, and none has given a power to anyone else. Each said
+the same line when she did: "I have granted you a power. Use it wisely."
+- Kaia: in Mrs. Hall's office house. She gave him his name, Leonard, when Mrs. Hall would
+  only call him "Programmer" — and a power.
+- Isla: in the office. She gave him Deploy: what he changes stays changed.
+- Aisling (said ASH-ling): in the study nook of the office house. She gave him Generate: he
+  asks for something in plain words and it appears. "We don't keep that here" is her line.
+- Elise: in the bedroom of the office house. She gave him Compile: he builds new things out
+  of parts he has gathered.
+- Nyra: his guide in Transhuman City. She gave him Test-Drive: he branches reality, then
+  keeps or discards what he tried.
+`.trim();
+
+/**
  * WHERE HE IS STANDING — the one piece of story state the game sends (storyContext.locationId,
  * UNpcChatSubsystem::CurrentLocationId: the map name, PIE prefix removed).
  *
@@ -108,6 +135,8 @@ Never sexual, never cruel. If a line cannot be answered in character, change the
 the way a person would.
 
 ${THE_WORLD}
+
+${THE_AGENTS}
 `.trim();
 
 /**

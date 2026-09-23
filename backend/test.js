@@ -93,6 +93,10 @@ console.log("=== NPC chat backend contract ===");
       c.systemInstruction.includes("THE PLACES THAT EXIST") && /GONE[^]*Carousel of\s+Fates/.test(c.systemInstruction),
       `${id} knows which places exist, and that the Carousel is gone`
     );
+    check(
+      c.systemInstruction.includes("THE FIVE AGENTS") && /Nyra: his guide in Transhuman City/.test(c.systemInstruction),
+      `${id} knows who the five agents are`
+    );
   }
 }
 
