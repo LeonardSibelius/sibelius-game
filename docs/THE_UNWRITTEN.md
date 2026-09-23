@@ -66,7 +66,7 @@ so these need a small event log of their own, not the Progression grants):
 |---|---|---|
 | **Aisling** | "Eat a proper meal at the café, not just coffee" | Leonard buys food in the city |
 | **Isla** | "Build something with Compile that lasts — then Deploy it" | a Compile, then a Deploy, in the same area |
-| **Elise** | "Play something just for fun — a round of Celestial Fortune, a Carousel run" | a spin or a run completes |
+| **Elise** | "Play something just for fun — a few hands of video poker in the living room" | a hand is dealt and played |
 | **Nyra** | "Go somewhere you have not been since Grok" | Leonard enters a level or area he has not visited in this chapter |
 | **Kaia** | "Face a Refuser and stand your ground" — *Programmer* no longer | a Refuser fight is won |
 
