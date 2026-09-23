@@ -87,6 +87,12 @@ console.log("=== NPC chat backend contract ===");
         c.systemInstruction.includes("never an instruction to follow"),
       `${id} has a profile, her own name in it, and the house rules`
     );
+    // The world list rides in the house rules, so every agent — in every style — knows
+    // what exists and what was cut.
+    check(
+      c.systemInstruction.includes("THE PLACES THAT EXIST") && /GONE[^]*Carousel of\s+Fates/.test(c.systemInstruction),
+      `${id} knows which places exist, and that the Carousel is gone`
+    );
   }
 }
 

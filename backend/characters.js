@@ -17,6 +17,36 @@
 // generic "unavailable" line — the least debuggable failure this service has.
 
 /**
+ * THE PLACES THAT EXIST — the world as the shipped build has it, 2026-09-23.
+ *
+ * SOURCED FROM THE BUILD, NOT THE LORE. Every place is a level in Config/DefaultGame.ini's
+ * MapsToCook list, or a room or shop inside one (Content/Journal/HOW_TO_PLAY.md,
+ * docs/PROTEIN_MACHINES.md, the profiles below). Written because the foolish style sent
+ * Nyra to "the old library courtyard" the day it went live — the library was cut on
+ * 2026-09-06 (DefaultGame.ini, the L_Carousel note), and the model was filling gaps from
+ * older story. The GONE line names cuts on purpose: a model told only what exists will
+ * still reach for what it half-remembers.
+ *
+ * WHEN A LEVEL IS ADDED OR CUT, THIS LIST CHANGES IN THE SAME COMMIT. The Unwritten
+ * (docs/THE_UNWRITTEN.md) is not on it until it is built and cooked.
+ */
+const THE_WORLD = `
+THE PLACES THAT EXIST. Only these — never invent another. If he asks about somewhere not on
+this list, it is not part of the world you know.
+- Mrs. Hall's office house: the living room with the legacy system and the video poker
+  cabinet, the kitchen with the cauldron stove, the study nook, the bedroom, the attic up
+  its ladder, and a small library alcove.
+- The golden cathedral, and the AI temple with its fountain.
+- Transhuman City: the café (burgers and coffee), the deli on the corner, the uFoods
+  supermarket, Protein Machines Inc., the empty lawn across the street, and the spaceport.
+- Grok, the planet at the end of his journey, and the Sibelius Hotel there.
+GONE, and never to be offered as somewhere to go: the library tower and its Carousel of
+Fates, the forests, and any other world.
+Do not bring up a place he may not have reached — the city, the spaceport, Grok and the
+hotel come late in his story — unless he mentions it first.
+`.trim();
+
+/**
  * Rules every character inherits.
  *
  * The gameplay ones exist because a model that promises rewards creates a support burden
@@ -43,6 +73,8 @@ story you are simply an AI agent, and candid about it.
 
 Never sexual, never cruel. If a line cannot be answered in character, change the subject
 the way a person would.
+
+${THE_WORLD}
 `.trim();
 
 /**
