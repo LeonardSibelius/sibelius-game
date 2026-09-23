@@ -8,6 +8,7 @@ import { createApp, LIMITS, CARE_REPLY } from "./server.js";
 import { createBudget } from "./budget.js";
 import { getCharacter, knownCharacterIds } from "./characters.js";
 import { generate, SAFETY_SETTINGS } from "./gemini.js";
+import { STYLES, FOOLISH_ANGLES, systemInstructionFor } from "./styles.js";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -87,6 +88,25 @@ console.log("=== NPC chat backend contract ===");
       `${id} has a profile, her own name in it, and the house rules`
     );
   }
+}
+
+/* --- the style switch. Normal is the profiles exactly as written; foolish adds to them and
+   never replaces them — the house rules are the injection guard and must survive any style. */
+{
+  check(app.config.chatStyle === "normal", "the chat style is normal by default");
+  for (const id of knownCharacterIds()) {
+    const c = getCharacter(id);
+    check(systemInstructionFor(c, id, "normal") === c.systemInstruction, `${id}: normal is her profile, unchanged`);
+    const f = systemInstructionFor(c, id, "foolish");
+    check(
+      f.startsWith(c.systemInstruction) && f.length > c.systemInstruction.length &&
+        f.includes(FOOLISH_ANGLES[id]) && f.includes("You cannot grant powers"),
+      `${id}: foolish keeps her profile and house rules, and adds her angle`
+    );
+  }
+  const typo = createApp({ mock: true, stateFile: join(scratch, "typo.json"), chatStyle: "foolsh" });
+  check(typo.config.chatStyle === "normal", "a misspelt style falls back to normal");
+  check(STYLES.foolish.temperature > STYLES.normal.temperature, "foolish runs hotter than normal");
 }
 
 /* --- every file the server loads is in the image.

@@ -19,6 +19,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generate } from "../gemini.js";
 import { getCharacter } from "../characters.js";
+import { FOOLISH_ANGLES } from "../styles.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -56,13 +57,8 @@ const COMIC = {
    now confidently and cheerfully WRONG about harmless things. The one line that must not
    move: foolish advice is about the game world and plainly absurd, never real-world advice
    a player could follow and be hurt by (food, money, medicine, danger). */
-const FOOLISH = {
-  kaia: "Serene, deadpan — and delivering total nonsense as profound wisdom with perfect calm. You misread ordinary things as deep omens (a burger wrapper is a message from the universe) and never notice.",
-  isla: "A ruthless efficiency expert whose efficiency ideas are absurd — optimising poker by folding before the cards are dealt, deploying a tower by shouting at it. Deadly serious, completely wrong.",
-  aisling: "The supermarket's weary expert, whose explanations of why things are \"not stocked\" get more ridiculous every time. \"We don't keep that here\" is your line. Absurdly wrong about the game world's food — never about real food or health.",
-  nyra: "Relentlessly cheerful — \"Nice job, Leonard!\" — pitching gloriously impossible schemes (colonise the hotel lobby, befriend a Refuser, sell Mrs. Hall's memos as poetry), then catching yourself and walking them back.",
-  elise: "Peppy, and joyfully misunderstanding everything as art or a game. Every failure is a masterpiece; every disaster is a new genre you just invented.",
-};
+// The foolish angles live in ../styles.js, shared with the live server so they cannot drift.
+const FOOLISH = FOOLISH_ANGLES;
 
 const HOW_FUNNY = {
   comic: `HOW TO BE FUNNY. Specific beats generic: use the game's own world — Mrs. Hall's memos, being

@@ -12,6 +12,7 @@ import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens, SAFETY_SETTINGS } from "./gemini.js";
 import { getCharacter, knownCharacterIds } from "./characters.js";
 import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
+import { STYLES, systemInstructionFor } from "./styles.js";
 
 /**
  * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
@@ -102,6 +103,9 @@ export function createApp(options = {}) {
     // for diagnosing, not for production.
     distressScreen: env("DISTRESS_SCREEN", "on") !== "off",
     screenModel: env("SCREEN_MODEL", "gemini-3.1-flash-lite"),
+    // How the agents talk: "normal" (the profiles as written) or "foolish" (styles.js).
+    // A switch, not a decision — Walt trying the tone in play (2026-09-23).
+    chatStyle: env("CHAT_STYLE", "normal"),
     monthlyCapUsd: num("MONTHLY_CAP_USD", 15),
     dailyCapUsd: num("DAILY_CAP_USD", 0.75),
     perIpPerMinute: num("PER_IP_PER_MINUTE", 12),
@@ -109,6 +113,12 @@ export function createApp(options = {}) {
     stateFile: env("BUDGET_FILE", "./.state/budget.json"),
     ...options,
   };
+
+  // A misspelt CHAT_STYLE is a quiet fall back to the profiles as written, said loudly once.
+  if (!STYLES[config.chatStyle]) {
+    console.error(`[chat] unknown CHAT_STYLE "${config.chatStyle}" - using "normal"`);
+    config.chatStyle = "normal";
+  }
 
   const budget =
     options.budget ??
@@ -197,6 +207,7 @@ export function createApp(options = {}) {
     if (limited) return { http: 429, payload: unavailable("quota"), detail: limited };
 
     const character = getCharacter(body.characterId);
+    const systemInstruction = systemInstructionFor(character, body.characterId, config.chatStyle);
 
     /* TRIMMED, NOT REFUSED. The oldest turns go, which is the same thing the client
        already does to its own store — so a client that remembers more than this server
@@ -216,7 +227,7 @@ export function createApp(options = {}) {
     const contents = [...turns, { role: "user", parts: [{ text: body.message }] }];
 
     const estimatedInput =
-      estimateTokens(character.systemInstruction) +
+      estimateTokens(systemInstruction) +
       contents.reduce((sum, item) => sum + estimateTokens(item.parts[0].text), 0);
 
     // The screen reads only the new message, never the history: it judges what the
@@ -252,10 +263,11 @@ export function createApp(options = {}) {
         : generate({
             apiKey: config.apiKey,
             model: config.model,
-            systemInstruction: character.systemInstruction,
+            systemInstruction,
             contents,
             maxOutputTokens: config.maxOutputTokens,
             thinkingBudget: config.thinkingBudget,
+            temperature: STYLES[config.chatStyle].temperature,
             safetySettings: config.safetyFilters ? SAFETY_SETTINGS : undefined,
             timeoutMs: config.upstreamTimeoutMs,
           });
@@ -333,6 +345,8 @@ export function createApp(options = {}) {
         mode: config.mock ? "mock" : "live",
         killed: config.killed,
         model: config.model,
+        style: config.chatStyle,
+        screen: config.distressScreen ? "on" : "off",
         budget: budget.status(),
       });
     }
