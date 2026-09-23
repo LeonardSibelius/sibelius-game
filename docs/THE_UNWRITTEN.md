@@ -37,8 +37,8 @@ wearing a game (coaching the player from the first second).
 
 ## The five aspects
 
-A first mapping, taken from where each agent already lives in the game. **Walt's call to
-change any of it** — the character profiles in `backend/characters.js` are sourced from
+Taken from where each agent already lives in the game; Elise's confirmed by Walt
+2026-09-22, the other four still a first mapping. **Walt's call to change any of it** — the character profiles in `backend/characters.js` are sourced from
 the game's own writing, and new canon is not canon until Walt has looked at it.
 
 | Agent | Already in the game | Aspect she could own |
@@ -47,7 +47,7 @@ the game's own writing, and new canon is not canon until Walt has looked at it.
 | **Isla** | The office; blunt and kind; remembers what he tells her | **Work and craft** — career, skills, projects |
 | **Aisling** | The supermarket; knows why things are "not stocked" | **Health and body** — food, sleep, energy |
 | **Nyra** | The guide who overpromised and owned it | **Direction** — plans, with honest realism about them |
-| **Elise** | *(open)* | **Relationships**, or **creativity and play** |
+| **Elise** | Gave him Compile — new things built from gathered parts; the warmest and least guarded of the five, and interested in *whether he is pleased* with what he builds | **Creativity and play** — making things for the joy of it |
 
 ---
 
@@ -155,7 +155,9 @@ not ignored, and the system SSD is failing (`stornvme` 129). Commit it before bu
 
 ## Open questions for Walt
 
-1. Is the aspect mapping right? What is Elise's?
+1. ~~What is Elise's aspect?~~ **Creativity and play** (Walt, 2026-09-22). Relationships
+   is now the one aspect no agent owns — leave it out, or give it to the council as a
+   whole?
 2. How is the chapter entered from the hotel — a door, a lift, a new floor?
 3. What does the room look like? The Unwritten could be literally blank — white walls,
    unfinished geometry that fills in as goals are kept.
