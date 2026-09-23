@@ -23,7 +23,8 @@ import { STYLES, systemInstructionFor } from "./styles.js";
  * chosen for the player's own country. The numbers are here, not in a model's output,
  * because a model paraphrasing a crisis line is the one thing that must never be wrong:
  * 988 is the US Suicide & Crisis Lifeline (call or text), findahelpline.com is a free
- * international directory. DRAFT WORDING (2026-09-23) — Walt's to rewrite.
+ * international directory. WORDING APPROVED BY WALT, 2026-09-23 ("no rewrite needed") —
+ * change it only on purpose, and keep the numbers checked when you do.
  */
 export const CARE_REPLY =
   "I'm going to step out of the game for a moment. I'm an AI, and what you just said " +
