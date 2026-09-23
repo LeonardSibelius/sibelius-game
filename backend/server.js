@@ -108,6 +108,13 @@ export function createApp(options = {}) {
     // How the agents talk: "normal" (the profiles as written) or "foolish" (styles.js).
     // A switch, not a decision — Walt trying the tone in play (2026-09-23).
     chatStyle: env("CHAT_STYLE", "normal"),
+    /* WHO IS "ONE CALLER" — THE PLAYER, NOT FLY'S PROXY. On Fly every connection arrives
+       from Fly's edge proxy, so the socket address is the proxy's, and keying the rate limit
+       on it made 12-a-minute and one-in-flight limits for ALL players combined (found
+       2026-09-23). Fly passes the real client in Fly-Client-IP. It is trusted only when
+       running on Fly (Fly sets FLY_APP_NAME): anywhere else, a client could send the header
+       itself and pick a fresh identity for every request. */
+    trustFlyClientIp: Boolean(process.env.FLY_APP_NAME),
     monthlyCapUsd: num("MONTHLY_CAP_USD", 15),
     dailyCapUsd: num("DAILY_CAP_USD", 0.75),
     perIpPerMinute: num("PER_IP_PER_MINUTE", 12),
@@ -497,6 +504,26 @@ export function createApp(options = {}) {
     return { distress: /__distress__/.test(body.message), usage };
   }
 
+  /**
+   * The rate-limit key for a request — see trustFlyClientIp. Logged ONCE per boot as a word,
+   * never as an address: whether Fly's header was used and whether it differed from the
+   * socket, which is the whole diagnosis without keeping anyone's IP in the logs.
+   */
+  let reportedCallerKey = false;
+  const callerKey = (req) => {
+    const socket = req.socket.remoteAddress ?? "unknown";
+    const header = req.headers["fly-client-ip"];
+    const flyClient = config.trustFlyClientIp && typeof header === "string" && header.trim() ? header.trim() : null;
+    if (!reportedCallerKey) {
+      reportedCallerKey = true;
+      console.log(
+        `[chat] caller key: ${flyClient ? "Fly-Client-IP" : "socket address"}` +
+          (flyClient ? ` (differs from socket: ${flyClient !== socket})` : "")
+      );
+    }
+    return flyClient ?? socket;
+  };
+
   const server = createServer((req, res) => {
     const send = (code, payload) => {
       const text = JSON.stringify(payload);
@@ -544,7 +571,7 @@ export function createApp(options = {}) {
       } catch {
         return send(400, unavailable("service"));
       }
-      const ip = req.socket.remoteAddress ?? "unknown";
+      const ip = callerKey(req);
       const result = route === "council" ? await handleCouncil(body, ip) : await handleChat(body, ip);
       if (result.detail) console.log(`[${route}] rejected: ${result.detail}`);
       send(result.http ?? 200, result.payload);

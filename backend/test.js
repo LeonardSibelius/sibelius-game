@@ -424,6 +424,40 @@ console.log("=== NPC chat backend contract ===");
   await new Promise((resolve) => tight.server.close(resolve));
 }
 
+/* --- one caller is one player. On Fly the socket is Fly's proxy for everyone; the limit is
+   keyed on Fly-Client-IP there, and the header is ignored anywhere else (it could be forged).
+   A limit of 1 a minute makes "separate" and "shared" easy to tell apart. */
+{
+  const startKeyed = async (trustFlyClientIp) => {
+    const a = createApp({ mock: true, stateFile: join(scratch, `keys-${uuid()}.json`), perIpPerMinute: 1, trustFlyClientIp });
+    await new Promise((resolve) => a.server.listen(0, resolve));
+    const url = `http://127.0.0.1:${a.server.address().port}/v1/npc-chat`;
+    const from = async (clientIp) => (await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json", "fly-client-ip": clientIp },
+      body: JSON.stringify(ask()),
+    })).status;
+    return { a, from };
+  };
+
+  const { a: onFly, from } = await startKeyed(true);
+  const first = await from("203.0.113.10");
+  const other = await from("203.0.113.20");
+  const firstAgain = await from("203.0.113.10");
+  check(first === 200 && other === 200, "on Fly, two players each get their own limit");
+  check(firstAgain === 429, "on Fly, one player over the limit is still refused");
+  await new Promise((resolve) => onFly.server.close(resolve));
+
+  const { a: offFly, from: fromOff } = await startKeyed(false);
+  const one = await fromOff("203.0.113.10");
+  const forged = await fromOff("203.0.113.99");
+  check(one === 200 && forged === 429, "off Fly, a forged Fly-Client-IP does not buy a fresh limit");
+  await new Promise((resolve) => offFly.server.close(resolve));
+
+  check(createApp({ mock: true, stateFile: join(scratch, "k.json") }).config.trustFlyClientIp === Boolean(process.env.FLY_APP_NAME),
+    "Fly-Client-IP is trusted exactly when running on Fly");
+}
+
 // --- health without secrets
 {
   const res = await fetch(`${base}/health`);
