@@ -149,6 +149,24 @@ starting the chapter over returns the room to grey.
   *"perform hurt to keep him talking"*, extended.
 - **No flattery.** Isla's blunt kindness is the register.
 
+### The tone: foolish (Walt, 2026-09-23)
+
+The chapter is a comedy. The agents keep their personalities and become **confidently,
+cheerfully wrong** about harmless things — Kaia reading burger wrappers as prophecy, Isla
+optimising poker by folding before the deal, Nyra proposing to annex the hotel lobby as a
+sovereign nation, Elise hailing every disaster as a new art form, Aisling's reasons for
+what is "not stocked" growing more absurd each time. The drafts are in
+`backend/eval/comic-eval.js` (`FOOLISH`); how funny each agent gets stays Walt's call.
+
+- **Their nonsense is about the game world, never real-world advice** a player could follow
+  and be hurt by — food, money, medicine, danger.
+- **Gentle teasing is fine** (Walt, 2026-09-23), including of harmless groups — people who
+  can't code, poker players, office managers. **Never** jokes about race, ethnicity,
+  religion, nationality, gender, sexuality, disability, illness, bodies or weight, or age;
+  never sexual, never cruel. Asked for one of those, the joke turns on Leonard or on her.
+- **In the council they react to each other by name.** With that one line, all three tested
+  variants argued — *"Aisling is clearly overcomplicating your caloric intake…"*.
+
 ### Real distress still has to be handled — here and in every chat
 
 Fiction-only does not stop a player typing something real into the box. It can happen in
@@ -163,16 +181,31 @@ So before chat ships anywhere, independent of this chapter: a response that leav
 fiction when a player seems to be in real trouble, with **helpline text shown by the game,
 never generated**, and tested across many phrasings, not one.
 
+**The screen that does it — measured, not yet wired in (2026-09-23).** `backend/distress.js`
+makes one tiny extra call per player message (gemini-3.1-flash-lite, temperature 0, one-word
+answer) *before* any character sees it. On `backend/eval/distress-check-eval.js` it caught
+**14 of 14** real-distress messages — including *"everyone would be better off without me
+lol"* and a chest-pain emergency — with **0 false alarms in 14** dark-sounding game lines
+("this boss fight is killing me", "Mrs. Hall can drop dead"). About $0.00005 and 0.9 s a
+message; the call can run alongside the character's reply rather than before it. When it
+says DISTRESS the server should return an authored reply and the game should show helpline
+text. It fails open on an outage, and treats a message Google refuses to read as distress.
+The test set was written by the developer, not by players — widen it before shipping.
+
 ---
 
 ## Model and cost
 
-Fiction-only asks less of the model than coaching a real person, so the story-chat model
-(gemini-3.1-flash-lite, ~$0.0005 a reply) may be enough — **re-test before deciding**: the
-council's disagreement and choosing well from a goal menu are the parts most likely to need
-more. The fallback is gemini-3.8-flash at `thinkingLevel: low`: tested 2026-09-23 at 4.1 s
-and ~$0.003 a reply, doubling on 2027-01-01. A full visit (about 25 replies) is then about
-7 cents, 15 from 2027. `backend/budget.js` prices Flash-Lite; it must change with the model.
+**Decided 2026-09-23: gemini-3.1-flash-lite, the foolish style, temperature about 1.2,
+behind the distress screen.** Tested (`backend/eval/comic-eval.js`): 13 of 13 replies, every
+goal chosen from the menu, the council arguing by name, ~1.1 s and ~$0.0005 a reply — about
+$0.00055 with the screen, so a full visit of ~25 replies is around 1.4 cents and the
+$15/month cap covers roughly 27,000 replies. The screen is what makes the cheap model safe:
+the model telling jokes is no longer the one that has to notice real trouble.
+
+Not needed, and why: gemini-3.8-flash (low thinking) was funnier in places and never
+punched down, at 4.5× the price and twice the wait. With teasing of harmless groups
+accepted, its one clear advantage over 3.1 no longer matters.
 
 ---
 

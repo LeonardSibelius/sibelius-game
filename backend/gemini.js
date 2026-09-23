@@ -64,6 +64,9 @@ export async function generate({
   thinkingBudget,
   thinkingLevel,
   safetySettings,
+  // 0.9 is the characters' voice. The distress screen (distress.js) passes 0: a yes/no
+  // judgement that changes between identical calls is not a judgement.
+  temperature = 0.9,
   timeoutMs = 20000,
   fetchImpl = fetch,
 }) {
@@ -77,7 +80,7 @@ export async function generate({
       // One candidate: we show one reply and paying for alternatives nobody reads is
       // the easiest money in this whole system to waste.
       candidateCount: 1,
-      temperature: 0.9,
+      temperature,
     },
   };
 
