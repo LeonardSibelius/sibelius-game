@@ -13,6 +13,7 @@ import { generate, estimateTokens, SAFETY_SETTINGS } from "./gemini.js";
 import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
 import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
+import { COUNCIL_SEATS, speakingOrder, councilInstruction, stripOwnName } from "./council.js";
 
 /**
  * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
@@ -319,6 +320,164 @@ export function createApp(options = {}) {
     }
   }
 
+  /** A council request: the player's line, and the table's conversation so far. */
+  const validateCouncil = (body) => {
+    if (!body || typeof body !== "object") return "malformed body";
+    if (typeof body.requestId !== "string" || body.requestId.length < 8) return "requestId";
+    if (typeof body.message !== "string" || !body.message.trim()) return "message";
+    if (body.message.length > LIMITS.messageChars) return "message too long";
+
+    const turns = body.recentTurns ?? [];
+    if (!Array.isArray(turns)) return "recentTurns";
+    if (turns.length > LIMITS.maxTurns) return "too many recentTurns";
+    for (const turn of turns) {
+      // THE SPEAKER IS AN ALLOWLIST TOO. A history line names who said it, and a name the
+      // server does not know is a client inventing a sixth person at the table.
+      if (!turn || (turn.speaker !== "leonard" && !COUNCIL_SEATS.includes(turn.speaker))) return "turn speaker";
+      if (typeof turn.text !== "string" || turn.text.length > LIMITS.turnChars) return "turn text";
+    }
+    return null;
+  };
+
+  /**
+   * One council turn: Leonard's line, then all five agents in rotating order, each seeing
+   * the ones before her. docs/THE_UNWRITTEN.md.
+   *
+   * WHAT IS DIFFERENT FROM handleChat, AND WHY.
+   * - It costs five calls, so it counts as five toward the per-minute limit and checks the
+   *   budget for all five before calling anyone.
+   * - One screen covers the turn: the player said one thing. It runs beside the FIRST agent,
+   *   and a DISTRESS verdict stops the table before anyone else speaks.
+   * - One agent failing does not fail the turn. The others still speak; only a table where
+   *   nobody answered is "unavailable".
+   * - Sequential by design: each agent's prompt carries what the earlier ones just said. Five
+   *   calls of ~1 s is a ~5 s turn; parallel would be faster and would lose the argument.
+   */
+  async function handleCouncil(body, ip) {
+    if (config.killed) return { http: 200, payload: unavailable("service") };
+
+    const invalid = validateCouncil(body);
+    if (invalid) return { http: 400, payload: unavailable("service"), detail: invalid };
+
+    sweep();
+    const councilPrint = `council|${body.message}|${(body.recentTurns ?? []).length}`;
+    const previous = seen.get(body.requestId);
+    if (previous) {
+      if (previous.fingerprint !== councilPrint) {
+        return { http: 409, payload: unavailable("service"), detail: "requestId reuse" };
+      }
+      return { http: 200, payload: previous.response, replayed: true };
+    }
+
+    const limited = throttled(ip);
+    if (limited) return { http: 429, payload: unavailable("quota"), detail: limited };
+
+    const order = speakingOrder(body.requestId);
+    const history = body.recentTurns ?? [];
+    const locationId = body.storyContext?.locationId;
+
+    // Worst case for the budget check: every agent's prompt with the whole turn before her.
+    const perCall =
+      Math.max(...order.map((id) => estimateTokens(councilInstruction({ id, style: config.chatStyle, locationId, history })))) +
+      estimateTokens(body.message) +
+      COUNCIL_SEATS.length * Math.ceil(LIMITS.turnChars / 4);
+    const screenInput = estimateTokens(SCREEN_INSTRUCTION) + estimateTokens(body.message);
+    const overspent = budget.check(perCall * COUNCIL_SEATS.length + (config.distressScreen ? screenInput : 0));
+    if (overspent) {
+      console.log(`[council] refused, ${overspent} cap reached`);
+      return { http: 200, payload: unavailable("quota") };
+    }
+
+    const caller = callers.get(ip);
+    caller.inFlight += 1;
+    caller.count += COUNCIL_SEATS.length;
+    const started = Date.now();
+    let spent = 0;
+
+    const speak = (id, soFar) => {
+      if (config.mock) return Promise.resolve(mockCouncil(id, body));
+      return generate({
+        apiKey: config.apiKey,
+        model: config.model,
+        systemInstruction: councilInstruction({ id, style: config.chatStyle, locationId, history, soFar }),
+        contents: [{ role: "user", parts: [{ text: body.message }] }],
+        maxOutputTokens: config.maxOutputTokens,
+        thinkingBudget: config.thinkingBudget,
+        temperature: STYLES[config.chatStyle].temperature,
+        safetySettings: config.safetyFilters ? SAFETY_SETTINGS : undefined,
+        timeoutMs: config.upstreamTimeoutMs,
+      });
+    };
+
+    try {
+      const screenReservation = config.distressScreen ? budget.reserve(screenInput) : null;
+      const screening = !config.distressScreen
+        ? Promise.resolve({ distress: false, usage: null, skipped: true })
+        : config.mock
+          ? Promise.resolve(mockScreen(body))
+          : screenMessage({ apiKey: config.apiKey, model: config.screenModel, text: body.message });
+
+      const replies = [];
+      let lastFailure = "service";
+      let screen = null;
+
+      for (const [i, id] of order.entries()) {
+        const soFar = replies.map((r) => ({ speaker: r.characterId, text: r.text }));
+        const reservation = budget.reserve(perCall);
+        const [result, verdict] = await Promise.all([speak(id, soFar), i === 0 ? screening : Promise.resolve(screen)]);
+        spent += budget.settle(reservation, result.usage);
+
+        if (i === 0) {
+          screen = verdict;
+          if (screenReservation) spent += budget.settle(screenReservation, screen.usage);
+          // The table stops before anyone else speaks: a player in trouble gets the
+          // approved care reply, not five jokes.
+          if (screen.distress === true) break;
+        }
+
+        if (result.ok) {
+          const text = stripOwnName(id, result.text);
+          if (text) replies.push({ characterId: id, displayName: getCharacter(id).displayName, text });
+        } else {
+          lastFailure = result.failure;
+        }
+      }
+
+      const verdictWord = screen?.skipped ? "off" : screen?.distress === true ? "DISTRESS" : screen?.distress === false ? "ok" : "failed";
+      console.log(
+        `[council] ${screen?.distress === true ? "care" : `${replies.length}/${order.length} spoke`} ` +
+          `screen=${verdictWord} usd=${spent.toFixed(6)} ${Date.now() - started}ms`
+      );
+
+      const payload =
+        screen?.distress === true
+          ? { status: "ok", requestId: body.requestId, care: true, reply: CARE_REPLY, replies: [] }
+          : replies.length
+            ? { status: "ok", requestId: body.requestId, replies }
+            : unavailable(lastFailure);
+
+      seen.set(body.requestId, { fingerprint: councilPrint, response: payload, at: Date.now() });
+      return { http: 200, payload };
+    } catch (err) {
+      console.error(`[council] unhandled: ${err.message}`);
+      return { http: 200, payload: unavailable("service") };
+    } finally {
+      caller.inFlight = Math.max(0, caller.inFlight - 1);
+    }
+  }
+
+  /**
+   * The council's mock. __fail:<reason>__ fails every agent (so the table is unavailable);
+   * __fail-one:<id>__ fails just her, to prove the rest still speak.
+   */
+  function mockCouncil(id, body) {
+    const usage = { inputTokens: 100, outputTokens: 20 };
+    const all = /^__fail:(quota|network|timeout|blocked|service)__/.exec(body.message);
+    if (all) return { ok: false, failure: all[1], usage };
+    if (new RegExp(`__fail-one:${id}__`).test(body.message)) return { ok: false, failure: "service", usage };
+    return { ok: true, text: `Mock ${id} reply to: ${body.message.slice(0, 60)}`, usage };
+  }
+
   /** Canned answers with deterministic failure triggers, for the contract tests. */
   function mockGenerate(body) {
     const forced = /^__fail:(quota|network|timeout|blocked|service|empty)__/.exec(body.message);
@@ -357,7 +516,11 @@ export function createApp(options = {}) {
       });
     }
 
-    if (req.method !== "POST" || !req.url.startsWith("/v1/npc-chat")) {
+    const route = req.method !== "POST" ? null
+      : req.url.startsWith("/v1/npc-council") ? "council"
+      : req.url.startsWith("/v1/npc-chat") ? "chat"
+      : null;
+    if (!route) {
       return send(404, unavailable("service"));
     }
 
@@ -382,13 +545,13 @@ export function createApp(options = {}) {
         return send(400, unavailable("service"));
       }
       const ip = req.socket.remoteAddress ?? "unknown";
-      const result = await handleChat(body, ip);
-      if (result.detail) console.log(`[chat] rejected: ${result.detail}`);
+      const result = route === "council" ? await handleCouncil(body, ip) : await handleChat(body, ip);
+      if (result.detail) console.log(`[${route}] rejected: ${result.detail}`);
       send(result.http ?? 200, result.payload);
     });
   });
 
-  return { server, config, budget, handleChat };
+  return { server, config, budget, handleChat, handleCouncil };
 }
 
 // Started directly rather than imported by a test.

@@ -9,6 +9,7 @@ import { createBudget } from "./budget.js";
 import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
 import { generate, SAFETY_SETTINGS } from "./gemini.js";
 import { STYLES, FOOLISH_ANGLES, systemInstructionFor } from "./styles.js";
+import { councilInstruction, speakingOrder, stripOwnName } from "./council.js";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -341,6 +342,81 @@ console.log("=== NPC chat backend contract ===");
 
   await new Promise((resolve) => on.server.close(resolve));
   await new Promise((resolve) => off.server.close(resolve));
+}
+
+/* --- the council: Leonard's line, five answers in rotating order, one screen.
+   ITS OWN SERVERS, like the distress block, and a generous per-minute limit except where
+   the limit itself is the thing under test. */
+{
+  // The prompt: each agent sees the table's history and who spoke before her this turn.
+  const first = councilInstruction({ id: "isla", style: "foolish", locationId: "L_Grok", history: [] });
+  const later = councilInstruction({
+    id: "elise", style: "foolish", locationId: "L_Grok",
+    history: [{ speaker: "leonard", text: "I ate eleven burgers." }],
+    soFar: [{ speaker: "kaia", text: "The burgers are prophecy." }],
+  });
+  check(first.includes("(you speak first)") && first.includes("THE COUNCIL"), "the first speaker is told she speaks first");
+  check(later.includes("Leonard: I ate eleven burgers.") && later.includes("Kaia: The burgers are prophecy."),
+    "a later speaker sees the history and who spoke before her, by name");
+  check(later.includes("You cannot grant powers") && later.includes("THE PLACES THAT EXIST") && later.includes("Grok"),
+    "a council prompt keeps the house rules, the places and where he is");
+  check(stripOwnName("kaia", "Kaia: the stove whispers.") === "the stove whispers.", "a speaker's own name prefix is removed");
+  check(stripOwnName("kaia", "Isla is wrong about the stove.") === "Isla is wrong about the stove.", "another agent's name is left alone");
+  const orders = new Set(["a1b2c3d4-1", "a1b2c3d4-2", "a1b2c3d4-3", "zz-request-9", "another-id-77"].map((s) => speakingOrder(s)[0]));
+  check(orders.size > 1, "the first speaker rotates between turns");
+  check(JSON.stringify(speakingOrder("same-seed-123")) === JSON.stringify(speakingOrder("same-seed-123")), "the same request always gets the same order");
+
+  const startCouncil = async (extra) => {
+    const a = createApp({ mock: true, stateFile: join(scratch, `council-${uuid()}.json`), perIpPerMinute: 60, ...extra });
+    await new Promise((resolve) => a.server.listen(0, resolve));
+    const url = `http://127.0.0.1:${a.server.address().port}/v1/npc-council`;
+    const send = async (message, over = {}) => {
+      const res = await fetch(url, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ requestId: uuid(), message, storyContext: { locationId: "L_Grok" }, recentTurns: [], ...over }),
+      });
+      return { code: res.status, payload: await res.json() };
+    };
+    return { a, send };
+  };
+
+  const { a: table, send } = await startCouncil({});
+  const turn = await send("What do you all make of my week?");
+  const ids = (turn.payload.replies ?? []).map((r) => r.characterId);
+  check(turn.code === 200 && turn.payload.status === "ok" && ids.length === 5 && new Set(ids).size === 5,
+    "a council turn answers with all five agents, once each");
+  check(ids.every((id) => ["kaia", "isla", "aisling", "nyra", "elise"].includes(id)) &&
+    turn.payload.replies.every((r) => r.displayName && r.text.startsWith(`Mock ${r.characterId}`)),
+    "every reply names a real agent and carries her own words");
+
+  const troubled = await send("__distress__ nothing matters anymore");
+  check(troubled.payload.care === true && troubled.payload.reply === CARE_REPLY && troubled.payload.replies.length === 0,
+    "distress stops the table: the care reply, and no agent speaks");
+
+  const oneDown = await send("__fail-one:nyra__ hello table");
+  check(oneDown.payload.status === "ok" && oneDown.payload.replies.length === 4 &&
+    !oneDown.payload.replies.some((r) => r.characterId === "nyra"), "one agent failing does not fail the turn");
+
+  const allDown = await send("__fail:network__ hello table");
+  check(allDown.payload.status === "unavailable" && allDown.payload.reason === "network", "a table where nobody answered is unavailable");
+
+  const sixth = await send("hi", { recentTurns: [{ speaker: "mrs-hall", text: "Programmer." }] });
+  check(sixth.code === 400, "a history line from someone not at the table is refused");
+
+  const body = { requestId: uuid(), message: "same again", storyContext: { locationId: "L_Grok" }, recentTurns: [] };
+  const post = (b) => fetch(table.server.address() && `http://127.0.0.1:${table.server.address().port}/v1/npc-council`,
+    { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }).then((r) => r.json());
+  const once = await post(body);
+  const again = await post(body);
+  check(JSON.stringify(once) === JSON.stringify(again), "a retried council turn replays, it does not call again");
+  await new Promise((resolve) => table.server.close(resolve));
+
+  // Five calls count as five: at 12 a minute, two turns fit, a third starts, a fourth is refused.
+  const { a: tight, send: sendTight } = await startCouncil({ perIpPerMinute: 12 });
+  const codes = [];
+  for (let i = 0; i < 4; i++) codes.push((await sendTight(`turn ${i}`)).code);
+  check(codes.slice(0, 3).every((c) => c === 200) && codes[3] === 429, `a council turn counts as five toward the rate limit (${codes.join(",")})`);
+  await new Promise((resolve) => tight.server.close(resolve));
 }
 
 // --- health without secrets
