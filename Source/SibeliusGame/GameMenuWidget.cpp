@@ -151,7 +151,9 @@ void UGameMenuWidget::BuildStatusTab(TSharedRef<SVerticalBox> Box)
 	APawn* Pawn = GetOwningPlayerPawn();
 
 	Row(FString::Printf(TEXT("SAUCE   %d"), Progression ? Progression->GetSauce() : 0), SauceGreen, 26, "Bold");
-	Row(TEXT("Earn it: books, Refusers fought, chapters, the temple fountain. Spend it: the kitchen cauldron. Risk it: the Carousel of Fates."), Dim, 14);
+	// "Risk it: the Carousel of Fates" removed 2026-09-23 — the Carousel was cut with the
+	// library on 2026-09-06 (Config/DefaultGame.ini) and nothing else wagers sauce.
+	Row(TEXT("Earn it: books, Refusers fought, chapters, the temple fountain. Spend it: the kitchen cauldron."), Dim, 14);
 
 	Row(TEXT(""), Body);
 	Row(TEXT("POWERS"), Heading, 20, "Bold");
@@ -245,13 +247,10 @@ void UGameMenuWidget::BuildRecordsTab(TSharedRef<SVerticalBox> Box)
 	// player cannot raise. The stat key survives for a future curio revival.)
 	Row(TEXT("chapters completed"), FString::FromInt(Stat(SibeliusStats::ChaptersCompleted)), Body);
 
-	Section(NSLOCTEXT("Sibelius", "RecCarousel", "THE CAROUSEL OF FATES"));
-	Row(TEXT("runs staked"), FString::FromInt(Stat(SibeliusStats::CarouselRuns)), Body);
-	Row(TEXT("runs won"),    FString::FromInt(Stat(SibeliusStats::CarouselWins)), SauceGreen);
-	Row(TEXT("best run — rounds cleared"),
-		FString::FromInt(Stat(SibeliusStats::CarouselBestRound)), Body);
-	Row(TEXT("biggest single spin (chips)"),
-		FString::FromInt(Stat(SibeliusStats::CarouselBestSpin)), Body);
+	// (THE CAROUSEL OF FATES section removed 2026-09-23, the curios rule again: the Carousel
+	// was cut with the library on 2026-09-06, so its four counters could only ever read 0.
+	// The Carousel* stat keys stay in SibeliusStats and in every save; restoring the library
+	// is uncommenting one MapsToCook line, and this section would come back with it.)
 
 	/* The toll, on the page where every other lifetime number already lives. Reads the
 	   slot meters rather than a LifetimeStats key, because the meters are the authority

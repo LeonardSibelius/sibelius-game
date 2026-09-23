@@ -22,7 +22,7 @@ back, fix the liar. When the next piece lands in ACCEPT, the ticket is done.
 Poker is through the glass when you want it. The rest of the house opens
 after the job.
 
-Explore. Collect. Earn Sauce. Spend it or risk it. Earn the next power.
+Explore. Collect. Earn Sauce. Spend it. Earn the next power.
 Everything you do feeds the next thing.
 
 SAUCE is the green number in the top-right corner. It is knowledge,
@@ -37,12 +37,6 @@ pots. Prices are honest: what you see is what you get. Locked powers can
 be bought there if you'd rather pay than search. The stove SIMMERS with
 the sauce you hold; spend there and it boils. In the AI temple, [E] pours
 living sauce into the pot and [C] compiles it.
-
-You risk it at THE CAROUSEL OF FATES. Where? The kitchen keeps more than
-one secret, and secrets in this house reveal themselves to those who
-look properly. A run stakes 50 sauce. Clear the quotas and the Carousel
-pays out big; bust and it keeps your stake, less a small mercy for every
-round you cleared. Walking away mid-run is allowed — the run waits.
 
 
 ## THE SIX POWERS
