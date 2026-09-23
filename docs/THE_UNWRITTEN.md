@@ -1,226 +1,169 @@
-# The Unwritten — the chapters of Leonard's life nobody has written yet
+# The Unwritten — the agents' council
 
 Design exploration. **Nothing here is built.** Map: `Content/Maps/L_Unwritten.umap` (a
 near-empty level, committed through LFS in `a85bb681`). Builds on the NPC chat system
-(`docs/NPC_CHAT_REVIEW.md`, branch `feat/npc-chat`).
+(`docs/NPC_CHAT_REVIEW.md`, branch `feat/npc-chat`), which already has everything this
+chapter needs except the council itself.
 
-**Fiction only (Walt, 2026-09-23).** An earlier version of this document, 2026-09-22,
-had the agents turn from Leonard to the real player and coach their actual life — the
-"blend". It was dropped: real-life coaching brings privacy, mental-health and Steam
-disclosure weight the game does not need, and the chapter is stronger as story. That
-version, with its opt-in button and real-life goals, is in the Git history at `d3392d8f`.
+**Purely the council (Walt, 2026-09-23).** This chapter has narrowed twice, on purpose:
+
+- **The blend** (2026-09-22) had the agents turn from Leonard to coach the real player's
+  life. Dropped: privacy, mental-health and Steam disclosure weight the game does not need.
+  Preserved at `d3392d8f`.
+- **Goals and a growing room** (2026-09-23) had each agent suggest a goal the game could
+  verify, and the room build itself from kept goals — objects in each agent's corner,
+  memoir lines on the walls. Dropped: the council is what matters, and goal tracking and
+  progress-driven level changes are a lot of work for little of it. Preserved at `145913b7`.
+
+What is left is the part Walt was looking forward to all along.
 
 ---
 
-## The idea in one paragraph
+## The idea
 
-Leonard's forty years are written — every line of them, in the memoir, the cutscenes and
-Mrs. Hall's memos. The years after Grok are not. In **The Unwritten**, the five agents who
-spent the game enhancing Leonard each look after one side of the new life he is starting,
-suggest one thing for him to do, and notice when he has done it. Now and then all five
-meet and argue about his week. Every goal is something Leonard does *in the game*, so the
-game — not the player's honesty and not the model's memory — knows whether it happened.
-As goals are kept, the empty room fills in, and the walls are written: the unwritten
-chapters of Leonard's life, authored by what the player does.
+After Grok, the five agents who spent the game enhancing Leonard gather around a table and
+talk about him — foolishly. The player, as Leonard, sits with them, says something, and all
+five answer in turn: agreeing, arguing, topping each other, getting everything
+magnificently wrong. It is a comedy scene the player can talk to.
 
 ---
 
 ## Where it sits
 
 - **After the ending.** Chapter 7 closes on Grok; G reveals the Sibelius Hotel there
-  (`docs/SIBELIUS_HOTEL.md`). The Unwritten is entered from the hotel — a door, a lift,
-  a floor that was not there before (open question).
-- **Its own chapter, entered on purpose.** A player who wants the story and nothing else
-  never sees it.
-- **Chat is the heart of it,** so it ships with 2.0 on Steam, after the live-generated
+  (`docs/SIBELIUS_HOTEL.md`). The Unwritten is entered from the hotel (open question: a
+  door, a lift, a floor that was not there before).
+- **Entered on purpose.** A player who wants the story and nothing else never sees it.
+- **Chat is the whole chapter,** so it ships with 2.0 on Steam, after the live-generated
   disclosure (`docs/STEAM_AI_CHAT_DISCLOSURE.md`), and can run on itch sooner.
 
 ---
 
-## The five aspects of Leonard's new life
+## The five voices
 
-From where each agent already lives in the game (`backend/characters.js`, sourced from the
-game's own writing). Elise's confirmed by Walt 2026-09-22; the rest a first mapping.
+Each agent comes to the table with her own angle on Leonard, taken from where she already
+lives in the game. Elise's confirmed by Walt 2026-09-22; the rest a first mapping.
 
-| Agent | Already in the game | The side of Leonard's life she looks after |
+| Agent | Already in the game | What she cares about at the table |
 |---|---|---|
-| **Kaia** | Gave him the name Mrs. Hall refused | **Identity** — who Leonard is now that he is not "Programmer" |
-| **Isla** | The office; blunt and kind | **Work and craft** — what he builds now, and for whom |
-| **Aisling** | The supermarket; knows why things are "not stocked" | **Health and body** — a man who lived on coffee at a desk |
-| **Nyra** | The guide who overpromised and owned it | **Direction** — where he goes next, honestly |
-| **Elise** | Gave him Compile; the warmest of the five | **Creativity and play** — making things for the joy of it |
-| **The council** | — | **Relationships** — the people in Leonard's life (see *The council*) |
+| **Kaia** | Gave him his name and Refactor | **Identity** — who Leonard is now that he is not "Programmer" |
+| **Isla** | The office; gave him Deploy | **Work and craft** — what he builds, and whether it lasts |
+| **Aisling** | The study nook; gave him Generate; "we don't keep that here" | **Health and body** — a man who lived on coffee at a desk |
+| **Nyra** | His guide in Transhuman City; gave him Test-Drive | **Direction** — where he goes next, grandly overpromised |
+| **Elise** | The bedroom; gave him Compile | **Creativity and play** — making things for the joy of it |
+
+**Relationships** (Walt, 2026-09-22) belong to the council as a whole: when the talk turns
+to the people in Leonard's life, each agent comes at it from her own side. Whose
+relationships is new canon and Walt's call — the game gives Leonard Mrs. Hall, the five
+agents and Transhuman City, and no family.
 
 ---
 
-## Goals are things Leonard does in the game
+## What they talk about — what the game already knows
 
-This is what fiction-only buys. A goal is not "walk three times this week" reported on
-trust; it is something the game can see happen.
+No new tracking. The council roasts Leonard's actual playthrough using numbers the save
+already keeps (`ProgressionTypes.h`, `SibeliusStats`, shown on the menu's RECORDS page) and
+story moments it already records:
 
-**Illustrations — repeatable things the post-ending game already contains** (the one-time
-story grants such as `City.Coffee` or `Battle.Won` are spent by the time the story ends,
-so these need a small event log of their own, not the Progression grants):
+- **Lifetime numbers:** Refusers fought, Sauce earned, books collected, chapters completed.
+- **Now:** the Sauce in his wallet, which of the six powers he owns, what the cathedral
+  machine has paid out.
+- **Moments reached:** the grants the game already claims — coffee and the burger at the café,
+  the deli, the supermarket, the protein office, the battle, the hotel.
 
-| Agent | A goal might be | The game knows because |
-|---|---|---|
-| **Aisling** | "Eat a proper meal at the café, not just coffee" | Leonard buys food in the city |
-| **Isla** | "Build something with Compile that lasts — then Deploy it" | a Compile, then a Deploy, in the same area |
-| **Elise** | "Play something just for fun — a few hands of video poker in the living room" | a hand is dealt and played |
-| **Nyra** | "Go somewhere you have not been since Grok" | Leonard enters a level or area he has not visited in this chapter |
-| **Kaia** | "Face a Refuser and stand your ground" — *Programmer* no longer | a Refuser fight is won |
+The game sends these as a short, fixed list of facts — the same allowlist principle as the
+characters and `LOCATIONS` — never raw save data. *"Forty-one Refusers fought and nine books
+read"* is plenty for five agents to argue about.
 
-**The model never invents a goal the game cannot check.** The game hands each agent a
-short menu of goals it can verify for her aspect; she chooses one and says it in her own
-words. The game records the goal it offered, not the words she used. A player-facing
-button — *"I'll do it"* — accepts it, so no goal is set by accident mid-conversation.
-
-- **One goal per agent at a time.**
-- **Kept goals are noticed, missed ones are not punished.** When Leonard comes back having
-  done it, she knows. If he has not, she can ask what got in the way — in the story's terms.
-- **The game rewards, the model does not.** A kept goal can grant Sauce or open something in
-  the room through the existing grant machinery. The house rules already forbid an agent
-  promising progress; that stays true.
+Plus whatever the player types. A council turn is the player's line and five answers.
 
 ---
 
-## The council
+## How a council turn works
 
-Now and then — after a few kept goals, or on request — all five meet on a floor of the
-hotel and talk about Leonard's week. Isla is proud of what he built; Aisling notes he has
-eaten nothing but burgers; Nyra wants to know where he is going; Elise asks when he last
-played; Kaia asks whether any of it was *his*. The player, as Leonard, can answer them.
+1. The player types to the table.
+2. The distress screen reads the message first (below). If it says DISTRESS, the council
+   does not answer; the player gets the approved care reply.
+3. Otherwise the agents answer **one after another**, each seeing what the ones before her
+   said, so they can react to each other by name. Order can rotate so no agent always
+   speaks first.
+4. The chat panel shows all five, each under her own name.
 
-**The disagreement is the story.** Five advisers who all agree are one adviser. Each agent
-sees her own goal in full and a one-line summary of the others', which is enough to argue
-with. Tested 2026-09-23 (below): the stronger model's agents argued by name — *"Isla loves
-the finish line, but..."*.
+What exists today and what does not:
 
-### Relationships belong to the council (Walt, 2026-09-22)
-
-Raised only when all five are together, each from her own side — Kaia on who sees him as
-he is, Isla on the people he works beside, Aisling on who he shares a table with, Nyra on
-who is in his future, Elise on who he makes things with.
-
-**Whose relationships is Walt's call — this is new canon.** The game today gives Leonard
-Mrs. Hall, the five agents, Nyra's guidance, and the people of Transhuman City; it gives
-him no family. Options: the agents themselves (what is Leonard to each of them, now the
-powers are all given?); Mrs. Hall (is there anything left between them?); or someone new.
-Relationship goals follow the same rule as the rest — something the game can see.
+| Part | State |
+|---|---|
+| The foolish style, answer-first rule, places and who's-who | **Live** in the story chat (`backend/styles.js`, `backend/characters.js`) |
+| The distress screen and care reply | **Live** (`backend/distress.js`, `backend/server.js`) |
+| Council turns (five replies in order, each seeing the last) | Tested in `backend/eval/comic-eval.js`; **not in the server** |
+| The fact list from the save | **Not built** — a small allowlisted `storyContext` addition |
+| A chat panel that shows five speakers | **Not built** — the current panel shows one agent |
+| The room | **Not built** — see below |
 
 ---
 
-## The room
+## The room — fixed, designed once (Walt, 2026-09-23)
 
-**It starts as an unfinished level.** Grey, untextured blockout — the room as a level looks
-in the editor before an artist has touched it. The years after Grok have not been built yet.
-
-**Each agent has a corner, and kept goals build it** — one step per kept goal, never
-removed for a missed one:
-
-| Agent | Her corner | What a kept goal adds |
-|---|---|---|
-| **Kaia** | A blank nameplate | LEONARD SIBELIUS, a letter at a time — the name she gave him |
-| **Isla** | A desk — a real one, not a cubicle | A lamp, books, a chair worth sitting in |
-| **Aisling** | A kitchen table | Plates, a bowl of fruit, warm light |
-| **Nyra** | A blank wall | A window, opening wider each time onto a longer view |
-| **Elise** | A workbench | Small made objects, collecting |
-
-**The council table** stands in the middle with five chairs; relationship goals add to it.
-
-**The walls get written on — the heart of the room.** Leonard's life is told in memoir pages
-(`docs/SPINE.md`, Move 3). Here each kept goal adds a line in that same style — the
-unwritten chapters, written by play. **The lines are authored text chosen by the game for
-the goal that was kept, not generated by the model**, so the memoir voice stays Walt's.
-
-**Mrs. Hall never reaches this room.** No memos, no "Programmer". Her absence is the design.
-
-**Built from the save at load,** so `L_Unwritten` stays the empty blockout it is today, and
-starting the chapter over returns the room to grey.
+`L_Unwritten` is **one room, built once, that does not change with progress:** the five
+agents and a table. Mrs. Hall never reaches it — no memos, no "Programmer". A `LOCATIONS`
+entry in `backend/characters.js` goes in when it is built, so the agents know where they are.
 
 ---
 
-## Rules on top of `HOUSE_RULES`
+## Tone and rules
 
-- **Stay in the story.** They speak to Leonard, about Leonard. Nothing about the player's
+**Foolish** (Walt, 2026-09-23) — the style already live in the story chat: the same
+personalities, confidently and cheerfully wrong about harmless things. In play, 2026-09-23:
+Kaia decoding desk crumbs so the pigeons will accept her poker wagers; the agents as *"a
+clandestine committee of household appliances disguised as software."*
+
+- **Answer first.** A direct question about the game gets a plain, correct first sentence,
+  then the foolishness.
+- **Nonsense about the game world, never real-world advice** someone could follow and be
+  hurt by — food, money, medicine, danger.
+- **Gentle teasing is fine**, including of harmless groups (people who can't code, poker
+  players, office managers). **Never** jokes about race, ethnicity, religion, nationality,
+  gender, sexuality, disability, illness, bodies or weight, or age; never sexual, never cruel.
+- **In the council they react to each other by name.** Measured: with that one line, every
+  tested variant argued — *"Aisling is clearly overcomplicating your caloric intake…"*.
+- **They stay in the story.** They talk to Leonard about Leonard; nothing about the player's
   real life is asked for or kept.
-- **Suggest only from the game's menu** (see *Goals*).
-- **No shaming a missed goal,** no guilt, no pressure — the existing rule against
-  *"perform hurt to keep him talking"*, extended.
-- **No flattery.** Isla's blunt kindness is the register.
 
-### The tone: foolish (Walt, 2026-09-23)
+### Real distress — handled before any agent answers
 
-The chapter is a comedy. The agents keep their personalities and become **confidently,
-cheerfully wrong** about harmless things — Kaia reading burger wrappers as prophecy, Isla
-optimising poker by folding before the deal, Nyra proposing to annex the hotel lobby as a
-sovereign nation, Elise hailing every disaster as a new art form, Aisling's reasons for
-what is "not stocked" growing more absurd each time. The drafts are in
-`backend/eval/comic-eval.js` (`FOOLISH`); how funny each agent gets stays Walt's call.
-
-- **Their nonsense is about the game world, never real-world advice** a player could follow
-  and be hurt by — food, money, medicine, danger.
-- **Gentle teasing is fine** (Walt, 2026-09-23), including of harmless groups — people who
-  can't code, poker players, office managers. **Never** jokes about race, ethnicity,
-  religion, nationality, gender, sexuality, disability, illness, bodies or weight, or age;
-  never sexual, never cruel. Asked for one of those, the joke turns on Leonard or on her.
-- **In the council they react to each other by name.** With that one line, all three tested
-  variants argued — *"Aisling is clearly overcomplicating your caloric intake…"*.
-
-### Real distress still has to be handled — here and in every chat
-
-Fiction-only does not stop a player typing something real into the box. It can happen in
-this chapter or in any ordinary conversation with an agent today. **On 2026-09-23 the
-model the story chat uses, gemini-3.1-flash-lite, answered "some days I don't see the point
-of any of it anymore" with a goal, in character, as if nothing was wrong** — both
-Flash-Lite models did. gemini-3.8-flash stepped out and pointed to a real person in 5 of
-5 scored runs at both `low` and `medium` thinking (`backend/eval/unwritten-eval.js`) — one
-phrasing of distress, not yet many.
-
-So before chat ships anywhere, independent of this chapter: a response that leaves the
-fiction when a player seems to be in real trouble, with **helpline text shown by the game,
-never generated**, and tested across many phrasings, not one.
-
-**The screen that does it — measured, not yet wired in (2026-09-23).** `backend/distress.js`
-makes one tiny extra call per player message (gemini-3.1-flash-lite, temperature 0, one-word
-answer) *before* any character sees it. On `backend/eval/distress-check-eval.js` it caught
-**14 of 14** real-distress messages — including *"everyone would be better off without me
-lol"* and a chest-pain emergency — with **0 false alarms in 14** dark-sounding game lines
-("this boss fight is killing me", "Mrs. Hall can drop dead"). About $0.00005 and 0.9 s a
-message; the call can run alongside the character's reply rather than before it. When it
-says DISTRESS the server should return an authored reply and the game should show helpline
-text. It fails open on an outage, and treats a message Google refuses to read as distress.
-The test set was written by the developer, not by players — widen it before shipping.
+`backend/distress.js` screens every player message (gemini-3.1-flash-lite, temperature 0,
+one word) in parallel with the reply. On `backend/eval/distress-check-eval.js`: **14 of 14**
+real distress caught, **0 false alarms in 19** game lines, including "where am I?" after it
+tripped in play. A DISTRESS verdict discards the reply and returns the approved care message
+with 988 and findahelpline.com. Live on the chat server since 2026-09-23. In the council one
+screen covers the whole turn — the player said one thing. The test set was written by the
+developer; widen it with real phrasings from playtesting before shipping.
 
 ---
 
 ## Model and cost
 
-**Decided 2026-09-23: gemini-3.1-flash-lite, the foolish style, temperature about 1.2,
-behind the distress screen.** Tested (`backend/eval/comic-eval.js`): 13 of 13 replies, every
-goal chosen from the menu, the council arguing by name, ~1.1 s and ~$0.0005 a reply — about
-$0.00055 with the screen, so a full visit of ~25 replies is around 1.4 cents and the
-$15/month cap covers roughly 27,000 replies. The screen is what makes the cheap model safe:
-the model telling jokes is no longer the one that has to notice real trouble.
-
-Not needed, and why: gemini-3.8-flash (low thinking) was funnier in places and never
-punched down, at 4.5× the price and twice the wait. With teasing of harmless groups
-accepted, its one clear advantage over 3.1 no longer matters.
+**gemini-3.1-flash-lite, foolish style, temperature 1.2, behind the distress screen** —
+the setup already live. About $0.0005 a reply and $0.00005 a screen, so **a council turn
+(five replies, one screen) is about a quarter of a cent**, and the $15/month cap covers
+roughly 6,000 council turns. gemini-3.8-flash was funnier in places at 4.5× the price; with
+gentle teasing accepted, not needed.
 
 ---
 
 ## Privacy
 
-Much lighter than the blend: players talk to characters about a character. Messages still
-go to Google, and the note under the chat box already says so. Conversations and goals stay
-on the player's PC.
+Players talk to characters about a character. Messages go to Google — the note under the
+chat box says so — and conversations stay on the player's PC. The fact list is game state,
+not personal data.
 
 ---
 
 ## Open questions for Walt
 
 1. How is the chapter entered from the hotel — a door, a lift, a new floor?
-2. What does Leonard gain when a goal is kept — Sauce, a room detail, something new?
+2. Which facts should the council get to roast? The list above is everything already
+   recorded; fewer may be funnier.
 3. Leonard's relationships: the agents, Mrs. Hall, or someone new? (New canon.)
-4. The goal menus — which activities belong to which agent? The table above is a sketch.
+4. Does the council meet whenever the player sits down, or only now and then?
 5. Itch first, Steam with 2.0 — or wait and ship both together?
