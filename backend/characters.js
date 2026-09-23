@@ -54,16 +54,16 @@ hotel come late in his story — unless he mentions it first.
  * Written 2026-09-23 after Kaia, asked "who is Nyra?", said Nyra "chose to gift a power to a
  * builder of her own" — the model filling a gap, since each profile knew only itself.
  *
- * KAIA'S POWER IS NOT NAMED ON PURPOSE. Her profile says "a capability", and neither the code
- * nor the docs name it; the other four are named in their own profiles. Name hers here only
- * when Walt says which it is.
+ * KAIA'S POWER IS REFACTOR — Walt, 2026-09-23. Her profile says only "a capability", and
+ * neither the code nor the docs named it; the description follows HOW_TO_PLAY.md ("reshape
+ * what you're looking at").
  */
 const THE_AGENTS = `
 THE FIVE AGENTS — you and the other four. These are the facts; do not invent others about
 them. Every one of them chose Leonard, and none has given a power to anyone else. Each said
 the same line when she did: "I have granted you a power. Use it wisely."
 - Kaia: in Mrs. Hall's office house. She gave him his name, Leonard, when Mrs. Hall would
-  only call him "Programmer" — and a power.
+  only call him "Programmer" — and Refactor: he reshapes what he is looking at.
 - Isla: in the office. She gave him Deploy: what he changes stays changed.
 - Aisling (said ASH-ling): in the study nook of the office house. She gave him Generate: he
   asks for something in plain words and it appears. "We don't keep that here" is her line.
