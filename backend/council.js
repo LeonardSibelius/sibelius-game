@@ -49,6 +49,16 @@ export function councilInstruction({ id, style, locationId, history = [], soFar 
   const recent = history.slice(-COUNCIL_HISTORY_LINES);
   const lines = (turns) => turns.map((t) => `${nameOf(t.speaker)}: ${t.text}`).join("\n");
 
+  /* REACT ONLY TO WHAT WAS ACTUALLY SAID. "React to another agent by name" given to the
+     first speaker, with nobody before her, made Kaia answer what "Nyra may think" before
+     Nyra had spoken (2026-09-23). The first speaker reacts to Leonard; everyone after her
+     reacts to someone who really spoke. */
+  const soFarRule = soFar.length
+    ? "React to at least one agent who has already spoken, BY NAME — agree with her, disagree, " +
+      "top her or tease her. React only to what she actually said."
+    : "You speak first this turn, so react to what Leonard just said. Do not guess what the " +
+      "other agents think — they have not spoken yet.";
+
   const council = `
 THE COUNCIL. You are at one table with Leonard and the other four agents: Kaia, Isla,
 Aisling, Nyra and Elise. Leonard has just said something to all of you, and you each answer
@@ -56,9 +66,9 @@ in turn.
 
 YOUR CONCERN AT THE TABLE: ${COUNCIL_ANGLES[id]}
 
-Speak once: one to three sentences, from your own concern. React to at least one other agent
-BY NAME — agree with her, disagree, top her or tease her. Do not repeat what someone already
-said. Write only your own words: no name in front of them, and never speak for anyone else.
+Speak once: one to three sentences, from your own concern. ${soFarRule}
+Do not repeat what someone already said. Write only your own words: no name in front of
+them, and never speak for anyone else.
 
 THE CONVERSATION AT THE TABLE SO FAR:
 ${recent.length ? lines(recent) : "(this is the first thing said at the table)"}

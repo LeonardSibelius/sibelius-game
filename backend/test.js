@@ -356,10 +356,15 @@ console.log("=== NPC chat backend contract ===");
     soFar: [{ speaker: "kaia", text: "The burgers are prophecy." }],
   });
   check(first.includes("(you speak first)") && first.includes("THE COUNCIL"), "the first speaker is told she speaks first");
+  // Kaia, speaking first, once answered what "Nyra may think" before Nyra spoke.
+  check(first.includes("Do not guess what the other agents think") && !first.includes("React to at least one agent who has already spoken"),
+    "the first speaker reacts to Leonard, not to agents who have not spoken");
   check(later.includes("Leonard: I ate eleven burgers.") && later.includes("Kaia: The burgers are prophecy."),
     "a later speaker sees the history and who spoke before her, by name");
   check(later.includes("You cannot grant powers") && later.includes("THE PLACES THAT EXIST") && later.includes("Grok"),
     "a council prompt keeps the house rules, the places and where he is");
+  check(later.includes("React to at least one agent who has already spoken"), "later speakers react to someone who really spoke");
+  check(!/said ASH-ling\)/.test(getCharacter("kaia").systemInstruction), "the shared who's-who carries no pronunciation note to read aloud");
   check(stripOwnName("kaia", "Kaia: the stove whispers.") === "the stove whispers.", "a speaker's own name prefix is removed");
   check(stripOwnName("kaia", "Isla is wrong about the stove.") === "Isla is wrong about the stove.", "another agent's name is left alone");
   const orders = new Set(["a1b2c3d4-1", "a1b2c3d4-2", "a1b2c3d4-3", "zz-request-9", "another-id-77"].map((s) => speakingOrder(s)[0]));

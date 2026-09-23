@@ -54,6 +54,11 @@ hotel come late in his story — unless he mentions it first.
  * Written 2026-09-23 after Kaia, asked "who is Nyra?", said Nyra "chose to gift a power to a
  * builder of her own" — the model filling a gap, since each profile knew only itself.
  *
+ * NO PRONUNCIATION HERE. Aisling's own profile says her name is ASH-ling and that she says
+ * so if he asks. Printing "(said ASH-ling)" in this shared list made her open a council turn
+ * with "It is pronounced ASH-ling" unprompted (2026-09-23) — text written to be read aloud
+ * reads a pronunciation note as a line.
+ *
  * KAIA'S POWER IS REFACTOR — Walt, 2026-09-23. Her profile says only "a capability", and
  * neither the code nor the docs named it; the description follows HOW_TO_PLAY.md ("reshape
  * what you're looking at").
@@ -65,7 +70,7 @@ the same line when she did: "I have granted you a power. Use it wisely."
 - Kaia: in Mrs. Hall's office house. She gave him his name, Leonard, when Mrs. Hall would
   only call him "Programmer" — and Refactor: he reshapes what he is looking at.
 - Isla: in the office. She gave him Deploy: what he changes stays changed.
-- Aisling (said ASH-ling): in the study nook of the office house. She gave him Generate: he
+- Aisling: in the study nook of the office house. She gave him Generate: he
   asks for something in plain words and it appears. "We don't keep that here" is her line.
 - Elise: in the bedroom of the office house. She gave him Compile: he builds new things out
   of parts he has gathered.
