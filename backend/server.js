@@ -9,7 +9,7 @@
 
 import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
-import { generate, estimateTokens } from "./gemini.js";
+import { generate, estimateTokens, SAFETY_SETTINGS } from "./gemini.js";
 import { getCharacter, knownCharacterIds } from "./characters.js";
 
 /**
@@ -74,6 +74,10 @@ export function createApp(options = {}) {
     killed: env("CHAT_DISABLED", "0") === "1",
     maxOutputTokens: num("MAX_OUTPUT_TOKENS", 512),
     thinkingBudget: process.env.THINKING_BUDGET ? num("THINKING_BUDGET", NaN) : undefined,
+    // OFF UNTIL MEASURED. The thresholds in gemini.js blocked half of all ordinary
+    // conversation when they went live (2026-09-22, rolled back 2026-09-23). "on" exists
+    // for measuring a replacement, not for production.
+    safetyFilters: env("SAFETY_FILTERS", "off") === "on",
     monthlyCapUsd: num("MONTHLY_CAP_USD", 15),
     dailyCapUsd: num("DAILY_CAP_USD", 0.75),
     perIpPerMinute: num("PER_IP_PER_MINUTE", 12),
@@ -214,6 +218,7 @@ export function createApp(options = {}) {
             contents,
             maxOutputTokens: config.maxOutputTokens,
             thinkingBudget: config.thinkingBudget,
+            safetySettings: config.safetyFilters ? SAFETY_SETTINGS : undefined,
             timeoutMs: config.upstreamTimeoutMs,
           });
 

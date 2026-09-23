@@ -1,3 +1,6 @@
 .env
 .state/
 node_modules/
+
+# Model comparison reports: generated, and they quote draft prompts verbatim.
+eval/out/

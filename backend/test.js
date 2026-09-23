@@ -183,24 +183,32 @@ console.log("=== NPC chat backend contract ===");
   check(payload.reason === "service", "an empty generation is a service failure, not an empty reply");
 }
 
-// --- the provider filters: the Steam disclosure promises them, and the default is OFF
+// --- the provider filters: OFF in production until a replacement is measured (gemini.js)
 {
   let sent = null;
   const fakeFetch = (reply) => async (_url, init) => {
     sent = JSON.parse(init.body);
     return { ok: true, status: 200, json: async () => reply };
   };
-  const call = (reply) =>
+  const call = (reply, safetySettings) =>
     generate({
       apiKey: "test",
       model: "test-model",
       systemInstruction: "rules",
       contents: [{ role: "user", parts: [{ text: "hello" }] }],
       maxOutputTokens: 64,
+      safetySettings,
       fetchImpl: fakeFetch(reply),
     });
+  const hello = { candidates: [{ content: { parts: [{ text: "Hi, Leonard." }] }, finishReason: "STOP" }] };
 
-  await call({ candidates: [{ content: { parts: [{ text: "Hi, Leonard." }] }, finishReason: "STOP" }] });
+  // The switch, and what the default sends. Turning it on by accident is the regression.
+  check(app.config.safetyFilters === false, "the server's adjustable filters are off by default");
+  await call(hello);
+  check(sent && !("safetySettings" in sent), "a request without filters sends no safetySettings");
+
+  // And when a measurement run does switch them on, they arrive complete.
+  await call(hello, SAFETY_SETTINGS);
   const categories = (sent?.safetySettings ?? []).map((s) => s.category);
   for (const category of [
     "HARM_CATEGORY_HARASSMENT",
@@ -208,7 +216,7 @@ console.log("=== NPC chat backend contract ===");
     "HARM_CATEGORY_SEXUALLY_EXPLICIT",
     "HARM_CATEGORY_DANGEROUS_CONTENT",
   ]) {
-    check(categories.includes(category), `every request sets a threshold for ${category}`);
+    check(categories.includes(category), `when on, a threshold is set for ${category}`);
   }
   check(
     (sent?.safetySettings ?? []).every((s) => s.threshold !== "OFF" && s.threshold !== "BLOCK_NONE"),

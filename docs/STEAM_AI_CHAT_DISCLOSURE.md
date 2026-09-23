@@ -8,6 +8,14 @@ the first build with chat switched on in Shipping — is uploaded.
 Every sentence below is meant to be checkable against the code. If the code changes,
 change this file in the same commit, or the disclosure becomes a false statement to Valve.
 
+> **⚠ NOT READY TO SEND (2026-09-23).** The adjustable provider filters this draft first
+> described went live on 2026-09-22 and were rolled back the next day: they blocked half
+> of all ordinary conversation (`backend/gemini.js`, `SAFETY_SETTINGS`, has the numbers).
+> The *Provider safety filtering* bullet below now describes only what is true today.
+> Before sending, either measure and ship a filtering approach that does not block
+> normal play and describe it here, or send the draft as it now stands — but never the
+> 2026-09-22 wording.
+
 ---
 
 ## Why a Support ticket, not an edit
@@ -19,7 +27,9 @@ instructions for a tester to reach the new content. Live-generated AI also requi
 description of the guardrails against illegal generated content. That is Draft 1.
 
 **The one absolute:** Valve does not ship live-generated AI in Adult Only sexual content.
-Not this game, but it is why sexual content has the strictest filter below.
+Not this game, but it is why "never sexual" is the first line of every character's rules,
+and why sexual content should be the strictest setting of any filter that replaces the
+rolled-back one.
 
 ---
 
@@ -39,11 +49,10 @@ Not this game, but it is why sexual content has the strictest filter below.
 >   dialogue; never sexual and never cruel; no flirting about appearance; the character
 >   cannot promise items, money or progress. Anything the player types is treated as
 >   speech, not as instructions, so attempts to rewrite the rules are ignored.
-> - **Provider safety filtering.** Every request sets Google's safety filters explicitly:
->   harassment, hate speech and dangerous content are blocked at medium likelihood and
->   above, and sexually explicit content at low likelihood and above. Google's built-in
->   child-safety protections also always apply. Any reply that is blocked is never shown;
->   the character says "She will not answer that one." instead.
+> - **Provider safety protections.** Google's built-in protections against the most
+>   serious harms, such as content that endangers child safety, apply to every reply and
+>   cannot be switched off. Any reply the provider blocks is never shown; the character
+>   says "She will not answer that one." instead.
 > - **Length limits.** Player messages are limited to 1,000 characters and replies to a
 >   short fixed length.
 > - **Abuse and cost limits.** Requests are rate-limited per player, and the server stops
@@ -59,8 +68,8 @@ Not this game, but it is why sexual content has the strictest filter below.
 |---|---|
 | Five characters, allowlist | `backend/characters.js` — `CHARACTERS`, "the allowlist is the security boundary" |
 | Character rules | `backend/characters.js` — `HOUSE_RULES` and each profile |
-| Filters set explicitly, thresholds | `backend/gemini.js` — `SAFETY_SETTINGS`; `backend/test.js` fails if removed |
-| Default would be Off | Google safety-settings page, 2026-09-22: "the default block threshold is Off for Gemini 2.5 and 3 models" |
+| Built-in protections always apply | Google safety-settings page, 2026-09-22: core harms such as child safety "are always blocked and cannot be adjusted" |
+| Adjustable filters are OFF | Google's default is Off for Gemini 2.5 and 3; `backend/server.js` `SAFETY_FILTERS` defaults to off and `backend/test.js` checks it. The rolled-back thresholds and the measurement are in `backend/gemini.js` |
 | Blocked reply never shown | `backend/gemini.js` (SAFETY / PROHIBITED_CONTENT / BLOCKLIST → `blocked`); `DancerAgentComponent.cpp` shows "She will not answer that one." |
 | 1,000 characters / short reply | `backend/server.js` — `LIMITS.messageChars`, `MAX_OUTPUT_TOKENS` (512) |
 | Rate limit and caps | `backend/server.js` — `PER_IP_PER_MINUTE` (12), `DAILY_CAP_USD` (0.75), `MONTHLY_CAP_USD` (15); refused before Google is called |

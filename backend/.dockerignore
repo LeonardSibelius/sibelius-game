@@ -6,3 +6,6 @@ node_modules/
 test.js
 README.md
 fly.toml
+
+# The model comparison calls Google with the local key and has no business in the image.
+eval/
