@@ -221,7 +221,14 @@ public:
 	UFUNCTION(Exec) void UnlockAllPowers();
 	UFUNCTION(Exec) void ResetProgression();
 
+	/** The council meeting, from the Tab menu's COUNCIL button. Does nothing if unavailable. */
+	void OpenCouncil();
+
 protected:
+	/** The council meeting panel and its one request (NpcCouncilSession.h). */
+	UPROPERTY()
+	TObjectPtr<class UNpcCouncilSession> CouncilSession;
+
 	/** SIB-39: toggles the developer/HELP overlay (bound to H). */
 	void ToggleDevOverlay();
 

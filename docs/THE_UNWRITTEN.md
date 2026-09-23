@@ -1,7 +1,8 @@
 # The Unwritten — the agents' council
 
-Design exploration. **Nothing here is built.** Map: `Content/Maps/L_Unwritten.umap` (a
-near-empty level, committed through LFS in `a85bb681`). Builds on the NPC chat system
+**The council is built and playable** — Tab menu → **COUNCIL** (2026-09-23). There is no
+room: Walt, 2026-09-23, *"i really don't think a room is necessary."* The near-empty
+`Content/Maps/L_Unwritten.umap` (LFS, `a85bb681`) stays in the repo, unused. Builds on the NPC chat system
 (`docs/NPC_CHAT_REVIEW.md`, branch `feat/npc-chat`), which already has everything this
 chapter needs except the council itself.
 
@@ -81,6 +82,10 @@ Plus whatever the player types. A council turn is the player's line and five ans
 
 ## How a council turn works
 
+0. The player opens the Tab menu and presses **COUNCIL** (`GameMenuWidget.cpp`). The button
+   exists only where talking to a dancer does — `sib.Chat.Enable`, 0 in Shipping — so the
+   Steam build has no AI door. The panel is the dancer chat panel, titled "The Council"
+   (`NpcCouncilSession.cpp`); the table remembers for the play session, not across quits.
 1. The player types to the table.
 2. The distress screen reads the message first (below). If it says DISTRESS, the council
    does not answer; the player gets the approved care reply.
@@ -95,16 +100,17 @@ What exists today and what does not:
 |---|---|
 | The foolish style, answer-first rule, places and who's-who | **Live** in the story chat (`backend/styles.js`, `backend/characters.js`) |
 | The distress screen and care reply | **Live** (`backend/distress.js`, `backend/server.js`) |
-| Council turns (five replies in order, each seeing the last) | Tested in `backend/eval/comic-eval.js`; **not in the server** |
+| Council turns (five replies in order, each seeing the last) | **Live** at `/v1/npc-council` (`backend/council.js`, `backend/server.js`) |
 | The fact list from the save | **Not built** — a small allowlisted `storyContext` addition |
-| A chat panel that shows five speakers | **Not built** — the current panel shows one agent |
-| The room | **Not built** — see below |
+| A chat panel that shows five speakers | **Built** — Tab menu → COUNCIL (`NpcCouncilSession.cpp`) |
+| The room | **Not wanted** (Walt, 2026-09-23) — the menu button replaces it |
 
 ---
 
-## The room — fixed, designed once (Walt, 2026-09-23)
+## The room — dropped (Walt, 2026-09-23)
 
-`L_Unwritten` is **one room, built once, that does not change with progress:** the five
+*Superseded the same day: the council opens from the Tab menu and needs no room. Kept as
+the record of what was planned.* `L_Unwritten` was to be **one room, built once, that does not change with progress:** the five
 agents and a table. Mrs. Hall never reaches it — no memos, no "Programmer". A `LOCATIONS`
 entry in `backend/characters.js` goes in when it is built, so the agents know where they are.
 

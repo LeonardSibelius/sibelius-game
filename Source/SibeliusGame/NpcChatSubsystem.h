@@ -54,6 +54,24 @@ enum class ENpcChatMode : uint8
 /** Reply text (empty on failure) and why, if it failed. */
 DECLARE_DELEGATE_TwoParams(FOnNpcChatReply, const FString& /*Reply*/, ENpcChatFailure /*Failure*/);
 
+/**
+ * One line said at the council table. SpeakerId is "leonard" or one of the five seats —
+ * the server allowlists exactly those, so a history line naming anyone else is a 400.
+ */
+struct FNpcCouncilLine
+{
+	FString SpeakerId;
+	FString DisplayName;
+	FString Text;
+};
+
+/**
+ * A council turn's answer: the agents who spoke, in the order they spoke. CareReply is set
+ * instead when the distress screen stopped the table — then Lines is empty.
+ */
+DECLARE_DELEGATE_ThreeParams(FOnNpcCouncilReply,
+	const TArray<FNpcCouncilLine>& /*Lines*/, const FString& /*CareReply*/, ENpcChatFailure /*Failure*/);
+
 UCLASS()
 class SIBELIUSGAME_API UNpcChatSubsystem : public UGameInstanceSubsystem
 {
@@ -81,6 +99,55 @@ public:
 	void Cancel(int32 RequestId);
 
 	bool IsBusy() const { return InFlightId != 0; }
+
+	// -----------------------------------------------------------------------
+	// THE COUNCIL (docs/THE_UNWRITTEN.md) — Leonard and all five agents at one table,
+	// opened from the Tab menu. One player line, five answers, one request.
+	//
+	// IT SHARES THE ONE-AT-A-TIME SLOT with Send. A council turn is five paid calls on
+	// the server; letting it run beside a dancer's reply would be the double-spend the
+	// slot exists to prevent. Cancel works on either.
+	// -----------------------------------------------------------------------
+
+	/** Put Message to the table. Returns a request id, or 0 if refused (busy or disabled). */
+	int32 SendCouncil(const FString& Message, FOnNpcCouncilReply OnReply);
+
+	/**
+	 * The table's conversation this play session, oldest first.
+	 *
+	 * NOT SAVED TO DISK, deliberately: the one-to-one store is keyed and bounded per agent
+	 * (MaxTurnsKept, and ApplySaveObject trims to it), and a council turn is six lines at
+	 * once. Quitting the game clears the table; level travel does not.
+	 */
+	const TArray<FNpcCouncilLine>& GetCouncilHistory() const { return CouncilHistory; }
+
+	/** Leonard's line and the answers, appended together only once the table answered. */
+	void RecordCouncilTurn(const FString& PlayerLine, const TArray<FNpcCouncilLine>& Replies);
+
+	void ForgetCouncil() { CouncilHistory.Reset(); }
+
+	/**
+	 * Lines of table history kept and sent — the server's COUNCIL_HISTORY_LINES (30) uses
+	 * exactly this many, and its maxTurns (64) refuses past that.
+	 */
+	static constexpr int32 CouncilLinesKept = 30;
+
+	/** The council endpoint, derived from the chat one so there is one URL to configure. */
+	static FString CouncilUrl();
+
+	/** The council POST body: requestId, message, storyContext, recentTurns{speaker,text}. */
+	static FString BuildCouncilRequestJson(
+		const FString& RequestId,
+		const FString& Message,
+		const FString& LocationId,
+		const TArray<FNpcCouncilLine>& RecentLines);
+
+	/**
+	 * Read a council response. True for an `ok` with at least one line, or with the care
+	 * reply. A table where nobody spoke is a failure, never an empty turn.
+	 */
+	static bool ParseCouncilJson(const FString& Body, TArray<FNpcCouncilLine>& OutLines,
+		FString& OutCareReply, ENpcChatFailure& OutFailure);
 
 	// -----------------------------------------------------------------------
 	// WHAT SHE REMEMBERS (step 5)
@@ -210,6 +277,12 @@ private:
 	/** Finish one: match the id, map the outcome, hand it to whoever is still listening. */
 	void CompleteRequest(int32 RequestId, const FString& Reply, ENpcChatFailure Failure);
 
+	/** The council's halves of the same three. */
+	bool SendCouncilOverHttp(int32 RequestId, const FString& Message);
+	void DeliverMockCouncil(int32 RequestId);
+	void CompleteCouncil(int32 RequestId, const TArray<FNpcCouncilLine>& Lines,
+		const FString& CareReply, ENpcChatFailure Failure);
+
 	/** The turns already in the store for this character — never the one being sent. */
 	TArray<FNpcChatTurn> RecentTurnsFor(const FString& CharacterId) const;
 
@@ -235,6 +308,8 @@ private:
 	int32 InFlightId = 0;
 
 	FOnNpcChatReply PendingReply;
+	FOnNpcCouncilReply PendingCouncilReply;   // bound instead of PendingReply for a council turn
+	TArray<FNpcCouncilLine> CouncilHistory;
 	FString PendingCharacterId;
 	FString PendingMessage;
 

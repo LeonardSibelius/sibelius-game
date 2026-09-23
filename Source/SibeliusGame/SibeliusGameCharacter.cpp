@@ -24,6 +24,7 @@
 #include "ProgressionSubsystem.h"          // SIB-39 dev-overlay toggle
 #include "JournalWidget.h"        // SIB-41 journal panel
 #include "GameMenuWidget.h"       // FUN-8 Tab game menu
+#include "NpcCouncilSession.h"    // the council meeting, opened from that menu
 #include "GenerateRequestWidget.h" // SIB-30 P1 typed-request panel
 #include "Framework/Application/SlateApplication.h" // hand the keyboard back on close
 #include "Blueprint/UserWidget.h" // CreateWidget
@@ -642,6 +643,27 @@ void ASibeliusGameCharacter::ToggleGameMenu()
 		PC->SetShowMouseCursor(true);
 		GameMenuWidget->SetFocus();
 	}
+}
+
+void ASibeliusGameCharacter::OpenCouncil()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC || !UNpcCouncilSession::IsAvailable())
+	{
+		return;
+	}
+
+	// The menu hands over to the meeting; Close gives input back to the game, not the menu.
+	if (GameMenuWidget && GameMenuWidget->IsInViewport())
+	{
+		GameMenuWidget->CloseMenu();
+	}
+
+	if (!CouncilSession)
+	{
+		CouncilSession = NewObject<UNpcCouncilSession>(this);
+	}
+	CouncilSession->Open(PC);
 }
 
 void ASibeliusGameCharacter::ToggleGenerate()

@@ -841,6 +841,9 @@ private:
 	/** Esc in the panel. */
 	void HandleChatClose();
 
+	/** The panel's Council button: end this conversation and open the whole table. */
+	void HandleChatCouncil();
+
 	/**
 	 * The service answered, or did not.
 	 *

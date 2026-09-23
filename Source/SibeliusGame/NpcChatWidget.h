@@ -28,6 +28,7 @@ class UVerticalBox;
 
 DECLARE_DELEGATE_OneParam(FOnNpcChatSend, const FString&);
 DECLARE_DELEGATE(FOnNpcChatClose);
+DECLARE_DELEGATE(FOnNpcChatCouncil);
 
 UCLASS()
 class SIBELIUSGAME_API UNpcChatWidget : public UUserWidget
@@ -39,6 +40,12 @@ public:
 
 	FOnNpcChatSend OnSend;
 	FOnNpcChatClose OnClose;
+
+	/** The Council button beside Close: leave this agent for the whole table. */
+	FOnNpcChatCouncil OnCouncil;
+
+	/** Shown in a dancer's conversation where the council is available; hidden in the council itself. */
+	void SetCouncilButtonVisible(bool bVisible);
 
 	/** Whose conversation this is. Drawn at the top so two agents never look alike. */
 	void SetAgentName(const FString& InAgentName);
@@ -70,6 +77,12 @@ public:
 	 */
 	void SetSidePanel(bool bSide);
 
+	/**
+	 * The council's composition: a tall centred card. No face to keep clear, and five
+	 * speakers a turn — the dancer's bottom band showed barely one of them (Walt, 2026-09-23).
+	 */
+	void SetCouncilPanel();
+
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
@@ -90,6 +103,9 @@ protected:
 	UFUNCTION()
 	void HandleCloseClicked();
 
+	UFUNCTION()
+	void HandleCouncilClicked();
+
 private:
 	UPROPERTY()
 	TObjectPtr<UTextBlock> TitleText;
@@ -108,6 +124,11 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UButton> CloseButton;
+
+	UPROPERTY()
+	TObjectPtr<UButton> CouncilButton;
+
+	bool bPendingCouncilVisible = false;
 
 	/** Held so SetSidePanel can reach the canvas slot that positions the whole card. */
 	UPROPERTY()

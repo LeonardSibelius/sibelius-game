@@ -90,6 +90,27 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 			TitleSlot->SetVerticalAlignment(VAlign_Center);
 		}
 
+		/* THE COUNCIL, BESIDE THE WAY OUT (Walt, 2026-09-23). From any agent's conversation
+		   to the whole table in one click, rather than Close, Tab, COUNCIL. Collapsed unless
+		   the owner turns it on - the council panel itself never shows it. */
+		CouncilButton = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("ChatCouncil"));
+		CouncilButton->SetBackgroundColor(FLinearColor(0.18f, 0.20f, 0.24f, 0.95f));
+		CouncilButton->OnClicked.AddDynamic(this, &UNpcChatWidget::HandleCouncilClicked);
+		CouncilButton->SetVisibility(bPendingCouncilVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+
+		UTextBlock* CouncilLabel = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ChatCouncilLabel"));
+		CouncilLabel->SetText(FText::FromString(TEXT("Council")));
+		CouncilLabel->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 16));
+		CouncilLabel->SetColorAndOpacity(FSlateColor(BodyColour));
+		CouncilButton->AddChild(CouncilLabel);
+
+		if (UHorizontalBoxSlot* CouncilSlot = HeaderRow->AddChildToHorizontalBox(CouncilButton))
+		{
+			CouncilSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+			CouncilSlot->SetVerticalAlignment(VAlign_Center);
+			CouncilSlot->SetPadding(FMargin(0.0f, 0.0f, 10.0f, 0.0f));
+		}
+
 		CloseButton = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("ChatClose"));
 		CloseButton->SetBackgroundColor(FLinearColor(0.18f, 0.20f, 0.24f, 0.95f));
 		CloseButton->OnClicked.AddDynamic(this, &UNpcChatWidget::HandleCloseClicked);
@@ -274,6 +295,33 @@ FReply UNpcChatWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEv
 void UNpcChatWidget::HandleCloseClicked()
 {
 	OnClose.ExecuteIfBound();
+}
+
+void UNpcChatWidget::HandleCouncilClicked()
+{
+	OnCouncil.ExecuteIfBound();
+}
+
+void UNpcChatWidget::SetCouncilButtonVisible(bool bVisible)
+{
+	bPendingCouncilVisible = bVisible;
+	if (CouncilButton)
+	{
+		CouncilButton->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+}
+
+void UNpcChatWidget::SetCouncilPanel()
+{
+	UCanvasPanelSlot* CardSlot = Card ? Cast<UCanvasPanelSlot>(Card->Slot) : nullptr;
+	if (!CardSlot)
+	{
+		return;
+	}
+	// Most of the screen, centred: the crosshair and the interaction prompt sit near the
+	// top middle, so the card starts just below them.
+	CardSlot->SetAnchors(FAnchors(0.15f, 0.08f, 0.85f, 0.95f));
+	CardSlot->SetOffsets(FMargin(0.0f));
 }
 
 void UNpcChatWidget::SetSidePanel(bool bSide)

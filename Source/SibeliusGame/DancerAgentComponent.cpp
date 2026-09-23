@@ -13,6 +13,8 @@
 #include "SupplyCounter.h"                 // stage 3 asks the save whether he shopped
 #include "TimerManager.h"                  // the restage retry, waiting for him to look away
 #include "NpcChatWidget.h"                  // step 4: the typed conversation panel
+#include "NpcCouncilSession.h"              // the panel's Council button
+#include "SibeliusGameCharacter.h"          // OpenCouncil
 #include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
 #include "NpcChatSaveGame.h"                // FNpcChatTurn — what she remembers
 #include "Blueprint/UserWidget.h"           // CreateWidget
@@ -1171,6 +1173,7 @@ void UDancerAgentComponent::BeginChat()
 		{
 			ChatWidget->OnSend.BindUObject(this, &UDancerAgentComponent::HandleChatSend);
 			ChatWidget->OnClose.BindUObject(this, &UDancerAgentComponent::HandleChatClose);
+			ChatWidget->OnCouncil.BindUObject(this, &UDancerAgentComponent::HandleChatCouncil);
 		}
 	}
 
@@ -1189,6 +1192,8 @@ void UDancerAgentComponent::BeginChat()
 	}
 	ChatWidget->SetVisibility(ESlateVisibility::Visible);
 	ChatWidget->SetSidePanel(CVarChatSidePanel.GetValueOnGameThread() != 0);
+	// Asked on every open: the same switch as the Tab menu's COUNCIL button.
+	ChatWidget->SetCouncilButtonVisible(UNpcCouncilSession::IsAvailable());
 
 	// A conversation never inherits the last one. Memory arrives in step 5, deliberately,
 	// and until it does the panel must not imply that anything is being kept.
@@ -1345,6 +1350,23 @@ void UDancerAgentComponent::EndChat()
 void UDancerAgentComponent::HandleChatClose()
 {
 	EndChat();
+}
+
+void UDancerAgentComponent::HandleChatCouncil()
+{
+	/* HER CONVERSATION ENDS FIRST, COMPLETELY. EndChat cancels her request, saves her
+	   memory, brings the camera home and hands input back; only then does the council take
+	   the screen and the input. Found before EndChat, because the pawn is the way there. */
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	ASibeliusGameCharacter* Leonard = PC ? Cast<ASibeliusGameCharacter>(PC->GetPawn()) : nullptr;
+
+	EndChat();
+
+	if (Leonard)
+	{
+		Leonard->OpenCouncil();
+	}
 }
 
 void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)

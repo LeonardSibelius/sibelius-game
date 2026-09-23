@@ -20,6 +20,9 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "TimerManager.h"
+#include "Dom/JsonObject.h"          // the council request body, read back
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogNpcChatSmoke, Log, All);
 
@@ -597,6 +600,102 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			TEXT("parse: transport status codes map to reasons"));
 	}
 
+	// --- 12b) THE COUNCIL: its contract, its answer, and one mock meeting.
+	{
+		TArray<FNpcCouncilLine> Table;
+		for (int32 i = 0; i < UNpcChatSubsystem::CouncilLinesKept + 5; ++i)
+		{
+			Table.Add({ i % 2 ? TEXT("kaia") : TEXT("leonard"), TEXT("x"), FString::Printf(TEXT("line %d"), i) });
+		}
+		const FString Body = UNpcChatSubsystem::BuildCouncilRequestJson(
+			TEXT("council-request-1"), TEXT("hello, table"), TEXT("L_Office"), Table);
+
+		TSharedPtr<FJsonObject> Root;
+		const bool bParsed = FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Body), Root) && Root.IsValid();
+		R.Check(bParsed, TEXT("council: the request body is JSON"));
+		if (bParsed)
+		{
+			const TArray<TSharedPtr<FJsonValue>>& Turns = Root->GetArrayField(TEXT("recentTurns"));
+			R.Check(Turns.Num() == UNpcChatSubsystem::CouncilLinesKept,
+				TEXT("council: only the most recent 30 lines are sent (the server reads 30, refuses past 64)"));
+			R.Check(Turns.Num() > 0 && Turns.Last()->AsObject()->GetStringField(TEXT("text")) == TEXT("line 34"),
+				TEXT("council: the lines kept are the newest, oldest first"));
+			R.Check(Turns.Num() > 0 && Turns[0]->AsObject()->HasField(TEXT("speaker"))
+					&& !Turns[0]->AsObject()->HasField(TEXT("role")),
+				TEXT("council: history names the speaker, not a user/model role"));
+			R.Check(Root->GetStringField(TEXT("message")) == TEXT("hello, table")
+					&& Root->GetObjectField(TEXT("storyContext"))->GetStringField(TEXT("locationId")) == TEXT("L_Office"),
+				TEXT("council: message and location travel"));
+		}
+
+		TArray<FNpcCouncilLine> Lines;
+		FString Care;
+		ENpcChatFailure Failure = ENpcChatFailure::None;
+
+		R.Check(UNpcChatSubsystem::ParseCouncilJson(
+				TEXT("{\"status\":\"ok\",\"replies\":[")
+				TEXT("{\"characterId\":\"nyra\",\"displayName\":\"Nyra\",\"text\":\"Nice job, Leonard!\"},")
+				TEXT("{\"characterId\":\"isla\",\"displayName\":\"Isla\",\"text\":\"   \"},")
+				TEXT("{\"characterId\":\"elise\",\"displayName\":\"Elise\",\"text\":\"A masterpiece.\"}]}"),
+				Lines, Care, Failure)
+			&& Lines.Num() == 2 && Lines[0].DisplayName == TEXT("Nyra") && Lines[1].SpeakerId == TEXT("elise")
+			&& Care.IsEmpty() && Failure == ENpcChatFailure::None,
+			TEXT("council parse: replies arrive in order, and a blank line is dropped, not drawn"));
+
+		R.Check(UNpcChatSubsystem::ParseCouncilJson(
+				TEXT("{\"status\":\"ok\",\"care\":true,\"reply\":\"We are here.\",\"replies\":[]}"), Lines, Care, Failure)
+			&& Care == TEXT("We are here.") && Lines.Num() == 0,
+			TEXT("council parse: the care reply arrives on its own"));
+
+		R.Check(!UNpcChatSubsystem::ParseCouncilJson(TEXT("{\"status\":\"ok\",\"replies\":[]}"), Lines, Care, Failure)
+			&& Failure == ENpcChatFailure::Service,
+			TEXT("council parse: a table where nobody spoke is a failure, not an empty turn"));
+
+		R.Check(!UNpcChatSubsystem::ParseCouncilJson(
+				TEXT("{\"status\":\"unavailable\",\"reason\":\"quota\"}"), Lines, Care, Failure)
+			&& Failure == ENpcChatFailure::Quota,
+			TEXT("council parse: a declared quota failure keeps its reason"));
+
+		// One mock meeting, end to end through the subsystem.
+		if (Chat && UNpcChatSubsystem::IsMock())
+		{
+			Chat->ForgetCouncil();
+			bool bFired = false;
+			TArray<FNpcCouncilLine> Got;
+			FOnNpcCouncilReply OnCouncil;
+			OnCouncil.BindLambda([&](const TArray<FNpcCouncilLine>& In, const FString&, ENpcChatFailure F)
+			{
+				bFired = true;
+				Got = In;
+				Failure = F;
+			});
+
+			const int32 Id = Chat->SendCouncil(TEXT("good morning, everyone"), OnCouncil);
+			R.Check(Id != 0 && Chat->IsBusy(), TEXT("council mock: a meeting turn is sent"));
+
+			FOnNpcChatReply Ignored;
+			R.Check(Chat->Send(TEXT("kaia"), TEXT("me too"), Ignored) == 0,
+				TEXT("council mock: a dancer cannot be asked while the table is answering (one slot)"));
+
+			AdvanceTime(GI, 2.5f);
+			R.Check(bFired && Failure == ENpcChatFailure::None && Got.Num() == 5,
+				TEXT("council mock: all five answer"));
+
+			Chat->RecordCouncilTurn(TEXT("good morning, everyone"), Got);
+			R.Check(Chat->GetCouncilHistory().Num() == 6
+					&& Chat->GetCouncilHistory()[0].SpeakerId == TEXT("leonard"),
+				TEXT("council mock: the turn is recorded as Leonard's line and five answers"));
+
+			bool bLate = false;
+			FOnNpcCouncilReply OnLate;
+			OnLate.BindLambda([&bLate](const TArray<FNpcCouncilLine>&, const FString&, ENpcChatFailure) { bLate = true; });
+			Chat->Cancel(Chat->SendCouncil(TEXT("never mind"), OnLate));
+			AdvanceTime(GI, 2.5f);
+			R.Check(!bLate && !Chat->IsBusy(), TEXT("council mock: a cancelled meeting turn never delivers"));
+			Chat->ForgetCouncil();
+		}
+	}
+
 	// --- 13) MODES. An unconfigured build must be honestly unavailable.
 	if (Chat)
 	{
@@ -658,6 +757,18 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			UrlVar->Set(TEXT("chat.example.com/v1/npc-chat"));
 			R.Check(UNpcChatSubsystem::ProxyUrl() == TEXT("https://chat.example.com/v1/npc-chat"),
 				TEXT("url: a remote host is dialled over https, never clear text"));
+			R.Check(UNpcChatSubsystem::CouncilUrl() == TEXT("https://chat.example.com/v1/npc-council"),
+				TEXT("url: the council endpoint is derived from the chat one"));
+
+			UrlVar->Set(TEXT("chat.example.com/some/other/path"));
+			R.Check(UNpcChatSubsystem::CouncilUrl().IsEmpty(),
+				TEXT("url: a non-standard chat path has no council, rather than a guessed one"));
+
+			ModeVar->Set(0);
+			FOnNpcCouncilReply NoCouncil;
+			R.Check(Chat->SendCouncil(TEXT("anyone?"), NoCouncil) == 0 && !Chat->IsBusy(),
+				TEXT("mode: disabled refuses a council turn before an id is spent"));
+			ModeVar->Set(2);
 			R.Check(UNpcChatSubsystem::IsUsableProxyUrl(TEXT("http://127.0.0.1:8787/v1/npc-chat")),
 				TEXT("url: a whole loopback URL is accepted"));
 

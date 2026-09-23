@@ -99,6 +99,16 @@ namespace
 
 	/** Client deadline. The backend's own is shorter; this catches a dead connection. */
 	constexpr float ChatHttpTimeoutSeconds = 25.0f;
+
+	/**
+	 * The council's deadline. Five agents speak one after another on the server, ~1 s each
+	 * on a good day, so the one-to-one 25 s would cut off a slow but healthy table.
+	 */
+	constexpr float CouncilHttpTimeoutSeconds = 60.0f;
+
+	/** The one path the council URL is derived from, and the one it becomes. */
+	const TCHAR* ChatPath = TEXT("/v1/npc-chat");
+	const TCHAR* CouncilPath = TEXT("/v1/npc-council");
 }
 
 namespace
@@ -429,6 +439,7 @@ void UNpcChatSubsystem::Cancel(int32 RequestId)
 
 	InFlightId = 0;
 	PendingReply.Unbind();
+	PendingCouncilReply.Unbind();
 	PendingCharacterId.Reset();
 	PendingMessage.Reset();
 }
@@ -617,6 +628,298 @@ void UNpcChatSubsystem::CompleteRequest(int32 RequestId, const FString& Reply, E
 	PendingUuid.Reset();
 
 	Callback.ExecuteIfBound(Reply, Failure);
+}
+
+// ---------------------------------------------------------------------------
+// THE COUNCIL
+// ---------------------------------------------------------------------------
+
+FString UNpcChatSubsystem::CouncilUrl()
+{
+	/* DERIVED, NOT A SECOND CVAR. Two endpoints configured separately is two things to get
+	   wrong, and pointing chat at a local server while the council quietly kept talking to
+	   production would be the worst version of that. A chat URL that is not the standard
+	   path has no council, and says so by being empty. */
+	const FString Chat = ProxyUrl();
+	if (!Chat.EndsWith(ChatPath))
+	{
+		return FString();
+	}
+	return Chat.LeftChop(FCString::Strlen(ChatPath)) + CouncilPath;
+}
+
+FString UNpcChatSubsystem::BuildCouncilRequestJson(
+	const FString& RequestId,
+	const FString& Message,
+	const FString& LocationId,
+	const TArray<FNpcCouncilLine>& RecentLines)
+{
+	const TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
+	Root->SetStringField(TEXT("requestId"), RequestId);
+	Root->SetStringField(TEXT("message"), Message);
+
+	const TSharedRef<FJsonObject> Story = MakeShared<FJsonObject>();
+	Story->SetStringField(TEXT("locationId"), LocationId);
+	Story->SetArrayField(TEXT("unlockedFacts"), TArray<TSharedPtr<FJsonValue>>());
+	Root->SetObjectField(TEXT("storyContext"), Story);
+
+	// Only the most recent lines: the server reads 30 and refuses past 64.
+	const int32 First = FMath::Max(0, RecentLines.Num() - CouncilLinesKept);
+	TArray<TSharedPtr<FJsonValue>> Turns;
+	for (int32 i = First; i < RecentLines.Num(); ++i)
+	{
+		const TSharedRef<FJsonObject> Turn = MakeShared<FJsonObject>();
+		// "speaker", not "role": at a table of six, user/model cannot say who spoke.
+		Turn->SetStringField(TEXT("speaker"), RecentLines[i].SpeakerId);
+		Turn->SetStringField(TEXT("text"), RecentLines[i].Text);
+		Turns.Add(MakeShared<FJsonValueObject>(Turn));
+	}
+	Root->SetArrayField(TEXT("recentTurns"), Turns);
+
+	FString Body;
+	const TSharedRef<TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>> Writer =
+		TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&Body);
+	FJsonSerializer::Serialize(Root, Writer);
+	return Body;
+}
+
+bool UNpcChatSubsystem::ParseCouncilJson(const FString& Body, TArray<FNpcCouncilLine>& OutLines,
+	FString& OutCareReply, ENpcChatFailure& OutFailure)
+{
+	OutLines.Reset();
+	OutCareReply.Reset();
+	OutFailure = ENpcChatFailure::Service;
+
+	TSharedPtr<FJsonObject> Root;
+	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Body);
+	if (!FJsonSerializer::Deserialize(Reader, Root) || !Root.IsValid())
+	{
+		return false;
+	}
+
+	const FString Status = Root->GetStringField(TEXT("status"));
+	if (Status.Equals(TEXT("unavailable"), ESearchCase::IgnoreCase))
+	{
+		OutFailure = FailureFromReason(Root->GetStringField(TEXT("reason")));
+		return false;
+	}
+	if (!Status.Equals(TEXT("ok"), ESearchCase::IgnoreCase))
+	{
+		return false;
+	}
+
+	/* THE CARE REPLY WINS OVER EVERYTHING ELSE IN THE BODY. The server sends it with an
+	   empty replies array; if a future server ever sent both, the player in trouble still
+	   gets the one authored line and not five jokes. */
+	bool bCare = false;
+	if (Root->TryGetBoolField(TEXT("care"), bCare) && bCare)
+	{
+		OutCareReply = Root->GetStringField(TEXT("reply")).TrimStartAndEnd();
+		if (OutCareReply.IsEmpty())
+		{
+			return false;
+		}
+		OutFailure = ENpcChatFailure::None;
+		return true;
+	}
+
+	const TArray<TSharedPtr<FJsonValue>>* Replies = nullptr;
+	if (Root->TryGetArrayField(TEXT("replies"), Replies))
+	{
+		for (const TSharedPtr<FJsonValue>& Value : *Replies)
+		{
+			const TSharedPtr<FJsonObject>* Obj = nullptr;
+			if (!Value.IsValid() || !Value->TryGetObject(Obj) || !Obj->IsValid())
+			{
+				continue;
+			}
+			FNpcCouncilLine Line;
+			Line.SpeakerId = (*Obj)->GetStringField(TEXT("characterId"));
+			Line.DisplayName = (*Obj)->GetStringField(TEXT("displayName"));
+			Line.Text = (*Obj)->GetStringField(TEXT("text")).TrimStartAndEnd();
+			// A line with no speaker or no words is dropped, never drawn as a blank.
+			if (!Line.SpeakerId.IsEmpty() && !Line.DisplayName.IsEmpty() && !Line.Text.IsEmpty())
+			{
+				OutLines.Add(MoveTemp(Line));
+			}
+		}
+	}
+
+	if (OutLines.Num() == 0)
+	{
+		return false;   // nobody spoke: a failure, not an empty table
+	}
+	OutFailure = ENpcChatFailure::None;
+	return true;
+}
+
+void UNpcChatSubsystem::RecordCouncilTurn(const FString& PlayerLine, const TArray<FNpcCouncilLine>& Replies)
+{
+	FNpcCouncilLine Said;
+	Said.SpeakerId = TEXT("leonard");
+	Said.DisplayName = TEXT("You");
+	Said.Text = PlayerLine;
+	CouncilHistory.Add(MoveTemp(Said));
+	CouncilHistory.Append(Replies);
+
+	const int32 Excess = CouncilHistory.Num() - CouncilLinesKept;
+	if (Excess > 0)
+	{
+		CouncilHistory.RemoveAt(0, Excess, EAllowShrinking::Yes);
+	}
+}
+
+int32 UNpcChatSubsystem::SendCouncil(const FString& Message, FOnNpcCouncilReply OnReply)
+{
+	if (InFlightId != 0)
+	{
+		UE_LOG(LogSibeliusGame, Verbose, TEXT("[Council] send refused, request %d still in flight"), InFlightId);
+		return 0;
+	}
+
+	UGameInstance* GI = GetGameInstance();
+	if (!GI)
+	{
+		return 0;
+	}
+
+	const ENpcChatMode Mode = CurrentMode();
+	if (Mode == ENpcChatMode::Disabled || (Mode == ENpcChatMode::Proxy && CouncilUrl().IsEmpty()))
+	{
+		UE_LOG(LogSibeliusGame, Verbose, TEXT("[Council] send refused, the council is unavailable"));
+		return 0;
+	}
+
+	InFlightId = NextRequestId++;
+	PendingCouncilReply = OnReply;
+	PendingMessage = Message;
+
+	if (Mode == ENpcChatMode::Proxy)
+	{
+		if (!SendCouncilOverHttp(InFlightId, Message))
+		{
+			CompleteCouncil(InFlightId, {}, FString(), ENpcChatFailure::Network);
+			return 0;
+		}
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Council] request %d sent (proxy)"), InFlightId);
+		return InFlightId;
+	}
+
+	const int32 ThisRequest = InFlightId;
+	FTimerDelegate Tick;
+	Tick.BindUObject(this, &UNpcChatSubsystem::DeliverMockCouncil, ThisRequest);
+	GI->GetTimerManager().SetTimer(MockTimer, Tick,
+		FMath::Max(0.05f, CVarChatMockDelay.GetValueOnGameThread()), /*bLoop=*/false);
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Council] request %d sent (mock)"), ThisRequest);
+	return ThisRequest;
+}
+
+void UNpcChatSubsystem::DeliverMockCouncil(int32 RequestId)
+{
+	const int32 ForcedFail = CVarChatMockFail.GetValueOnGameThread();
+	if (ForcedFail > 0)
+	{
+		CompleteCouncil(RequestId, {}, FString(), static_cast<ENpcChatFailure>(
+			FMath::Clamp(ForcedFail, 1, static_cast<int32>(ENpcChatFailure::Service))));
+		return;
+	}
+
+	// Plainly canned, and in the server's seat order, so a walk-test can judge the panel.
+	static const TCHAR* Seats[][2] =
+	{
+		{ TEXT("kaia"), TEXT("Kaia") }, { TEXT("isla"), TEXT("Isla") }, { TEXT("aisling"), TEXT("Aisling") },
+		{ TEXT("nyra"), TEXT("Nyra") }, { TEXT("elise"), TEXT("Elise") },
+	};
+	TArray<FNpcCouncilLine> Lines;
+	for (const auto& Seat : Seats)
+	{
+		Lines.Add({ Seat[0], Seat[1],
+			FString::Printf(TEXT("A placeholder where %s will answer \"%s\"."), Seat[1], *PendingMessage.Left(60)) });
+	}
+	CompleteCouncil(RequestId, Lines, FString(), ENpcChatFailure::None);
+}
+
+bool UNpcChatSubsystem::SendCouncilOverHttp(int32 RequestId, const FString& Message)
+{
+	const FString Url = CouncilUrl();
+	if (Url.IsEmpty())
+	{
+		return false;
+	}
+
+	PendingUuid = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
+	const FString Body = BuildCouncilRequestJson(PendingUuid, Message, CurrentLocationId(), CouncilHistory);
+
+	PendingHttp = FHttpModule::Get().CreateRequest();
+	PendingHttp->SetURL(Url);
+	PendingHttp->SetVerb(TEXT("POST"));
+	PendingHttp->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+	PendingHttp->SetTimeout(CouncilHttpTimeoutSeconds);
+	PendingHttp->SetContentAsString(Body);
+
+	// Weak and matched by id, for the same reasons as SendOverHttp.
+	TWeakObjectPtr<UNpcChatSubsystem> WeakThis(this);
+	PendingHttp->OnProcessRequestComplete().BindLambda(
+		[WeakThis, RequestId](FHttpRequestPtr, FHttpResponsePtr Response, bool bConnectedOk)
+		{
+			UNpcChatSubsystem* Self = WeakThis.Get();
+			if (!Self)
+			{
+				return;
+			}
+			if (!bConnectedOk || !Response.IsValid())
+			{
+				Self->CompleteCouncil(RequestId, {}, FString(), ENpcChatFailure::Network);
+				return;
+			}
+
+			const int32 Code = Response->GetResponseCode();
+			TArray<FNpcCouncilLine> Lines;
+			FString Care;
+			ENpcChatFailure Failure = ENpcChatFailure::Service;
+			const bool bOk = ParseCouncilJson(Response->GetContentAsString(), Lines, Care, Failure);
+
+			if (Code < 200 || Code > 299)
+			{
+				// Prefer a declared reason in the body to the bare status.
+				if (Failure == ENpcChatFailure::Service)
+				{
+					Failure = FailureFromHttpCode(Code);
+				}
+				UE_LOG(LogSibeliusGame, Warning, TEXT("[Council] request %d failed, HTTP %d"), RequestId, Code);
+				Self->CompleteCouncil(RequestId, {}, FString(), Failure);
+				return;
+			}
+
+			Self->CompleteCouncil(RequestId, Lines, Care, bOk ? ENpcChatFailure::None : Failure);
+		});
+
+	if (!PendingHttp->ProcessRequest())
+	{
+		PendingHttp.Reset();
+		PendingUuid.Reset();
+		return false;
+	}
+	return true;
+}
+
+void UNpcChatSubsystem::CompleteCouncil(int32 RequestId, const TArray<FNpcCouncilLine>& Lines,
+	const FString& CareReply, ENpcChatFailure Failure)
+{
+	if (RequestId != InFlightId)
+	{
+		return;
+	}
+
+	FOnNpcCouncilReply Callback = PendingCouncilReply;
+
+	InFlightId = 0;
+	PendingCouncilReply.Unbind();
+	PendingMessage.Reset();
+	PendingHttp.Reset();
+	PendingUuid.Reset();
+
+	Callback.ExecuteIfBound(Lines, CareReply, Failure);
 }
 
 // ---------------------------------------------------------------------------

@@ -31,7 +31,9 @@ public class SibeliusGameEditor : ModuleRules
 			"EnhancedInput",
 			"NavigationSystem",
 			"AIModule",
-			"Niagara"
+			"Niagara",
+			// the NPC chat gate reads the council request body it builds
+			"Json"
 		});
 
 		// Same FormatStringSan workaround as the game module (PK11).

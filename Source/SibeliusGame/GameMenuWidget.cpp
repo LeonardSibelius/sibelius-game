@@ -6,6 +6,8 @@
 #include "InventoryComponent.h"
 #include "CompileTypes.h"
 #include "GenerateComponent.h"
+#include "NpcCouncilSession.h"         // the COUNCIL button, and whether to show it
+#include "SibeliusGameCharacter.h"     // OpenCouncil
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Widgets/SBoxPanel.h"
@@ -84,6 +86,38 @@ TSharedRef<SWidget> UGameMenuWidget::RebuildWidget()
 						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabRecords", "RECORDS"), ETab::Records) ]
 						+ SHorizontalBox::Slot().AutoWidth().Padding(10, 0, 0, 0)
 						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabControls", "CONTROLS"), ETab::Controls) ]
+						+ SHorizontalBox::Slot().FillWidth(1.0f)
+						[ SNullWidget::NullWidget ]
+						/* THE COUNCIL is not a tab: it leaves the menu for the meeting panel, so it
+						   sits apart on the right. Collapsed wherever chat is off — Shipping, and
+						   any build with no chat service — so the Steam build shows no AI door. */
+						+ SHorizontalBox::Slot().AutoWidth()
+						[
+							SNew(SButton)
+							.ContentPadding(FMargin(22.0f, 8.0f))
+							// A lambda, not a value: the menu widget is built once and reused, and
+							// sib.Chat.Enable can change between openings.
+							.Visibility_Lambda([]()
+							{
+								return UNpcCouncilSession::IsAvailable() ? EVisibility::Visible : EVisibility::Collapsed;
+							})
+							.ToolTipText(NSLOCTEXT("Sibelius", "MenuCouncilTip",
+								"Talk to Kaia, Isla, Aisling, Nyra and Elise at once."))
+							.OnClicked_Lambda([this]()
+							{
+								if (ASibeliusGameCharacter* Leonard = Cast<ASibeliusGameCharacter>(GetOwningPlayerPawn()))
+								{
+									Leonard->OpenCouncil();
+								}
+								return FReply::Handled();
+							})
+							[
+								SNew(STextBlock)
+								.Text(NSLOCTEXT("Sibelius", "MenuCouncil", "COUNCIL"))
+								.Font(Font("Bold", 20))
+								.ColorAndOpacity(Heading)
+							]
+						]
 					]
 
 					+ SVerticalBox::Slot().FillHeight(1.0f)
