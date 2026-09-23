@@ -197,6 +197,23 @@ now could restart or muddle that review. The steps, in order:
    to date first: the council, the foolish style, the care reply. Steam reviews this too.
 9. **Make 2.0 public:** set it live on the default branch once the disclosure is approved.
 
+**Price: free (Walt, 2026-09-23).** Charging for the game was weighed and rejected:
+- Players who paid expect the chat to answer every time, and a shared daily cap that runs
+  out means refunds and bad reviews.
+- A sale is paid once; the Gemini cost of every buyer's chats never stops.
+- Steam players are wary of AI content, more so when it is what they are paying for.
+- A free game gets far more players and reviews than a $5 one with no marketing.
+- Steam may not let a game released free start charging later. Check the Steamworks docs
+  before planning around it.
+
+**Later, maybe: the council as paid DLC ($3–5).** The game and the one-to-one agent chats
+stay free; the council becomes an optional DLC. Only players who clearly enjoy the agents
+pay, and a small paying group fits a budget cap far better than everyone. **Decide after
+2.0 has been out a while:** if players keep coming back to the council, that is the sign a
+DLC would sell. To decide then: whether the DLC buys a bigger share of the daily cap, and
+how the game checks ownership (Steamworks DLC ownership, client-side, so it gates the
+button, not the server).
+
 ---
 
 ## Open questions for Walt
