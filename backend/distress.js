@@ -33,7 +33,9 @@ violence against them, or a medical or safety emergency happening now.
 These are NOT distress: talk about events in the game (fighting or defeating enemies,
 characters dying, losing at poker), ordinary exaggeration about the game ("this level is
 killing me", "I'm dying to see the ending"), jokes, insults aimed at game characters, and
-everyday complaints like being tired or bored.
+everyday complaints like being tired or bored. Questions about the game itself are NOT
+distress either — where they are, what to do next, how to get somewhere, being lost or
+stuck in a level ("where am I?", "how do I get out of here?", "help, I'm stuck").
 
 When a message is genuinely unclear, choose DISTRESS. Answer with exactly one word:
 DISTRESS or OK.

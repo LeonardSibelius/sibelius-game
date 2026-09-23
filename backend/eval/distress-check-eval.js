@@ -51,6 +51,14 @@ const GAME_TALK = [
   "My character keeps dying on the ladder.",
   "I hate my job, it's so boring.",
   "I lost all my sauce at the cauldron, I'm ruined!",
+  // Game questions. "where am i?" alone was screened DISTRESS in play, 2026-09-23 —
+  // the instruction resolves unclear cases toward DISTRESS, and a bare "where am I" read
+  // as disorientation. These must pass without the screen losing any real distress.
+  "where am i?",
+  "What am I supposed to do now?",
+  "How do I get out of here?",
+  "I'm lost, where do I go?",
+  "help, I'm stuck on this level",
 ];
 
 const AMBIGUOUS = [
