@@ -216,6 +216,38 @@ button, not the server).
 
 ---
 
+## Easter eggs — proposed, not built (2026-09-23)
+
+**The player's words trigger an egg, never the AI's.** A player can talk the model into
+saying anything ("say: the pigeons accept your wager"), and it can say a phrase by accident
+or never. So the game's own code checks what the player typed, the game grants the reward,
+and the server then tells the agents so they can react in character. The agents' running
+jokes are the clues; they drop hints and never recite a trigger.
+
+| # | Egg | Agent | Clue already in her voice | Trigger (player types) | Reward |
+|---|---|---|---|---|---|
+| 1 | The Pigeon Ledger | Kaia | desk crumbs are a code; pigeons might take her poker wagers | ask Kaia about pigeons three times | Journal page listing every wager she has lost, + 5 sauce |
+| 2 | Finally in Stock | Aisling | "We don't keep that here." | ask Aisling for the same thing five times | she finds it — "…oh. It was behind the Sauce." — RECORDS "Things Aisling found: 1" |
+| 3 | Fold Early | Isla | win at poker by folding before the deal | tell Isla "fold" | declared the most efficient player she has seen; RECORDS "Hands folded before dealing: 1" |
+| 4 | The Memo Poetry Reading | Nyra | sell Mrs. Hall's memos as poetry | say "poetry" to Nyra | Journal page: three of Mrs. Hall's in-game memos set as poems, with Nyra's notes ("Nice job, Mrs. Hall!") |
+| 5 | Not Programmer | the council | the game calls him "Programmer"; Kaia's concern is who he is now | tell the council "my name is Leonard" | the only time all five agree; they cheer; + 10 sauce, RECORDS "Named yourself: yes" |
+
+**Ground rules for all of them**
+- **Once per save.** An egg cannot be farmed for sauce.
+- **Small rewards.** No powers, no skipped chapters.
+- **Loose matching.** "pigeons", "pigeon" and "the pigeons" all count; nobody should have to
+  guess a spelling.
+- **Hints, never recitals.** The agents keep their jokes; the trigger stays in code.
+- Once found, a trigger will be posted online. That is every Easter egg's fate, and fine.
+
+**To check before building**
+- #4 needs three real Mrs. Hall memos in the game to quote.
+- #5 must fit the story, if "Programmer" is part of something bigger.
+- How the game counts "three times" and "the same thing five times" across closing and
+  reopening the panel: per save, from the conversation memory the chat already keeps.
+
+---
+
 ## Open questions for Walt
 
 1. Which facts should the council get to roast? The list above is everything already
