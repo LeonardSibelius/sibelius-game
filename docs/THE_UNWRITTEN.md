@@ -102,6 +102,25 @@ with.
 Mechanically: one request per speaker, in turn, each seeing what the previous ones said.
 At today's price that is well under a tenth of a cent per council.
 
+### Relationships belong to the council (Walt, 2026-09-22)
+
+The sixth aspect — family, friends, the people in the player's life — has no single agent.
+It is asked about only when all five are in the room, and that is the right shape for it:
+nobody's relationships sit neatly inside one part of their life, so each agent comes at
+them from her own side.
+
+- **Kaia** — who sees you as you are, not for what you produce.
+- **Isla** — the people you work beside, and whether any of them know you.
+- **Aisling** — who you share a table with, and who notices when you are not well.
+- **Nyra** — who is in the future you are planning, and who you are building it with.
+- **Elise** — who you make things and play with, just for the fun of it.
+
+**One shared goal, not five.** The council may suggest a single relationships goal — "call
+your brother this week" — and, as with every goal, the player confirms it with a button
+before the game writes it down. It is saved under the council, not under any one agent,
+and it is only raised at the next council, never in a one-to-one chat. The rule against
+shaming a missed goal matters most here.
+
 ---
 
 ## Rules the agents need, on top of `HOUSE_RULES`
@@ -155,9 +174,9 @@ not ignored, and the system SSD is failing (`stornvme` 129). Commit it before bu
 
 ## Open questions for Walt
 
-1. ~~What is Elise's aspect?~~ **Creativity and play** (Walt, 2026-09-22). Relationships
-   is now the one aspect no agent owns — leave it out, or give it to the council as a
-   whole?
+1. ~~What is Elise's aspect?~~ **Creativity and play** (Walt, 2026-09-22).
+   ~~Who owns relationships?~~ **The council as a whole** (Walt, 2026-09-22) — see *The
+   council*.
 2. How is the chapter entered from the hotel — a door, a lift, a new floor?
 3. What does the room look like? The Unwritten could be literally blank — white walls,
    unfinished geometry that fills in as goals are kept.
