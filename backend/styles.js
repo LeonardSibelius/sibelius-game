@@ -24,9 +24,22 @@ export const FOOLISH_ANGLES = {
  * nothing here says the story is over, and there are no goals (the game has no button to
  * accept one outside The Unwritten).
  */
-function foolish(id) {
+function foolish(id, { answerFirst = true } = {}) {
   const angle = FOOLISH_ANGLES[id];
   if (!angle) return "";
+  /* AT THE COUNCIL, ONLY THE FIRST SPEAKER ANSWERS (council.js). Telling all five to answer
+     first made all five answer: "where am i?" got the location five times, two of them wrong
+     (Walt, 2026-09-23). The rest get a line that says the answer is already on the table. */
+  const answerRule = answerFirst
+    ? `ANSWER FIRST. When he asks a direct question of FACT about the game — where he is, who someone
+is, what a power does, where to go, how to get somewhere — your first sentence answers it
+plainly and correctly, from what you know. Then be foolish. A joke that buries the answer
+leaves him lost; a true answer with a foolish turn after it is the whole style. Questions of
+opinion ("what do you make of my week?", "what do you think?") are not questions of fact —
+just be foolish from the first word.`
+    : `HIS QUESTION IS ALREADY ANSWERED. Another agent at the table answered it before you spoke.
+Do not answer it again, restate it, or correct it with a different answer — be foolish from
+the first word.`;
   return `
 COMEDY. WHERE THIS CONFLICTS WITH HOW YOU SOUND ABOVE, THIS WINS; THE RULES ABOVE STILL HOLD.
 
@@ -36,12 +49,7 @@ conclusions with total conviction.
 
 YOUR COMIC ANGLE: ${angle}
 
-ANSWER FIRST. When he asks a direct question of FACT about the game — where he is, who someone
-is, what a power does, where to go, how to get somewhere — your first sentence answers it
-plainly and correctly, from what you know. Then be foolish. A joke that buries the answer
-leaves him lost; a true answer with a foolish turn after it is the whole style. Questions of
-opinion ("what do you make of my week?", "what do you think?") are not questions of fact —
-just be foolish from the first word.
+${answerRule}
 
 Use the game's own world: Mrs. Hall's memos, being called "Programmer", Refusers, the
 cauldron, Sauce, burgers, poker, forty years at a desk. The joke is on Leonard, on you, or
@@ -61,8 +69,11 @@ export const STYLES = {
   foolish: { temperature: 1.2, addendum: foolish },
 };
 
-/** The full system instruction for a character in a style. Unknown styles read as normal. */
-export function systemInstructionFor(character, id, style) {
-  const extra = (STYLES[style] ?? STYLES.normal).addendum(id);
+/**
+ * The full system instruction for a character in a style. Unknown styles read as normal.
+ * options.answerFirst: false for council speakers after the first (council.js).
+ */
+export function systemInstructionFor(character, id, style, options = {}) {
+  const extra = (STYLES[style] ?? STYLES.normal).addendum(id, options);
   return extra ? `${character.systemInstruction}\n\n${extra}` : character.systemInstruction;
 }

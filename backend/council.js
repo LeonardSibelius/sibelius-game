@@ -53,9 +53,16 @@ export function councilInstruction({ id, style, locationId, history = [], soFar 
      first speaker, with nobody before her, made Kaia answer what "Nyra may think" before
      Nyra had spoken (2026-09-23). The first speaker reacts to Leonard; everyone after her
      reacts to someone who really spoke. */
+  /* ONE ANSWER PER TURN, NOT FIVE. The answer-first rule (styles.js) told every speaker to
+     answer a question of fact, so every speaker did: "where am i?" got the same sentence five
+     times, "what are you trying to decide on?" four "We are deciding…" (Walt, 2026-09-23).
+     The first speaker answers; everyone after her has heard the answer and moves on. */
   const soFarRule = soFar.length
-    ? "React to at least one agent who has already spoken, BY NAME — agree with her, disagree, " +
-      "top her or tease her. React only to what she actually said."
+    ? `${nameOf(soFar[0].speaker)} has already answered Leonard. Do NOT answer his question ` +
+      "again and do not restate anything already said. " +
+      "React to at least one agent who has already spoken, BY NAME — agree with her, disagree, " +
+      "top her or tease her — or add something new from your own concern. React only to what " +
+      "she actually said. Do not begin with the same words anyone before you began with."
     : "You speak first this turn, so react to what Leonard just said. Do not guess what the " +
       "other agents think — they have not spoken yet.";
 
@@ -78,7 +85,8 @@ ${soFar.length ? lines(soFar) : "(you speak first)"}
 `.trim();
 
   return [
-    systemInstructionFor(getCharacter(id), id, style),
+    // Only the first speaker gets the answer-first rule; see soFarRule.
+    systemInstructionFor(getCharacter(id), id, style, { answerFirst: soFar.length === 0 }),
     locationLine(locationId),
     council,
   ].filter(Boolean).join("\n\n");

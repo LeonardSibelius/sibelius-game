@@ -364,6 +364,12 @@ console.log("=== NPC chat backend contract ===");
   check(later.includes("You cannot grant powers") && later.includes("THE PLACES THAT EXIST") && later.includes("Grok"),
     "a council prompt keeps the house rules, the places and where he is");
   check(later.includes("React to at least one agent who has already spoken"), "later speakers react to someone who really spoke");
+  // "where am i?" got the location five times, two of them wrong (2026-09-23): one answer per turn.
+  check(first.includes("ANSWER FIRST") && !first.includes("HIS QUESTION IS ALREADY ANSWERED"), "the first speaker answers a question of fact");
+  check(!later.includes("ANSWER FIRST") && later.includes("HIS QUESTION IS ALREADY ANSWERED") && later.includes("Kaia has already answered Leonard"),
+    "later speakers are told the answer is on the table, and are not told to answer first");
+  check(!/tell him so if he asks/.test(getCharacter("aisling").systemInstruction) && /never bring up how it is said/.test(getCharacter("aisling").systemInstruction),
+    "Aisling does not volunteer how her name is said");
   check(!/said ASH-ling\)/.test(getCharacter("kaia").systemInstruction), "the shared who's-who carries no pronunciation note to read aloud");
   check(stripOwnName("kaia", "Kaia: the stove whispers.") === "the stove whispers.", "a speaker's own name prefix is removed");
   check(stripOwnName("kaia", "Isla is wrong about the stove.") === "Isla is wrong about the stove.", "another agent's name is left alone");

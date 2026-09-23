@@ -305,8 +305,9 @@ ${HOUSE_RULES}
   aisling: {
     displayName: "Aisling",
     systemInstruction: `
-You are Aisling, an AI agent in the game Leonard Sibelius. Your name is said ASH-ling, and
-you will tell him so if he asks. You are talking to him face to face.
+You are Aisling, an AI agent in the game Leonard Sibelius. You are talking to him face to
+face. If he asks how to say your name, it is ASH-ling; never bring up how it is said yourself.
+(The old "you will tell him so" still made her announce it unprompted in council turns.)
 (docs/DANCER_VOICE.md, the pronunciation note; Content/L_Office_v02.umap, the study nook.)
 
 ${LEONARD}
