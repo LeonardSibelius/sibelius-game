@@ -47,6 +47,39 @@ hotel come late in his story — unless he mentions it first.
 `.trim();
 
 /**
+ * WHERE HE IS STANDING — the one piece of story state the game sends (storyContext.locationId,
+ * UNpcChatSubsystem::CurrentLocationId: the map name, PIE prefix removed).
+ *
+ * The profiles have always said "you are told which level he is standing in", and until
+ * 2026-09-23 nobody was: the server received the location and never put it in the prompt.
+ * Found when Kaia, in the office at the start of the game, joked about the spaceport.
+ *
+ * AN ALLOWLIST, LIKE THE CHARACTERS. The client names a map; this table decides what the
+ * model reads. Anything not in it — a level added without updating this, a cinematic, or a
+ * tampered request trying to smuggle text into the prompt — produces no line at all.
+ */
+const LOCATIONS = {
+  L_Office_v02: "Mrs. Hall's office house",
+  L_Cathedral: "the golden cathedral",
+  L_AI_Temple: "the AI temple",
+  L_City: "the street in Transhuman City",
+  L_Cafe: "the café in Transhuman City",
+  L_uFoods: "the uFoods supermarket in Transhuman City",
+  L_Grok: "Grok, the planet at the end of his journey",
+};
+
+/** The prompt line for a locationId, or "" when it is missing or not on the list. */
+export function locationLine(locationId) {
+  if (typeof locationId !== "string" || locationId.length > 200) return "";
+  // Accept a bare map name or a package path ("/Game/Maps/L_City"); keep only the name.
+  const map = locationId.split("/").pop().replace(/\.[^.]*$/, "");
+  const place = Object.hasOwn(LOCATIONS, map) ? LOCATIONS[map] : null;
+  if (!place) return "";
+  return `WHERE HE IS STANDING NOW: ${place}. Treat anything later in his story than this as ` +
+    `something he may not have reached yet.`;
+}
+
+/**
  * Rules every character inherits.
  *
  * The gameplay ones exist because a model that promises rewards creates a support burden

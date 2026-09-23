@@ -10,7 +10,7 @@
 import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens, SAFETY_SETTINGS } from "./gemini.js";
-import { getCharacter, knownCharacterIds } from "./characters.js";
+import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
 import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
 
@@ -207,7 +207,12 @@ export function createApp(options = {}) {
     if (limited) return { http: 429, payload: unavailable("quota"), detail: limited };
 
     const character = getCharacter(body.characterId);
-    const systemInstruction = systemInstructionFor(character, body.characterId, config.chatStyle);
+    // Profile, then style, then where he is — the location goes last so it is the freshest
+    // fact in the prompt, and an unknown location adds nothing (characters.js, LOCATIONS).
+    const systemInstruction = [
+      systemInstructionFor(character, body.characterId, config.chatStyle),
+      locationLine(body.storyContext?.locationId),
+    ].filter(Boolean).join("\n\n");
 
     /* TRIMMED, NOT REFUSED. The oldest turns go, which is the same thing the client
        already does to its own store — so a client that remembers more than this server
