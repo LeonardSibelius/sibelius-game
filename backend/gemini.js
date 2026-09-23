@@ -62,6 +62,7 @@ export async function generate({
   contents,
   maxOutputTokens,
   thinkingBudget,
+  thinkingLevel,
   safetySettings,
   timeoutMs = 20000,
   fetchImpl = fetch,
@@ -89,6 +90,16 @@ export async function generate({
      conversations (docs/NPC_CHAT_REVIEW.md). */
   if (Number.isFinite(thinkingBudget)) {
     body.generationConfig.thinkingConfig = { thinkingBudget };
+  }
+
+  /* THE GEMINI 3 FLASH CONTROL IS A LEVEL, NOT A BUDGET. Google's thinking page, checked
+     2026-09-23: gemini-3.8-flash and 3.7-flash take thinkingLevel low | medium | high,
+     default medium, and cannot be switched off; 3.6-flash also takes minimal. The page
+     does not mention thinkingBudget for any Gemini 3 model, so the two are never sent
+     together. Nothing in the server sets this yet — it exists for The Unwritten
+     comparison (eval/unwritten-eval.js). */
+  if (thinkingLevel && !Number.isFinite(thinkingBudget)) {
+    body.generationConfig.thinkingConfig = { thinkingLevel };
   }
 
   const controller = new AbortController();
