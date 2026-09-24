@@ -141,6 +141,23 @@ TSharedRef<SWidget> UNpcChatWidget::RebuildWidget()
 			ScrollSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 		}
 		Column->AddChildToVerticalBox(StatusText);
+
+		/* THE [Go] BUTTON (Walt, 2026-09-23). An agent can offer one place the travel keys
+		   already reach; the player decides. Collapsed until a reply offers somewhere, and
+		   left-aligned under the status line so it reads as part of her answer. */
+		TravelButton = WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), TEXT("ChatTravel"));
+		TravelButton->SetBackgroundColor(FLinearColor(0.20f, 0.34f, 0.24f, 0.95f));
+		TravelButton->OnClicked.AddDynamic(this, &UNpcChatWidget::HandleTravelClicked);
+		TravelButton->SetVisibility(ESlateVisibility::Collapsed);
+		TravelLabel = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ChatTravelLabel"));
+		TravelLabel->SetFont(FCoreStyle::GetDefaultFontStyle("Bold", 16));
+		TravelLabel->SetColorAndOpacity(FSlateColor(BodyColour));
+		TravelButton->AddChild(TravelLabel);
+		if (UVerticalBoxSlot* TravelSlot = Column->AddChildToVerticalBox(TravelButton))
+		{
+			TravelSlot->SetHorizontalAlignment(HAlign_Left);
+			TravelSlot->SetPadding(FMargin(0.0f, 6.0f, 0.0f, 0.0f));
+		}
 		if (UVerticalBoxSlot* InputSlot = Column->AddChildToVerticalBox(InputSize))
 		{
 			InputSlot->SetPadding(FMargin(0.0f, 8.0f, 0.0f, 0.0f));
@@ -253,6 +270,7 @@ void UNpcChatWidget::ResetTranscript()
 	}
 	SetStatus(FText::GetEmpty());
 	SetInputEnabled(true);
+	SetTravelOffer(FString());   // an offer never outlives the conversation it was made in
 	if (InputBox)
 	{
 		InputBox->SetText(FText::GetEmpty());
@@ -300,6 +318,21 @@ void UNpcChatWidget::HandleCloseClicked()
 void UNpcChatWidget::HandleCouncilClicked()
 {
 	OnCouncil.ExecuteIfBound();
+}
+
+void UNpcChatWidget::HandleTravelClicked()
+{
+	OnTravel.ExecuteIfBound();
+}
+
+void UNpcChatWidget::SetTravelOffer(const FString& Label)
+{
+	if (!TravelButton || !TravelLabel)
+	{
+		return;
+	}
+	TravelLabel->SetText(FText::FromString(Label));
+	TravelButton->SetVisibility(Label.IsEmpty() ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 }
 
 void UNpcChatWidget::SetCouncilButtonVisible(bool bVisible)

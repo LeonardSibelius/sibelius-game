@@ -326,5 +326,15 @@ public:
 	    PIE-prefix-safe). Drives both the O-key travel and the "[O] Back to Office" HUD hint. */
 	bool IsAwayFromOffice() const;
 
+	/**
+	 * Where the AI agents' [Go] button may take him RIGHT NOW: exactly what the travel keys
+	 * already allow — the office ([O], when away) and the city ([>], once open, when not
+	 * there). Nothing behind an in-world door, so a button can never skip a story beat.
+	 */
+	TArray<FName> OpenTravelDestinations() const;
+
+	/** The [Go] button: re-checks the destination is still open, then travels. False if not. */
+	bool TravelFromChat(FName LevelName);
+
 };
 

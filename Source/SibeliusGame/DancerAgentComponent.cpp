@@ -1175,6 +1175,7 @@ void UDancerAgentComponent::BeginChat()
 			ChatWidget->OnSend.BindUObject(this, &UDancerAgentComponent::HandleChatSend);
 			ChatWidget->OnClose.BindUObject(this, &UDancerAgentComponent::HandleChatClose);
 			ChatWidget->OnCouncil.BindUObject(this, &UDancerAgentComponent::HandleChatCouncil);
+			ChatWidget->OnTravel.BindUObject(this, &UDancerAgentComponent::HandleChatTravel);
 		}
 	}
 
@@ -1353,6 +1354,24 @@ void UDancerAgentComponent::HandleChatClose()
 	EndChat();
 }
 
+void UDancerAgentComponent::HandleChatTravel()
+{
+	// The same order as the Council button: her conversation ends completely first.
+	const FName Destination = OfferedTravel;
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	ASibeliusGameCharacter* Leonard = PC ? Cast<ASibeliusGameCharacter>(PC->GetPawn()) : nullptr;
+
+	EndChat();
+
+	if (Leonard && !Destination.IsNone() && !Leonard->TravelFromChat(Destination))
+	{
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] %s: travel offer to %s no longer open"),
+			*AgentName, *Destination.ToString());
+	}
+	OfferedTravel = NAME_None;
+}
+
 void UDancerAgentComponent::HandleChatCouncil()
 {
 	/* HER CONVERSATION ENDS FIRST, COMPLETELY. EndChat cancels her request, saves her
@@ -1447,6 +1466,10 @@ void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
 	ChatWidget->AppendTurn(TEXT("You"), PlayerLine);
 	Chat->RecordTurn(ResolveChatId(), /*bFromPlayer=*/true, PlayerLine);
 
+	// Saying something new withdraws her last offer; her next reply may make another.
+	OfferedTravel = NAME_None;
+	ChatWidget->SetTravelOffer(FString());
+
 	const FString EggNote = ChatEasterEggs::Commit(Progression, Egg);
 	if (!EggNote.IsEmpty())
 	{
@@ -1471,6 +1494,25 @@ void UDancerAgentComponent::HandleChatReply(const FString& Reply, ENpcChatFailur
 	{
 		ChatWidget->AppendTurn(AgentName, Reply);
 		ChatWidget->SetStatus(FText::GetEmpty());
+
+		/* HER OFFER BECOMES A BUTTON ONLY IF THE GAME AGREES. The server already checked it
+		   against the places this request said were open; this asks the character again,
+		   because the character — the same rules as [O] and [>] — is the authority. */
+		OfferedTravel = NAME_None;
+		if (UNpcChatSubsystem* Service = GetChatSubsystem())
+		{
+			const FName Offer(*Service->TakeTravelOffer());
+			const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+			const ASibeliusGameCharacter* Leonard = PC ? Cast<ASibeliusGameCharacter>(PC->GetPawn()) : nullptr;
+			if (!Offer.IsNone() && Leonard && Leonard->OpenTravelDestinations().Contains(Offer))
+			{
+				OfferedTravel = Offer;
+				ChatWidget->SetTravelOffer(
+					Offer == FName(TEXT("L_City")) ? TEXT("Go to Transhuman City")
+					: Offer == FName(TEXT("L_Cathedral")) ? TEXT("Go to the golden cathedral")
+					: TEXT("Go back to the office"));
+			}
+		}
 
 		/* WRITTEN AT THE END OF EACH EXCHANGE, not only on close. A conversation is
 		   minutes long and the game can be quit from inside one; a memory that only

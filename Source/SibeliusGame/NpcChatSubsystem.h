@@ -54,6 +54,22 @@ enum class ENpcChatMode : uint8
 /** Reply text (empty on failure) and why, if it failed. */
 DECLARE_DELEGATE_TwoParams(FOnNpcChatReply, const FString& /*Reply*/, ENpcChatFailure /*Failure*/);
 
+struct FNpcStoryFacts
+{
+	/* WHAT THE AGENTS ARE TOLD ABOUT HIS PLAYTHROUGH (docs/THE_UNWRITTEN.md, "What they talk
+	   about"). A short, fixed list read from the save and the HUD — never raw save data.
+	   The server allowlists every field again (backend/facts.js) and writes the prompt line
+	   itself, so nothing here is ever pasted into an instruction as-is. */
+	TArray<FString> Powers;        // display names of the powers he owns, "CODE VISION" ...
+	int32 Sauce = 0;               // in his wallet now
+	int32 SauceEarned = 0;         // lifetime
+	int32 RefusersFought = 0;
+	int32 BooksCollected = 0;
+	int32 ChaptersCompleted = 0;
+	FString Objective;             // the HUD's gold objective line, or empty
+	TArray<FString> Destinations;  // where a [Go] button may take him now (OpenTravelDestinations)
+};
+
 /**
  * One line said at the council table. SpeakerId is "leonard" or one of the five seats —
  * the server allowlists exactly those, so a history line naming anyone else is a 400.
@@ -142,7 +158,8 @@ public:
 		const FString& Message,
 		const FString& LocationId,
 		const TArray<FNpcCouncilLine>& RecentLines,
-		const FString& StoryEvent = FString());
+		const FString& StoryEvent = FString(),
+		const FNpcStoryFacts* Facts = nullptr);
 
 	/**
 	 * Read a council response. True for an `ok` with at least one line, or with the care
@@ -253,7 +270,11 @@ public:
 		const FString& Message,
 		const FString& LocationId,
 		const TArray<FNpcChatTurn>& RecentTurns,
-		const FString& StoryEvent = FString());
+		const FString& StoryEvent = FString(),
+		const FNpcStoryFacts* Facts = nullptr);
+
+	/** The facts object, written into storyContext by both request builders. */
+	static void WriteStoryFacts(const TSharedRef<class FJsonObject>& Story, const FNpcStoryFacts& Facts);
 
 	/**
 	 * Read a backend response. Returns true only for a well-formed `ok` carrying text.
@@ -263,6 +284,15 @@ public:
 	 * empty speech bubble and told it was an answer.
 	 */
 	static bool ParseReplyJson(const FString& Body, FString& OutReply, ENpcChatFailure& OutFailure);
+
+	/**
+	 * The place an agent's reply offers to take him ("travel", a level name), or empty. Read
+	 * from the same body as the reply; the panel re-checks it before showing a button.
+	 */
+	static FString ParseTravelOffer(const FString& Body);
+
+	/** The last reply's travel offer, handed over once: reading it clears it. */
+	FString TakeTravelOffer() { FString Offer = MoveTemp(LastTravelOffer); LastTravelOffer.Reset(); return Offer; }
 
 	/** Map the allowlisted reason strings; anything unrecognised is Service. */
 	static ENpcChatFailure FailureFromReason(const FString& Reason);
@@ -292,6 +322,9 @@ private:
 	/** The level the player is standing in, for the server to allowlist. */
 	FString CurrentLocationId() const;
 
+	/** His playthrough as the agents may know it: the save and the HUD, read now. */
+	FNpcStoryFacts CurrentStoryFacts() const;
+
 	/** A canned line in the agents' register, folding in what the player actually said. */
 	FString ComposeMockReply(const FString& CharacterId, const FString& Message) const;
 
@@ -318,6 +351,9 @@ private:
 
 	/** storyContext.event for the request in flight — an Easter egg (ChatEasterEggs.h). */
 	FString PendingEvent;
+
+	/** Set when a reply arrives with an offer; taken by the panel in its reply handler. */
+	FString LastTravelOffer;
 
 	FTimerHandle MockTimer;
 

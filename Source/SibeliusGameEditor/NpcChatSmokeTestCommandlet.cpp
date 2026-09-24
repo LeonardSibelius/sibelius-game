@@ -803,6 +803,52 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 				&& EvaluateChatLine(BothFound, FName(TEXT("nyra")), TEXT("poetry")).Egg.IsNone(),
 			TEXT("eggs: Fold Early and the Memo Poetry Reading are found once per save"));
 
+		// Facts: his playthrough, as the agents may know it (backend/facts.js reads these).
+		{
+			FNpcStoryFacts Facts;
+			Facts.Powers = { TEXT("CODE VISION"), TEXT("REFACTOR") };
+			Facts.Sauce = 12;
+			Facts.SauceEarned = 40;
+			Facts.RefusersFought = 41;
+			Facts.BooksCollected = 9;
+			Facts.ChaptersCompleted = 2;
+			Facts.Objective = TEXT("Hold [V] and read the parts.");
+
+			TSharedPtr<FJsonObject> Root;
+			const FString Body = UNpcChatSubsystem::BuildRequestJson(
+				TEXT("facts-request-1"), TEXT("kaia"), TEXT("what now?"), TEXT("L_Office_v02"), {}, FString(), &Facts);
+			const TSharedPtr<FJsonObject>* Written = nullptr;
+			const bool bHasFacts = FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Body), Root) && Root.IsValid()
+				&& Root->GetObjectField(TEXT("storyContext"))->TryGetObjectField(TEXT("facts"), Written);
+			R.Check(bHasFacts && (*Written)->GetArrayField(TEXT("powers")).Num() == 2
+					&& (*Written)->GetIntegerField(TEXT("sauce")) == 12
+					&& (*Written)->GetIntegerField(TEXT("refusersFought")) == 41
+					&& (*Written)->GetStringField(TEXT("objective")) == TEXT("Hold [V] and read the parts."),
+				TEXT("facts: a chat request carries his powers, numbers and the objective line"));
+
+			const FString CouncilBody = UNpcChatSubsystem::BuildCouncilRequestJson(
+				TEXT("facts-request-2"), TEXT("hello"), TEXT("L_Office_v02"), {}, FString(), &Facts);
+			R.Check(CouncilBody.Contains(TEXT("\"facts\"")) && CouncilBody.Contains(TEXT("\"chaptersCompleted\":2")),
+				TEXT("facts: a council request carries them too"));
+
+			// The travel button: the open places go out, and an offer comes back.
+			FNpcStoryFacts Travelling = Facts;
+			Travelling.Destinations = { TEXT("L_City") };
+			R.Check(UNpcChatSubsystem::BuildRequestJson(TEXT("facts-request-4"), TEXT("nyra"), TEXT("where now?"),
+					TEXT("L_Office_v02"), {}, FString(), &Travelling).Contains(TEXT("\"destinations\":[\"L_City\"]")),
+				TEXT("travel: the request says which places the travel keys reach now"));
+			R.Check(UNpcChatSubsystem::ParseTravelOffer(TEXT("{\"status\":\"ok\",\"reply\":\"Go!\",\"travel\":\"L_City\"}")) == TEXT("L_City")
+					&& UNpcChatSubsystem::ParseTravelOffer(TEXT("{\"status\":\"ok\",\"reply\":\"Hello.\"}")).IsEmpty()
+					&& UNpcChatSubsystem::ParseTravelOffer(TEXT("not json")).IsEmpty(),
+				TEXT("travel: an offer is read when present, and nothing otherwise"));
+
+			FNpcStoryFacts NoObjective = Facts;
+			NoObjective.Objective.Reset();
+			R.Check(!UNpcChatSubsystem::BuildRequestJson(TEXT("facts-request-3"), TEXT("kaia"), TEXT("hi"),
+					TEXT("L_Office_v02"), {}, FString(), &NoObjective).Contains(TEXT("\"objective\"")),
+				TEXT("facts: no objective on screen, no objective field"));
+		}
+
 		// The event rides in storyContext, and only when there is one.
 		auto StoryOf = [](const FString& Body) -> TSharedPtr<FJsonObject>
 		{

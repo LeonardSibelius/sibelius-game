@@ -18,6 +18,10 @@
 #include "HAL/IConsoleManager.h"
 #include "TimerManager.h"
 #include "SibeliusGame.h"
+#include "ProgressionSubsystem.h"   // the facts: powers, sauce, lifetime numbers
+#include "SibeliusHUD.h"            // the facts: the gold objective line
+#include "GameFramework/PlayerController.h"
+#include "SibeliusGameCharacter.h"  // the facts: where the travel keys can take him now
 
 namespace
 {
@@ -279,7 +283,8 @@ FString UNpcChatSubsystem::BuildRequestJson(
 	const FString& Message,
 	const FString& LocationId,
 	const TArray<FNpcChatTurn>& RecentTurns,
-	const FString& StoryEvent)
+	const FString& StoryEvent,
+	const FNpcStoryFacts* Facts)
 {
 	const TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
 	Root->SetStringField(TEXT("requestId"), RequestId);
@@ -298,6 +303,10 @@ FString UNpcChatSubsystem::BuildRequestJson(
 	if (!StoryEvent.IsEmpty())
 	{
 		Story->SetStringField(TEXT("event"), StoryEvent);
+	}
+	if (Facts)
+	{
+		WriteStoryFacts(Story, *Facts);
 	}
 	Root->SetObjectField(TEXT("storyContext"), Story);
 
@@ -322,6 +331,17 @@ FString UNpcChatSubsystem::BuildRequestJson(
 		TJsonWriterFactory<TCHAR, TCondensedJsonPrintPolicy<TCHAR>>::Create(&Body);
 	FJsonSerializer::Serialize(Root, Writer);
 	return Body;
+}
+
+FString UNpcChatSubsystem::ParseTravelOffer(const FString& Body)
+{
+	TSharedPtr<FJsonObject> Root;
+	FString Travel;
+	if (FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Body), Root) && Root.IsValid())
+	{
+		Root->TryGetStringField(TEXT("travel"), Travel);
+	}
+	return Travel;
 }
 
 bool UNpcChatSubsystem::ParseReplyJson(const FString& Body, FString& OutReply, ENpcChatFailure& OutFailure)
@@ -388,6 +408,7 @@ int32 UNpcChatSubsystem::Send(const FString& CharacterId, const FString& Message
 	}
 
 	InFlightId = NextRequestId++;
+	LastTravelOffer.Reset();   // an offer belongs to the reply it came with, never the next
 	PendingReply = OnReply;
 	PendingCharacterId = CharacterId;
 	PendingMessage = Message;
@@ -532,6 +553,75 @@ TArray<FNpcChatTurn> UNpcChatSubsystem::RecentTurnsFor(const FString& CharacterI
 	return GetHistory(FName(*CharacterId));
 }
 
+void UNpcChatSubsystem::WriteStoryFacts(const TSharedRef<FJsonObject>& Story, const FNpcStoryFacts& Facts)
+{
+	const TSharedRef<FJsonObject> Out = MakeShared<FJsonObject>();
+
+	TArray<TSharedPtr<FJsonValue>> Powers;
+	for (const FString& Power : Facts.Powers)
+	{
+		Powers.Add(MakeShared<FJsonValueString>(Power));
+	}
+	Out->SetArrayField(TEXT("powers"), Powers);
+	Out->SetNumberField(TEXT("sauce"), Facts.Sauce);
+	Out->SetNumberField(TEXT("sauceEarned"), Facts.SauceEarned);
+	Out->SetNumberField(TEXT("refusersFought"), Facts.RefusersFought);
+	Out->SetNumberField(TEXT("booksCollected"), Facts.BooksCollected);
+	Out->SetNumberField(TEXT("chaptersCompleted"), Facts.ChaptersCompleted);
+	if (!Facts.Objective.IsEmpty())
+	{
+		Out->SetStringField(TEXT("objective"), Facts.Objective);
+	}
+	TArray<TSharedPtr<FJsonValue>> Destinations;
+	for (const FString& Destination : Facts.Destinations)
+	{
+		Destinations.Add(MakeShared<FJsonValueString>(Destination));
+	}
+	Out->SetArrayField(TEXT("destinations"), Destinations);
+	Story->SetObjectField(TEXT("facts"), Out);
+}
+
+FNpcStoryFacts UNpcChatSubsystem::CurrentStoryFacts() const
+{
+	FNpcStoryFacts Facts;
+	const UGameInstance* GI = GetGameInstance();
+	const UProgressionSubsystem* Progression = GI ? GI->GetSubsystem<UProgressionSubsystem>() : nullptr;
+	if (Progression)
+	{
+		for (uint8 i = 0; i < static_cast<uint8>(EPowerVerb::Count); ++i)
+		{
+			const EPowerVerb Verb = static_cast<EPowerVerb>(i);
+			if (Progression->IsUnlocked(Verb))
+			{
+				Facts.Powers.Add(PowerVerbDisplayName(Verb));
+			}
+		}
+		Facts.Sauce = Progression->GetSauce();
+		Facts.SauceEarned = Progression->GetStat(SibeliusStats::SauceEarned);
+		// The stat KEY is still RefusersSlapped; the game calls it "Refusers fought".
+		Facts.RefusersFought = Progression->GetStat(SibeliusStats::RefusersSlapped);
+		Facts.BooksCollected = Progression->GetStat(SibeliusStats::BooksCollected);
+		Facts.ChaptersCompleted = Progression->GetStat(SibeliusStats::ChaptersCompleted);
+	}
+
+	/* THE SAME LINE THE SCREEN SHOWS. The HUD already derives "the ONE next thing" from live
+	   state (ASibeliusHUD::ComputeObjective); asking the agents to work it out would be a
+	   second answer free to disagree with the first. */
+	const APlayerController* PC = GI ? GI->GetFirstLocalPlayerController() : nullptr;
+	if (const ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+	{
+		Facts.Objective = HUD->GetObjectiveLine();
+	}
+	if (const ASibeliusGameCharacter* Leonard = PC ? Cast<ASibeliusGameCharacter>(PC->GetPawn()) : nullptr)
+	{
+		for (const FName& Level : Leonard->OpenTravelDestinations())
+		{
+			Facts.Destinations.Add(Level.ToString());
+		}
+	}
+	return Facts;
+}
+
 FString UNpcChatSubsystem::CurrentLocationId() const
 {
 	const UGameInstance* GI = GetGameInstance();
@@ -551,8 +641,9 @@ bool UNpcChatSubsystem::SendOverHttp(int32 RequestId, const FString& CharacterId
 	// request id: one is our bookkeeping, the other belongs to the contract.
 	PendingUuid = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
 
+	const FNpcStoryFacts Facts = CurrentStoryFacts();
 	const FString Body = BuildRequestJson(PendingUuid, CharacterId, Message,
-		CurrentLocationId(), RecentTurnsFor(CharacterId), PendingEvent);
+		CurrentLocationId(), RecentTurnsFor(CharacterId), PendingEvent, &Facts);
 
 	PendingHttp = FHttpModule::Get().CreateRequest();
 	PendingHttp->SetURL(Url);
@@ -603,6 +694,11 @@ bool UNpcChatSubsystem::SendOverHttp(int32 RequestId, const FString& CharacterId
 			ENpcChatFailure Failure = ENpcChatFailure::None;
 			if (ParseReplyJson(Content, Reply, Failure))
 			{
+				// Only for the request still awaited; CompleteRequest drops any other.
+				if (RequestId == Self->InFlightId)
+				{
+					Self->LastTravelOffer = ParseTravelOffer(Content);
+				}
 				Self->CompleteRequest(RequestId, Reply, ENpcChatFailure::None);
 			}
 			else
@@ -665,7 +761,8 @@ FString UNpcChatSubsystem::BuildCouncilRequestJson(
 	const FString& Message,
 	const FString& LocationId,
 	const TArray<FNpcCouncilLine>& RecentLines,
-	const FString& StoryEvent)
+	const FString& StoryEvent,
+	const FNpcStoryFacts* Facts)
 {
 	const TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
 	Root->SetStringField(TEXT("requestId"), RequestId);
@@ -677,6 +774,10 @@ FString UNpcChatSubsystem::BuildCouncilRequestJson(
 	if (!StoryEvent.IsEmpty())
 	{
 		Story->SetStringField(TEXT("event"), StoryEvent);
+	}
+	if (Facts)
+	{
+		WriteStoryFacts(Story, *Facts);
 	}
 	Root->SetObjectField(TEXT("storyContext"), Story);
 
@@ -866,7 +967,9 @@ bool UNpcChatSubsystem::SendCouncilOverHttp(int32 RequestId, const FString& Mess
 	}
 
 	PendingUuid = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
-	const FString Body = BuildCouncilRequestJson(PendingUuid, Message, CurrentLocationId(), CouncilHistory, PendingEvent);
+	const FNpcStoryFacts Facts = CurrentStoryFacts();
+	const FString Body = BuildCouncilRequestJson(PendingUuid, Message, CurrentLocationId(), CouncilHistory,
+		PendingEvent, &Facts);
 
 	PendingHttp = FHttpModule::Get().CreateRequest();
 	PendingHttp->SetURL(Url);

@@ -34,6 +34,8 @@
 #include "Kismet/GameplayStatics.h"     // O-to-office: OpenLevel
 #include "Engine/World.h"               // GetMapName for the wander-world check
 #include "TravelTransitionSubsystem.h"  // O-to-office travels through the transition cover
+#include "CathedralDoor.h"                // the attic door's travel rule, for the [Go] button
+#include "BranchSubsystem.h"
 #include "ProgressionSubsystem.h"       // FUN-1: the power gates + sauce cheats
 #include "MrsHallSubsystem.h"           // SPINE Move 2 moment 1: the opening ticket
 #include "TimerManager.h"
@@ -519,6 +521,52 @@ void ASibeliusGameCharacter::ReturnToOffice()
 	{
 		UTravelTransitionSubsystem::Travel(this, OfficeLevelName);
 	}
+}
+
+TArray<FName> ASibeliusGameCharacter::OpenTravelDestinations() const
+{
+	TArray<FName> Open;
+	const UWorld* World = GetWorld();
+	if (!World)
+	{
+		return Open;
+	}
+	const FName Here(*UWorld::RemovePIEPrefix(World->GetMapName()));
+	if (Here != OfficeLevelName)
+	{
+		Open.Add(OfficeLevelName);   // what [O] does
+	}
+	if (IsCityOpen(this) && Here != CityLevelName)
+	{
+		Open.Add(CityLevelName);     // what [>] does
+	}
+
+	/* THE CATHEDRAL, BY THE ATTIC DOOR'S OWN RULES (Walt, 2026-09-23). A placed door can be
+	   set to appear only after Generate is used, and nothing in code says whether this one
+	   is — so the button takes the strict reading: only once he OWNS Generate. And never
+	   while Test-Drive branches are open, which the door itself refuses ("Merge or discard
+	   your branches before ascending"): travel would strand the snapshot stack. */
+	static const FName CathedralLevelName(TEXT("L_Cathedral"));
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (Here != CathedralLevelName
+		&& Progression && Progression->IsUnlocked(EPowerVerb::Generate)
+		&& ACathedralDoor::IsTravelAllowed(World->GetSubsystem<UBranchSubsystem>()))
+	{
+		Open.Add(CathedralLevelName);
+	}
+	return Open;
+}
+
+bool ASibeliusGameCharacter::TravelFromChat(FName LevelName)
+{
+	/* ASKED AGAIN AT THE CLICK, not trusted from when the offer was made: the button can sit
+	   on screen while things change, and the server's word is never the authority here. */
+	if (!OpenTravelDestinations().Contains(LevelName))
+	{
+		return false;
+	}
+	UTravelTransitionSubsystem::Travel(this, LevelName);
+	return true;
 }
 
 /* IS THE CITY OPEN? One question, one answer, asked by both the key and the menu.

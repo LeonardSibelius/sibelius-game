@@ -29,6 +29,7 @@ class UVerticalBox;
 DECLARE_DELEGATE_OneParam(FOnNpcChatSend, const FString&);
 DECLARE_DELEGATE(FOnNpcChatClose);
 DECLARE_DELEGATE(FOnNpcChatCouncil);
+DECLARE_DELEGATE(FOnNpcChatTravel);
 
 UCLASS()
 class SIBELIUSGAME_API UNpcChatWidget : public UUserWidget
@@ -46,6 +47,12 @@ public:
 
 	/** Shown in a dancer's conversation where the council is available; hidden in the council itself. */
 	void SetCouncilButtonVisible(bool bVisible);
+
+	/** The [Go] button an agent's reply can offer. The owner decides where it goes. */
+	FOnNpcChatTravel OnTravel;
+
+	/** Show the [Go] button with this label, or hide it with an empty one. */
+	void SetTravelOffer(const FString& Label);
 
 	/** Whose conversation this is. Drawn at the top so two agents never look alike. */
 	void SetAgentName(const FString& InAgentName);
@@ -106,6 +113,9 @@ protected:
 	UFUNCTION()
 	void HandleCouncilClicked();
 
+	UFUNCTION()
+	void HandleTravelClicked();
+
 private:
 	UPROPERTY()
 	TObjectPtr<UTextBlock> TitleText;
@@ -127,6 +137,12 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UButton> CouncilButton;
+
+	UPROPERTY()
+	TObjectPtr<UButton> TravelButton;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> TravelLabel;
 
 	bool bPendingCouncilVisible = false;
 

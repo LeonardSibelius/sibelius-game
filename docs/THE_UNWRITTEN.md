@@ -62,6 +62,13 @@ agents and Transhuman City, and no family.
 
 ## What they talk about — what the game already knows
 
+**Built (2026-09-23), for every chat and the council:** powers, sauce, Refusers fought, books,
+chapters, and the HUD's gold objective line, so "what now?" gets the screen's answer as the
+agent's own advice (`backend/facts.js`, `UNpcChatSubsystem::CurrentStoryFacts`). The story
+moments below are not sent yet. One-to-one chat can also offer a **[Go]** button to a place the
+travel keys reach — the office, the city, and the cathedral once he owns Generate
+(`ASibeliusGameCharacter::OpenTravelDestinations`); his question decides whether it can appear.
+
 No new tracking. The council roasts Leonard's actual playthrough using numbers the save
 already keeps (`ProgressionTypes.h`, `SibeliusStats`, shown on the menu's RECORDS page) and
 story moments it already records:

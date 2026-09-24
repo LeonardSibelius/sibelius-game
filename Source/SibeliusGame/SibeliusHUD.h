@@ -172,6 +172,12 @@ private:
 public:
 	void ShowPresenceLine(const FString& Text, float Seconds);
 
+	/**
+	 * The gold objective line, for the AI agents (NpcChatSubsystem): when he asks "what now?"
+	 * they give the same answer the screen does, instead of guessing. One source of truth.
+	 */
+	FString GetObjectiveLine() const { return ComputeObjective(); }
+
 	/* ---------------- SHIPPING-SAFE PLAYER MESSAGING ----------------
 	   GEngine->AddOnScreenDebugMessage is COMPILED OUT of Shipping builds. Every world
 	   interaction prompt and nearly every piece of feedback in the game went through it,

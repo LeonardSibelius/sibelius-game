@@ -844,6 +844,12 @@ private:
 	/** The panel's Council button: end this conversation and open the whole table. */
 	void HandleChatCouncil();
 
+	/** The panel's [Go] button: end this conversation and travel where she offered. */
+	void HandleChatTravel();
+
+	/** Where her last reply offered to send him, already checked against the open places. */
+	FName OfferedTravel;
+
 	/**
 	 * The service answered, or did not.
 	 *

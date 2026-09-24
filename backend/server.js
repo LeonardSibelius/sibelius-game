@@ -15,6 +15,7 @@ import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
 import { COUNCIL_SEATS, speakingOrder, councilInstruction, stripOwnName } from "./council.js";
 import { eventLine } from "./events.js";
+import { factsLine, extractTravel } from "./facts.js";
 
 /**
  * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
@@ -224,6 +225,7 @@ export function createApp(options = {}) {
     const systemInstruction = [
       systemInstructionFor(character, body.characterId, config.chatStyle),
       locationLine(body.storyContext?.locationId),
+      factsLine(body.storyContext?.facts),
       eventLine(body.storyContext?.event, { where: "chat", characterId: body.characterId }),
     ].filter(Boolean).join("\n\n");
 
@@ -312,12 +314,15 @@ export function createApp(options = {}) {
          message also tripped the provider's own protections must still be answered, not
          shown "unavailable". A failed screen (null) falls through to the normal reply —
          failing open, as distress.js explains. */
+      // The travel tag comes out of the text whatever it says, and becomes an offer only for
+      // a place the game said was open (facts.js). A care reply never offers to travel.
+      const offer = result.ok ? extractTravel(result.text, body.storyContext?.facts, body.message) : null;
       const payload =
         screen.distress === true
           ? { status: "ok", requestId: body.requestId, reply: CARE_REPLY, care: true }
-          : result.ok
-            ? { status: "ok", requestId: body.requestId, reply: result.text }
-            : unavailable(result.failure);
+          : result.ok && offer.text
+            ? { status: "ok", requestId: body.requestId, reply: offer.text, ...(offer.travel ? { travel: offer.travel } : {}) }
+            : unavailable(result.ok ? "service" : result.failure);
 
       seen.set(body.requestId, { fingerprint: fingerprint(body), response: payload, at: Date.now() });
       return { http: 200, payload };
@@ -387,10 +392,11 @@ export function createApp(options = {}) {
     const history = body.recentTurns ?? [];
     const locationId = body.storyContext?.locationId;
     const event = body.storyContext?.event;
+    const facts = body.storyContext?.facts;
 
     // Worst case for the budget check: every agent's prompt with the whole turn before her.
     const perCall =
-      Math.max(...order.map((id) => estimateTokens(councilInstruction({ id, style: config.chatStyle, locationId, history, event })))) +
+      Math.max(...order.map((id) => estimateTokens(councilInstruction({ id, style: config.chatStyle, locationId, history, event, facts })))) +
       estimateTokens(body.message) +
       COUNCIL_SEATS.length * Math.ceil(LIMITS.turnChars / 4);
     const screenInput = estimateTokens(SCREEN_INSTRUCTION) + estimateTokens(body.message);
@@ -411,7 +417,7 @@ export function createApp(options = {}) {
       return generate({
         apiKey: config.apiKey,
         model: config.model,
-        systemInstruction: councilInstruction({ id, style: config.chatStyle, locationId, history, soFar, event }),
+        systemInstruction: councilInstruction({ id, style: config.chatStyle, locationId, history, soFar, event, facts }),
         contents: [{ role: "user", parts: [{ text: body.message }] }],
         maxOutputTokens: config.maxOutputTokens,
         thinkingBudget: config.thinkingBudget,
@@ -448,7 +454,8 @@ export function createApp(options = {}) {
         }
 
         if (result.ok) {
-          const text = stripOwnName(id, result.text);
+          // The council has no travel button, so any tag is only ever removed.
+          const text = extractTravel(stripOwnName(id, result.text), null).text;
           if (text) replies.push({ characterId: id, displayName: getCharacter(id).displayName, text });
         } else {
           lastFailure = result.failure;
@@ -499,6 +506,9 @@ export function createApp(options = {}) {
       if (which === "empty") return { ok: false, failure: "service", usage };
       return { ok: false, failure: which, usage };
     }
+    // __travel:<id>__ makes the mock end its reply with that tag, for the travel tests.
+    const travel = /__travel:([A-Za-z0-9_]+)__/.exec(body.message);
+    if (travel) return { ok: true, text: `Off you go, Leonard. [GO:${travel[1]}]`, usage };
     return { ok: true, text: `Mock reply to: ${body.message.slice(0, 80)}`, usage };
   }
 
