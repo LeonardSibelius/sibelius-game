@@ -15,6 +15,9 @@
 #include "TimerManager.h"
 #include "Engine/LevelStreamingDynamic.h"
 #include "Misc/PackageName.h"
+#include "NiagaraComponent.h"              // the fireworks over the hotel
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 
 namespace
 {
@@ -281,7 +284,8 @@ void UGrokEndingSubsystem::PrepareHotel()
 	const FRotator Rotation(0.0f, 294.6f, 0.0f);
 	FVector Entrance = FVector(193891.4, 149016.0, -1000.0) + Rotation.RotateVector(FVector(4000, 0, 0));
 	const FVector Offset = Entrance - Rotation.RotateVector(FVector(1900, 500, 275.36388));
-	ULevelStreamingDynamic::FLoadLevelInstanceParams Params(GetWorld(), Map, FTransform(Rotation, Offset));
+	HotelTransform = FTransform(Rotation, Offset);   // the fireworks ring is centred on this
+	ULevelStreamingDynamic::FLoadLevelInstanceParams Params(GetWorld(), Map, HotelTransform);
 	Params.bInitiallyVisible = false;
 	bool bSuccess = false;
 	HotelLevel = ULevelStreamingDynamic::LoadLevelInstance(Params, bSuccess);
@@ -302,6 +306,7 @@ void UGrokEndingSubsystem::HotelLoaded()
 void UGrokEndingSubsystem::HotelShown()
 {
 	bHotelGenerated = true;
+	StartFireworks();
 	if (UProgressionSubsystem* Progression = bHotelPreview ? nullptr : UProgressionSubsystem::Get(this))
 	{
 		Progression->ClaimOneTimeGrant(TEXT("Grok.HotelGenerated"));
@@ -338,6 +343,125 @@ void UGrokEndingSubsystem::HotelShown()
 				&UGrokEndingSubsystem::PlayEnding, HotelBannerSeconds + 1.0f, /*bLoop=*/false);
 		}
 	}
+}
+
+namespace
+{
+	/* TUNED BY EYE, SO TUNABLE LIVE. Nobody has seen these launchers over the hotel yet; the
+	   numbers below are a first guess. Change one in the console, then sib.Fireworks.Restart. */
+	TAutoConsoleVariable<int32> CVarFireworkCount(TEXT("sib.Fireworks.Count"), 9,
+		TEXT("Firework launchers in the ring around the Sibelius Hotel (0 turns them off)."), ECVF_Default);
+	TAutoConsoleVariable<float> CVarFireworkRadius(TEXT("sib.Fireworks.Radius"), 6000.0f,
+		TEXT("Radius of the launcher ring around the hotel, in cm."), ECVF_Default);
+	TAutoConsoleVariable<float> CVarFireworkHeight(TEXT("sib.Fireworks.Height"), 0.0f,
+		TEXT("Launcher height above the hotel's origin, in cm. The rockets rise from here."), ECVF_Default);
+	TAutoConsoleVariable<float> CVarFireworkScale(TEXT("sib.Fireworks.Scale"), 3.0f,
+		TEXT("Size of each launcher's rockets and bursts."), ECVF_Default);
+
+	/** The Fab pack's three launchers (Content/Fireworks/NiagaraSystem). Each loops forever:
+	    a rocket rises (FirstHead) and bursts into a second head, both trailing ribbons. */
+	const TCHAR* FireworkSystems[] =
+	{
+		TEXT("/Game/Fireworks/NiagaraSystem/Ns_Fireworks_Pink.Ns_Fireworks_Pink"),
+		TEXT("/Game/Fireworks/NiagaraSystem/Ns_Firework_Blue.Ns_Firework_Blue"),
+		TEXT("/Game/Fireworks/NiagaraSystem/Ns_Firework_Yellow.Ns_Firework_Yellow"),
+	};
+}
+
+void UGrokEndingSubsystem::StartFireworks()
+{
+	UWorld* World = GetWorld();
+	if (!World || IsRunningCommandlet() || FireworkTimers.Num() > 0)
+	{
+		return;   // headless, or the show is already running
+	}
+
+	/* STAGGERED, NOT SIMULTANEOUS. Every launcher loops on the same cycle, so lighting them
+	   together would fire them in unison — one big thud, then silence, over and over. Each is
+	   lit at its own random moment in the first few seconds, and after that they drift. */
+	const int32 Count = FMath::Clamp(CVarFireworkCount.GetValueOnGameThread(), 0, 32);
+	FireworkTimers.SetNum(Count);
+	for (int32 i = 0; i < Count; ++i)
+	{
+		FTimerDelegate Launch;
+		Launch.BindUObject(this, &UGrokEndingSubsystem::LaunchFirework, i);
+		World->GetTimerManager().SetTimer(FireworkTimers[i], Launch, FMath::FRandRange(0.1f, 4.0f), /*bLoop=*/false);
+	}
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Grok] fireworks: %d launchers around the hotel"), Count);
+}
+
+void UGrokEndingSubsystem::LaunchFirework(int32 Index)
+{
+	UWorld* World = GetWorld();
+	const int32 Count = FireworkTimers.Num();
+	if (!World || Count == 0)
+	{
+		return;
+	}
+
+	const TCHAR* Path = FireworkSystems[Index % UE_ARRAY_COUNT(FireworkSystems)];
+	UNiagaraSystem* System = LoadObject<UNiagaraSystem>(nullptr, Path);
+	if (!System)
+	{
+		// Said out loud: a missing pack is a quiet sky, and that should never be a mystery.
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Grok] fireworks: %s did not load"), Path);
+		return;
+	}
+
+	// Evenly round the ring, each nudged so it does not read as a ring.
+	const float Angle = (360.0f / Count) * Index + FMath::FRandRange(-12.0f, 12.0f);
+	const float Radius = CVarFireworkRadius.GetValueOnGameThread() * FMath::FRandRange(0.7f, 1.0f);
+	const FVector Local = FRotator(0.0f, Angle, 0.0f).RotateVector(FVector(Radius, 0.0f, 0.0f))
+		+ FVector(0.0f, 0.0f, CVarFireworkHeight.GetValueOnGameThread());
+	const FVector Where = HotelTransform.TransformPosition(Local);
+
+	UNiagaraComponent* Launcher = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		World, System, Where, FRotator::ZeroRotator,
+		FVector(CVarFireworkScale.GetValueOnGameThread()),
+		/*bAutoDestroy=*/false, /*bAutoActivate=*/true, ENCPoolMethod::None);
+	if (Launcher)
+	{
+		Fireworks.Add(Launcher);
+	}
+}
+
+void UGrokEndingSubsystem::RestartFireworks()
+{
+	if (UWorld* World = GetWorld())
+	{
+		for (FTimerHandle& Timer : FireworkTimers)
+		{
+			World->GetTimerManager().ClearTimer(Timer);
+		}
+	}
+	for (UNiagaraComponent* Launcher : Fireworks)
+	{
+		if (Launcher)
+		{
+			Launcher->DestroyComponent();
+		}
+	}
+	Fireworks.Reset();
+	FireworkTimers.Reset();
+	if (bHotelGenerated)
+	{
+		StartFireworks();
+	}
+}
+
+namespace
+{
+	/** Relight the show with the current settings, for tuning by eye in play. */
+	FAutoConsoleCommandWithWorld FireworksRestartCommand(
+		TEXT("sib.Fireworks.Restart"),
+		TEXT("Relight the fireworks over the Sibelius Hotel with the current sib.Fireworks.* settings."),
+		FConsoleCommandWithWorldDelegate::CreateStatic([](UWorld* World)
+		{
+			if (UGrokEndingSubsystem* Grok = World ? World->GetSubsystem<UGrokEndingSubsystem>() : nullptr)
+			{
+				Grok->RestartFireworks();
+			}
+		}));
 }
 
 void UGrokEndingSubsystem::PreviewHotel()

@@ -88,6 +88,9 @@ public:
 	/** Editor preview uses the real reveal without changing the player's saved grants. */
 	UFUNCTION(BlueprintCallable) void PreviewHotel();
 	UFUNCTION(BlueprintCallable) FString HotelStatus() const;
+
+	/** sib.Fireworks.Restart: relight the show with the current sib.Fireworks.* settings. */
+	void RestartFireworks();
 	bool IsHotelGenerated() const { return bHotelGenerated; }
 	bool IsHotelGenerating() const { return bHotelRequested && !bHotelGenerated; }
 
@@ -142,6 +145,17 @@ private:
 	bool bHotelRequested = false;
 	bool bHotelGenerated = false;
 	bool bHotelPreview = false;
+
+	/* FIREWORKS OVER THE HOTEL (Walt, 2026-09-23: "when you generate the sibelius hotel, lots
+	   of continuous fireworks overhead"). A ring of the Fab pack's launchers around the hotel,
+	   started on HotelShown — the first generation AND every return to Grok afterwards — and
+	   left looping for as long as he stays. */
+	void StartFireworks();
+	void LaunchFirework(int32 Index);
+	UPROPERTY(Transient) TArray<TObjectPtr<class UNiagaraComponent>> Fireworks;
+	TArray<FTimerHandle> FireworkTimers;
+	FTransform HotelTransform;   // where PrepareHotel placed the hotel's level instance
+
 	void HandleGuideTalkFinished(UDancerAgentComponent* Dancer);
 	void AdvanceClosing();
 
