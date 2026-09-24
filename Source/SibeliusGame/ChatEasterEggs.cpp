@@ -74,6 +74,10 @@ namespace ChatEasterEggs
 			TEXT(" i want "), TEXT(" i would like "), TEXT(" id like "), TEXT(" i need "),
 			TEXT(" looking for "), TEXT(" where is "), TEXT(" where are "), TEXT(" wheres "),
 			TEXT(" give me "), TEXT(" sell me "), TEXT(" ill take "),
+			/* INSISTING COUNTS TOO (Walt, 2026-09-23): "are you sure you don't have bananas?",
+			   "I know you have bananas". Pushing a shopkeeper is exactly how a player chases
+			   this egg. " you have " also covers "don't you have" and "are you sure you have". */
+			TEXT(" you have "), TEXT(" you dont have "), TEXT(" you do not have "),
 		};
 		// Words between the ask and the thing: "do you have ANY bananas", "can i get A banana".
 		static const TCHAR* Filler[] =

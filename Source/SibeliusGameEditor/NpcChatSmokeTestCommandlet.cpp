@@ -751,6 +751,13 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 				&& RequestedItem(TEXT("where are the BANANAS")) == TEXT("banana")
 				&& RequestedItem(TEXT("I'd like some banana, please")) == TEXT("banana"),
 			TEXT("eggs: one item, asked four different ways, is the same item"));
+		// Walt's own lines from PIE, which the first matcher missed.
+		R.Check(RequestedItem(TEXT("are you really sure you don't have bananas?")) == TEXT("banana")
+				&& RequestedItem(TEXT("are you absolutely sure you don\x2019t have bananas?")) == TEXT("banana")
+				&& RequestedItem(TEXT("i know you have bananas")) == TEXT("banana")
+				&& RequestedItem(TEXT("don't you have any bananas")) == TEXT("banana")
+				&& RequestedItem(TEXT("you do not have bananas?")) == TEXT("banana"),
+			TEXT("eggs: insisting counts - 'you don't have', 'I know you have', 'don't you have'"));
 		R.Check(RequestedItem(TEXT("do you have coffee")) != RequestedItem(TEXT("do you have bananas"))
 				&& RequestedItem(TEXT("hello Aisling, how are you?")).IsEmpty(),
 			TEXT("eggs: different items differ, and small talk asks for nothing"));
