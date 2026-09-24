@@ -8,6 +8,7 @@
 
 import { getCharacter, locationLine } from "./characters.js";
 import { systemInstructionFor } from "./styles.js";
+import { eventLine } from "./events.js";
 
 /** Everyone at the table, in the base order the rotation starts from. */
 export const COUNCIL_SEATS = ["kaia", "isla", "aisling", "nyra", "elise"];
@@ -45,7 +46,7 @@ export function speakingOrder(seed) {
  * is standing, then the council itself — the recent conversation and what the agents before
  * her said this turn.
  */
-export function councilInstruction({ id, style, locationId, history = [], soFar = [] }) {
+export function councilInstruction({ id, style, locationId, history = [], soFar = [], event }) {
   const recent = history.slice(-COUNCIL_HISTORY_LINES);
   const lines = (turns) => turns.map((t) => `${nameOf(t.speaker)}: ${t.text}`).join("\n");
 
@@ -89,6 +90,8 @@ ${soFar.length ? lines(soFar) : "(you speak first)"}
     systemInstructionFor(getCharacter(id), id, style, { answerFirst: soFar.length === 0 }),
     locationLine(locationId),
     council,
+    // Last, so an event (events.js) outranks the usual arguing for this turn only.
+    eventLine(event, { where: "council" }),
   ].filter(Boolean).join("\n\n");
 }
 

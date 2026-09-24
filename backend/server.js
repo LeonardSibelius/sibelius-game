@@ -14,6 +14,7 @@ import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
 import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
 import { COUNCIL_SEATS, speakingOrder, councilInstruction, stripOwnName } from "./council.js";
+import { eventLine } from "./events.js";
 
 /**
  * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
@@ -218,9 +219,12 @@ export function createApp(options = {}) {
     const character = getCharacter(body.characterId);
     // Profile, then style, then where he is — the location goes last so it is the freshest
     // fact in the prompt, and an unknown location adds nothing (characters.js, LOCATIONS).
+    // A story event (events.js), when the game sent one, goes after even the location: it
+    // is about this reply only, and the last thing she reads.
     const systemInstruction = [
       systemInstructionFor(character, body.characterId, config.chatStyle),
       locationLine(body.storyContext?.locationId),
+      eventLine(body.storyContext?.event, { where: "chat", characterId: body.characterId }),
     ].filter(Boolean).join("\n\n");
 
     /* TRIMMED, NOT REFUSED. The oldest turns go, which is the same thing the client
@@ -382,10 +386,11 @@ export function createApp(options = {}) {
     const order = speakingOrder(body.requestId);
     const history = body.recentTurns ?? [];
     const locationId = body.storyContext?.locationId;
+    const event = body.storyContext?.event;
 
     // Worst case for the budget check: every agent's prompt with the whole turn before her.
     const perCall =
-      Math.max(...order.map((id) => estimateTokens(councilInstruction({ id, style: config.chatStyle, locationId, history })))) +
+      Math.max(...order.map((id) => estimateTokens(councilInstruction({ id, style: config.chatStyle, locationId, history, event })))) +
       estimateTokens(body.message) +
       COUNCIL_SEATS.length * Math.ceil(LIMITS.turnChars / 4);
     const screenInput = estimateTokens(SCREEN_INSTRUCTION) + estimateTokens(body.message);
@@ -406,7 +411,7 @@ export function createApp(options = {}) {
       return generate({
         apiKey: config.apiKey,
         model: config.model,
-        systemInstruction: councilInstruction({ id, style: config.chatStyle, locationId, history, soFar }),
+        systemInstruction: councilInstruction({ id, style: config.chatStyle, locationId, history, soFar, event }),
         contents: [{ role: "user", parts: [{ text: body.message }] }],
         maxOutputTokens: config.maxOutputTokens,
         thinkingBudget: config.thinkingBudget,

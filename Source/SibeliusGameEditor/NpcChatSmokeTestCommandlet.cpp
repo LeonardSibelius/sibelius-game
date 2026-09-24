@@ -10,6 +10,8 @@
 #include "NpcChatSaveGame.h"
 #include "SibeliusSaveIO.h"
 #include "PowerGrant.h"
+#include "ChatEasterEggs.h"
+#include "ProgressionTypes.h"   // FProgressionState, for the eggs on a throwaway state
 
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
@@ -694,6 +696,74 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			R.Check(!bLate && !Chat->IsBusy(), TEXT("council mock: a cancelled meeting turn never delivers"));
 			Chat->ForgetCouncil();
 		}
+	}
+
+	/* --- 12c) EASTER EGGS (ChatEasterEggs.h). The player's words decide; the request carries
+	   the event. Tested on a THROWAWAY FProgressionState: the progression slot has no sandbox,
+	   and Commit would write a real player's save. */
+	{
+		using namespace ChatEasterEggs;
+
+		R.Check(MentionsPigeons(TEXT("what about the PIGEONS?")) && MentionsPigeons(TEXT("a pigeon"))
+				&& !MentionsPigeons(TEXT("what about the crumbs?")),
+			TEXT("eggs: pigeons are matched loosely, and only pigeons"));
+
+		R.Check(NamesHimselfLeonard(TEXT("My name is Leonard!")) && NamesHimselfLeonard(TEXT("i'm leonard"))
+				&& NamesHimselfLeonard(TEXT("I\x2019m Leonard.")) && NamesHimselfLeonard(TEXT("please, call me   Leonard"))
+				&& NamesHimselfLeonard(TEXT("I am Leonard, not Programmer")),
+			TEXT("eggs: 'my name is Leonard' is matched however it is typed"));
+		R.Check(!NamesHimselfLeonard(TEXT("I am Leonardo")) && !NamesHimselfLeonard(TEXT("who is Leonard?"))
+				&& !NamesHimselfLeonard(TEXT("slim leonard")),
+			TEXT("eggs: near misses do not count"));
+
+		FProgressionState Fresh;
+		FCheck First = EvaluateChatLine(Fresh, FName(TEXT("kaia")), TEXT("tell me about the pigeons"));
+		R.Check(First.bCountsTowardPigeons && First.Egg.IsNone() && First.StoryEvent.IsEmpty(),
+			TEXT("eggs: the first pigeon question counts, and finds nothing yet"));
+		R.Check(!EvaluateChatLine(Fresh, FName(TEXT("isla")), TEXT("pigeons?")).bCountsTowardPigeons,
+			TEXT("eggs: pigeons asked of another agent do not count"));
+		R.Check(EvaluateChatLine(Fresh, FName(TEXT("Kaia")), TEXT("pigeons?")).bCountsTowardPigeons,
+			TEXT("eggs: the agent id is matched without case"));
+
+		FProgressionState TwoAsked;
+		TwoAsked.BumpStat(KaiaPigeonQuestionsStat, PigeonQuestionsNeeded - 1);
+		const FCheck Third = EvaluateChatLine(TwoAsked, FName(TEXT("kaia")), TEXT("the pigeons again?"));
+		R.Check(Third.Egg == PigeonLedger && Third.StoryEvent == TEXT("egg_pigeon_ledger"),
+			TEXT("eggs: the third pigeon question finds the Pigeon Ledger and tells the server"));
+
+		FProgressionState Found;
+		Found.BumpStat(KaiaPigeonQuestionsStat, 10);
+		Found.Claim(PigeonLedger);
+		Found.Claim(NotProgrammer);
+		R.Check(EvaluateChatLine(Found, FName(TEXT("kaia")), TEXT("pigeons!")).Egg.IsNone()
+				&& EvaluateCouncilLine(Found, TEXT("my name is Leonard")).Egg.IsNone(),
+			TEXT("eggs: once per save - a found egg is never found again"));
+
+		const FCheck Named = EvaluateCouncilLine(Fresh, TEXT("My name is Leonard."));
+		R.Check(Named.Egg == NotProgrammer && Named.StoryEvent == TEXT("egg_not_programmer"),
+			TEXT("eggs: telling the council his name finds Not Programmer"));
+		R.Check(EvaluateCouncilLine(Fresh, TEXT("what should I do next?")).Egg.IsNone(),
+			TEXT("eggs: an ordinary council line finds nothing"));
+
+		// The event rides in storyContext, and only when there is one.
+		auto StoryOf = [](const FString& Body) -> TSharedPtr<FJsonObject>
+		{
+			TSharedPtr<FJsonObject> Root;
+			return FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Body), Root) && Root.IsValid()
+				? Root->GetObjectField(TEXT("storyContext")) : nullptr;
+		};
+		const TSharedPtr<FJsonObject> WithEvent = StoryOf(UNpcChatSubsystem::BuildRequestJson(
+			TEXT("egg-request-1"), TEXT("kaia"), TEXT("pigeons?"), TEXT("L_Office_v02"), {}, TEXT("egg_pigeon_ledger")));
+		const TSharedPtr<FJsonObject> Without = StoryOf(UNpcChatSubsystem::BuildRequestJson(
+			TEXT("egg-request-2"), TEXT("kaia"), TEXT("hello"), TEXT("L_Office_v02"), {}));
+		R.Check(WithEvent.IsValid() && WithEvent->GetStringField(TEXT("event")) == TEXT("egg_pigeon_ledger"),
+			TEXT("eggs: a chat request carries the event"));
+		R.Check(Without.IsValid() && !Without->HasField(TEXT("event")),
+			TEXT("eggs: an ordinary request carries no event field at all"));
+		const TSharedPtr<FJsonObject> CouncilEvent = StoryOf(UNpcChatSubsystem::BuildCouncilRequestJson(
+			TEXT("egg-request-3"), TEXT("my name is Leonard"), TEXT("L_Office_v02"), {}, TEXT("egg_not_programmer")));
+		R.Check(CouncilEvent.IsValid() && CouncilEvent->GetStringField(TEXT("event")) == TEXT("egg_not_programmer"),
+			TEXT("eggs: a council request carries the event"));
 	}
 
 	// --- 13) MODES. An unconfigured build must be honestly unavailable.

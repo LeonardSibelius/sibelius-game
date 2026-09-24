@@ -7,6 +7,7 @@
 #include "CompileTypes.h"
 #include "GenerateComponent.h"
 #include "NpcCouncilSession.h"         // the COUNCIL button, and whether to show it
+#include "ChatEasterEggs.h"            // FOUND, on RECORDS
 #include "SibeliusGameCharacter.h"     // OpenCouncil
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
@@ -302,6 +303,27 @@ void UGameMenuWidget::BuildRecordsTab(TSharedRef<SVerticalBox> Box)
 				: FString::Printf(TEXT("%lld"),
 					FProgressionState::BattleQualifyingCoinOut - St.BattleCreditsPaid()),
 			St.IsBattleQualified() ? SauceGreen : Body);
+	}
+
+	/* FOUND - the chat's Easter eggs (ChatEasterEggs.h). The section only appears once one
+	   is found, and lists only what was found: a row for an egg nobody has discovered would
+	   be the spoiler, and a counter the player cannot see how to raise (the curios rule). */
+	if (P)
+	{
+		const bool bLedger = P->HasClaimedGrant(ChatEasterEggs::PigeonLedger);
+		const bool bNamed = P->HasClaimedGrant(ChatEasterEggs::NotProgrammer);
+		if (bLedger || bNamed)
+		{
+			Section(NSLOCTEXT("Sibelius", "RecFound", "FOUND"));
+			if (bLedger)
+			{
+				Row(TEXT("The Pigeon Ledger - it is in your Journal"), FString(TEXT("YES")), SauceGreen);
+			}
+			if (bNamed)
+			{
+				Row(TEXT("Named yourself: Leonard, not Programmer"), FString(TEXT("YES")), SauceGreen);
+			}
+		}
 	}
 
 	Box->AddSlot().AutoHeight().Padding(0, 14, 0, 0)

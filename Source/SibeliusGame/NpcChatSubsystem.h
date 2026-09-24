@@ -86,7 +86,8 @@ public:
 	 * Enter twice must not spend two of a shared daily allowance on one thought, and a
 	 * queue here would only move that spend, not prevent it.
 	 */
-	int32 Send(const FString& CharacterId, const FString& Message, FOnNpcChatReply OnReply);
+	int32 Send(const FString& CharacterId, const FString& Message, FOnNpcChatReply OnReply,
+		const FString& StoryEvent = FString());
 
 	/**
 	 * Abandon a request. The reply, if it ever lands, is dropped.
@@ -110,7 +111,7 @@ public:
 	// -----------------------------------------------------------------------
 
 	/** Put Message to the table. Returns a request id, or 0 if refused (busy or disabled). */
-	int32 SendCouncil(const FString& Message, FOnNpcCouncilReply OnReply);
+	int32 SendCouncil(const FString& Message, FOnNpcCouncilReply OnReply, const FString& StoryEvent = FString());
 
 	/**
 	 * The table's conversation this play session, oldest first.
@@ -140,7 +141,8 @@ public:
 		const FString& RequestId,
 		const FString& Message,
 		const FString& LocationId,
-		const TArray<FNpcCouncilLine>& RecentLines);
+		const TArray<FNpcCouncilLine>& RecentLines,
+		const FString& StoryEvent = FString());
 
 	/**
 	 * Read a council response. True for an `ok` with at least one line, or with the care
@@ -250,7 +252,8 @@ public:
 		const FString& CharacterId,
 		const FString& Message,
 		const FString& LocationId,
-		const TArray<FNpcChatTurn>& RecentTurns);
+		const TArray<FNpcChatTurn>& RecentTurns,
+		const FString& StoryEvent = FString());
 
 	/**
 	 * Read a backend response. Returns true only for a well-formed `ok` carrying text.
@@ -312,6 +315,9 @@ private:
 	TArray<FNpcCouncilLine> CouncilHistory;
 	FString PendingCharacterId;
 	FString PendingMessage;
+
+	/** storyContext.event for the request in flight — an Easter egg (ChatEasterEggs.h). */
+	FString PendingEvent;
 
 	FTimerHandle MockTimer;
 

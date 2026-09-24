@@ -53,6 +53,10 @@ private:
 	 *  Cathedral machine's lifetime CoinOut - see FProgressionState::IsBattleQualified. */
 	FString ComposeArchitects() const;
 
+	/** Easter egg 1 (ChatEasterEggs.h): Kaia's record of every poker wager she has lost to
+	 *  the pigeons. Empty until the player has found it. */
+	FString ComposePigeonLedger() const;
+
 	UPROPERTY()
 	TObjectPtr<UScrollBox> ScrollBox;
 

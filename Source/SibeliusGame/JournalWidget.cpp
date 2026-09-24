@@ -14,6 +14,7 @@
 #include "Misc/Paths.h"
 #include "ProgressionSubsystem.h"
 #include "SibeliusControls.h"   // the player's earned memoir record
+#include "ChatEasterEggs.h"    // the Pigeon Ledger, once found
 
 UJournalWidget::UJournalWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -108,6 +109,7 @@ void UJournalWidget::RefreshFromNarrative()
 	JournalText += SibeliusControls::ComposeAsText(this);
 	JournalText += ComposeMemoirRecord();
 	JournalText += ComposeArchitects();
+	JournalText += ComposePigeonLedger();
 	ApplyText();
 }
 
@@ -123,6 +125,34 @@ void UJournalWidget::RefreshFromNarrative()
    already in FProgressionState::SlotLifetimeMeters, which locked decision 2 says can
    never be cleared. A second copy could only ever disagree with the first.
 */
+/* THE PIGEON LEDGER - Easter egg 1 (docs/THE_UNWRITTEN.md, "Easter eggs").
+
+   Found by asking Kaia about the pigeons three times; she keeps saying the desk crumbs are
+   a code and that the pigeons might accept her poker wagers. Written in her voice: serene,
+   deadpan, and certain every loss was an omen. Nothing here until the grant is claimed -
+   a Journal that listed it early would be the spoiler. */
+FString UJournalWidget::ComposePigeonLedger() const
+{
+	const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this);
+	if (!Prog || !Prog->HasClaimedGrant(ChatEasterEggs::PigeonLedger))
+	{
+		return FString();
+	}
+
+	return TEXT("\n\n\nTHE PIGEON LEDGER\n\n")
+		TEXT("    Kept by Kaia. Wagers lost to the pigeons, in order. Each was an omen.\n\n")
+		TEXT("    1. Bet that the crumbs by the keyboard spelled a word. They spelled\n")
+		TEXT("       lunch. Lost one burger.\n")
+		TEXT("    2. Bet a full house against a pigeon holding nothing. The pigeon\n")
+		TEXT("       left. Ruled a fold in its favour. Lost the pot.\n")
+		TEXT("    3. Bet that Mrs. Hall's memo was a prophecy. It was about the\n")
+		TEXT("       stapler. Lost one bottle of Sauce.\n")
+		TEXT("    4. Bet the pigeons could not count cards. They cannot. They won\n")
+		TEXT("       anyway. Lost my composure, briefly.\n")
+		TEXT("    5. Bet double or nothing that Leonard would never find this page.\n")
+		TEXT("       Lost.\n");
+}
+
 FString UJournalWidget::ComposeArchitects() const
 {
 	const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this);

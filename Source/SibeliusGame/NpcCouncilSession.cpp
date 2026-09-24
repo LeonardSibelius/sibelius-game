@@ -3,6 +3,8 @@
 #include "NpcCouncilSession.h"
 
 #include "NpcChatWidget.h"
+#include "ChatEasterEggs.h"        // egg 5, Not Programmer
+#include "ProgressionSubsystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/GameInstance.h"
 #include "Framework/Application/SlateApplication.h"
@@ -176,9 +178,13 @@ void UNpcCouncilSession::HandleSend(const FString& PlayerLine)
 		return;
 	}
 
+	// The egg is decided from what the player typed, before the send (ChatEasterEggs.h).
+	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(OwningPC.Get());
+	const ChatEasterEggs::FCheck Egg = ChatEasterEggs::EvaluateCouncilLine(Progression, PlayerLine);
+
 	FOnNpcCouncilReply Reply;
 	Reply.BindUObject(this, &UNpcCouncilSession::HandleReply);
-	RequestId = Chat->SendCouncil(PlayerLine, Reply);
+	RequestId = Chat->SendCouncil(PlayerLine, Reply, Egg.StoryEvent);
 
 	if (RequestId == 0)
 	{
@@ -191,6 +197,12 @@ void UNpcCouncilSession::HandleSend(const FString& PlayerLine)
 
 	PendingLine = PlayerLine;
 	Widget->AppendTurn(TEXT("You"), PlayerLine);
+
+	const FString EggNote = ChatEasterEggs::Commit(Progression, Egg);
+	if (!EggNote.IsEmpty())
+	{
+		Widget->AppendTurn(FString(), EggNote);
+	}
 	Widget->SetInputEnabled(false);
 	// Five agents, one after another: a few seconds, and the status says why.
 	Widget->SetStatus(FText::FromString(TEXT("The council is talking it over...")));

@@ -278,7 +278,8 @@ FString UNpcChatSubsystem::BuildRequestJson(
 	const FString& CharacterId,
 	const FString& Message,
 	const FString& LocationId,
-	const TArray<FNpcChatTurn>& RecentTurns)
+	const TArray<FNpcChatTurn>& RecentTurns,
+	const FString& StoryEvent)
 {
 	const TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
 	Root->SetStringField(TEXT("requestId"), RequestId);
@@ -292,6 +293,12 @@ FString UNpcChatSubsystem::BuildRequestJson(
 	const TSharedRef<FJsonObject> Story = MakeShared<FJsonObject>();
 	Story->SetStringField(TEXT("locationId"), LocationId);
 	Story->SetArrayField(TEXT("unlockedFacts"), TArray<TSharedPtr<FJsonValue>>());
+	// Only when there is one: the server allowlists it (backend/events.js), and absent is
+	// the ordinary case.
+	if (!StoryEvent.IsEmpty())
+	{
+		Story->SetStringField(TEXT("event"), StoryEvent);
+	}
 	Root->SetObjectField(TEXT("storyContext"), Story);
 
 	TArray<TSharedPtr<FJsonValue>> Turns;
@@ -354,7 +361,8 @@ bool UNpcChatSubsystem::ParseReplyJson(const FString& Body, FString& OutReply, E
 	return false;   // unknown status
 }
 
-int32 UNpcChatSubsystem::Send(const FString& CharacterId, const FString& Message, FOnNpcChatReply OnReply)
+int32 UNpcChatSubsystem::Send(const FString& CharacterId, const FString& Message, FOnNpcChatReply OnReply,
+	const FString& StoryEvent)
 {
 	if (InFlightId != 0)
 	{
@@ -383,6 +391,7 @@ int32 UNpcChatSubsystem::Send(const FString& CharacterId, const FString& Message
 	PendingReply = OnReply;
 	PendingCharacterId = CharacterId;
 	PendingMessage = Message;
+	PendingEvent = StoryEvent;
 
 	if (Mode == ENpcChatMode::Proxy)
 	{
@@ -442,6 +451,7 @@ void UNpcChatSubsystem::Cancel(int32 RequestId)
 	PendingCouncilReply.Unbind();
 	PendingCharacterId.Reset();
 	PendingMessage.Reset();
+	PendingEvent.Reset();
 }
 
 void UNpcChatSubsystem::DeliverMockReply(int32 RequestId)
@@ -466,6 +476,7 @@ void UNpcChatSubsystem::DeliverMockReply(int32 RequestId)
 	PendingReply.Unbind();
 	PendingCharacterId.Reset();
 	PendingMessage.Reset();
+	PendingEvent.Reset();
 
 	const int32 ForcedFail = CVarChatMockFail.GetValueOnGameThread();
 	if (ForcedFail > 0)
@@ -541,7 +552,7 @@ bool UNpcChatSubsystem::SendOverHttp(int32 RequestId, const FString& CharacterId
 	PendingUuid = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
 
 	const FString Body = BuildRequestJson(PendingUuid, CharacterId, Message,
-		CurrentLocationId(), RecentTurnsFor(CharacterId));
+		CurrentLocationId(), RecentTurnsFor(CharacterId), PendingEvent);
 
 	PendingHttp = FHttpModule::Get().CreateRequest();
 	PendingHttp->SetURL(Url);
@@ -624,6 +635,7 @@ void UNpcChatSubsystem::CompleteRequest(int32 RequestId, const FString& Reply, E
 	PendingReply.Unbind();
 	PendingCharacterId.Reset();
 	PendingMessage.Reset();
+	PendingEvent.Reset();
 	PendingHttp.Reset();
 	PendingUuid.Reset();
 
@@ -652,7 +664,8 @@ FString UNpcChatSubsystem::BuildCouncilRequestJson(
 	const FString& RequestId,
 	const FString& Message,
 	const FString& LocationId,
-	const TArray<FNpcCouncilLine>& RecentLines)
+	const TArray<FNpcCouncilLine>& RecentLines,
+	const FString& StoryEvent)
 {
 	const TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
 	Root->SetStringField(TEXT("requestId"), RequestId);
@@ -661,6 +674,10 @@ FString UNpcChatSubsystem::BuildCouncilRequestJson(
 	const TSharedRef<FJsonObject> Story = MakeShared<FJsonObject>();
 	Story->SetStringField(TEXT("locationId"), LocationId);
 	Story->SetArrayField(TEXT("unlockedFacts"), TArray<TSharedPtr<FJsonValue>>());
+	if (!StoryEvent.IsEmpty())
+	{
+		Story->SetStringField(TEXT("event"), StoryEvent);
+	}
 	Root->SetObjectField(TEXT("storyContext"), Story);
 
 	// Only the most recent lines: the server reads 30 and refuses past 64.
@@ -769,7 +786,7 @@ void UNpcChatSubsystem::RecordCouncilTurn(const FString& PlayerLine, const TArra
 	}
 }
 
-int32 UNpcChatSubsystem::SendCouncil(const FString& Message, FOnNpcCouncilReply OnReply)
+int32 UNpcChatSubsystem::SendCouncil(const FString& Message, FOnNpcCouncilReply OnReply, const FString& StoryEvent)
 {
 	if (InFlightId != 0)
 	{
@@ -793,6 +810,7 @@ int32 UNpcChatSubsystem::SendCouncil(const FString& Message, FOnNpcCouncilReply 
 	InFlightId = NextRequestId++;
 	PendingCouncilReply = OnReply;
 	PendingMessage = Message;
+	PendingEvent = StoryEvent;
 
 	if (Mode == ENpcChatMode::Proxy)
 	{
@@ -848,7 +866,7 @@ bool UNpcChatSubsystem::SendCouncilOverHttp(int32 RequestId, const FString& Mess
 	}
 
 	PendingUuid = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
-	const FString Body = BuildCouncilRequestJson(PendingUuid, Message, CurrentLocationId(), CouncilHistory);
+	const FString Body = BuildCouncilRequestJson(PendingUuid, Message, CurrentLocationId(), CouncilHistory, PendingEvent);
 
 	PendingHttp = FHttpModule::Get().CreateRequest();
 	PendingHttp->SetURL(Url);
@@ -916,6 +934,7 @@ void UNpcChatSubsystem::CompleteCouncil(int32 RequestId, const TArray<FNpcCounci
 	InFlightId = 0;
 	PendingCouncilReply.Unbind();
 	PendingMessage.Reset();
+	PendingEvent.Reset();
 	PendingHttp.Reset();
 	PendingUuid.Reset();
 

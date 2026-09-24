@@ -14,6 +14,7 @@
 #include "TimerManager.h"                  // the restage retry, waiting for him to look away
 #include "NpcChatWidget.h"                  // step 4: the typed conversation panel
 #include "NpcCouncilSession.h"              // the panel's Council button
+#include "ChatEasterEggs.h"                 // egg 1, the Pigeon Ledger
 #include "SibeliusGameCharacter.h"          // OpenCouncil
 #include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
 #include "NpcChatSaveGame.h"                // FNpcChatTurn — what she remembers
@@ -1411,7 +1412,13 @@ void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
 	// The STABLE id, the same one memory is keyed by — not AgentName, which is a
 	// display name derived from the actor. They match today and would diverge the
 	// first time a spawned dancer sets ChatId, which is the whole reason it exists.
-	ChatRequestId = Chat->Send(ResolveChatId().ToString(), PlayerLine, Reply);
+	/* AN EASTER EGG IS DECIDED HERE, FROM WHAT THE PLAYER TYPED — never from her reply
+	   (ChatEasterEggs.h). Evaluated before the send so the event rides on this request
+	   and she reacts in this reply; committed only if the send was accepted. */
+	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	const ChatEasterEggs::FCheck Egg = ChatEasterEggs::EvaluateChatLine(Progression, ResolveChatId(), PlayerLine);
+
+	ChatRequestId = Chat->Send(ResolveChatId().ToString(), PlayerLine, Reply, Egg.StoryEvent);
 
 	if (ChatRequestId == 0)
 	{
@@ -1430,6 +1437,12 @@ void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
 
 	ChatWidget->AppendTurn(TEXT("You"), PlayerLine);
 	Chat->RecordTurn(ResolveChatId(), /*bFromPlayer=*/true, PlayerLine);
+
+	const FString EggNote = ChatEasterEggs::Commit(Progression, Egg);
+	if (!EggNote.IsEmpty())
+	{
+		ChatWidget->AppendTurn(FString(), EggNote);
+	}
 	ChatWidget->SetInputEnabled(false);
 	ChatWidget->SetStatus(FText::FromString(FString::Printf(TEXT("%s is thinking..."), *AgentName)));
 }
