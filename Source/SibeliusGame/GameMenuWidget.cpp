@@ -312,12 +312,17 @@ void UGameMenuWidget::BuildRecordsTab(TSharedRef<SVerticalBox> Box)
 	{
 		const bool bLedger = P->HasClaimedGrant(ChatEasterEggs::PigeonLedger);
 		const bool bNamed = P->HasClaimedGrant(ChatEasterEggs::NotProgrammer);
-		if (bLedger || bNamed)
+		const bool bStocked = P->HasClaimedGrant(ChatEasterEggs::FinallyInStock);
+		if (bLedger || bNamed || bStocked)
 		{
 			Section(NSLOCTEXT("Sibelius", "RecFound", "FOUND"));
 			if (bLedger)
 			{
 				Row(TEXT("The Pigeon Ledger - it is in your Journal"), FString(TEXT("YES")), SauceGreen);
+			}
+			if (bStocked)
+			{
+				Row(TEXT("Things Aisling found"), FString(TEXT("1")), SauceGreen);
 			}
 			if (bNamed)
 			{

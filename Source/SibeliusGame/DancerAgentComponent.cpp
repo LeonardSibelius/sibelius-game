@@ -1416,7 +1416,16 @@ void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
 	   (ChatEasterEggs.h). Evaluated before the send so the event rides on this request
 	   and she reacts in this reply; committed only if the send was accepted. */
 	UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
-	const ChatEasterEggs::FCheck Egg = ChatEasterEggs::EvaluateChatLine(Progression, ResolveChatId(), PlayerLine);
+	TArray<FString> EarlierLines;   // what he said to her before, for egg 2's count
+	for (const FNpcChatTurn& Turn : Chat->GetHistory(ResolveChatId()))
+	{
+		if (Turn.bFromPlayer)
+		{
+			EarlierLines.Add(Turn.Text);
+		}
+	}
+	const ChatEasterEggs::FCheck Egg =
+		ChatEasterEggs::EvaluateChatLine(Progression, ResolveChatId(), PlayerLine, EarlierLines);
 
 	ChatRequestId = Chat->Send(ResolveChatId().ToString(), PlayerLine, Reply, Egg.StoryEvent);
 

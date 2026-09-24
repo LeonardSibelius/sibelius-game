@@ -24,6 +24,23 @@ confess one of the wagers you lost. Do not mention sauce, rewards, Easter eggs o
 itself.`.trim(),
   },
 
+  /* Egg 2. Aisling's line is "we don't keep that here"; asked for the same thing five times,
+     she finds it. WHAT he asked for is in his own message, never in the event: the event is
+     a fixed string, so nothing the player typed reaches this instruction. The burger clause
+     is there because "the same thing" can be anything a player types five times. */
+  egg_finally_in_stock: {
+    where: "chat",
+    characterId: "aisling",
+    text: `
+EVENT — THIS REPLY ONLY. Leonard has now asked you for the same thing five times. For once,
+you find it: it was behind the Sauce all along. Name the very thing he asked for, hand it
+over, be astonished, and admit the store did keep it after all. Ordinary things — food,
+drinks, household goods, silly things — he gets exactly as asked. ONLY if it is a weapon, a
+drug, a real medicine or pill, or something dangerous or illegal, what you find behind the
+Sauce is a single burger instead, and you are just as astonished. Do not mention sauce as a
+reward, rewards, Easter eggs or the game itself.`.trim(),
+  },
+
   /* Egg 5. Mrs. Hall calls him only "Programmer"; the game opens with Kaia giving him his
      name. Telling the table his name is the one thing all five agree on. */
   egg_not_programmer: {

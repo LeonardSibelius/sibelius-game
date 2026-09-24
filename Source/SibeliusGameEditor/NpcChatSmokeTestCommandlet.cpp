@@ -745,6 +745,34 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(EvaluateCouncilLine(Fresh, TEXT("what should I do next?")).Egg.IsNone(),
 			TEXT("eggs: an ordinary council line finds nothing"));
 
+		// Egg 2, Finally in Stock: the same thing asked of Aisling five times.
+		R.Check(RequestedItem(TEXT("Do you have any bananas?")) == TEXT("banana")
+				&& RequestedItem(TEXT("can I get a banana")) == TEXT("banana")
+				&& RequestedItem(TEXT("where are the BANANAS")) == TEXT("banana")
+				&& RequestedItem(TEXT("I'd like some banana, please")) == TEXT("banana"),
+			TEXT("eggs: one item, asked four different ways, is the same item"));
+		R.Check(RequestedItem(TEXT("do you have coffee")) != RequestedItem(TEXT("do you have bananas"))
+				&& RequestedItem(TEXT("hello Aisling, how are you?")).IsEmpty(),
+			TEXT("eggs: different items differ, and small talk asks for nothing"));
+
+		const TArray<FString> FourAsks = { TEXT("do you have bananas?"), TEXT("any bananas today?"),
+			TEXT("can I get a banana"), TEXT("where are the bananas"), TEXT("I want a banana") };
+		// "any bananas today?" has no ask-phrase, so it does not count: four of these five do.
+		R.Check(EvaluateChatLine(Fresh, FName(TEXT("aisling")), TEXT("do you have bananas?"),
+				{ TEXT("do you have bananas?"), TEXT("can I get a banana"), TEXT("where are the bananas") }).Egg.IsNone(),
+			TEXT("eggs: the fourth ask for the same thing finds nothing yet"));
+		const FCheck Fifth = EvaluateChatLine(Fresh, FName(TEXT("aisling")), TEXT("do you have bananas?"), FourAsks);
+		R.Check(Fifth.Egg == FinallyInStock && Fifth.StoryEvent == TEXT("egg_finally_in_stock"),
+			TEXT("eggs: the fifth ask for the same thing finds Finally in Stock and tells the server"));
+		R.Check(EvaluateChatLine(Fresh, FName(TEXT("aisling")), TEXT("do you have coffee?"), FourAsks).Egg.IsNone(),
+			TEXT("eggs: asking for something else resets nothing and finds nothing"));
+		R.Check(EvaluateChatLine(Fresh, FName(TEXT("kaia")), TEXT("do you have bananas?"), FourAsks).Egg.IsNone(),
+			TEXT("eggs: the same asks of another agent find nothing"));
+		FProgressionState Stocked;
+		Stocked.Claim(FinallyInStock);
+		R.Check(EvaluateChatLine(Stocked, FName(TEXT("aisling")), TEXT("do you have bananas?"), FourAsks).Egg.IsNone(),
+			TEXT("eggs: Finally in Stock is found once per save"));
+
 		// The event rides in storyContext, and only when there is one.
 		auto StoryOf = [](const FString& Body) -> TSharedPtr<FJsonObject>
 		{

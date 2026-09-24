@@ -63,9 +63,95 @@ namespace ChatEasterEggs
 		return false;
 	}
 
-	FCheck EvaluateChatLine(const FProgressionState& State, FName ChatId, const FString& Line)
+	FString RequestedItem(const FString& Line)
+	{
+		// The ways people ask a shopkeeper for something, apostrophes already gone ("id like").
+		static const TCHAR* Asks[] =
+		{
+			TEXT(" do you have "), TEXT(" do you sell "), TEXT(" do you stock "), TEXT(" do you carry "),
+			TEXT(" do you keep "), TEXT(" have you got "), TEXT(" got any "), TEXT(" can i get "),
+			TEXT(" can i have "), TEXT(" could i get "), TEXT(" could i have "), TEXT(" may i have "),
+			TEXT(" i want "), TEXT(" i would like "), TEXT(" id like "), TEXT(" i need "),
+			TEXT(" looking for "), TEXT(" where is "), TEXT(" where are "), TEXT(" wheres "),
+			TEXT(" give me "), TEXT(" sell me "), TEXT(" ill take "),
+		};
+		// Words between the ask and the thing: "do you have ANY bananas", "can i get A banana".
+		static const TCHAR* Filler[] =
+		{
+			TEXT("a"), TEXT("an"), TEXT("any"), TEXT("some"), TEXT("the"), TEXT("more"), TEXT("of"),
+			TEXT("your"), TEXT("me"), TEXT("us"), TEXT("to"), TEXT("buy"), TEXT("get"), TEXT("please"),
+			TEXT("just"), TEXT("one"), TEXT("few"), TEXT("in"), TEXT("stock"), TEXT("i"), TEXT("my"),
+		};
+
+		const FString Said = Normalise(Line);
+		int32 Earliest = INDEX_NONE;
+		int32 AskLen = 0;
+		for (const TCHAR* Ask : Asks)
+		{
+			const int32 At = Said.Find(Ask);
+			if (At != INDEX_NONE && (Earliest == INDEX_NONE || At < Earliest))
+			{
+				Earliest = At;
+				AskLen = FCString::Strlen(Ask);
+			}
+		}
+		if (Earliest == INDEX_NONE)
+		{
+			return FString();
+		}
+
+		TArray<FString> Words;
+		Said.Mid(Earliest + AskLen).ParseIntoArray(Words, TEXT(" "));
+		for (const FString& Word : Words)
+		{
+			bool bFiller = false;
+			for (const TCHAR* F : Filler)
+			{
+				if (Word == F)
+				{
+					bFiller = true;
+					break;
+				}
+			}
+			if (bFiller)
+			{
+				continue;
+			}
+			// "bananas" and "banana" are the same ask. Crude, but applied the same way to
+			// both sides of every comparison, which is all it has to be.
+			return (Word.Len() > 3 && Word.EndsWith(TEXT("s"))) ? Word.LeftChop(1) : Word;
+		}
+		return FString();
+	}
+
+	FCheck EvaluateChatLine(const FProgressionState& State, FName ChatId, const FString& Line,
+		const TArray<FString>& EarlierLines)
 	{
 		FCheck Check;
+
+		/* EGG 2, FINALLY IN STOCK. Aisling's line is "we don't keep that here"; ask her for the
+		   same thing five times and, for once, she finds it. Counted in the conversation
+		   memory, so it survives closing the panel and needs no new save field. */
+		if (ChatId == FName(TEXT("aisling")))
+		{
+			const FString Item = RequestedItem(Line);
+			if (Item.IsEmpty() || State.HasClaimed(FinallyInStock))
+			{
+				return Check;
+			}
+			int32 Asks = 1;
+			for (const FString& Earlier : EarlierLines)
+			{
+				Asks += RequestedItem(Earlier) == Item ? 1 : 0;
+			}
+			if (Asks >= SameAsksNeeded)
+			{
+				Check.Egg = FinallyInStock;
+				Check.StoryEvent = TEXT("egg_finally_in_stock");
+			}
+			return Check;
+		}
+
 		// FName compares without case, so "Kaia" and "kaia" are the same agent.
 		if (ChatId != FName(TEXT("kaia")) || !MentionsPigeons(Line) || State.HasClaimed(PigeonLedger))
 		{
@@ -92,9 +178,10 @@ namespace ChatEasterEggs
 		return Check;
 	}
 
-	FCheck EvaluateChatLine(const UProgressionSubsystem* Progression, FName ChatId, const FString& Line)
+	FCheck EvaluateChatLine(const UProgressionSubsystem* Progression, FName ChatId, const FString& Line,
+		const TArray<FString>& EarlierLines)
 	{
-		return Progression ? EvaluateChatLine(Progression->GetStateForRead(), ChatId, Line) : FCheck();
+		return Progression ? EvaluateChatLine(Progression->GetStateForRead(), ChatId, Line, EarlierLines) : FCheck();
 	}
 
 	FCheck EvaluateCouncilLine(const UProgressionSubsystem* Progression, const FString& Line)
@@ -126,6 +213,11 @@ namespace ChatEasterEggs
 			return FString::Printf(
 				TEXT("You found an Easter egg: The Pigeon Ledger. +%d sauce. It is in your Journal [J]."),
 				PigeonLedgerSauce);
+		}
+		if (Check.Egg == FinallyInStock)
+		{
+			// No sauce: the reward is Aisling finding it, and the line on RECORDS.
+			return TEXT("You found an Easter egg: Finally in Stock.");
 		}
 		if (Check.Egg == NotProgrammer)
 		{
