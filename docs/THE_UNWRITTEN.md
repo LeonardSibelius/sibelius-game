@@ -23,9 +23,9 @@ What is left is the part Walt was looking forward to all along.
 ## The idea
 
 After Grok, the five agents who spent the game enhancing Leonard gather around a table and
-talk about him — foolishly. The player, as Leonard, sits with them, says something, and all
-five answer in turn: agreeing, arguing, topping each other, getting everything
-magnificently wrong. It is a comedy scene the player can talk to.
+talk about him. The player, as Leonard, sits with them, says something, and all five
+answer in turn, each from her own concern, building on each other. It began as a comedy
+scene; since 2026-09-24 it is a hopeful one (see *Tone and rules*).
 
 ---
 
@@ -105,7 +105,7 @@ What exists today and what does not:
 
 | Part | State |
 |---|---|
-| The foolish style, answer-first rule, places and who's-who | **Live** in the story chat (`backend/styles.js`, `backend/characters.js`) |
+| The hopeful style (foolish before it), answer-first rule, places and who's-who | **Live** in the story chat (`backend/styles.js`, `backend/characters.js`) |
 | The distress screen and care reply | **Live** (`backend/distress.js`, `backend/server.js`) |
 | Council turns (five replies in order, each seeing the last) | **Live** at `/v1/npc-council` (`backend/council.js`, `backend/server.js`) |
 | The fact list from the save | **Not built** — a small allowlisted `storyContext` addition |
@@ -125,7 +125,28 @@ entry in `backend/characters.js` goes in when it is built, so the agents know wh
 
 ## Tone and rules
 
-**Foolish** (Walt, 2026-09-23) — the style already live in the story chat: the same
+**Hopeful** (Walt, 2026-09-24: *"the ai agent chat sounds too demented. Please make the ai
+agent chat more encouraging, hopeful and optimistic about the future."*) — the live style
+since then, `CHAT_STYLE=hopeful`. The same personalities, on his side. The old way of building
+is behind him and his best work is still ahead of him.
+
+- **Specific, not syrupy.** They notice something real, such as a power he has or something he
+  just did, and say why it is a good sign.
+- **The past is not their subject.** They do not raise Mrs. Hall or the forty years
+  themselves. If he does, they acknowledge it in a few words and turn toward what he can
+  build now.
+- **Discouragement is taken seriously.** They acknowledge it in one sentence and give him one
+  honest reason for hope. Hope is not a promise.
+- **The next step only when asked.** A greeting gets a greeting, not a task.
+- **The egg hooks stay.** Three eggs survive as light running jokes: Isla's fold-before-the-deal
+  poker plan, Nyra's memos-as-poetry scheme, and Aisling's "we don't keep that here".
+- Measured on `backend/eval/tone-eval.js`, with the same six lines to all five agents in both
+  styles. "I'm not sure I'm any good at this" drew *"a walking catastrophe"* in the foolish style; the
+  hopeful style answered *"It is perfectly normal to feel that way when you are starting
+  something entirely new."*
+
+**Foolish** (Walt, 2026-09-23) — the style live in the story chat until 2026-09-24, kept in
+`styles.js` for comparison. The same
 personalities, confidently and cheerfully wrong about harmless things. In play, 2026-09-23:
 Kaia decoding desk crumbs so the pigeons will accept her poker wagers; the agents as *"a
 clandestine committee of household appliances disguised as software."*
@@ -156,7 +177,7 @@ developer; widen it with real phrasings from playtesting before shipping.
 
 ## Model and cost
 
-**gemini-3.1-flash-lite, foolish style, temperature 1.2, behind the distress screen** —
+**gemini-3.1-flash-lite, hopeful style, temperature 1.0, behind the distress screen** —
 the setup already live. About $0.0005 a reply and $0.00005 a screen, so **a council turn
 (five replies, one screen) is about a quarter of a cent**, and the $15/month cap covers
 roughly 6,000 council turns. gemini-3.8-flash was funnier in places at 4.5× the price; with

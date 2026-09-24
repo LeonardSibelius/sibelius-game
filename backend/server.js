@@ -107,7 +107,7 @@ export function createApp(options = {}) {
     // for diagnosing, not for production.
     distressScreen: env("DISTRESS_SCREEN", "on") !== "off",
     screenModel: env("SCREEN_MODEL", "gemini-3.1-flash-lite"),
-    // How the agents talk: "normal" (the profiles as written) or "foolish" (styles.js).
+    // How the agents talk: "normal" (the profiles as written), "foolish" or "hopeful" (styles.js).
     // A switch, not a decision — Walt trying the tone in play (2026-09-23).
     chatStyle: env("CHAT_STYLE", "normal"),
     /* WHO IS "ONE CALLER" — THE PLAYER, NOT FLY'S PROXY. On Fly every connection arrives

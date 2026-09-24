@@ -162,7 +162,7 @@ export function factsLine(facts, { travel = true } = {}) {
   if (!lines.length) return "";
   return [
     "WHAT THE GAME TELLS YOU ABOUT HIS PLAYTHROUGH. It is true. Use a fact when it fits — tease " +
-      "him about it, be impressed, be foolishly wrong about what it means — but never recite the " +
+      "him gently about it, be impressed, be proud of what it shows — but never recite the " +
       "list, and never invent a number or an event that is not here.",
     ...lines,
   ].join("\n");

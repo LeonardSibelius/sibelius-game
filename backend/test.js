@@ -8,7 +8,7 @@ import { createApp, LIMITS, CARE_REPLY } from "./server.js";
 import { createBudget } from "./budget.js";
 import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
 import { generate, SAFETY_SETTINGS } from "./gemini.js";
-import { STYLES, FOOLISH_ANGLES, systemInstructionFor } from "./styles.js";
+import { STYLES, FOOLISH_ANGLES, HOPEFUL_ANGLES, systemInstructionFor } from "./styles.js";
 import { councilInstruction, speakingOrder, stripOwnName } from "./council.js";
 import { eventLine, STORY_EVENTS } from "./events.js";
 import { factsLine, cleanObjective, OBJECTIVE_MAX_CHARS, destinationsFrom, extractTravel } from "./facts.js";
@@ -134,6 +134,24 @@ console.log("=== NPC chat backend contract ===");
   const typo = createApp({ mock: true, stateFile: join(scratch, "typo.json"), chatStyle: "foolsh" });
   check(typo.config.chatStyle === "normal", "a misspelt style falls back to normal");
   check(STYLES.foolish.temperature > STYLES.normal.temperature, "foolish runs hotter than normal");
+  // Walt, 2026-09-24: "too demented" - hopeful is the live style. Same guards as foolish.
+  for (const id of knownCharacterIds()) {
+    const c = getCharacter(id);
+    const h = systemInstructionFor(c, id, "hopeful");
+    check(
+      h.startsWith(c.systemInstruction) && h.includes(HOPEFUL_ANGLES[id]) && h.includes("You cannot grant powers") &&
+        h.includes("ANSWER FIRST") && h.includes("NEVER gloomy") && !h.includes("COMEDY"),
+      `${id}: hopeful keeps her profile and house rules, answers first, and is not the comedy style`
+    );
+    check(systemInstructionFor(c, id, "hopeful", { answerFirst: false }).includes("ALREADY ANSWERED"),
+      `${id}: hopeful later council speakers do not re-answer`);
+  }
+  // The eggs are found by taking an agent at her running joke; the hopeful angles keep them.
+  check(/fold before the cards/.test(HOPEFUL_ANGLES.isla), "hopeful Isla still folds before the deal (egg 3)");
+  check(/memos as poetry/.test(HOPEFUL_ANGLES.nyra), "hopeful Nyra still pitches the memos as poetry (egg 4)");
+  check(/We don't keep that here/.test(HOPEFUL_ANGLES.aisling), "hopeful Aisling still says her line (egg 2)");
+  const hopefulApp = createApp({ mock: true, stateFile: join(scratch, "hopeful.json"), chatStyle: "hopeful" });
+  check(hopefulApp.config.chatStyle === "hopeful", "CHAT_STYLE=hopeful is accepted");
 }
 
 /* --- every file the server loads is in the image.
