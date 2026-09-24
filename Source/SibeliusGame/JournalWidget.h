@@ -57,6 +57,9 @@ private:
 	 *  the pigeons. Empty until the player has found it. */
 	FString ComposePigeonLedger() const;
 
+	/** Easter egg 4: three of Mrs. Hall's memos, set as poems by Nyra. Empty until found. */
+	FString ComposeMemoPoetry() const;
+
 	UPROPERTY()
 	TObjectPtr<UScrollBox> ScrollBox;
 

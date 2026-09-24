@@ -780,6 +780,29 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(EvaluateChatLine(Stocked, FName(TEXT("aisling")), TEXT("do you have bananas?"), FourAsks).Egg.IsNone(),
 			TEXT("eggs: Finally in Stock is found once per save"));
 
+		// Egg 3, Fold Early (Isla), and egg 4, The Memo Poetry Reading (Nyra).
+		R.Check(SaysFold(TEXT("I fold.")) && SaysFold(TEXT("FOLD!")) && SaysFold(TEXT("ok, folding"))
+				&& !SaysFold(TEXT("put it in the folder")) && !SaysFold(TEXT("unfold the map")),
+			TEXT("eggs: 'fold' is matched as a whole word - folder and unfold do not count"));
+		R.Check(SaysPoetry(TEXT("do you like poetry?")) && SaysPoetry(TEXT("write me a poem"))
+				&& !SaysPoetry(TEXT("poetic justice")),
+			TEXT("eggs: 'poetry' and 'poem' are matched as whole words"));
+		const FCheck Folded = EvaluateChatLine(Fresh, FName(TEXT("isla")), TEXT("I fold"));
+		R.Check(Folded.Egg == FoldEarly && Folded.StoryEvent == TEXT("egg_fold_early"),
+			TEXT("eggs: 'fold' to Isla finds Fold Early and tells the server"));
+		const FCheck Poetry = EvaluateChatLine(Fresh, FName(TEXT("nyra")), TEXT("tell me about poetry"));
+		R.Check(Poetry.Egg == MemoPoetry && Poetry.StoryEvent == TEXT("egg_memo_poetry"),
+			TEXT("eggs: 'poetry' to Nyra finds The Memo Poetry Reading and tells the server"));
+		R.Check(EvaluateChatLine(Fresh, FName(TEXT("nyra")), TEXT("I fold")).Egg.IsNone()
+				&& EvaluateChatLine(Fresh, FName(TEXT("isla")), TEXT("poetry")).Egg.IsNone(),
+			TEXT("eggs: each word only works on its own agent"));
+		FProgressionState BothFound;
+		BothFound.Claim(FoldEarly);
+		BothFound.Claim(MemoPoetry);
+		R.Check(EvaluateChatLine(BothFound, FName(TEXT("isla")), TEXT("fold")).Egg.IsNone()
+				&& EvaluateChatLine(BothFound, FName(TEXT("nyra")), TEXT("poetry")).Egg.IsNone(),
+			TEXT("eggs: Fold Early and the Memo Poetry Reading are found once per save"));
+
 		// The event rides in storyContext, and only when there is one.
 		auto StoryOf = [](const FString& Body) -> TSharedPtr<FJsonObject>
 		{

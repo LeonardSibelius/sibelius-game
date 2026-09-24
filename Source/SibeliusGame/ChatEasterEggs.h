@@ -3,6 +3,8 @@
 // Easter eggs in the AI agent chat (docs/THE_UNWRITTEN.md, "Easter eggs"). Built:
 //   1. The Pigeon Ledger  — ask Kaia about pigeons three times.
 //   2. Finally in Stock   — ask Aisling for the same thing five times.
+//   3. Fold Early         — tell Isla "fold".
+//   4. The Memo Poetry Reading — say "poetry" to Nyra.
 //   5. Not Programmer     — tell the council your name is Leonard.
 //
 // THE PLAYER'S WORDS TRIGGER AN EGG, NEVER THE AI'S. A player can talk the model into saying
@@ -27,6 +29,8 @@ namespace ChatEasterEggs
 	inline const FName PigeonLedger(TEXT("Egg_PigeonLedger"));
 	inline const FName NotProgrammer(TEXT("Egg_NotProgrammer"));
 	inline const FName FinallyInStock(TEXT("Egg_FinallyInStock"));
+	inline const FName FoldEarly(TEXT("Egg_FoldEarly"));
+	inline const FName MemoPoetry(TEXT("Egg_MemoPoetry"));
 
 	/** Asks for the same item, this one included, before Aisling finds it (egg 2). */
 	constexpr int32 SameAsksNeeded = 5;
@@ -43,6 +47,12 @@ namespace ChatEasterEggs
 
 	/** "my name is Leonard", "I'm Leonard", "call me Leonard" — punctuation and case ignored. */
 	SIBELIUSGAME_API bool NamesHimselfLeonard(const FString& Line);
+
+	/** "fold", "I fold", "folding" — the whole word, so "folder" and "unfold" do not count. */
+	SIBELIUSGAME_API bool SaysFold(const FString& Line);
+
+	/** "poetry", "a poem", "poems" — the whole word. */
+	SIBELIUSGAME_API bool SaysPoetry(const FString& Line);
 
 	/**
 	 * The thing a line asks for, reduced to one comparable word, or empty when it asks for

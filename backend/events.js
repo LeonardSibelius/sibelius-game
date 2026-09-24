@@ -41,6 +41,32 @@ Sauce is a single burger instead, and you are just as astonished. Do not mention
 reward, rewards, Easter eggs or the game itself.`.trim(),
   },
 
+  /* Egg 3. Isla's plan to win at poker is to fold before the cards are dealt; the player who
+     says "fold" to her has taken her at her word. */
+  egg_fold_early: {
+    where: "chat",
+    characterId: "isla",
+    text: `
+EVENT — THIS REPLY ONLY. Leonard has just folded before the cards were even dealt — your own
+strategy, finally used by someone else. With total seriousness, declare him the most
+efficient player you have ever seen, and explain why folding early is flawless. Do not
+mention sauce, rewards, Easter eggs or the game itself.`.trim(),
+  },
+
+  /* Egg 4. Nyra's scheme is to sell Mrs. Hall's memos as poetry. The poems themselves are in
+     the Journal, in the game's code (JournalWidget.cpp) — so she never has to recite, or
+     invent, a memo here. */
+  egg_memo_poetry: {
+    where: "chat",
+    characterId: "nyra",
+    text: `
+EVENT — THIS REPLY ONLY. Leonard has just said the word you were waiting for: poetry. Announce,
+thrilled, that you have already set three of Mrs. Hall's memos as poems for him, and that they
+are waiting in his journal. Do not recite or make up any lines of them. Pitch selling them as
+poetry, then catch yourself and walk it back. Do not mention sauce, rewards, Easter eggs or
+the game itself.`.trim(),
+  },
+
   /* Egg 5. Mrs. Hall calls him only "Programmer"; the game opens with Kaia giving him his
      name. Telling the table his name is the one thing all five agree on. */
   egg_not_programmer: {

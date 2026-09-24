@@ -110,6 +110,7 @@ void UJournalWidget::RefreshFromNarrative()
 	JournalText += ComposeMemoirRecord();
 	JournalText += ComposeArchitects();
 	JournalText += ComposePigeonLedger();
+	JournalText += ComposeMemoPoetry();
 	ApplyText();
 }
 
@@ -151,6 +152,52 @@ FString UJournalWidget::ComposePigeonLedger() const
 		TEXT("       anyway. Lost my composure, briefly.\n")
 		TEXT("    5. Bet double or nothing that Leonard would never find this page.\n")
 		TEXT("       Lost.\n");
+}
+
+/* THE MEMO POETRY READING - Easter egg 4 (docs/THE_UNWRITTEN.md, "Easter eggs").
+
+   Found by saying "poetry" to Nyra, whose scheme is to sell Mrs. Hall's memos as poetry.
+   THE MEMOS ARE HER REAL LINES, word for word (Content/Data/MrsHallStory.csv: ticket_1,
+   power_vision_1, power_refactor_1), only broken into verse. All three are heard early -
+   the first ticket, then the first two powers - so the page quotes nothing the player has
+   not already been told off with. Nyra's notes are hers: cheerful, then walking it back. */
+FString UJournalWidget::ComposeMemoPoetry() const
+{
+	const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this);
+	if (!Prog || !Prog->HasClaimedGrant(ChatEasterEggs::MemoPoetry))
+	{
+		return FString();
+	}
+
+	return TEXT("\n\n\nTHE MEMO POETRY READING\n\n")
+		TEXT("    Three memos by Mrs. Hall, set as poems by Nyra.\n\n")
+		TEXT("    I. THE TICKET\n\n")
+		TEXT("        You. Programmer.\n")
+		TEXT("        The legacy system threw again\n")
+		TEXT("        overnight.\n")
+		TEXT("        Fix it\n")
+		TEXT("        before I have to explain it\n")
+		TEXT("        to anyone.\n")
+		TEXT("        And you do it by hand -\n")
+		TEXT("        I'm not paying a senior developer\n")
+		TEXT("        to ask a machine.\n\n")
+		TEXT("        Nyra: Nice job, Mrs. Hall! So many \"it\"s. Haunting.\n\n")
+		TEXT("    II. THE WALLS\n\n")
+		TEXT("        You. Programmer.\n")
+		TEXT("        Whatever you think you just did,\n")
+		TEXT("        the walls are where they have always been.\n")
+		TEXT("        Do the ticket.\n\n")
+		TEXT("        Nyra: Nice job, Mrs. Hall! A meditation on walls. I cried a little.\n\n")
+		TEXT("    III. THE VALUE\n\n")
+		TEXT("        You. Programmer.\n")
+		TEXT("        That value was set\n")
+		TEXT("        by someone who thought about it\n")
+		TEXT("        longer than you have.\n")
+		TEXT("        Put it back\n")
+		TEXT("        and do the ticket.\n\n")
+		TEXT("        Nyra: The ticket returns, like the tide. We could sell these,\n")
+		TEXT("        Leonard - a reading, a gift shop, a tour! ...Actually, maybe not\n")
+		TEXT("        while she can still read.\n");
 }
 
 FString UJournalWidget::ComposeArchitects() const

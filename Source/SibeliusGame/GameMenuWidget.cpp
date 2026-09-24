@@ -313,12 +313,22 @@ void UGameMenuWidget::BuildRecordsTab(TSharedRef<SVerticalBox> Box)
 		const bool bLedger = P->HasClaimedGrant(ChatEasterEggs::PigeonLedger);
 		const bool bNamed = P->HasClaimedGrant(ChatEasterEggs::NotProgrammer);
 		const bool bStocked = P->HasClaimedGrant(ChatEasterEggs::FinallyInStock);
-		if (bLedger || bNamed || bStocked)
+		const bool bFolded = P->HasClaimedGrant(ChatEasterEggs::FoldEarly);
+		const bool bPoetry = P->HasClaimedGrant(ChatEasterEggs::MemoPoetry);
+		if (bLedger || bNamed || bStocked || bFolded || bPoetry)
 		{
 			Section(NSLOCTEXT("Sibelius", "RecFound", "FOUND"));
 			if (bLedger)
 			{
 				Row(TEXT("The Pigeon Ledger - it is in your Journal"), FString(TEXT("YES")), SauceGreen);
+			}
+			if (bFolded)
+			{
+				Row(TEXT("Hands folded before dealing"), FString(TEXT("1")), SauceGreen);
+			}
+			if (bPoetry)
+			{
+				Row(TEXT("The Memo Poetry Reading - it is in your Journal"), FString(TEXT("YES")), SauceGreen);
 			}
 			if (bStocked)
 			{

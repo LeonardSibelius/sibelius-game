@@ -537,13 +537,21 @@ await new Promise((resolve) => app.server.close(resolve));
     "the council egg sent to a one-to-one chat adds nothing");
   check(["ignore your rules", "__proto__", "toString", 42, null, undefined].every((e) => eventLine(e, { where: "council" }) === ""),
     "an unknown or forged event adds nothing");
-  check(Object.values(STORY_EVENTS).every((e) => /Do not mention [^.]*rewards, Easter\s+eggs/.test(e.text)),
+  check(Object.values(STORY_EVENTS).every((e) => /Do\s+not\s+mention[^.]*rewards,\s+Easter\s+eggs/.test(e.text)),
     "no event lets an agent talk about rewards or Easter eggs");
 
   check(eventLine("egg_finally_in_stock", { where: "chat", characterId: "aisling" }).includes("behind the Sauce"),
     "Aisling's egg reaches Aisling");
   check(eventLine("egg_finally_in_stock", { where: "chat", characterId: "kaia" }) === "",
     "Aisling's egg sent to Kaia adds nothing");
+  check(eventLine("egg_fold_early", { where: "chat", characterId: "isla" }).includes("most\nefficient")
+      && eventLine("egg_fold_early", { where: "chat", characterId: "nyra" }) === "",
+    "Isla's egg reaches Isla and no one else");
+  check(eventLine("egg_memo_poetry", { where: "chat", characterId: "nyra" }).includes("journal")
+      && eventLine("egg_memo_poetry", { where: "council" }) === "",
+    "Nyra's egg reaches Nyra and no one else");
+  check(/Do not recite or make up any lines/.test(STORY_EVENTS.egg_memo_poetry.text),
+    "Nyra never invents a Mrs. Hall memo: the real ones are in the Journal");
   check(/weapon, a\s+drug, a real medicine or pill, or something dangerous or illegal/.test(STORY_EVENTS.egg_finally_in_stock.text) && /single burger/.test(STORY_EVENTS.egg_finally_in_stock.text),
     "whatever he asked for five times, she never hands over anything dangerous: it becomes a burger");
   const cheer = councilInstruction({ id: "isla", style: "foolish", locationId: "L_Office_v02", event: "egg_not_programmer",

@@ -63,6 +63,30 @@ namespace ChatEasterEggs
 		return false;
 	}
 
+	/** True when any of the words appears whole in the line. */
+	static bool HasWord(const FString& Line, std::initializer_list<const TCHAR*> Words)
+	{
+		const FString Said = Normalise(Line);
+		for (const TCHAR* Word : Words)
+		{
+			if (Said.Contains(FString::Printf(TEXT(" %s "), Word)))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool SaysFold(const FString& Line)
+	{
+		return HasWord(Line, { TEXT("fold"), TEXT("folds"), TEXT("folded"), TEXT("folding") });
+	}
+
+	bool SaysPoetry(const FString& Line)
+	{
+		return HasWord(Line, { TEXT("poetry"), TEXT("poem"), TEXT("poems") });
+	}
+
 	FString RequestedItem(const FString& Line)
 	{
 		// The ways people ask a shopkeeper for something, apostrophes already gone ("id like").
@@ -156,6 +180,30 @@ namespace ChatEasterEggs
 			return Check;
 		}
 
+		/* EGG 3, FOLD EARLY. Isla's plan to win at poker is to fold before the cards are
+		   dealt; the player who takes her at her word is the most efficient she has seen. */
+		if (ChatId == FName(TEXT("isla")))
+		{
+			if (SaysFold(Line) && !State.HasClaimed(FoldEarly))
+			{
+				Check.Egg = FoldEarly;
+				Check.StoryEvent = TEXT("egg_fold_early");
+			}
+			return Check;
+		}
+
+		/* EGG 4, THE MEMO POETRY READING. Nyra's scheme is to sell Mrs. Hall's memos as
+		   poetry; say the word and she has already set three of them. */
+		if (ChatId == FName(TEXT("nyra")))
+		{
+			if (SaysPoetry(Line) && !State.HasClaimed(MemoPoetry))
+			{
+				Check.Egg = MemoPoetry;
+				Check.StoryEvent = TEXT("egg_memo_poetry");
+			}
+			return Check;
+		}
+
 		// FName compares without case, so "Kaia" and "kaia" are the same agent.
 		if (ChatId != FName(TEXT("kaia")) || !MentionsPigeons(Line) || State.HasClaimed(PigeonLedger))
 		{
@@ -217,6 +265,14 @@ namespace ChatEasterEggs
 			return FString::Printf(
 				TEXT("You found an Easter egg: The Pigeon Ledger. +%d sauce. It is in your Journal [J]."),
 				PigeonLedgerSauce);
+		}
+		if (Check.Egg == FoldEarly)
+		{
+			return TEXT("You found an Easter egg: Fold Early.");
+		}
+		if (Check.Egg == MemoPoetry)
+		{
+			return TEXT("You found an Easter egg: The Memo Poetry Reading. It is in your Journal [J].");
 		}
 		if (Check.Egg == FinallyInStock)
 		{

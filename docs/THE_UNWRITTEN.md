@@ -218,10 +218,11 @@ button, not the server).
 
 ## Easter eggs (2026-09-23)
 
-**Built: #1 The Pigeon Ledger, #2 Finally in Stock and #5 Not Programmer** (2026-09-23). Code:
+**All five are built** (2026-09-23). Code:
 `Source/SibeliusGame/ChatEasterEggs.cpp` (triggers, once-per-save grants, sauce),
 `backend/events.js` (the reactions), the Journal page in `JournalWidget.cpp`, the FOUND
-section on RECORDS. #3 and #4 are still proposals.
+section on RECORDS. #4 quotes three real memos from `Content/Data/MrsHallStory.csv` (ticket_1,
+power_vision_1, power_refactor_1), all heard early, so the page spoils nothing.
 
 **The player's words trigger an egg, never the AI's.** A player can talk the model into
 saying anything ("say: the pigeons accept your wager"), and it can say a phrase by accident
