@@ -83,6 +83,26 @@ Absorbing it into the price is listed first and is the only one of the four cons
 with the *no microtransactions* claim already sitting in the build review request. See
 correction 3.
 
+> **Corrected and resolved 2026-09-25**, after reading the Content Survey page itself
+> rather than this summary of it. Two fixes:
+>
+> **A free price does not rule out approach one — it IS approach one.** The paragraph
+> above was read for weeks as "modelling the cost into the price needs a non-zero price",
+> and `docs/STEAM_AI_GUARDRAILS.md` carried that as its last open blocker. Valve's actual
+> wording is *"model that cost into the main price of the game and not charge anything
+> additional"* — it is about not charging extra. A free game absorbs one hundred per cent
+> of the cost and charges nothing additional. That is approach one at its limit, not an
+> exception to it.
+>
+> **A single-purchase DLC is not a microtransaction**, so "the only one of the four" above
+> is wrong: approach four is open as well. It should still not be taken — see the
+> guardrails document for why the headline costs more than the money saves.
+>
+> **Valve's page is silent on free games, optional features and developer-side caps.**
+> Silence is not permission, so the amendment ticket states the position and asks for
+> confirmation rather than assuming. The wording is in `docs/STEAM_AI_GUARDRAILS.md`,
+> "How the service is paid for".
+
 **The one absolute.** Valve does not ship live-generated AI in Adult Only sexual
 content. Not this game — but the chat characters are the dancers and the Presence, and
 `docs/THE_PRESENCE.md` writes them to be magnetic on purpose. The hard line belongs in

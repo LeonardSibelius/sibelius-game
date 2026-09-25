@@ -186,12 +186,54 @@ the dialogue.
 
 ---
 
+## How the service is paid for — goes in the ticket
+
+Valve's Content Survey documentation says that a game integrating an external AI service
+must manage access to it on players' behalf and collect payment through a Steam-supported
+method, and offers four ways. The first is:
+
+> *"model that cost into the main price of the game and not charge anything additional"*
+
+**That is the one this game uses, and it already does.** Wording for the ticket:
+
+> The AI service is paid for entirely by the developer. Nothing is charged to players for
+> it, and there is no microtransaction, subscription or DLC attached to it — this is the
+> first of the four approaches in your documentation, at a game price of zero.
+>
+> Spending is capped on the developer's own proxy, daily and monthly, and the caps are
+> enforced before any call is made to the provider rather than after. The conversation
+> feature is optional and not required to finish the game; when the cap is reached, the
+> characters report that conversations are unavailable and the rest of the game is
+> unaffected. No player has paid for anything that can stop working.
+>
+> Could you confirm this is acceptable for a free title? Your documentation does not
+> address free games, optional features, or developer-side spending caps specifically,
+> and we would rather have it confirmed than assume it.
+
+**Ask the question, do not assume the answer.** The documentation is silent on all three
+of those cases — it treats every live-generated integration the same way. Silence is not
+permission. The amendment is a support ticket either way, so one extra sentence buys a
+written answer and costs nothing.
+
+**If Valve says no, pull chat from the Steam build. Do not monetise it.** A
+single-purchase DLC is the technically clean answer and Valve lists it, but a paid
+AI-conversation add-on bolted onto a memoir about a 71-year-old is exactly the
+*"AI girlfriend casino"* headline `docs/THE_PRESENCE.md` vetoed permanently. The moat is
+the memoir's sincerity. The feature can live on itch and in development builds; the
+framing cannot be got back.
+
+**Scale, so the risk is legible.** The monthly cap is roughly 21,000 replies at the
+measured cost per reply. A free release where a few hundred players each have one
+conversation spends a couple of dollars. Running dry is not a realistic worry at this
+size, and runaway cost is impossible because the cap is checked before the call.
+
+---
+
 ## Still open before this can be filed
 
-1. **The price question.** The package is free, and Valve expects a game calling a paid AI
-   service per interaction to collect payment through a Steam-supported method. Absorbing
-   the cost into the price is not available at a price of zero. See
-   `docs/NPC_CHAT_REVIEW.md`, "The clause that bears on the tier decision."
+1. ~~The price question~~ — **resolved 2026-09-25**, see the section above. The position is
+   approach one (developer absorbs the cost, nothing charged), stated in the ticket with a
+   request that Valve confirm it for a free title.
 2. ~~The sexual-content filter decision~~ — **done 2026-09-25.** Measured, enabled at
    `BLOCK_MEDIUM_AND_ABOVE`, and described above without overclaiming what it does.
 3. **The ElevenLabs commercial licence**, which the Pre-Generated disclosure already
