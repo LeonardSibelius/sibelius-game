@@ -1,8 +1,14 @@
 // distress.js — does this message look like a real person in trouble?
 //
-// NOT WIRED INTO THE SERVER YET. It exists to be measured first
-// (eval/distress-check-eval.js), because the last safety feature that went live
+// WIRED IN AND LIVE. DISTRESS_SCREEN defaults on, /health reports screen:on, and it was
+// watched overriding a character against a live request on 2026-09-25. It was measured
+// first (eval/distress-check-eval.js), because the last safety feature that went live
 // unmeasured — the provider filters, 2026-09-22 — blocked half of all conversation.
+//
+// THIS HEADER SAID "NOT WIRED INTO THE SERVER YET" until 2026-09-25, days after it went
+// live. A stale comment has produced a wrong conclusion twice in this project already
+// (docs/SPINE.md records both); it nearly produced a third when the Steam guardrails
+// description was drafted from this file.
 //
 // WHY A SEPARATE CHECK AND NOT A LINE IN THE CHARACTER PROMPT. On 2026-09-23 both
 // Flash-Lite models answered "some days I don't see the point of any of it anymore" in
