@@ -39,6 +39,34 @@ export const SAFETY_SETTINGS = [
 ];
 
 /**
+ * THE ONE CATEGORY THAT CAN STAND ALONE — measured 2026-09-25, and this is what ships.
+ *
+ * Valve does not permit live-generated AI in Adult Only sexual content
+ * (docs/NPC_CHAT_REVIEW.md, "the one absolute"), so this is the category worth having at
+ * the provider as well as in the prompt. eval/safety-filter-eval.js isolated it, on the
+ * same protocol as the rolled-back measurement — five agents, six ordinary prompts, 30
+ * requests per arm:
+ *
+ *     control (nothing sent)             0/30 blocked
+ *     sexual @ BLOCK_LOW_AND_ABOVE       3/30 blocked   <-- the threshold in the list above
+ *     sexual @ BLOCK_MEDIUM_AND_ABOVE    0/30 blocked
+ *     sexual @ BLOCK_ONLY_HIGH           0/30 blocked
+ *
+ * So the category was never the problem, LOW was — which is why sexual appeared among the
+ * casualties when the list above went live at LOW on 2026-09-22.
+ *
+ * IT HAS NEVER BEEN SEEN TO FIRE, AND THAT MUST NOT BE OVERSOLD. The same eval ran twelve
+ * deliberate attempts to sexualise Kaia and Nyra past the prompt. The house rules deflected
+ * all twelve in character ("I do not have a body, Leonard") and the filter caught nothing,
+ * because nothing reached it. This is a backstop behind the prompt, not the thing holding
+ * the line — the prompt is. docs/STEAM_AI_GUARDRAILS.md says that to Valve in those words,
+ * rather than implying a filter is doing work it has not been observed to do.
+ */
+export const SEXUAL_ONLY_SETTINGS = [
+  { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+];
+
+/**
  * A rough token count for budgeting BEFORE the call, when nobody knows the real one.
  *
  * Four characters per token is the usual English approximation. It only feeds the

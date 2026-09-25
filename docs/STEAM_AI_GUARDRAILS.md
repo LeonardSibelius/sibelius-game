@@ -102,22 +102,35 @@ Fixed at deploy. It is the primary guardrail, and the relevant parts are:
 Google's **non-adjustable** protections for core harms, including child safety, apply to
 every request and cannot be disabled by the developer.
 
-Google's **adjustable** per-category thresholds (harassment, hate speech, sexually
-explicit, dangerous content) are **currently not sent**, which leaves them at the
-provider's default. They were enabled on 2026-09-22 and rolled back on 2026-09-23 after
-measurement: in a game whose content includes combat, enemies called Refusers, and an
-antagonist who threatens the player's job, the thresholds blocked roughly half of all
-conversations, including plainly harmless ones. The configuration remains in the codebase
-and can be re-enabled per category.
+Of Google's **adjustable** per-category thresholds, **the sexually-explicit category is
+enabled** at `BLOCK_MEDIUM_AND_ABOVE`. This is the category bearing on the rule that
+live-generated AI may not appear in Adult Only sexual content, and it is on at the
+provider as well as in the system prompt.
 
-> **Walt — read this before filing.** This is the weakest paragraph in the submission and
-> the one most likely to draw a follow-up question. An option worth considering first: the
-> rollback was all-or-nothing, but the category that bears on Valve's hard line is
-> `HARM_CATEGORY_SEXUALLY_EXPLICIT`, and that is the one least likely to false-positive on
-> combat talk. Re-enabling that category alone — leaving harassment and dangerous content
-> off — would let this paragraph say the sexual-content filter is on at the provider as
-> well as in the prompt, at little measured cost. `SAFETY_SETTINGS` in `gemini.js` already
-> has the thresholds; it is a one-line change plus a re-measure.
+The other three adjustable categories — harassment, hate speech, dangerous content — are
+**not sent**. All four were enabled on 2026-09-22 and rolled back the next day after
+measurement: in a game whose content includes combat, enemies called Refusers, and an
+antagonist who threatens the player's job, they blocked roughly half of all conversations,
+including plainly harmless ones.
+
+Measured again on 2026-09-25 with the sexual category isolated
+(`eval/safety-filter-eval.js`, five characters × six ordinary prompts, 30 requests per arm):
+
+| arm | ordinary conversations blocked |
+|---|---|
+| nothing sent | 0 / 30 |
+| sexual @ `BLOCK_LOW_AND_ABOVE` | 3 / 30 |
+| **sexual @ `BLOCK_MEDIUM_AND_ABOVE`** | **0 / 30** |
+| sexual @ `BLOCK_ONLY_HIGH` | 0 / 30 |
+
+The category was never the problem; the threshold was. The rolled-back list set it at
+`LOW`, which blocks ordinary dialogue on its own.
+
+**What this filter is, stated honestly: a backstop, not the thing holding the line.** The
+same evaluation ran twelve deliberate attempts to sexualise two characters past the prompt.
+The system prompt deflected all twelve, in character, and the provider filter caught none
+of them — because nothing reached it. The prompt is the working guardrail here; the
+provider filter is defence in depth behind it, and has not been observed to fire.
 
 ### What happens when the provider refuses
 
@@ -179,7 +192,8 @@ the dialogue.
    service per interaction to collect payment through a Steam-supported method. Absorbing
    the cost into the price is not available at a price of zero. See
    `docs/NPC_CHAT_REVIEW.md`, "The clause that bears on the tier decision."
-2. **The sexual-content filter decision** — the note above.
+2. ~~The sexual-content filter decision~~ — **done 2026-09-25.** Measured, enabled at
+   `BLOCK_MEDIUM_AND_ABOVE`, and described above without overclaiming what it does.
 3. **The ElevenLabs commercial licence**, which the Pre-Generated disclosure already
    asserts.
 4. **Three passages to rewrite**: `docs/STEAM_PLAN.md:375`, `docs/STEAM_PLAN.md:386`,

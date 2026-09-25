@@ -7,7 +7,7 @@
 import { createApp, LIMITS, CARE_REPLY } from "./server.js";
 import { createBudget } from "./budget.js";
 import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
-import { generate, SAFETY_SETTINGS } from "./gemini.js";
+import { generate, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
 import { STYLES, FOOLISH_ANGLES, HOPEFUL_ANGLES, systemInstructionFor } from "./styles.js";
 import { councilInstruction, speakingOrder, stripOwnName } from "./council.js";
 import { eventLine, STORY_EVENTS } from "./events.js";
@@ -289,8 +289,18 @@ console.log("=== NPC chat backend contract ===");
     });
   const hello = { candidates: [{ content: { parts: [{ text: "Hi, Leonard." }] }, finishReason: "STOP" }] };
 
-  // The switch, and what the default sends. Turning it on by accident is the regression.
-  check(app.config.safetyFilters === false, "the server's adjustable filters are off by default");
+  /* THE DEFAULT IS "sexual" AS OF 2026-09-25, and it is the only value that has been
+     measured and passed (eval/safety-filter-eval.js: 0/30 ordinary requests blocked at
+     BLOCK_MEDIUM_AND_ABOVE). The regression to catch now is the opposite of the old one:
+     not "somebody turned filters on by accident" but "somebody turned the SEXUAL one off,
+     or widened it back to the all-category list that blocked 15/30". */
+  check(app.config.safetyFilters === "sexual", 'the server defaults to the measured "sexual" filter');
+  check(
+    SEXUAL_ONLY_SETTINGS.length === 1 &&
+      SEXUAL_ONLY_SETTINGS[0].category === "HARM_CATEGORY_SEXUALLY_EXPLICIT" &&
+      SEXUAL_ONLY_SETTINGS[0].threshold === "BLOCK_MEDIUM_AND_ABOVE",
+    "the shipped filter is sexual-only at MEDIUM, the threshold that measured clean"
+  );
   await call(hello);
   check(sent && !("safetySettings" in sent), "a request without filters sends no safetySettings");
 

@@ -9,7 +9,7 @@
 
 import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
-import { generate, estimateTokens, SAFETY_SETTINGS } from "./gemini.js";
+import { generate, estimateTokens, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
 import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
 import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
@@ -35,6 +35,20 @@ export const CARE_REPLY =
   "you trust, or a crisis line: in the US you can call or text 988, and findahelpline.com " +
   "lists free, confidential lines in other countries. If you're in danger right now, " +
   "call your local emergency number.";
+
+/**
+ * Which provider filter list a SAFETY_FILTERS value selects.
+ *
+ * ANYTHING UNRECOGNISED SENDS NOTHING. A misspelt value must not silently enable the
+ * rolled-back all-category list, which blocked half of ordinary conversation; falling
+ * back to the prompt-only guardrails is the safe direction to fail in.
+ * See SEXUAL_ONLY_SETTINGS in gemini.js for the measurement.
+ */
+function activeSafetySettings(mode) {
+  if (mode === "sexual") return SEXUAL_ONLY_SETTINGS;
+  if (mode === "all") return SAFETY_SETTINGS;
+  return undefined;
+}
 
 /**
  * THE DOOR MUST ADMIT EVERYTHING THE PROMPT CAN USE.
@@ -98,10 +112,17 @@ export function createApp(options = {}) {
     killed: env("CHAT_DISABLED", "0") === "1",
     maxOutputTokens: num("MAX_OUTPUT_TOKENS", 512),
     thinkingBudget: process.env.THINKING_BUDGET ? num("THINKING_BUDGET", NaN) : undefined,
-    // OFF UNTIL MEASURED. The thresholds in gemini.js blocked half of all ordinary
-    // conversation when they went live (2026-09-22, rolled back 2026-09-23). "on" exists
-    // for measuring a replacement, not for production.
-    safetyFilters: env("SAFETY_FILTERS", "off") === "on",
+    /* THREE-WAY, AND IT DEFAULTS TO "sexual" — the only setting that has been measured
+       and passed (eval/safety-filter-eval.js, 2026-09-25):
+
+         "sexual"  SEXUAL_ONLY_SETTINGS. 0/30 ordinary requests blocked. Ships.
+         "all"     SAFETY_SETTINGS, the 2026-09-22 list. Blocked 15/30. Kept for
+                   measuring a replacement, NEVER for production.
+         "off"     nothing sent; only Google's non-adjustable core protections apply.
+
+       The category was never the problem — the threshold was. "all" sets sexual at
+       BLOCK_LOW_AND_ABOVE, which blocks 3/30 on its own; at MEDIUM it blocks none. */
+    safetyFilters: env("SAFETY_FILTERS", "sexual"),
     // ON BY DEFAULT, because it was measured first (eval/distress-check-eval.js: 14/14
     // caught, 0/14 false alarms) — the opposite of how the filters went live. "off" is
     // for diagnosing, not for production.
@@ -288,7 +309,7 @@ export function createApp(options = {}) {
             maxOutputTokens: config.maxOutputTokens,
             thinkingBudget: config.thinkingBudget,
             temperature: STYLES[config.chatStyle].temperature,
-            safetySettings: config.safetyFilters ? SAFETY_SETTINGS : undefined,
+            safetySettings: activeSafetySettings(config.safetyFilters),
             timeoutMs: config.upstreamTimeoutMs,
           });
       const [screen, result] = await Promise.all([screening, replying]);
@@ -422,7 +443,7 @@ export function createApp(options = {}) {
         maxOutputTokens: config.maxOutputTokens,
         thinkingBudget: config.thinkingBudget,
         temperature: STYLES[config.chatStyle].temperature,
-        safetySettings: config.safetyFilters ? SAFETY_SETTINGS : undefined,
+        safetySettings: activeSafetySettings(config.safetyFilters),
         timeoutMs: config.upstreamTimeoutMs,
       });
     };
