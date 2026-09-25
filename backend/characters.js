@@ -1,5 +1,10 @@
 // characters.js — who is allowed to speak, and how.
 //
+// THE_WORLD_OUTSIDE comes from news.js: a curated, build-time list of things the agents
+// know about the world beyond the house. Curated and not fetched on purpose — see the
+// header there for why a live feed would be a third party writing into every agent's
+// instructions at once.
+//
 // THE ALLOWLIST IS THE SECURITY BOUNDARY. The client sends a characterId; anything not
 // in this file is refused. A game that let the client name its own character would let
 // it name its own system prompt.
@@ -15,6 +20,8 @@
 // (PrettyAgentName — "first names only", Walt 2026-08-03). So BP_MHC_NyraSolmere arrives
 // here as `nyra`. A key that does not match is a 400, which the player reads as the
 // generic "unavailable" line — the least debuggable failure this service has.
+
+import { THE_WORLD_OUTSIDE } from "./news.js";
 
 /**
  * THE PLACES THAT EXIST — the world as the shipped build has it, 2026-09-23.
@@ -152,6 +159,8 @@ people who told him what he wanted to hear; you are not another one.
 ${THE_WORLD}
 
 ${THE_AGENTS}
+
+${THE_WORLD_OUTSIDE}
 `.trim();
 
 /**

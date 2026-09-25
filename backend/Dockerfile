@@ -7,7 +7,10 @@ FROM node:22-alpine
 RUN addgroup -S chat && adduser -S chat -G chat
 
 WORKDIR /app
-COPY --chown=chat:chat package.json server.js budget.js gemini.js characters.js distress.js styles.js council.js events.js facts.js ./
+# news-candidates.js is deliberately NOT copied: it is a build-time harvesting tool that
+# makes an outbound call, and nothing the server imports touches it. news.js IS needed —
+# characters.js imports THE_WORLD_OUTSIDE from it.
+COPY --chown=chat:chat package.json server.js budget.js gemini.js characters.js distress.js styles.js council.js events.js facts.js news.js ./
 
 # The volume is mounted here and owned by root by default; the entrypoint needs to be
 # able to write the ledger into it. Fly mounts after this, so ownership is fixed at boot
