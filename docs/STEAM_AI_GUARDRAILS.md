@@ -236,8 +236,12 @@ size, and runaway cost is impossible because the cap is checked before the call.
    request that Valve confirm it for a free title.
 2. ~~The sexual-content filter decision~~ — **done 2026-09-25.** Measured, enabled at
    `BLOCK_MEDIUM_AND_ABOVE`, and described above without overclaiming what it does.
-3. **The ElevenLabs commercial licence**, which the Pre-Generated disclosure already
-   asserts.
+3. ~~The ElevenLabs commercial licence~~ — **verified 2026-09-25.** The account was on
+   the $6 Starter plan, which carries the commercial licence for Speech, from 2026-06-09
+   to 2026-09-09; every voice file in the project was generated inside that window, the
+   last of them three days before it lapsed. The Pre-Generated disclosure's "under a paid
+   commercial licence" is true as written. Billing table and file dates:
+   `docs/DANCER_VOICE.md`, "Licensing — SETTLED".
 4. **Three passages to rewrite**: `docs/STEAM_PLAN.md:375`, `docs/STEAM_PLAN.md:386`,
    `docs/STEAM_STORE_COPY.md:101` — all three currently say no content is generated at
    runtime.

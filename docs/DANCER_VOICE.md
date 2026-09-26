@@ -197,16 +197,63 @@ Aisling, Elise).
 
 ---
 
-## Licensing — read this before shipping
+## Licensing — SETTLED, and this is the evidence
 
 The free ElevenLabs tier is **non-commercial and requires attribution**. This
-repo's `.gitignore` already carries the standing rule for AI voice:
+repo's `.gitignore` carries the standing rule for AI voice:
 
 > Clear the synthetic-voice commercial license before any shipped build.
 
-That applies to this line the same as to Mrs. Hall's refusals. A paid tier
-carries the commercial license; sort it out before the itch/Steam push, not
-after.
+### It was cleared. Every recording in this project is licensed.
+
+**Checked 2026-09-25** in the ElevenLabs account, Usage → Billing Windows, which
+lists the Stripe invoice summaries:
+
+| start | end | base charge |
+|---|---|---|
+| 2026-06-09 | 2026-07-09 | $6 |
+| 2026-07-09 | 2026-08-09 | $6 |
+| 2026-08-09 | 2026-09-09 | $6 |
+
+**$6/month is Starter, and Starter carries the commercial licence for Speech** —
+the Free plan card lists that same line struck through. So the account was paid
+from 9 June to 9 September 2026.
+
+Every voice file was generated inside that window. Creation times in `Tools/Audio`:
+
+| file | created |
+|---|---|
+| `ai-intro`, `ai-clue2` | 2026-06-11, 06-12 |
+| `dancer_power` + all five named takes | 2026-08-25 |
+| `kaia_intro` | 2026-08-25 |
+| `dancer_guide_nyra` … `dancer_guide5_nyra` | 2026-08-31 → 09-05 |
+| `dancer_protein_nyra` | **2026-09-06** |
+
+The last one was made **three days before the subscription lapsed**. Nothing in
+this project was generated on the free tier.
+
+**THE RIGHTS ATTACH AT GENERATION TIME, NOT TO TODAY'S PLAN.** This is the part
+worth understanding, because the account reads *Free* now and that looks alarming
+at a glance. The licence covers what was made while paying and keeps covering it
+afterwards. The reverse is the real hazard: upgrading later does **not**
+retroactively license anything made on Free. A lapsed plan costs nothing already
+recorded.
+
+This is what `docs/STEAM_PLAN.md`'s Pre-Generated disclosure means when it tells
+Valve the audio was generated *"under a paid commercial licence"*. That sentence
+is true as written, and the table above is the proof of it.
+
+### The rule from here
+
+**The account has been on Free since 2026-09-09. Do not generate on it.** Anything
+made now is non-commercial, requires attribution, and would land in `Tools/Audio`
+looking identical to the licensed files with nothing to tell them apart. If you
+record again — the unwritten Mrs. Hall story lines, or anything for a 2.0 —
+**resubscribe first, then generate**, and add the dates to the table above. Six
+dollars for the month you actually use.
+
+**Keep this table.** It lives in an account whose interface and retention are not
+yours to control, and the Steam disclosure rests on it.
 
 ---
 
