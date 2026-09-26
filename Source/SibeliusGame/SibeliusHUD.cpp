@@ -774,13 +774,31 @@ FString ASibeliusHUD::ComputeObjective() const
 
 				if (!bFirstTicketDone)
 				{
+					/* THE GOLD LINE NOW AGREES WITH KAIA (Walt, 2026-09-26).
+
+					   Her locked opening ends "Come upstairs. I have powers to give you"
+					   (docs/CINEMATICS.md, script A) — and the banner met the player at
+					   second 36 telling him to stay downstairs and work the machine. The
+					   voice sent him up, the screen sent him down, and that is the first
+					   forty seconds of the game. The script was locked 2026-08-25; the
+					   living-room First Ticket landed after it (MACHINE_PLAN §8) and
+					   nothing came back to reconcile the two.
+
+					   So Refactor is asked FIRST and the machine second. Order, not text:
+					   pointing the Tutorial.Vision line upstairs would have nagged
+					   forever, because that gate only clears when V is actually held —
+					   a player who obeyed it, went up and took the power would have been
+					   told to go upstairs again. Asking for the verb first advances on
+					   the thing the line tells him to do.
+
+					   ASibeliusHUD::DrawObjective renders one line, so these stay short. */
+					if (!Progression->IsUnlocked(EPowerVerb::Refactor))
+					{
+						return TEXT("Kaia is upstairs, with the first power to give you.");
+					}
 					if (!Progression->HasClaimedGrant(TEXT("Tutorial.Vision")))
 					{
 						return TEXT("The legacy system is throwing. Hold [V] and read the parts.");
-					}
-					if (!Progression->IsUnlocked(EPowerVerb::Refactor))
-					{
-						return TEXT("One part is lying. [R] is not yet yours — an AI agent has the verb.");
 					}
 					if (!Machine->AreAllFaultsCleared())
 					{
