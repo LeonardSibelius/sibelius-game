@@ -9,6 +9,8 @@
 #include "MrsHallSubsystem.h"       // SPINE Move 2: the one channel she speaks through
 
 #include "BuildSite.h"
+#include "Spaceport.h"               // the one catalog entry with a prerequisite
+#include "ProteinMachine.h"          // IsEnhanced - that prerequisite
 #include "Branchable.h"              // GetBranchId - the id a record is keyed on
 #include "ProgressionSubsystem.h"    // where generated objects are remembered
 #include "SibeliusGame.h"            // LogSibeliusGame
@@ -198,6 +200,55 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 	{
 		if (const FGenerateCatalogEntry* E = FindEntry(R.EntryId))
 		{
+			/* THE LAUNCH COMPLEX WAITS FOR THE BODY THAT CAN USE IT (Walt, 2026-09-26).
+
+			   Walt built a spaceport before the protein treatment, and it landed across
+			   the entrance to Protein Machines Inc. — so the structure that needs the
+			   enhancement was standing on the only place to get it. Unwinnable, from one
+			   keystroke, with no warning.
+
+			   IsEnhanced already gated three things: the pre-flight (Spaceport.cpp), the
+			   launch, and the lawn hint that says to build here at all (HintVolume.cpp:78).
+			   Building was the one door left open, so the hint said "enhance first" and the
+			   game said nothing. This closes it, and the order the hint always described is
+			   now the order the game enforces.
+
+			   Asked of the RESOLVED CLASS, not the EntryId, for the same reason
+			   ResolveSiteClass exists: a row and the class it spawns are the pair that can
+			   drift, and a string match would miss a second launch-complex row or break on
+			   a rename.
+
+			   Refused BEFORE SpawnEntry, so the budget is not charged - the caller only
+			   deducts on a successful spawn. Not routed through Mrs. Hall: her lines are a
+			   data table keyed on EGenerateOutcome, and this is not one of her four
+			   reasons. It is the same refusal the powers use, in the same banner, naming
+			   the place to go - which is what CheckPowerUnlocked learned to do after a
+			   small top-left line read as a bug. */
+			const UClass* SiteClass = ResolveSiteClass(*E).Get();
+			if (SiteClass
+				&& SiteClass->IsChildOf(ASpaceport::StaticClass())
+				&& !AProteinMachine::IsEnhanced(this))
+			{
+				const FString Refusal =
+					TEXT("NOT UNTIL YOU CAN SURVIVE IT — PROTEIN MACHINES INC., BESIDE THE DELI PLAZA");
+
+				const APawn* Pawn = Cast<APawn>(GetOwner());
+				const APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+				if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+				{
+					HUD->ShowBanner(Refusal, 4.0f);
+				}
+				else
+				{
+					Toast(Refusal, FColor::Orange);   // headless / no HUD: still say it
+				}
+
+				UE_LOG(LogTemp, Display,
+					TEXT("[Generate] '%s' refused: not enhanced yet (Protein Machines)."),
+					*R.EntryId.ToString());
+				return EGenerateOutcome::RefusedUnsafe;
+			}
+
 			if (SpawnEntry(*E))
 			{
 				RemainingBudget -= R.Cost;
