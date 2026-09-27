@@ -243,5 +243,20 @@ FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 	{
 		return NSLOCTEXT("Travel", "Ignition", "Ignition...");
 	}
+	/* THE FIRST SCREEN OF THE GAME SAYS NOTHING (Walt, 2026-09-26).
+
+	   "Traveling..." is the honest word for a door between two worlds and the wrong
+	   one for a boot: this is the default map, nobody has been anywhere yet, and the
+	   first word the game showed him was about a journey that had not happened. The
+	   cover itself stays — it still hides the load, and the throbber still turns —
+	   it just stops narrating.
+
+	   Matched by name rather than by "is this the first load", because the subsystem
+	   is handed a map name and nothing else, and the boot map is a fixed one
+	   (GameDefaultMap, DefaultEngine.ini). */
+	if (LevelName.Contains(TEXT("Cine_KaiaIntro")))
+	{
+		return FText::GetEmpty();
+	}
 	return NSLOCTEXT("Travel", "Traveling", "Traveling...");
 }
