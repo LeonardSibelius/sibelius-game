@@ -357,3 +357,11 @@ Content/__ExternalObjects__/SBG_RetroArcade/
 # billiards sim needs. The asset paths are /Game/Billiard_Table/..., so it must live
 # at exactly this folder or its material references break.
 Content/Billiard_Table/
+
+# --- PixelForgeESP "Interior Essentials: Retro Bowling Alley" (Fab, 2026-09-27, "Generated with AI: No") ---
+# The room for the bowling alley, reached by a door in the living room. Paid pack: never in
+# the public repo. Its levels are not World Partition (no __ExternalActors__ folder), but
+# ignore those paths too in case a copy of its map is ever converted.
+Content/IE_RetroBowl/
+Content/__ExternalActors__/IE_RetroBowl/
+Content/__ExternalObjects__/IE_RetroBowl/
