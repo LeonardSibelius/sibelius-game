@@ -348,3 +348,12 @@ Content/SBG_RetroArcade/
 # these two folders - 146 of them. Same treatment as RestaurantScene and Phantom.
 Content/__ExternalActors__/SBG_RetroArcade/
 Content/__ExternalObjects__/SBG_RetroArcade/
+
+# --- PijayArt "Classic Billiards Table" (Fab, 2026-09-27, "Generated with AI: No") ---
+# The pool table for the living room. Unpacked from the listing's Additional Files
+# (the UE 4.20 project), because Fab's in-editor import used the converted glTF, which
+# fuses all 19 pieces into one mesh - that copy sits under Content/Fab/, already
+# ignored. This one keeps each ball, the cue and the rack as its own mesh, which the
+# billiards sim needs. The asset paths are /Game/Billiard_Table/..., so it must live
+# at exactly this folder or its material references break.
+Content/Billiard_Table/
