@@ -1,0 +1,28 @@
+// SteamPipe app build script - Leonard Sibelius (5249380) - E: RECOVERY KIT VERSION
+//
+// Do not run steamcmd on this directly. Run steam_upload_chat.ps1 beside it: it writes a
+// RESOLVED COPY of this file into its buildoutput folder, with this machine's paths in the
+// two SET-BY-SCRIPT lines and "preview" set, and runs steamcmd on the copy. This file is
+// never modified. It refuses to run until Valve has accepted the 2.0 amendment.
+//
+// "preview" is "1" here so that anyone who does run steamcmd on it directly gets a dry run.
+//
+// "setlive" IS DELIBERATELY EMPTY. The upload lands attached to no branch; you set it
+// live yourself in Steamworks > SteamPipe > Builds.
+
+"appbuild"
+{
+	"appid"			"5249380"
+	"desc"			"v2.0 AI chat - from the E: recovery kit"
+
+	"buildoutput"	"SET-BY-SCRIPT"
+	"contentroot"	"SET-BY-SCRIPT"
+
+	"setlive"		""
+	"preview"		"1"
+
+	"depots"
+	{
+		"5249381"	"depot_build_5249381.vdf"
+	}
+}
