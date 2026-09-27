@@ -65,7 +65,8 @@ inline FPinVec2 operator*(double S, FPinVec2 A) { return FPinVec2(A.X * S, A.Y *
 
 enum class EPinballSurface : uint8_t
 {
-	Wall,        // rails, the top arc, the lane walls, the slingshot backs: passive
+	Wall,        // rails, the top arc, the lane walls: passive, and fairly dead
+	Rubber,      // a rubber band stretched between posts: passive, but lively
 	Slingshot,   // a rubber face that kicks the ball away when struck hard enough
 	OneWayGate,  // collides only from its front (left-normal) side: lets the plunged ball
 	             // out of the shooter lane and never lets it back in
@@ -85,11 +86,33 @@ struct FPinballBumper
 	double Radius = 2.6;
 };
 
-// A rollover is a sensor, not an obstacle: it lights when the ball passes over it.
+// A rubber post: a passive circle. The rubber bands between posts are Rubber segments,
+// pushed out to the post's edge, so the ball meets rubber rather than the post's centre line.
+struct FPinballPost
+{
+	FPinVec2 Center;
+	double Radius = 1.1;
+};
+
+// A rollover is a sensor, not an obstacle: it lights when the ball passes over it. Those
+// marked bInSet together pay the table's set bonus when every one of them is lit.
 struct FPinballRollover
 {
 	FPinVec2 Center;
 	double Radius = 2.0;
+	int Points = 50;
+	bool bInSet = true;
+};
+
+// A kickout hole: a slow ball drops in, is held a moment, scores, and is kicked back out.
+// A fast ball rolls straight over it, as it would on the real thing.
+struct FPinballKickout
+{
+	FPinVec2 Center;
+	double Radius = 1.6;
+	int Points = 30;
+	FPinVec2 EjectDirection = FPinVec2(0.0, -1.0);   // unit vector, table coordinates
+	double EjectSpeed = 200.0;
 };
 
 // A flipper is a tapered capsule rotating about its pivot: thick at the base, thin at the
@@ -113,16 +136,28 @@ struct FPinballTableLayout
 
 	std::vector<FPinballSegment> Segments;
 	std::vector<FPinballBumper> Bumpers;
+	std::vector<FPinballPost> Posts;
 	std::vector<FPinballRollover> Rollovers;
+	std::vector<FPinballKickout> Kickouts;
 	FPinballFlipperDef Flippers[2];   // 0 = left, 1 = right
 
 	FPinVec2 PlungerRest;             // where a served ball waits in the shooter lane
 	double ShooterLaneMinX = 46.5;    // the lane's inner wall; the playfield is left of it
 	double DrainY = -4.0;             // below this the ball is lost
 
-	// The living-room table: three pop bumpers, two slingshots, three top rollovers,
-	// a shooter lane with a one-way gate, and a pair of flippers.
+	// Scoring belongs to the table, not the physics: the Singalong's bumper caps say
+	// "10 POINTS", and a different table would say something else.
+	int BumperPoints = 100;
+	int SlingshotPoints = 10;
+	int RolloverSetBonus = 1000;
+
+	// The living-room table: the Singalong cabinet's own playfield, measured from its mesh
+	// (see the note above MakeDefault in PinballSim.cpp).
 	static FPinballTableLayout MakeDefault();
+
+	// A plain generic table - three bumpers, two slingshots, three rollovers - kept because
+	// the physics tests are written against its simple, known geometry.
+	static FPinballTableLayout MakeTestTable();
 };
 
 enum class EPinballPhase : uint8_t
@@ -143,7 +178,9 @@ enum class EPinballEvent : uint8_t
 	BumperHit,          // Index = bumper
 	SlingshotHit,       // Index = slingshot
 	RolloverLit,        // Index = rollover
-	RolloversComplete,  // all three lit: bonus, and the lights reset
+	RolloversComplete,  // every rollover in the set lit: bonus, and the lights reset
+	KickoutCaptured,    // Index = hole, Points = what it paid
+	KickoutEjected,     // Index = hole
 	BallDrained,        // Index = the ball that was lost
 	GameOver,           // Points = final score
 };
@@ -167,12 +204,9 @@ public:
 		"the ball must move less than its own radius per substep, or it can tunnel");
 
 	static constexpr int BallsPerGame = 3;
-	static constexpr int BumperPoints = 100;
-	static constexpr int SlingshotPoints = 10;
-	static constexpr int RolloverPoints = 50;
-	static constexpr int RolloverSetBonus = 1000;
 
 	static constexpr double WallRestitution = 0.45;
+	static constexpr double RubberRestitution = 0.6;
 	static constexpr double BumperRestitution = 0.5;
 	static constexpr double FlipperRestitution = 0.55;
 	static constexpr double BumperKickSpeed = 300.0;
@@ -187,6 +221,9 @@ public:
 	static constexpr double FlipperDownSpeed = 18.0;
 	static constexpr double PlungerMinSpeed = 80.0;     // too soft to clear the gate
 	static constexpr double PlungerMaxSpeed = 700.0;
+	static constexpr double KickoutCaptureSpeed = 180.0; // faster than this rolls over the hole
+	static constexpr double KickoutHoldSeconds = 0.9;
+	static constexpr double KickoutRearmSeconds = 0.6;   // the kicked ball is not re-swallowed
 
 	explicit FPinballSim(FPinballTableLayout InLayout = FPinballTableLayout::MakeDefault());
 
@@ -209,6 +246,7 @@ public:
 	int Score() const { return CurrentScore; }
 	int BallNumber() const { return CurrentBall; }
 	bool IsRolloverLit(size_t Index) const;
+	int HeldInKickout() const { return CapturedKickout; }   // -1 when the ball is free
 	double EffectiveGravity() const { return Gravity; }
 
 	// Everything that happened since the last call, oldest first.
@@ -230,8 +268,11 @@ private:
 	void TickCooldowns();
 	void CollideSegments();
 	void CollideBumpers();
+	void CollidePosts();
 	void CollideFlippers();
 	void UpdateRollovers();
+	void UpdateKickouts();
+	void EjectKickout();
 	void DrainBall();
 	double Resolve(FPinVec2 Normal, double Penetration, FPinVec2 SurfaceVelocity, double Restitution);
 	void Kick(FPinVec2 Normal, double Speed);
@@ -249,6 +290,9 @@ private:
 	std::vector<uint8_t> RolloverInside;
 	std::vector<double> BumperCooldown;
 	std::vector<double> SlingCooldown;
+	std::vector<double> KickoutCooldown;
+	int CapturedKickout = -1;
+	double KickoutHeldSeconds = 0.0;
 	int CurrentScore = 0;
 	int CurrentBall = 0;
 	std::vector<FPinballEvent> PendingEvents;
