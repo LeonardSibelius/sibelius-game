@@ -330,3 +330,21 @@ Content/Maps/L_SibeliusHotel_Generated.umap
 # that works in PIE and is missing from the build would be that bug again in
 # the last scene of the game.
 Content/PortalVFX/
+
+# ---- Retro Pinball Machines (Speedbump Games, bought 2026-09-27) ---------------
+# $6.99, Fab Standard License, public repo. Arrived NOT ignored, like PortalVFX
+# before it; caught by `git status` before anything was committed.
+#
+# Two 1960s-70s electromechanical cabinets (Road Rally, Singalong), UE 5.5-5.8,
+# "Generated with AI: No" - so it adds nothing to the Steam AI disclosure. It is
+# the SHELL for the living-room table: the ball, flippers and bumpers are drawn by
+# the table actor from FPinballSim's layout. Each mesh has its own M_Flipper slot,
+# which is how the modelled static flippers get hidden under ours.
+#
+# When the table actor references the cabinet, make it a HARD reference
+# (FObjectFinder), not a soft path - the v0.7.4 invisible-spaceport lesson.
+Content/SBG_RetroArcade/
+# Its demo level is World Partition, so every actor in it is a separate file under
+# these two folders - 146 of them. Same treatment as RestaurantScene and Phantom.
+Content/__ExternalActors__/SBG_RetroArcade/
+Content/__ExternalObjects__/SBG_RetroArcade/
