@@ -8,13 +8,28 @@ the first build with chat switched on in Shipping — is uploaded.
 Every sentence below is meant to be checkable against the code. If the code changes,
 change this file in the same commit, or the disclosure becomes a false statement to Valve.
 
-> **⚠ NOT READY TO SEND (2026-09-23).** The adjustable provider filters this draft first
-> described went live on 2026-09-22 and were rolled back the next day: they blocked half
-> of all ordinary conversation (`backend/gemini.js`, `SAFETY_SETTINGS`, has the numbers).
-> The *Provider safety filtering* bullet below now describes only what is true today.
-> Before sending, either measure and ship a filtering approach that does not block
-> normal play and describe it here, or send the draft as it now stands — but never the
-> 2026-09-22 wording.
+> **READY TO SEND, ONCE 1.0 IS APPROVED (updated 2026-09-26).**
+>
+> The 2026-09-23 blocker is cleared. It said: before sending, either ship a filtering
+> approach that does not block normal play and describe it here, or send the draft as it
+> stood. The first option was taken on 2026-09-25 — the sexually-explicit category was
+> measured in isolation, came back at 0/30 ordinary conversations blocked at
+> `BLOCK_MEDIUM_AND_ABOVE`, and shipped. It is described in this file and in detail in
+> `docs/STEAM_AI_GUARDRAILS.md`.
+>
+> **Two rows in the table below were wrong until this edit**, and would have been a false
+> statement to a storefront: they still claimed the adjustable filters were off. The
+> filter went on the day *after* that claim was written and nobody came back to the file.
+> That is the third time a stale note in this project has nearly produced a wrong
+> conclusion. If the code changes, change this file in the same commit.
+>
+> **What is actually left before sending** — none of it is writing:
+> 1. Valve approves 1.0 (build 25471988, in the queue since 2026-09-22).
+> 2. Send this as a Support ticket, with `docs/STEAM_AI_GUARDRAILS.md` as the guardrails
+>    answer, and ask the free-title pricing question in the same message.
+> 3. If Valve accepts, update the three "nothing is generated at runtime" passages —
+>    `docs/STEAM_PLAN.md:375` and `:386`, `docs/STEAM_STORE_COPY.md:101` — then flip the
+>    two Shipping defaults and upload.
 
 ---
 
@@ -51,8 +66,9 @@ rolled-back one.
 >   speech, not as instructions, so attempts to rewrite the rules are ignored.
 > - **Provider safety protections.** Google's built-in protections against the most
 >   serious harms, such as content that endangers child safety, apply to every reply and
->   cannot be switched off. Any reply the provider blocks is never shown; the character
->   says "She will not answer that one." instead.
+>   cannot be switched off. In addition, the developer has enabled Google's adjustable
+>   filter for sexually explicit content, at its medium threshold. Any reply the provider
+>   blocks is never shown; the character says "She will not answer that one." instead.
 > - **Length limits.** Player messages are limited to 1,000 characters and replies to a
 >   short fixed length.
 > - **Abuse and cost limits.** Requests are rate-limited per player, and the server stops
@@ -69,7 +85,8 @@ rolled-back one.
 | Five characters, allowlist | `backend/characters.js` — `CHARACTERS`, "the allowlist is the security boundary" |
 | Character rules | `backend/characters.js` — `HOUSE_RULES` and each profile |
 | Built-in protections always apply | Google safety-settings page, 2026-09-22: core harms such as child safety "are always blocked and cannot be adjusted" |
-| Adjustable filters are OFF | Google's default is Off for Gemini 2.5 and 3; `backend/server.js` `SAFETY_FILTERS` defaults to off and `backend/test.js` checks it. The rolled-back thresholds and the measurement are in `backend/gemini.js` |
+| Sexually-explicit filter is ON at medium | `backend/server.js` — `SAFETY_FILTERS` defaults to `"sexual"`, which `activeSafetySettings()` maps to `SEXUAL_ONLY_SETTINGS` in `backend/gemini.js`: `HARM_CATEGORY_SEXUALLY_EXPLICIT` at `BLOCK_MEDIUM_AND_ABOVE`. `backend/test.js` asserts both the default and the threshold. Measured 2026-09-25 at 0/30 ordinary conversations blocked — the arms and numbers are in `backend/eval/safety-filter-eval.js` and `docs/STEAM_AI_GUARDRAILS.md` |
+| The other three adjustable filters are not sent | Harassment, hate speech and dangerous content. All four were enabled 2026-09-22 and rolled back the next day after they blocked roughly half of ordinary conversation in a game containing combat and an antagonist. `backend/gemini.js` `SAFETY_SETTINGS` keeps that list and the reasoning |
 | Blocked reply never shown | `backend/gemini.js` (SAFETY / PROHIBITED_CONTENT / BLOCKLIST → `blocked`); `DancerAgentComponent.cpp` shows "She will not answer that one." |
 | 1,000 characters / short reply | `backend/server.js` — `LIMITS.messageChars`, `MAX_OUTPUT_TOKENS` (512) |
 | Rate limit and caps | `backend/server.js` — `PER_IP_PER_MINUTE` (12), `DAILY_CAP_USD` (0.75), `MONTHLY_CAP_USD` (15); refused before Google is called |

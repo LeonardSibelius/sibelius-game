@@ -245,4 +245,18 @@ size, and runaway cost is impossible because the cap is checked before the call.
 4. **Three passages to rewrite**: `docs/STEAM_PLAN.md:375`, `docs/STEAM_PLAN.md:386`,
    `docs/STEAM_STORE_COPY.md:101` — all three currently say no content is generated at
    runtime.
-5. **A v2.0 build** with the Shipping guard scoped, so the tester instructions are true.
+5. ~~A v2.0 build with the Shipping guard scoped~~ — **built 2026-09-26.** The tester
+   instructions above are now true of a real artifact: a Shipping Win64 package with
+   `sib.Chat.Enable` and `sib.Chat.Mode` defaulting on, archived to
+   `E:\builds\sibelius-shipping-chat-20260926`.
+
+   **"Scoped" oversold it.** The change is two digits — the `#if UE_BUILD_SHIPPING`
+   values in `InteractorComponent.cpp` and `NpcChatSubsystem.cpp`. It was made
+   uncommitted, packaged, then reverted the same evening, so the branch default is still
+   off and nothing can drift into a store upload by accident. Reproducing it is a
+   thirty-second edit plus a package.
+
+   The gate was never engineering. As the note above that `#if` says: *"Changing this
+   default for Shipping is a storefront decision, not a code one, and it is Walt's to
+   make."* It stays off until Valve accepts the amendment, because turning it on first
+   would make the shipped build contradict a survey answer already filed.
