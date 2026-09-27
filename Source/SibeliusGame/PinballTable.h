@@ -39,6 +39,7 @@
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
 #include "PinballSim.h"
+#include "TableSounds.h"
 #include "PinballTable.generated.h"
 
 class ASibeliusHUD;
@@ -168,6 +169,20 @@ private:
 
 	void SyncVisuals(float DeltaSeconds);
 	void HandleEvents();
+
+	// Sound. An EM machine's score motor rings one chime per digit, a beat apart, so a
+	// score is QUEUED rather than played: fifty points is five rings. See TableSounds.h.
+	struct FQueuedSound
+	{
+		double At = 0.0;   // world seconds
+		ETableSound Sound = ETableSound::Chime10;
+		float Volume = 1.0f;
+	};
+	void QueueSound(ETableSound Sound, float Volume, double Delay);
+	void QueueScoreChimes(int32 Points);
+	void PlayQueuedSounds();
+	TArray<FQueuedSound> SoundQueue;
+	double ChimeFreeAt = 0.0;   // when the score motor is next free
 	void RefreshScoreText();
 	void ApplyHiddenFlipperMaterial();
 	void DrawPhysicsLayout() const;

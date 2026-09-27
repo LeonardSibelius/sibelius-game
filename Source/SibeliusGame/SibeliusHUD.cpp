@@ -108,6 +108,7 @@ void ASibeliusHUD::DrawHUD()
 	{
 		// A cutscene still gets drawn - it IS the screen. Everything else stays off.
 		DrawCinematicVideo();
+		DrawTablePanel();
 		return;
 	}
 
@@ -125,6 +126,67 @@ void ASibeliusHUD::DrawHUD()
 	if (bOverlayVisible)
 	{
 		DrawDevOverlay();
+	}
+}
+
+void ASibeliusHUD::ShowTablePanel(const FString& Status, const FString& Controls, float Seconds)
+{
+	TableStatus = Status;
+	TableControls = Controls;
+	TablePanelUntil = (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0) + Seconds;
+}
+
+void ASibeliusHUD::DrawTablePanel()
+{
+	if (!Canvas)
+	{
+		return;
+	}
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (Now >= TablePanelUntil)
+	{
+		return;
+	}
+
+	UFont* Font = GEngine ? GEngine->GetMediumFont() : nullptr;
+	// Sized to the screen, so it reads the same at 1080p and 4K.
+	const float Unit = Canvas->ClipY / 1080.0f;
+
+	// One block of lines, centred, on its own strip; Top is its top edge, or its bottom
+	// edge when bFromBottom.
+	auto DrawBlock = [this, Font](const FString& Block, float Scale, float Edge, bool bFromBottom, const FLinearColor& Color)
+	{
+		TArray<FString> Lines;
+		Block.ParseIntoArray(Lines, TEXT("\n"), false);
+		float MaxW = 0.f, LineH = 0.f;
+		for (const FString& Line : Lines)
+		{
+			float W = 0.f, H = 0.f;
+			GetTextSize(Line.IsEmpty() ? FString(TEXT(" ")) : Line, W, H, Font, Scale);
+			MaxW = FMath::Max(MaxW, W);
+			LineH = FMath::Max(LineH, H);
+		}
+		const float Pad = 12.0f * Scale;
+		const float TotalH = LineH * Lines.Num();
+		const float Y0 = bFromBottom ? Edge - TotalH : Edge;
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.55f), (Canvas->ClipX - MaxW) * 0.5f - Pad, Y0 - Pad * 0.5f, MaxW + Pad * 2.0f, TotalH + Pad);
+		float Y = Y0;
+		for (const FString& Line : Lines)
+		{
+			float W = 0.f, H = 0.f;
+			GetTextSize(Line, W, H, Font, Scale);
+			DrawText(Line, Color, (Canvas->ClipX - W) * 0.5f, Y, Font, Scale);
+			Y += LineH;
+		}
+	};
+
+	if (!TableStatus.IsEmpty())
+	{
+		DrawBlock(TableStatus, 2.2f * Unit, Canvas->ClipY * 0.035f, false, FLinearColor(1.0f, 0.93f, 0.78f));
+	}
+	if (!TableControls.IsEmpty())
+	{
+		DrawBlock(TableControls, 1.5f * Unit, Canvas->ClipY * 0.965f, true, FLinearColor(0.85f, 0.85f, 0.85f));
 	}
 }
 

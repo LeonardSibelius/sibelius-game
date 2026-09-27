@@ -84,6 +84,17 @@ public:
 	 */
 	void SetCinematicVideo(class UTexture* InVideo);
 
+	/**
+	 * A GAME AT A TABLE owns the screen but still has to say the score (pool, 2026-09-27).
+	 * A status line across the top and the controls across the bottom, each on a dark
+	 * strip. Drawn THROUGH a cinematic hold, because the table holds one to clear the
+	 * crosshair and the objective away while he plays. A lease like HoldCinematic: the
+	 * table renews it every frame, and it goes by itself if the table stops ticking.
+	 * Lines may contain newlines. First tried as 3D text hung in front of the table's
+	 * camera, which smeared, clipped and drew too large: the canvas is the right place.
+	 */
+	void ShowTablePanel(const FString& Status, const FString& Controls, float Seconds = 0.25f);
+
 	// SIB-39 dev overlay visibility. Static so the toggle key (character) and the
 	// ScanForSite log gate (UBuildComponent) share one flag without a HUD lookup.
 	// Default ON (Walt likes seeing it).
@@ -254,6 +265,11 @@ private:
 
 	/** World seconds until the HUD un-blanks itself, or 0. See HoldCinematic. */
 	double CinematicUntil = 0.0;
+
+	void DrawTablePanel();
+	FString TableStatus;
+	FString TableControls;
+	double TablePanelUntil = 0.0;
 
 	/** Full-screen video for the duration of a cutscene, or null. See SetCinematicVideo. */
 	UPROPERTY(Transient)

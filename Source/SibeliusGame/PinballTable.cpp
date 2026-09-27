@@ -285,6 +285,7 @@ void APinballTable::Tick(float DeltaSeconds)
 		}
 	}
 
+	PlayQueuedSounds();   // outside bPlaying: a score still rings out after he steps away
 	SyncVisuals(DeltaSeconds);
 	RefreshScoreText();
 
@@ -476,26 +477,123 @@ void APinballTable::SyncVisuals(float DeltaSeconds)
 
 void APinballTable::HandleEvents()
 {
-	// Sound hooks belong here too, when the table has sounds.
 	for (const FPinballEvent& Event : Sim.TakeEvents())
 	{
 		switch (Event.Type)
 		{
+		case EPinballEvent::GameStarted:
+			// The score reels spinning back to zero: a rattle of steps.
+			for (int32 Step = 0; Step < 10; ++Step)
+			{
+				QueueSound(ETableSound::ReelClick, 0.5f, 0.045 * Step);
+			}
+			break;
+		case EPinballEvent::BallServed:
+			QueueSound(ETableSound::KickoutIn, 0.35f, 0.0);   // the ball rolling into the lane
+			break;
+		case EPinballEvent::BallLaunched:
+			TableSounds::Play(this, ETableSound::Plunger, 0.8f);
+			break;
+		case EPinballEvent::FlipperUp:
+			TableSounds::Play(this, ETableSound::FlipperUp, 0.7f, FMath::FRandRange(0.97f, 1.03f));
+			break;
+		case EPinballEvent::FlipperDown:
+			TableSounds::Play(this, ETableSound::FlipperDown, 0.35f);
+			break;
 		case EPinballEvent::BumperHit:
 			if (BumperFlash.IsValidIndex(Event.Index))
 			{
 				BumperFlash[Event.Index] = 1.0f;
 			}
+			TableSounds::Play(this, ETableSound::Bumper, 0.9f, FMath::FRandRange(0.96f, 1.04f));
+			QueueScoreChimes(Event.Points);
+			break;
+		case EPinballEvent::SlingshotHit:
+			TableSounds::Play(this, ETableSound::Slingshot, 0.8f, FMath::FRandRange(0.96f, 1.04f));
+			QueueScoreChimes(Event.Points);
+			break;
+		case EPinballEvent::RolloverLit:
+		case EPinballEvent::RolloversComplete:
+			QueueScoreChimes(Event.Points);
+			break;
+		case EPinballEvent::KickoutCaptured:
+			TableSounds::Play(this, ETableSound::KickoutIn, 0.8f);
+			QueueScoreChimes(Event.Points);
+			break;
+		case EPinballEvent::KickoutEjected:
+			TableSounds::Play(this, ETableSound::Bumper, 0.8f, 0.75f);
 			break;
 		case EPinballEvent::BallDrained:
+			TableSounds::Play(this, ETableSound::Drain, 0.8f);
 			UE_LOG(LogSibeliusGame, Display, TEXT("[Pinball] ball %d drained at %d."), Event.Index, Sim.Score());
 			break;
 		case EPinballEvent::GameOver:
 			HighScore = FMath::Max(HighScore, Event.Points);
+			QueueSound(ETableSound::Chime1000, 0.8f, 0.6);
 			UE_LOG(LogSibeliusGame, Display, TEXT("[Pinball] game over: %d (high %d)."), Event.Points, HighScore);
 			break;
 		default:
 			break;
+		}
+	}
+}
+
+void APinballTable::QueueSound(ETableSound Sound, float Volume, double Delay)
+{
+	const UWorld* World = GetWorld();
+	if (!World || SoundQueue.Num() >= 60)   // a hard cap: a stuck queue must not grow forever
+	{
+		return;
+	}
+	SoundQueue.Add(FQueuedSound{ World->GetTimeSeconds() + Delay, Sound, Volume });
+}
+
+void APinballTable::QueueScoreChimes(int32 Points)
+{
+	const UWorld* World = GetWorld();
+	if (!World || Points <= 0)
+	{
+		return;
+	}
+	// One ring per digit, thousands first, a score-motor beat apart, after whatever is
+	// still ringing. Anything under ten still rings the 10 chime once.
+	constexpr double Beat = 0.11;
+	const int32 Thousands = FMath::Min(Points / 1000, 9);
+	const int32 Hundreds = (Points % 1000) / 100;
+	const int32 Tens = FMath::Max((Points % 100) / 10, (Points < 10) ? 1 : 0);
+
+	const double Now = World->GetTimeSeconds();
+	double At = FMath::Max(Now, ChimeFreeAt);
+	auto Ring = [this, &At, Now](ETableSound Chime, int32 Count)
+	{
+		for (int32 K = 0; K < Count; ++K)
+		{
+			QueueSound(Chime, 0.55f, At - Now);
+			At += Beat;
+		}
+	};
+	Ring(ETableSound::Chime1000, Thousands);
+	Ring(ETableSound::Chime100, Hundreds);
+	Ring(ETableSound::Chime10, Tens);
+	// A busy table can outrun the motor; never let the backlog run more than two
+	// seconds behind the ball.
+	ChimeFreeAt = FMath::Min(At, Now + 2.0);
+}
+
+void APinballTable::PlayQueuedSounds()
+{
+	const UWorld* World = GetWorld();
+	if (!World || SoundQueue.Num() == 0)
+	{
+		return;
+	}
+	const double Now = World->GetTimeSeconds();
+	for (int32 I = SoundQueue.Num() - 1; I >= 0; --I)
+	{
+		if (SoundQueue[I].At <= Now)
+		{
+			TableSounds::Play(this, SoundQueue[I].Sound, SoundQueue[I].Volume);
+			SoundQueue.RemoveAtSwap(I);
 		}
 	}
 }

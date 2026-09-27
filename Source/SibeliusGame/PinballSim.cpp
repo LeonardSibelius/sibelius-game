@@ -204,6 +204,14 @@ FPinballTableLayout FPinballTableLayout::MakeDefault()
 	Wall(54.9, 0.0, 54.9, 88.0);                       // shooter lane inner wall
 	Wall(54.9, 0.0, 59.8, 0.0);                        // plunger floor
 	Wall(54.9, 88.0, 59.8, 90.5, EPinballSurface::OneWayGate);   // front (left-normal) = above
+	/* THE TWO UPPER POSTS HARD BY THE SIDE WALLS - (1.53, 82.66) left, (53.03, 82.05) right -
+	   stand 0.44 and 0.78 cm off the wall: too narrow for a ball, so a ball coming down the
+	   wall sat in the V between post and wall, at rest, for ever. Walt's first ball did,
+	   upper left (2026-09-27), and a 400-game hunt found 16 more there and on the right.
+	   On the machine a rubber ring fills that gap. Here a short rail runs from the wall down
+	   onto each post's inner shoulder, steep enough that nothing rests on it. */
+	Wall(0.0, 84.8, 2.30, 83.43);
+	Wall(54.9, 84.2, 52.26, 82.82);
 
 	// --- rubber bands ----------------------------------------------------------------------
 	Band({ FPinVec2(6.17, 11.45), FPinVec2(14.19, 12.69), FPinVec2(7.40, 23.36) }, 1.0, 1, 0);   // left slingshot

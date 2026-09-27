@@ -680,6 +680,61 @@ int main()
 			Fmt("%d of 10 finished, longest %.0f s", GamesFinished, LongestGame));
 	}
 
+	{
+		// THE WALL-POST WEDGES (Walt's first game with sound, 2026-09-27): the ball sat for
+		// ever between the upper-left post and the left wall. Ten scripted games never went
+		// there; random flipping found it 16 times in 400. So this plays RANDOM games, and
+		// fails on any ball that stays inside a 4 cm box for six seconds out of a kickout.
+		int Trapped = 0;
+		std::string Where;
+		const int Games = 150;
+		for (int Game = 0; Game < Games; ++Game)
+		{
+			FLcg Rng{ 1000u + static_cast<uint32_t>(Game) * 7919u };
+			FPinballSim Sim;
+			Sim.StartGame();
+			bool bLeft = false;
+			bool bRight = false;
+			double MinX = 1e9, MaxX = -1e9, MinY = 1e9, MaxY = -1e9, Window = 0.0;
+			for (int Frame = 0; Frame < 60 * 1200 && Sim.Phase() != EPinballPhase::GameOver; ++Frame)
+			{
+				bLeft = Rng.Next01() < 0.04 ? !bLeft : bLeft;
+				bRight = Rng.Next01() < 0.04 ? !bRight : bRight;
+				Sim.SetFlipper(0, bLeft);
+				Sim.SetFlipper(1, bRight);
+				if (Sim.Phase() == EPinballPhase::BallReady && Rng.Next01() < 0.05)
+				{
+					Sim.Launch(0.3 + 0.7 * Rng.Next01());
+				}
+				Sim.Advance(1.0 / 60.0);
+				Sim.TakeEvents();
+				if (Sim.Phase() != EPinballPhase::InPlay || Sim.HeldInKickout() >= 0)
+				{
+					Window = 0.0; MinX = MinY = 1e9; MaxX = MaxY = -1e9;
+					continue;
+				}
+				const FPinVec2 P = Sim.BallPosition();
+				MinX = P.X < MinX ? P.X : MinX; MaxX = P.X > MaxX ? P.X : MaxX;
+				MinY = P.Y < MinY ? P.Y : MinY; MaxY = P.Y > MaxY ? P.Y : MaxY;
+				Window += 1.0 / 60.0;
+				if (Window >= 6.0)
+				{
+					if (MaxX - MinX < 4.0 && MaxY - MinY < 4.0)
+					{
+						if (Trapped++ == 0)
+						{
+							Where = Fmt("first: game %d, ball at (%.2f, %.2f)", Game, P.X, P.Y);
+						}
+						break;
+					}
+					Window = 0.0; MinX = MinY = 1e9; MaxX = MaxY = -1e9;
+				}
+			}
+		}
+		Check(Trapped == 0, "Singalong: 150 randomly flipped games - the ball never comes to rest in play",
+			Trapped == 0 ? Fmt("%d games", Games) : Fmt("%d trapped; ", Trapped) + Where);
+	}
+
 	std::printf("\n%d passed, %d failed\n", GPasses, GFailures);
 	return GFailures == 0 ? 0 : 1;
 }
