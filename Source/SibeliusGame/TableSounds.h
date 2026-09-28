@@ -43,6 +43,10 @@ enum class ETableSound : uint8
 	BowlRoll,      // its rumble down sixty feet of maple, fading as it reaches the pins
 	PinClatter,    // wood on wood: the crash of the rack
 
+	// Chess
+	ChessPlace,    // a felted boxwood piece set down on the board: a soft, low tok
+	ChessCapture,  // the taker set down hard where the taken piece stood
+
 	Count
 };
 

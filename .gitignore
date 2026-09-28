@@ -372,6 +372,13 @@ Content/__ExternalObjects__/IE_RetroBowl/
 Content/Bowling/L_Bowling.umap
 Content/Bowling/*_BuiltData.uasset
 
+# --- Tomas Dvorak "Chess Set" (Fab, free, Standard License, 2026-09-28, "Generated with AI: No") ---
+# The board and 32 separate pieces for the park chess table in Transhuman City, imported from
+# the listing's FBX download. A vendor asset: never in the public repo, even free. The raw
+# download (FBX + PNGs) sits unpacked in Tools/VendorSource/ for Tools/Scripts/import_chess_set.py.
+Content/ChessSet/
+Tools/VendorSource/
+
 # The UnrealClaude editor plugin writes every script Claude runs in the editor here. Scratch,
 # not project content.
 Content/UnrealClaude/

@@ -160,6 +160,19 @@ namespace TableSoundsDetail
 					+ 0.45f * N * Decay(90.0f, T);
 			});
 			break;
+		case ETableSound::ChessPlace:
+			// Felt under the piece takes the snap off; what is left is the board's own tone.
+			Pcm = Knock(0.10f, 51, 210.0f, 60.0f, 0.18f, 1050.0f, 0.05f);
+			break;
+		case ETableSound::ChessCapture:
+			// Set down harder, and a moment later the taken piece lifted against its neighbour.
+			Pcm = Build(0.20f, 52, 4200.0f, [](float T, float N)
+			{
+				const float Second = FMath::Max(0.0f, T - 0.055f);
+				return 0.55f * Sine(230.0f, T) * Decay(55.0f, T) + 0.30f * N * Decay(180.0f, T)
+					+ (T > 0.055f ? 0.30f * Sine(1480.0f, Second) * Decay(70.0f, Second) + 0.22f * N * Decay(220.0f, Second) : 0.0f);
+			});
+			break;
 		default:
 			break;
 		}
