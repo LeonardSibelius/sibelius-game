@@ -14,7 +14,7 @@
 #   - On the recovery stick, E:\builds\steam-upload\  - the defaults find the chat build
 #     one folder up. No path arguments needed.
 #   - In the repo, Tools\Steam\recovery-kit\  - pass -ContentRoot, e.g.
-#     -ContentRoot C:\Users\wpark\builds\sibelius-shipping-chat-20260927\Windows
+#     -ContentRoot C:\Users\wpark\builds\sibelius-shipping-chat-20260928\Windows
 #
 # ---------------------------------------------------------------------------
 # DO NOT RUN THIS UNTIL VALVE HAS ACCEPTED THE 2.0 CONTENT-SURVEY AMENDMENT.
@@ -80,7 +80,7 @@ if (-not $AmendmentAccepted) {
 $Kit      = $PSScriptRoot
 $AppVdf   = Join-Path $Kit 'app_build_5249380.vdf'
 $DepotVdf = Join-Path $Kit 'depot_build_5249381.vdf'
-if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-chat-20260927\Windows' }
+if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-chat-20260928\Windows' }
 if (-not $BuildOutput) { $BuildOutput = Join-Path $Kit 'buildoutput' }
 
 # ---------------------------------------------------------------------------
