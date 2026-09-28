@@ -25,6 +25,8 @@
 //     world 269, -1976), which cannot be knocked down and stood behind ours
 //   - place one ABowlingLane at 192, -115, 0; DeckLight 90 and ApproachLight 60 lumens
 //   - move the PlayerStart to 269, 255, 100, yaw -90: on the approach, facing the lane
+//   - delete the six DecalActors MI_Decal_1..6 (the pack's PixelForge logo, T_PixelForgeESP,
+//     on the wall above the pins - Walt, 2026-09-28: "can we get rid of the Pixelforge signs")
 // The way home is the game's own [O]. The way in is the BOWLING door in L_Office_v02: an
 // AHiddenDoor with bAlwaysVisible, TravelTargetLevel L_Bowling, the pack's SM_Door_1 at
 // scale 0.63 and T_Sign_Bowling, on the wall behind the pinball.
