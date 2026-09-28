@@ -8,6 +8,14 @@ the first build with chat switched on in Shipping — is uploaded.
 Every sentence below is meant to be checkable against the code. If the code changes,
 change this file in the same commit, or the disclosure becomes a false statement to Valve.
 
+> **SENT 2026-09-28, the day Valve approved 1.0: ticket HT-65HH-2V43-8C45** (Steamworks
+> Support > Manage your store page > Other). The chat build is BuildID **25588600** on the
+> private, password-protected **chat-review** branch; `default` stays on the approved
+> 25471988 until Valve answers. The ticket as sent is `E:\builds\steam-docs\STEAM_TICKET_TO_PASTE.txt`
+> (Draft 2 + Draft 1 + the pricing question, plus one line saying the build also adds the
+> living-room games, none of which use generative AI). If Valve accepts: move 25588600 to
+> `default` and update the Live-Generated passages listed below.
+>
 > **READY TO SEND, ONCE 1.0 IS APPROVED (updated 2026-09-26).**
 >
 > The 2026-09-23 blocker is cleared. It said: before sending, either ship a filtering
