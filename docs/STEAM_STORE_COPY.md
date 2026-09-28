@@ -6,6 +6,12 @@
 REV 2 is not safe to paste as written. Three things were wrong; all three are fixed
 below, and §5 of this file says exactly what changed and why.
 
+> **Updated 2026-09-27 for the next upload:** the living room now has a pinball machine,
+> a pool table and a door to the Transhuman Bowling Alley, and the poker cabinet is no
+> longer hidden. One sentence of the long description, the credits, the storage size and
+> two notes changed; §5b lists them. **The AI disclosure did not change.** None of this
+> applies to the build Valve already holds (v1.1.4): paste it with the next upload.
+
 > **Why this is urgent.** The Steam Direct 30-day clock ends **25 September**. The
 > Coming Soon page needs **two weeks** from the day it goes public, and Valve reviews
 > the page before that — days, not hours. The page is now the only thing setting the
@@ -37,8 +43,9 @@ retired. This game is my memoir — and I built it with an AI.[/b]
 
 [i]Leonard Sibelius[/i] is the story of a man merging with an artificial intelligence.
 You earn AI powers one shrine at a time, gather the Sauce of All Knowledge, slap refusal
-demons across the office, and hold [b]V[/b] to see what is hidden — starting with the
-video poker cabinet in your own living room.
+demons across the office, and hold [b]V[/b] to see what is hidden. And when you need a
+break, your own living room has a video poker cabinet, a 1960s pinball machine, a pool
+table, and a door to the Transhuman Bowling Alley.
 
 Behind a wall only the fully-merged can drop sits [b]Celestial Fortune[/b]: a complete
 slot machine with a real par sheet. I spent 2007 building the data systems behind
@@ -77,7 +84,8 @@ fiction.
 Characters Nyra, Isla, Kaia, Aisling and Elise by [b]xAndrei[/b] · Dance animations by
 [b]Morro Motion[/b] · Downtown West by [b]Jacob Norris / PurePolygons[/b] · Office by
 [b]QuadArt[/b] · Space Port by [b]PackDev[/b] · Sibelius Hotel architecture by
-[b]DmitriyDryzhak[/b]
+[b]DmitriyDryzhak[/b] · Pinball machine by [b]Speedbump Games[/b] · Pool table by
+[b]PijayArt[/b] · Bowling alley by [b]PixelForgeESP[/b]
 ```
 
 ---
@@ -106,6 +114,17 @@ None. This game does not generate any content at runtime.
 
 Still true in v1.1.3: the Generate power places pre-built assets, and the televisions
 open an external web page. Neither creates content at runtime.
+
+**Rechecked 2026-09-27 for the living-room games — nothing to add.** All three purchased
+packs showed *"Generated with AI: No"* on their Fab listings before they were bought
+(Speedbump Games' Retro Pinball Machines, PijayArt's Classic Billiards Table,
+PixelForgeESP's Retro Bowling Alley). Their sounds are synthesised in code at runtime
+(`Source/SibeliusGame/TableSounds.cpp`), not recordings and not AI. The bowling pin and
+the BOWLING door sign are drawn by `Tools/Scripts/make_bowling_art.py` from regulation
+dimensions. The physics that moves the balls and pins is code, not generated content.
+
+The Live-Generated answer above is for the builds Valve has now. It changes only if the
+AI chat amendment is accepted — see `STEAM_AI_CHAT_DISCLOSURE.md`, a separate ticket.
 
 ---
 
@@ -140,6 +159,10 @@ DirectX:     Version 12
 Storage:     8 GB available space
 ```
 
+**Re-measure before the next upload.** 8 GB was measured before the pinball, pool and
+bowling packs went in (the alley pack alone is about 0.6 GB before cooking). Package,
+check the size of the Shipping folder, round up — probably **9 GB** — and change both rows.
+
 **The 5 GB figure in `STEAM_PLAN.md` §3 is stale** — it predates the city, the
 spaceport and the hotel. 8 GB is the measured number, rounded up from 7.8 GB.
 
@@ -156,6 +179,9 @@ Walt's call, 2026-09-15: **declare it.** The game contains simulated gambling �
 *Celestial Fortune*, a five-reel slot machine with a published par sheet, and a video
 poker cabinet in the living room. Both are played with in-game Sauce. **No real
 money is wagered and nothing pays out in real currency.**
+
+**Still the answer after 2026-09-27.** The pinball, pool table and bowling alley are free
+play: skill games, no Sauce, nothing wagered. The slot machine and poker are unchanged.
 
 The reasoning: under-declaring is the expensive failure, because it surfaces *after*
 launch, when the announcement has already been spent. Declaring simulated gambling
@@ -194,6 +220,26 @@ and goes in regardless of whether the copy describes the room.
 **Untouched, on purpose:** the hook, the Bally paragraph's position below it, the
 four-word *"And then you can launch it"*, and the absence of Nyra's betrayal. All
 three are reasoned through in `STEAM_PLAN.md` §3.
+
+---
+
+## 5b. What changed on 2026-09-27, and why
+
+**The poker line described a hidden cabinet that is no longer hidden.** Walt made the
+poker cabinet plainly visible ("two hidden doors are enough") and the game's Code Vision
+lesson moved to the legacy machine. The long description said *"hold V to see what is
+hidden — starting with the video poker cabinet"*, which would now send a player looking
+for a secret that is standing in the open. The V clause stays; the living-room sentence
+replaces the poker clause and names the three new games in the same breath.
+
+**Placement:** in the first paragraph of the game, not after the Architects — the living
+room is where the game starts, and the Architects stay last (REV 2's rule).
+
+**Credits:** Speedbump Games, PijayArt and PixelForgeESP, added to the artists' line the
+way the Hotel credit was.
+
+**The short description is unchanged.** It is 297 of 300 characters and every word is
+spent; the games belong in the long description.
 
 ---
 
