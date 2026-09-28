@@ -55,6 +55,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Hidden Door|Travel")
 	FText TravelPromptText = NSLOCTEXT("Sibelius", "HiddenDoorTravelPrompt", "Enter the Stacks [E]");
 
+	/** NOT HIDDEN: a plain door, open and signed from the first frame, no Code Vision needed.
+	    Walt, 2026-09-27: "two hidden doors are enough" - the office's and the attic's stay
+	    secrets, and the living room's bowling door is simply there. Everything else about
+	    the door (travel, prompt, sign, branch guard) is unchanged. */
+	UPROPERTY(EditAnywhere, Category = "Hidden Door|Travel")
+	bool bAlwaysVisible = false;
+
 protected:
 	virtual void BeginPlay() override;
 

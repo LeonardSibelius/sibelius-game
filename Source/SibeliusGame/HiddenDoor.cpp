@@ -107,6 +107,11 @@ void AHiddenDoor::BeginPlay()
 	UE_LOG(LogHiddenDoor, Log, TEXT("[%s] BeginPlay: starting as wall; attempting to bind to player. MPC fallback %s."),
 		*GetName(), CodeVisionMPC ? TEXT("available") : TEXT("NOT configured"));
 
+	if (bAlwaysVisible)
+	{
+		ApplyState(true);   // a plain door: open for good, and never bound to Code Vision
+		return;
+	}
 	ApplyState(false); // start as a solid wall
 	TryBindToPlayer();
 }
@@ -161,7 +166,7 @@ void AHiddenDoor::Tick(float DeltaTime)
 
 	// Primary path: once the delegate is bound it is authoritative (collision flips
 	// on the hard boolean per CV4/CV10). Skip the poll entirely.
-	if (bBoundToComponent || !CodeVisionMPC)
+	if (bAlwaysVisible || bBoundToComponent || !CodeVisionMPC)
 	{
 		return;
 	}

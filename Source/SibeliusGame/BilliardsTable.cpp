@@ -747,12 +747,12 @@ void ABilliardsTable::RefreshPanel()
 	{
 	case EBilliardsPhase::Idle:
 		Text = TEXT("CLEAR THE TABLE\nPot all fifteen in as few strokes as you can.");
-		Controls = TEXT("SPACE to rack      E to walk away");
+		Controls = TEXT("SPACE to rack      ESC to walk away");
 		break;
 	case EBilliardsPhase::Cleared:
 		Text = FString::Printf(TEXT("CLEARED IN %d STROKES%s"),
 			LastClearedStrokes, LastClearedStrokes == BestStrokes ? TEXT("  -  YOUR BEST") : *Best);
-		Controls = TEXT("SPACE to rack again      E to walk away");
+		Controls = TEXT("SPACE to rack again      ESC to walk away");
 		break;
 	default:
 	{
@@ -767,7 +767,7 @@ void ABilliardsTable::RefreshPanel()
 		}
 		Text = FString::Printf(TEXT("STROKES %d     LEFT %d%s\nSPIN %s%s"),
 			Sim.Strokes(), Sim.BallsLeft(), *Best, *SpinName, *Power);
-		Controls = TEXT("AIM  A D or mouse  (SHIFT fine)      SPIN  W S      SHOOT  hold SPACE, let go\nV  view down the cue      R  rerack      E  walk away");
+		Controls = TEXT("AIM  A D or mouse  (SHIFT fine)      SPIN  W S      SHOOT  hold SPACE, let go\nV  view down the cue      R  rerack      ESC  walk away");
 		break;
 	}
 	}

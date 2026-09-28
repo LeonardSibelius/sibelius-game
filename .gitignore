@@ -365,3 +365,13 @@ Content/Billiard_Table/
 Content/IE_RetroBowl/
 Content/__ExternalActors__/IE_RetroBowl/
 Content/__ExternalObjects__/IE_RetroBowl/
+# L_Bowling is the pack's own L_Map, saved as a copy: publishing it would publish the pack's
+# level design, so it stays local (backed up to E:), like the pinball pack's demo level. How
+# it was set up is written down in BowlingLane.h, so it can be rebuilt from the pack. The pin,
+# its materials and the door sign in this folder are ours, and ARE tracked.
+Content/Bowling/L_Bowling.umap
+Content/Bowling/*_BuiltData.uasset
+
+# The UnrealClaude editor plugin writes every script Claude runs in the editor here. Scratch,
+# not project content.
+Content/UnrealClaude/

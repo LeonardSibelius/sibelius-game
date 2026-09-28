@@ -921,14 +921,16 @@ FString ASibeliusHUD::ComputeObjective() const
 		   and the poker cabinet now stands where its door did, hidden until Code Vision
 		   finds it. The lesson is unchanged — hold V, something is there — but the thing
 		   at the glass is no longer a door. */
-		return TEXT("Vision [V] shows what is hidden. Turn around and look at the glass.");
+		/* And not "look at the glass" any more (Walt, 2026-09-27): the poker cabinet there is
+		   plainly visible now, and the lesson is taught at the legacy machine. */
+		return TEXT("Vision [V] shows what is hidden. Hold it and look around.");
 	}
 
 	// 3) Poker through the glass. A living-room table book must not steal this
 	// line — they pick that up for E + sauce, then still go play.
 	if (!Progression->HasClaimedGrant(TEXT("Tutorial.Poker")) && Keys == 0)
 	{
-		return TEXT("Vision [V] shows what is hidden. Poker is at the glass behind you — [E] to play.");
+		return TEXT("Poker is at the glass behind you — [E] to play.");
 	}
 
 	/* 4) After poker: where the powers come from. Not an upstairs invite.

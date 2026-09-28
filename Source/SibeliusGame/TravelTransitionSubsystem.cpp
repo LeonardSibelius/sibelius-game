@@ -221,6 +221,10 @@ FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 	{
 		return NSLOCTEXT("Travel", "EnterForest", "Entering the Many Worlds...");
 	}
+	if (LevelName.Contains(TEXT("Bowling")))
+	{
+		return NSLOCTEXT("Travel", "EnterBowling", "The Transhuman Bowling Alley...");
+	}
 	if (LevelName.Contains(TEXT("Office")))
 	{
 		return NSLOCTEXT("Travel", "ReturnOffice", "Returning to the office...");

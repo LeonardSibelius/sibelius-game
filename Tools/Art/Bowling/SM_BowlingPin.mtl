@@ -1,0 +1,10 @@
+# BowlingPin materials (Tools/Scripts/make_bowling_art.py)
+newmtl M_PinWhite
+Kd 0.93 0.92 0.90
+Ks 0.6 0.6 0.6
+Ns 180
+
+newmtl M_PinRed
+Kd 0.70 0.03 0.04
+Ks 0.6 0.6 0.6
+Ns 180

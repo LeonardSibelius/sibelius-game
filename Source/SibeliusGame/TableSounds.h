@@ -1,6 +1,7 @@
 // TableSounds.h
 //
-// THE SOUNDS OF THE LIVING-ROOM TABLES — the pinball and the pool table (Walt, 2026-09-27).
+// THE SOUNDS OF THE GAMES — the living-room pinball and pool table, and the bowling alley
+// (Walt, 2026-09-27).
 //
 // Synthesised in code at runtime, like the slot and poker machines (ProceduralPcm.h):
 // no recordings, so nothing to license and nothing for the Steam AI disclosure to cover.
@@ -36,6 +37,13 @@ enum class ETableSound : uint8
 	BallClick,     // ball on ball: phenolic, bright, short
 	CushionThud,   // ball into rubber
 	PocketDrop,    // into the pocket, with a rattle
+
+	// Bowling
+	BowlRelease,   // the ball set down on the lane
+	BowlRoll,      // its rumble down sixty feet of maple, fading as it reaches the pins
+	PinClatter,    // wood on wood: the crash of the rack
+
+	Count
 };
 
 namespace TableSounds

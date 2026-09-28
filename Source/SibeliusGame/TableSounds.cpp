@@ -63,9 +63,9 @@ namespace TableSoundsDetail
 
 	const TArray<uint8>& Get(ETableSound Sound)
 	{
-		static TArray<uint8> Bank[16];
+		static TArray<uint8> Bank[static_cast<int32>(ETableSound::Count)];
 		const int32 Index = static_cast<int32>(Sound);
-		check(Index >= 0 && Index < 16);
+		check(Index >= 0 && Index < static_cast<int32>(ETableSound::Count));
 		TArray<uint8>& Pcm = Bank[Index];
 		if (Pcm.Num() > 0)
 		{
@@ -137,6 +137,27 @@ namespace TableSoundsDetail
 					}
 				}
 				return S;
+			});
+			break;
+		case ETableSound::BowlRelease: Pcm = Knock(0.25f, 41, 70.0f, 18.0f, 0.35f, 300.0f, 0.0f); break;
+		case ETableSound::BowlRoll:
+			// A low rumble with the lane's boards ticking under it, swelling, then fading
+			// out as the ball reaches the pins about two and a half seconds later.
+			Pcm = Build(2.6f, 42, 260.0f, [](float T, float N)
+			{
+				const float Envelope = FMath::Min(T / 0.25f, 1.0f) * FMath::Clamp((2.6f - T) / 0.9f, 0.0f, 1.0f);
+				const float Boards = 0.5f + 0.5f * FMath::Sin(2.0f * PI * 38.0f * T);
+				return Envelope * (0.9f * N * (0.75f + 0.25f * Boards) + 0.12f * Sine(52.0f, T));
+			});
+			break;
+		case ETableSound::PinClatter:
+			// Maple pins: a hollow wooden knock, lower and longer than a pool ball's click.
+			Pcm = Build(0.22f, 43, 5000.0f, [](float T, float N)
+			{
+				return 0.40f * Sine(820.0f, T) * Decay(40.0f, T)
+					+ 0.25f * Sine(1330.0f, T) * Decay(55.0f, T)
+					+ 0.18f * Sine(2210.0f, T) * Decay(80.0f, T)
+					+ 0.45f * N * Decay(90.0f, T);
 			});
 			break;
 		default:
