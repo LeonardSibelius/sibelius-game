@@ -27,6 +27,8 @@
 //   - move the PlayerStart to 269, 255, 100, yaw -90: on the approach, facing the lane
 //   - delete the six DecalActors MI_Decal_1..6 (the pack's PixelForge logo, T_PixelForgeESP,
 //     on the wall above the pins - Walt, 2026-09-28: "can we get rid of the Pixelforge signs")
+//   - delete the "PIXEL FORGE ESP / BOWLING" letters (SM_Titles_1) over the entrance
+//     counter - Walt removed them himself the same morning
 // The way home is the game's own [O]. The way in is the BOWLING door in L_Office_v02: an
 // AHiddenDoor with bAlwaysVisible, TravelTargetLevel L_Bowling, the pack's SM_Door_1 at
 // scale 0.63 and T_Sign_Bowling, on the wall behind the pinball.
