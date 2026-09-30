@@ -79,8 +79,8 @@ Three ceilings, smallest first:
 
 | stop | default | enforced by |
 |---|---|---|
-| daily cap | $0.75 | this server |
-| monthly cap | $15 | this server |
+| daily cap | $1.50 | this server |
+| monthly cap | $45 | this server |
 | prepay balance | $25 | Google, hard |
 
 The daily cap exists because a monthly one cannot tell a launch day from an attack: one
@@ -160,7 +160,7 @@ Check it with `fly logs` (the `[chat] … usd=…` line per request) and
   seconds against a measured p50 of 957 ms. A player watching Kaia's face wait for a
   container is worse than the couple of dollars auto-stop saves.
 - **One machine.** The ledger is a file and the dedup table is in memory, so a second
-  machine makes the $15 cap advisory. If this ever needs to scale, both move to shared
+  machine makes the $45 cap advisory. If this ever needs to scale, both move to shared
   state first.
 - **The volume.** A restart that reset the month's spend to zero would remove the only
   control that stops at *our* number instead of Google's.

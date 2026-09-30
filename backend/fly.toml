@@ -5,7 +5,7 @@
 # the reasoning someone will eventually "tidy" one of them.
 #
 #   ONE MACHINE (no scale, HA off). The spend ledger is a file and the dedup table and
-#   rate limiter live in memory. A second machine makes the $15 cap advisory.
+#   rate limiter live in memory. A second machine makes the $45 cap advisory.
 #
 #   ALWAYS ON (auto_stop off, min 1). A cold start costs seconds against a measured p50
 #   of 957 ms. A player watching Kaia's face wait for a container is worse than the
@@ -23,10 +23,10 @@ primary_region = 'sjc'
 [env]
   BUDGET_FILE = '/data/budget.json'
   CHAT_DISABLED = '0'
-  DAILY_CAP_USD = '0.75'
+  DAILY_CAP_USD = '1.50'
   GEMINI_MODEL = 'gemini-3.1-flash-lite'
   MAX_OUTPUT_TOKENS = '512'
-  MONTHLY_CAP_USD = '15'
+  MONTHLY_CAP_USD = '45'
   PER_IP_PER_MINUTE = '12'
   PORT = '8787'
   UPSTREAM_TIMEOUT_MS = '20000'

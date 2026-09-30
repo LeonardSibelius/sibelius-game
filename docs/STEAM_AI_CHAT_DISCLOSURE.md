@@ -104,7 +104,7 @@ rolled-back one.
 | The other three adjustable filters are not sent | Harassment, hate speech and dangerous content. All four were enabled 2026-09-22 and rolled back the next day after they blocked roughly half of ordinary conversation in a game containing combat and an antagonist. `backend/gemini.js` `SAFETY_SETTINGS` keeps that list and the reasoning |
 | Blocked reply never shown | `backend/gemini.js` (SAFETY / PROHIBITED_CONTENT / BLOCKLIST → `blocked`); `DancerAgentComponent.cpp` shows "She will not answer that one." |
 | 1,000 characters / short reply | `backend/server.js` — `LIMITS.messageChars`, `MAX_OUTPUT_TOKENS` (512) |
-| Rate limit and caps | `backend/server.js` — `PER_IP_PER_MINUTE` (12), `DAILY_CAP_USD` (0.75), `MONTHLY_CAP_USD` (15); refused before Google is called |
+| Rate limit and caps | `backend/server.js` — `PER_IP_PER_MINUTE` (12), `DAILY_CAP_USD` (1.50), `MONTHLY_CAP_USD` (45; raised from 0.75 / 15 on 2026-09-29 for players, Walt: "chat like crazy"); refused before Google is called |
 | No message text logged | `backend/server.js` — every `console.log` prints ids, counts and cost only. A completed reply is held in memory for 10 minutes for request de-duplication, then dropped |
 | Stored on the player's PC | `NpcChatSaveGame.h` — its own save slot |
 | Note under the chat box | `NpcChatWidget.cpp` — `ChatProviderNote` |
