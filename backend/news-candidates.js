@@ -1,6 +1,7 @@
 // news-candidates.js — harvests candidates for news.js. A TOOL, NOT A DEPENDENCY.
 //
-//     node news-candidates.js
+//     node news-candidates.js                 # AI, the last 150 days
+//     node news-candidates.js --wide --days 60   # also science, space, longevity, making things
 //
 // Nothing in the running server calls this. It exists so refreshing THE_WORLD_OUTSIDE is
 // ten minutes instead of an afternoon, and so the next person knows where those six lines
@@ -19,13 +20,20 @@
 // a man the industry retired: layoffs, replacement, litigation, weapons, funding. Those are
 // real AI news and they are not this game's.
 
-const WINDOW_DAYS = 150;
+// WIDE (Walt, 2026-09-29: "mentioning interesting news items"): the same one-person test,
+// beyond AI - the agents' second subjects are minds, bodies, long lives and abundance.
+const WIDE = process.argv.includes("--wide");
+const daysArg = process.argv.indexOf("--days");
+const WINDOW_DAYS = daysArg > 0 ? Number(process.argv[daysArg + 1]) || 150 : 150;
 const MIN_POINTS = 100;
 const PAGES = 4;
 
 /** Titles that touch the machine learning to be interesting here. */
-const RELEVANT =
+const AI_TERMS =
   /\b(AI|LLM|GPT|model|agent|neural|diffusion|transcri|voice|vision|semantic|embedding|inference|fine-?tun)\b/i;
+const WIDE_TERMS =
+  /\b(space|rocket|satellite|orbit|telescope|astronom|planet|moon|mars|longevity|aging|ageing|biolog|protein|gene|DNA|cell|brain|physics|fusion|battery|solar|robot|drone|3D.?print|CNC|microscope|radio|synth|music|chess|telescop|weather|ocean|map)\w*/i;
+const RELEVANT = { test: (title) => AI_TERMS.test(title) || (WIDE && WIDE_TERMS.test(title)) };
 
 /** Dropped on sight — see the note above about inverting the message. */
 const EXCLUDE =
@@ -64,7 +72,7 @@ console.log(`scanned ${seen.size} Show HN posts over ${WINDOW_DAYS} days`);
 console.log(`${candidates.length} candidates after filtering\n`);
 console.log(`THE TEST: does this show ONE PERSON doing what used to need an institution?\n`);
 
-for (const hit of candidates.slice(0, 25)) {
+for (const hit of candidates.slice(0, WIDE ? 45 : 25)) {
   const days = Math.round((Date.now() - new Date(hit.created_at)) / 86400000);
   console.log(`[${String(hit.points).padStart(4)}pt ${String(days).padStart(3)}d] ${hit.title}`);
   console.log(`            https://news.ycombinator.com/item?id=${hit.objectID}`);

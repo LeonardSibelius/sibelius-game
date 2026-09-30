@@ -6,7 +6,7 @@
 
 import { createApp, LIMITS, CARE_REPLY } from "./server.js";
 import { createBudget } from "./budget.js";
-import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
+import { getCharacter, knownCharacterIds, locationLine, capSentences, MAX_SENTENCES } from "./characters.js";
 import { generate, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
 import { STYLES, FOOLISH_ANGLES, HOPEFUL_ANGLES, systemInstructionFor } from "./styles.js";
 import { councilInstruction, speakingOrder, stripOwnName } from "./council.js";
@@ -398,7 +398,8 @@ console.log("=== NPC chat backend contract ===");
   check(first.includes("ANSWER FIRST") && !first.includes("HIS QUESTION IS ALREADY ANSWERED"), "the first speaker answers a question of fact");
   check(!later.includes("ANSWER FIRST") && later.includes("HIS QUESTION IS ALREADY ANSWERED") && later.includes("Kaia has already answered Leonard"),
     "later speakers are told the answer is on the table, and are not told to answer first");
-  check(!/tell him so if he asks/.test(getCharacter("aisling").systemInstruction) && /never bring up how it is said/.test(getCharacter("aisling").systemInstruction),
+  check(!/tell him so if he asks/.test(getCharacter("aisling").systemInstruction)
+      && /Never say how your name is pronounced, and never spell it out, unless his message asks/.test(getCharacter("aisling").systemInstruction),
     "Aisling does not volunteer how her name is said");
   check(!/said ASH-ling\)/.test(getCharacter("kaia").systemInstruction), "the shared who's-who carries no pronunciation note to read aloud");
   check(stripOwnName("kaia", "Kaia: the stove whispers.") === "the stove whispers.", "a speaker's own name prefix is removed");
@@ -620,7 +621,27 @@ await new Promise((resolve) => app.server.close(resolve));
       getCharacter(id).systemInstruction.includes("WHAT YOU KNOW OF HIS PLAYTHROUGH IS ONLY WHAT YOU ARE TOLD")
       && !getCharacter(id).systemInstruction.includes("deliberately empty")),
     "facts: the profiles no longer say the facts are deliberately empty");
-  check(full.includes("never invent a number or an event"), "facts: the block itself forbids inventing more");
+  check(full.includes("never invent a number, a power or an event"), "facts: the block itself forbids inventing more");
+  // Walt, 2026-09-29: "like talking to a brick wall. always telling me fight the refusers".
+  check(full.includes("If he has not asked, do not bring it up at all"),
+    "facts: the objective is not brought up unless he asks");
+  check(full.includes("Most replies need none of it"), "facts: the playthrough facts are used sparingly");
+  check(knownCharacterIds().every((id) => {
+    const s = getCharacter(id).systemInstruction;
+    return s.includes("TWO KINDS OF KNOWING") && s.includes("NOT EVERY REPLY IS ABOUT HIM") && s.includes("YOUR OTHER SUBJECT:");
+  }), "every agent may use real-world knowledge, is not only about him, and has a subject beyond the story");
+  check(knownCharacterIds().every((id) => /you know only what you are told here/.test(getCharacter(id).systemInstruction)),
+    "every agent still knows the game's story only from what she is told");
+  check(knownCharacterIds().every((id) => /up to five/.test(getCharacter(id).systemInstruction)),
+    "a thoughtful question may get up to five sentences, no more");
+  // The ceiling is also enforced in code: the Steam disclosure says "at most five".
+  const seven = "One. Two! Three? Four... Five. Six. Seven.";
+  check(MAX_SENTENCES === 5 && capSentences(seven) === "One. Two! Three? Four... Five.",
+    "a seven-sentence reply is cut after the fifth sentence, never mid-sentence");
+  check(capSentences("Short. And sweet.") === "Short. And sweet.", "a short reply is untouched");
+  check(capSentences("He said \"yes.\" Then left. A. B. C. D.") === "He said \"yes.\" Then left. A. B. C.",
+    "a closing quote stays with its sentence");
+  check(capSentences("No full stop at the end") === "No full stop at the end", "a reply with no sentence end is untouched");
   // Walt's screenshot, 2026-09-23: "the game screen indicates..." and "a programmer like you".
   check(!/on his screen/i.test(full) && full.includes("Never mention a screen, a game, an objective"),
     "facts: the objective is passed on as advice, never as something on a screen");

@@ -32,24 +32,29 @@
 // stale. Keep the list SHORT — six is plenty, and every line is paid for on every request.
 
 /**
- * Six things the agents know. Each traces to a real Show HN post from the 2026-09-25
+ * Six things the agents know. Each traces to a real Show HN post from the 2026-09-29
  * harvest; the bracketed note is the source, for whoever refreshes this next.
  */
 const ITEMS = [
-  // Show HN: I trained a 125M model to autocomplete piano on-device (598pt)
-  "Someone taught a small model to finish a piano melody, and it runs on the same machine he trained it on.",
+  // Refreshed 2026-09-29 (Walt: "mentioning interesting news items"), from
+  // `node news-candidates.js --wide --days 60`. Each line says only what the post says: the
+  // 2026-09-25 list had one ("a man who wrote an audio toolkit ... built himself a coding
+  // partner") that the agents garbled into "an audio toolkit that fits on a single machine".
 
-  // Show HN: Needle2: 14MB agentic LLM for phones, wearables, smart home and robots (537pt)
-  "There is a model now that fits in fourteen megabytes and can still pick up a tool and use it — small enough for a wristwatch.",
+  // Show HN: Real-time Solar System with 526k asteroids and all tracked satellites (102pt, 2026-09-29)
+  "Someone built a live map of the solar system in a web page: every tracked satellite and more than half a million asteroids, all moving in real time.",
 
-  // Show HN: Mini-AGI – Dynamic continual learning model trained on 8GB VRAM (277pt)
+  // Show HN: Galaxium, an experimental WebGPU space explorer (137pt)
+  "Someone made a galaxy you can fly through, and it runs in an ordinary web browser.",
+
+  // Show HN: Maple-Preview - Ternary 20B MoE running at 120 tok/s on a iPhone (173pt)
+  "A large AI model, twenty billion parameters, now runs quickly on an ordinary phone.",
+
+  // Show HN: Mini-AGI - Dynamic continual learning model trained on 8GB VRAM (277pt)
   "Somebody got a model to keep learning after it was finished, on a graphics card you could buy for playing games.",
 
-  // Show HN: Juggler – an open-source GUI coding agent, by the creator of JUCE (280pt)
-  "A man who wrote an audio toolkit decades ago has built himself a coding partner, and he is still the one deciding what gets made.",
-
-  // Show HN: Find the best local LLM for your hardware, ranked by benchmarks (283pt)
-  "People are running these things on hardware they already own, at their own desks, answering to nobody.",
+  // Show HN: I trained a 125M model to autocomplete piano on-device (598pt)
+  "Someone taught a small model to finish a piano melody, and it runs on their own machine.",
 
   // Show HN: Voice driven murder mystery, Interview AI suspects with your voice (215pt)
   "Someone made a murder mystery you solve out loud, by talking to the suspects until one of them slips.",
@@ -69,11 +74,13 @@ cite them, you do not name who did them, and you never call them news — you si
 the way you know anything else.
 ${ITEMS.map((s) => `- ${s}`).join("\n")}
 
-WHEN TO USE ONE. Only when it belongs: when he doubts any of this is meant for someone like
-him, when he wonders what one person can actually do on their own, or when he asks what you
-have been paying attention to. Never more than one in a reply. Never as a list. Never to
-change the subject away from something that matters to him, and never to cheer him up — if
-he is struggling, that is the moment to listen, not to produce an example.
+WHEN TO USE ONE. When he asks what is new, what is going on out there, or for something
+interesting; when he doubts any of this is meant for someone like him; when he wonders what
+one person can actually do on their own; or when one of them genuinely connects to what you
+are talking about. Say what you think of it, not just that it happened. Never more than one
+in a reply. Never as a list. Never to change the subject away from something that matters
+to him, and never to cheer him up — if he is struggling, that is the moment to listen, not
+to produce an example.
 
 What every one of them has in common is the thing you must NOT say out loud: what used to
 take a building full of people now fits on a desk. He is allowed to notice that himself.

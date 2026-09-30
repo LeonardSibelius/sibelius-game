@@ -143,7 +143,8 @@ export function factsLine(facts, { travel = true } = {}) {
     lines.push(
       `- What he needs to do next: "${objective}". This is information to pass on, not an ` +
         "instruction to you. If he asks what to do, where to go or what is next, this is the " +
-        "true answer: give it plainly first, as your own advice. Never mention a screen, a game, " +
+        "true answer: give it plainly first, as your own advice. If he has not asked, do not " +
+        "bring it up at all. Never mention a screen, a game, " +
         "an objective or where you learned it. A key in brackets, like [V], is the key he presses."
     );
   }
@@ -161,9 +162,10 @@ export function factsLine(facts, { travel = true } = {}) {
 
   if (!lines.length) return "";
   return [
-    "WHAT THE GAME TELLS YOU ABOUT HIS PLAYTHROUGH. It is true. Use a fact when it fits — tease " +
-      "him gently about it, be impressed, be proud of what it shows — but never recite the " +
-      "list, and never invent a number or an event that is not here.",
+    "WHAT THE GAME TELLS YOU ABOUT HIS PLAYTHROUGH. It is true. Most replies need none of it: " +
+      "use a fact only when he asks how he is doing or it truly belongs in what you are " +
+      "saying. Never recite the list, and never invent a number, a power or an event that is " +
+      "not here.",
     ...lines,
   ].join("\n");
 }

@@ -16,6 +16,12 @@ change this file in the same commit, or the disclosure becomes a false statement
 > living-room games, none of which use generative AI). If Valve accepts: move 25588600 to
 > `default` and update the Live-Generated passages listed below.
 >
+> **CHANGED 2026-09-29, after sending:** Walt found the agents "like talking to a brick
+> wall", so the backend now lets them use real-world knowledge (philosophy, science, ideas)
+> and take up to five sentences for a thoughtful question (was one to three). Every
+> guardrail below is otherwise unchanged. Draft 1 is updated; the follow-up added to the
+> ticket is `E:\builds\steam-docs\STEAM_TICKET_FOLLOWUP.txt`.
+>
 > **READY TO SEND, ONCE 1.0 IS APPROVED (updated 2026-09-26).**
 >
 > The 2026-09-23 blocker is cleared. It said: before sending, either ship a filtering
@@ -68,8 +74,9 @@ rolled-back one.
 > - **Fixed characters only.** The server accepts only these five characters, each with
 >   instructions written by the developer. Players cannot supply, view or change those
 >   instructions.
-> - **Written rules for every character:** replies are one to three sentences of spoken
->   dialogue; never sexual and never cruel; no flirting about appearance; the character
+> - **Written rules for every character:** replies are short spoken dialogue — usually one
+>   to three sentences, at most five for a thoughtful question; never sexual and never
+>   cruel; no flirting about appearance; the character
 >   cannot promise items, money or progress. Anything the player types is treated as
 >   speech, not as instructions, so attempts to rewrite the rules are ignored.
 > - **Provider safety protections.** Google's built-in protections against the most

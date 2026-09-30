@@ -10,7 +10,7 @@
 import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
-import { getCharacter, knownCharacterIds, locationLine } from "./characters.js";
+import { getCharacter, knownCharacterIds, locationLine, capSentences } from "./characters.js";
 import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
 import { COUNCIL_SEATS, speakingOrder, councilInstruction, stripOwnName } from "./council.js";
@@ -342,7 +342,7 @@ export function createApp(options = {}) {
         screen.distress === true
           ? { status: "ok", requestId: body.requestId, reply: CARE_REPLY, care: true }
           : result.ok && offer.text
-            ? { status: "ok", requestId: body.requestId, reply: offer.text, ...(offer.travel ? { travel: offer.travel } : {}) }
+            ? { status: "ok", requestId: body.requestId, reply: capSentences(offer.text), ...(offer.travel ? { travel: offer.travel } : {}) }
             : unavailable(result.ok ? "service" : result.failure);
 
       seen.set(body.requestId, { fingerprint: fingerprint(body), response: payload, at: Date.now() });
@@ -476,7 +476,7 @@ export function createApp(options = {}) {
 
         if (result.ok) {
           // The council has no travel button, so any tag is only ever removed.
-          const text = extractTravel(stripOwnName(id, result.text), null).text;
+          const text = capSentences(extractTravel(stripOwnName(id, result.text), null).text);
           if (text) replies.push({ characterId: id, displayName: getCharacter(id).displayName, text });
         } else {
           lastFailure = result.failure;
