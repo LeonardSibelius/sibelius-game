@@ -42,6 +42,7 @@
 #include "SauceShop.h"                  // FUN-3: re-apply bought upgrades on spawn
 #include "SauceBowl.h"                  // temple ritual: C claims a filled pot in reach
 #include "Spaceport.h"                  // ...and at the spaceport, C is the pre-flight
+#include "CompilePortal.h"              // ...and at a portal, C goes through
 #include "EngineUtils.h"                // TActorIterator (the pot scan)
 #include "NavigationInvokerComponent.h" // forest roads: navmesh bubbles around agents
 #include "SibeliusGame.h"
@@ -937,6 +938,21 @@ void ASibeliusGameCharacter::OnRefactorPressed()
 
 void ASibeliusGameCharacter::OnBuildPressed()
 {
+	/* A PORTAL HE IS LOOKING AT GOES FIRST (CompilePortal.h). The attic-key orb below
+	   claims C anywhere within 2.5 m of itself and it stands near the front door, so with
+	   the portal there Walt's first C at "[C] go through" answered "THE ATTIC KEY NEEDS 2
+	   BOOKS". The prompt on screen says which thing the press is for, so when that prompt
+	   is the portal's, the portal answers - through the Compile check, which is its gate
+	   (earn Compile from Elise upstairs first). */
+	if (ACompilePortal* Portal = InteractorComponent ? Cast<ACompilePortal>(InteractorComponent->GetFocusedActor()) : nullptr)
+	{
+		if (CheckPowerUnlocked(EPowerVerb::Compile) && Portal->TryClaim(this, /*bLookedAt=*/true))
+		{
+			OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);
+		}
+		return;
+	}
+
 	// The library alcove orb is the attic key, not a COMPILE site.
 	if (BuildComp && BuildComp->TryTakeNearbyAtticKey())
 	{
@@ -946,6 +962,19 @@ void ASibeliusGameCharacter::OnBuildPressed()
 	if (!CheckPowerUnlocked(EPowerVerb::Compile))
 	{
 		return;
+	}
+
+	/* A PORTAL WITHIN REACH, looked at or not. After the unlock check on purpose: the
+	   portal down the hall from the start is the reason to earn Compile from Elise, and the
+	   refusal banner above is the whole of its gate. It claims only within a few metres, so
+	   it never shadows the sauce pot, a build site or the spaceport below. */
+	for (TActorIterator<ACompilePortal> It(GetWorld()); It; ++It)
+	{
+		if (It->TryClaim(this))
+		{
+			OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);
+			return;
+		}
 	}
 
 	// One verb, disambiguated by state (Raymond's rule): a filled sauce pot
