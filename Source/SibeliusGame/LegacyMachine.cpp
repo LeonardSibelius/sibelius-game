@@ -37,6 +37,27 @@ namespace
 	constexpr int32 ThrowHour = 3;
 }
 
+/* The sign's two layouts. Named rather than anonymous, so a unity build cannot collide
+   them with another file's. See the sign notes in the constructor for the joke layout's
+   numbers; the company layout is the same plate with nothing taped to it. */
+namespace LegacyMachineSign
+{
+	const FVector Anchor(-45.0f, 0.0f, 158.0f);
+	const FRotator Facing(0.0f, 180.0f, 0.0f);
+
+	// The joke: a tall plate, the official name small on its bottom strip, the card over the top.
+	const FVector JokePlateScale(0.02f, 2.50f, 0.46f);
+	const FVector JokeNameOffset(-1.6f, 0.0f, -15.0f);
+	constexpr float JokeNameSize = 8.0f;
+
+	// The company name alone: 300 x 36 cm, the name 18cm tall and centred. 24 characters at
+	// 18 is ~259cm by build_legacy_machine.py's GLYPH_W of 0.60, an estimate the real font
+	// has come in UNDER before, so it fits with room even if the estimate is a little low.
+	const FVector CompanyPlateScale(0.02f, 3.00f, 0.36f);
+	const FVector CompanyNameOffset(-1.6f, 0.0f, 0.0f);
+	constexpr float CompanyNameSize = 18.0f;
+}
+
 ALegacyMachine::ALegacyMachine()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -136,8 +157,8 @@ ALegacyMachine::ALegacyMachine()
 	   at 8 is ~211cm on a 250 plate, both with room to spare even if GLYPH_W is off by
 	   a fifth in either direction. That is the difference between using the estimate
 	   for headroom and depending on it for the joke. */
-	const FVector SignAnchor(-45.0f, 0.0f, 158.0f);
-	const FRotator SignFacing(0.0f, 180.0f, 0.0f);
+	const FVector SignAnchor = LegacyMachineSign::Anchor;
+	const FRotator SignFacing = LegacyMachineSign::Facing;
 	const FRotator CardFacing(0.0f, 180.0f, 4.0f);   // taped on crooked
 
 	SignPlate = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SignPlate"));
@@ -262,22 +283,35 @@ ALegacyMachine::ALegacyMachine()
    the .umap happens to hold. */
 void ALegacyMachine::ApplySignVisibility()
 {
-	UStaticMeshComponent* Meshes[] = { SignPlate, SignCard };
-	for (UStaticMeshComponent* M : Meshes)
+	// The joke wins if both are ticked: it is the fuller sign, and it carries the official
+	// name the card is mocking.
+	const bool bJoke = bShowSign;
+	const bool bCompany = !bJoke && bShowCompanySign;
+	const bool bPlate = bJoke || bCompany;
+
+	if (SignPlate)
 	{
-		if (M)
-		{
-			M->SetVisibility(bShowSign, /*bPropagateToChildren=*/true);
-		}
+		SignPlate->SetRelativeScale3D(bCompany ? LegacyMachineSign::CompanyPlateScale : LegacyMachineSign::JokePlateScale);
+		SignPlate->SetVisibility(bPlate, /*bPropagateToChildren=*/true);
+	}
+	if (SignOfficialText)
+	{
+		SignOfficialText->SetRelativeLocation(LegacyMachineSign::Anchor
+			+ (bCompany ? LegacyMachineSign::CompanyNameOffset : LegacyMachineSign::JokeNameOffset));
+		SignOfficialText->SetWorldSize(bCompany ? LegacyMachineSign::CompanyNameSize : LegacyMachineSign::JokeNameSize);
+		SignOfficialText->SetText(FText::FromString(bCompany ? CompanyName : OfficialName));
+		SignOfficialText->SetVisibility(bPlate, /*bPropagateToChildren=*/true);
 	}
 
-	UTextRenderComponent* Texts[] = { SignOfficialText, SignText };
-	for (UTextRenderComponent* T : Texts)
+	// The card and its writing only ever belong to the joke, and move together, so its
+	// text never floats in mid-air with nothing behind it.
+	if (SignCard)
 	{
-		if (T)
-		{
-			T->SetVisibility(bShowSign, /*bPropagateToChildren=*/true);
-		}
+		SignCard->SetVisibility(bJoke, /*bPropagateToChildren=*/true);
+	}
+	if (SignText)
+	{
+		SignText->SetVisibility(bJoke, /*bPropagateToChildren=*/true);
 	}
 }
 
@@ -376,10 +410,7 @@ void ALegacyMachine::DressTheVerdict()
 		}
 	}
 
-	if (SignOfficialText)
-	{
-		SignOfficialText->SetText(FText::FromString(OfficialName));
-	}
+	// The plate's own text is ApplySignVisibility's: it depends on which sign is up.
 	if (SignText)
 	{
 		SignText->SetText(FText::FromString(HandLetteredName));

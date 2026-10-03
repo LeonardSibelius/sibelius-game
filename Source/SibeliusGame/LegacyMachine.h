@@ -344,6 +344,26 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Sign")
 	FString HandLetteredName = TEXT("MRS. HALL'S CRAP FACTORY");
 
+	/* THE COMPANY SIGN (Walt, 2026-10-02). A neighbour playing the game stood in front of
+	   the line passing and failing its boxes and was bewildered: he could not tell what it
+	   was or whose it was. Walt: a sign over it, "DAILY GRIND INCORPORATED", "which makes
+	   it clear that the mess is not an AI construction."
+
+	   A different job from the joke sign, which stays off. That one tells the player what
+	   to think of the line; this one only says WHOSE it is -- an old company's, the human
+	   daily grind the AI powers exist to escape -- and leaves the wondering about what it
+	   does, which was the point of switching the joke off on 2026-08-30.
+
+	   It reuses the brass plate alone, widened, with the company name large and centred,
+	   and the taped-on card hidden. A NEW property rather than a new default on bShowSign,
+	   so no value the level already serialised can out-vote it. If bShowSign is ticked,
+	   the joke layout returns intact and wins. */
+	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Sign")
+	bool bShowCompanySign = true;
+
+	UPROPERTY(EditAnywhere, Category = "Legacy Machine|Sign")
+	FString CompanyName = TEXT("DAILY GRIND INCORPORATED");
+
 	/** Components are made in the constructor, which runs before any instance value is
 	 *  applied, so the count cannot come from RejectSpillCount. Twelve is made; the
 	 *  property decides how many are shown. */
@@ -434,9 +454,10 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	/** Show or hide all four sign components together. Called from OnConstruction so the
-	 *  editor updates live, and from BeginPlay so a level that serialised them visible
-	 *  before bShowSign existed cannot out-vote the switch. */
+	/** Lay out the sign for whichever of its two jobs is switched on (the joke, or the
+	 *  company name) and show or hide its four components to match. Called from
+	 *  OnConstruction so the editor updates live, and from BeginPlay so a level that
+	 *  serialised them visible before the switches existed cannot out-vote them. */
 	void ApplySignVisibility();
 
 	virtual void OnConstruction(const FTransform& Transform) override;
