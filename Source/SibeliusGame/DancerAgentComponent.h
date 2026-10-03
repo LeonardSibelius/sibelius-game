@@ -358,6 +358,25 @@ public:
 	UFUNCTION(BlueprintPure, Category="Dancer")
 	bool IsGuide() const;
 
+	/* AT HOME (Walt, 2026-10-03). In her virtual home (AVirtualHome, L_KaiaHome) an agent
+	   is neither granting nor guiding: he has come to visit. E goes straight to the chat,
+	   which opens - as every chat does - on her recorded line, and this is the line.
+
+	   An ACTOR TAG for the reason GuideTag is one: this component is attached at runtime,
+	   so there is no per-instance property to set, and a tag on the placed actor cooks.
+	   The recording is dancer_home_<name> (Walt's, ElevenLabs, same voice as her others);
+	   until it exists she is silent and the chat simply opens, which is the voice system's
+	   ordinary "not recorded yet" state. Change the line and the recording together. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer|Home")
+	FName HomeTag = TEXT("HomeDancer");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Dancer|Home")
+	FString HomeLine = TEXT("Welcome to my virtual home, Leonard.  I can Refactor it as I please.");
+
+	/** True when the owning actor carries HomeTag - she is at home and he is visiting. */
+	UFUNCTION(BlueprintPure, Category="Dancer")
+	bool IsAtHome() const;
+
 	/**
 	 * 0 before he has been in the deli, 1 after. Always 0 for a dancer who is not a guide.
 	 *

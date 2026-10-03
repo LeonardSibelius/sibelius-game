@@ -6,6 +6,8 @@
 #include "DancerAgentComponent.h"
 #include "DancerAgentSubsystem.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/PlayerCameraManager.h"
+#include "SibeliusAim.h"           // rays start level with his eyes, even in third person
 #include "CollisionQueryParams.h"
 #include "HAL/IConsoleManager.h"   // sib.Chat.Enable
 #include "Engine/EngineTypes.h"
@@ -54,8 +56,28 @@ void UInteractorComponent::UpdateFocus()
 		return;
 	}
 
-	const FVector Forward = CameraComp->GetForwardVector();
-	const FVector Start = CameraComp->GetComponentLocation();
+	/* AIM ALONG THE VIEW HE IS ACTUALLY SEEING. This used the first-person camera's own
+	   forward, which is right in first person and wrong in battle form: battle form
+	   switches that camera off, and an inactive camera stops following the mouse, so on
+	   Kaia's planet E aimed wherever he had been looking when he arrived (it reached her
+	   only because she stood straight ahead). The player camera manager is the live view in
+	   both modes, and SibeliusAim starts the ray level with his eyes, so in first person
+	   this is the same ray as before.
+
+	   ONLY WHILE THE VIEW IS HIM. A table, a slot cabinet or a talk close-up takes the view
+	   to a camera of its own; aiming from that would put prompts on whatever that camera
+	   sees. While one is up, the old ray from his head stands, exactly as it always has. */
+	FVector Forward = CameraComp->GetForwardVector();
+	FVector Start = CameraComp->GetComponentLocation();
+	{
+		const APawn* Pawn = Cast<APawn>(GetOwner());
+		const APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+		if (PC && PC->PlayerCameraManager && PC->GetViewTarget() == Pawn)
+		{
+			Forward = PC->PlayerCameraManager->GetCameraRotation().Vector();
+			Start = SibeliusAim::RayStart(Pawn, PC->PlayerCameraManager->GetCameraLocation(), Forward);
+		}
+	}
 	const FVector End = Start + Forward * InteractRange;
 
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(InteractTrace), false, GetOwner());

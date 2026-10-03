@@ -43,6 +43,7 @@
 #include "SauceBowl.h"                  // temple ritual: C claims a filled pot in reach
 #include "Spaceport.h"                  // ...and at the spaceport, C is the pre-flight
 #include "CompilePortal.h"              // ...and at a portal, C goes through
+#include "VirtualHome.h"                // powers lent in an agent's virtual home
 #include "EngineUtils.h"                // TActorIterator (the pot scan)
 #include "NavigationInvokerComponent.h" // forest roads: navmesh bubbles around agents
 #include "SibeliusGame.h"
@@ -872,6 +873,14 @@ bool ASibeliusGameCharacter::CheckPowerUnlocked(EPowerVerb Verb) const
 	{
 		ASibeliusHUD::Toast(this, TEXT("NOT IN THIS BODY"), 1.5f, SibeliusToast::Warn);
 		return false;
+	}
+
+	/* LENT BY THE PLACE (VirtualHome.h). In an agent's virtual home her power works whether
+	   or not he has earned it: Kaia, at home, "can Refactor it as I please", and so can he.
+	   Nothing is written to the save - back in the house the gate below decides again. */
+	if (AVirtualHome::LendsPower(this, Verb))
+	{
+		return true;
 	}
 
 	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);

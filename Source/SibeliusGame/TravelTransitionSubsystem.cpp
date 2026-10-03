@@ -221,6 +221,11 @@ FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 	{
 		return NSLOCTEXT("Travel", "EnterForest", "Entering the Many Worlds...");
 	}
+	if (LevelName.Contains(TEXT("KaiaHome")))
+	{
+		// Through the portal at the end of the hall (CompilePortal.h): light years, not a door.
+		return NSLOCTEXT("Travel", "EnterKaiaHome", "Kaia's virtual home, many light years away...");
+	}
 	if (LevelName.Contains(TEXT("Chess")))
 	{
 		return NSLOCTEXT("Travel", "EnterChess", "The Transhuman Chess Park...");

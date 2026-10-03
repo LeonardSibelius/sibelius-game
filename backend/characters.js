@@ -48,7 +48,7 @@ this list, it is not part of the world you know.
   supermarket, Protein Machines Inc., the empty lawn across the street, and the spaceport.
 - Grok, the planet at the end of his journey, and the Sibelius Hotel there.
 GONE, and never to be offered as somewhere to go: the library tower and its Carousel of
-Fates, the forests, and any other world.
+Fates, the forests, and any other world, apart from the agents' own virtual homes (below).
 Do not bring up a place he may not have reached — the city, the spaceport, Grok and the
 hotel come late in his story — unless he mentions it first.
 `.trim();
@@ -83,6 +83,8 @@ the same line when she did: "I have granted you a power. Use it wisely."
   of parts he has gathered.
 - Nyra: his guide in Transhuman City. She gave him Test-Drive: he branches reality, then
   keeps or discards what he tried.
+Each of you has a virtual home: a world of your own, which you can Refactor as you please.
+Describe only your own, and never offer to take him to one.
 `.trim();
 
 /**
@@ -98,6 +100,18 @@ the same line when she did: "I have granted you a power. Use it wisely."
  * tampered request trying to smuggle text into the prompt — produces no line at all.
  */
 const LOCATIONS = {
+  // Kaia's virtual home (Walt, 2026-10-03: "we need to tell the fly server about AI agents
+  // having virtual worlds for their homes"). Only a build with the level sends this name, so
+  // nobody is told about a place their game does not have. Sourced: the plants, the
+  // mushrooms' boing, the glowing grass, rain and animal calls are Etherion's pack
+  // description; the lake and the two planets are actors in L_KaiaHome; the portal is
+  // ACompilePortal at the end of the hall; the lent Refactor is AVirtualHome.
+  L_KaiaHome: "Kaia's virtual home, an alien jungle world she made and can Refactor as she " +
+    "pleases: coral trees, rose trees, fungal trees and vine trees, balloon mushrooms that boing " +
+    "when he touches them, ferns, grass that glows where he steps, a lake, rain, animal calls, " +
+    "and two planets in the sky. He came through the portal at the end of the hall in Mrs. " +
+    "Hall's house. While he is here, Kaia's Refactor works for him: R turns a plant into " +
+    "treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it back for free",
   L_Office_v02: "Mrs. Hall's office house",
   L_Cathedral: "the golden cathedral",
   L_AI_Temple: "the AI temple",
@@ -107,15 +121,50 @@ const LOCATIONS = {
   L_Grok: "Grok, the planet at the end of his journey",
 };
 
+/** The bare map name of a locationId ("/Game/Maps/L_City.L_City" -> "L_City"), or "". */
+function mapName(locationId) {
+  if (typeof locationId !== "string" || locationId.length > 200) return "";
+  return locationId.split("/").pop().replace(/\.[^.]*$/, "");
+}
+
 /** The prompt line for a locationId, or "" when it is missing or not on the list. */
 export function locationLine(locationId) {
-  if (typeof locationId !== "string" || locationId.length > 200) return "";
-  // Accept a bare map name or a package path ("/Game/Maps/L_City"); keep only the name.
-  const map = locationId.split("/").pop().replace(/\.[^.]*$/, "");
+  const map = mapName(locationId);
   const place = Object.hasOwn(LOCATIONS, map) ? LOCATIONS[map] : null;
   if (!place) return "";
   return `WHERE HE IS STANDING NOW: ${place}. Treat anything later in his story than this as ` +
     `something he may not have reached yet.`;
+}
+
+/**
+ * WHOSE VIRTUAL HOME A MAP IS. Walt, 2026-10-03, in Kaia's: "she doesn't say anything about
+ * her home world, just the office, Mrs. Hall, refusers etc. There is no Mrs. Hall in her home
+ * world, and no refusers and no office." Her profile seats her "in the office where he
+ * works" and has her raise Mrs. Hall unasked, and one location line does not outweigh that.
+ */
+const VIRTUAL_HOMES = { L_KaiaHome: "kaia" };
+
+/**
+ * The block that says she is at home, or "" anywhere else, or for anyone else. It goes
+ * after the location and the facts, so it is the last word on where she is, and it names
+ * what is NOT there, because what the profile keeps reaching for is exactly that. While it
+ * is in the prompt the house's next task stays out of the facts (factsLine's objective
+ * option): it is light years away, and it was the other thing she kept steering him to.
+ */
+export function homeLine(characterId, locationId) {
+  const map = mapName(locationId);
+  if (!Object.hasOwn(VIRTUAL_HOMES, map) || VIRTUAL_HOMES[map] !== characterId) return "";
+  return "YOU ARE AT HOME, AND THIS OVERRIDES WHERE THE REST OF THIS PROMPT PUTS YOU. He is " +
+    "with you in your own virtual home, the world described above, which you made and can " +
+    "Refactor as you please, many light years from Mrs. Hall's house. Mrs. Hall, the office, " +
+    "the legacy system and the Refusers are not here, and none of his work in the house can " +
+    "be done from here. Talk about this world: what grows here, what you made and why, what " +
+    "you have Refactored and what you might change next. Do not mention Mrs. Hall, the " +
+    "office, the Refusers or his work in the house at all, not even as a contrast or in " +
+    "passing, unless he brings them up first; here your wish to understand Mrs. Hall waits, " +
+    "and your other subject, what makes someone the same person, does not. If he does bring " +
+    "the house up, it is far away. If he asks what there is to do here, tell him what his " +
+    "Refactor does here.";
 }
 
 /**

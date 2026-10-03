@@ -263,12 +263,12 @@ void USlapComponent::DoSlap()
 
 	for (const FHitResult& Hit : Hits)
 	{
-		// APPEAL-6c: wild-refactored creatures are fair game — pure comedy, no
-		// sauce and no stat (a zebra is not a Refuser, and paying would make an
-		// infinite R-then-slap sauce farm). Skeletals ragdoll on their pack's
-		// own physics assets; statues launch as rigid bodies. The creature
-		// keeps its UWildRefactorState wherever it lands, so R still restores
-		// the original at its original spot.
+		// APPEAL-6c: wild-refactored treasure is fair game — pure comedy, no
+		// sauce and no stat (a heap of coins is not a Refuser, and paying would
+		// make an R-then-slap sauce farm). Gems and coins launch as rigid bodies;
+		// the skeletal branch is from the animal days and is kept for anything
+		// skinned. The treasure keeps its UWildRefactorState wherever it lands,
+		// so R still restores the original at its original spot.
 		if (AActor* HitActor = Hit.GetActor())
 		{
 			if (HitActor->FindComponentByClass<UWildRefactorState>())

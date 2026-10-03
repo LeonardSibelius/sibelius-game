@@ -10,7 +10,7 @@
 import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
-import { getCharacter, knownCharacterIds, locationLine, capSentences } from "./characters.js";
+import { getCharacter, knownCharacterIds, locationLine, homeLine, capSentences } from "./characters.js";
 import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
 import { COUNCIL_SEATS, speakingOrder, councilInstruction, stripOwnName } from "./council.js";
@@ -241,12 +241,15 @@ export function createApp(options = {}) {
     const character = getCharacter(body.characterId);
     // Profile, then style, then where he is — the location goes last so it is the freshest
     // fact in the prompt, and an unknown location adds nothing (characters.js, LOCATIONS).
-    // A story event (events.js), when the game sent one, goes after even the location: it
-    // is about this reply only, and the last thing she reads.
+    // In her own virtual home, the at-home block follows the facts and the house's next task
+    // is left out of them (characters.js, homeLine). A story event (events.js), when the game
+    // sent one, goes after all of it: it is about this reply only, and the last thing she reads.
+    const home = homeLine(body.characterId, body.storyContext?.locationId);
     const systemInstruction = [
       systemInstructionFor(character, body.characterId, config.chatStyle),
       locationLine(body.storyContext?.locationId),
-      factsLine(body.storyContext?.facts),
+      factsLine(body.storyContext?.facts, { objective: !home }),
+      home,
       eventLine(body.storyContext?.event, { where: "chat", characterId: body.characterId }),
     ].filter(Boolean).join("\n\n");
 

@@ -109,8 +109,10 @@ export function cleanObjective(value) {
 /**
  * The prompt block for storyContext.facts, or "" when nothing usable was sent.
  * options.travel: false leaves out the travel offer (the council has no button).
+ * options.objective: false leaves out his next task (in an agent's virtual home it is a
+ * task for the house, light years away: characters.js, homeLine).
  */
-export function factsLine(facts, { travel = true } = {}) {
+export function factsLine(facts, { travel = true, objective: withObjective = true } = {}) {
   if (!facts || typeof facts !== "object" || Array.isArray(facts)) return "";
   const lines = [];
 
@@ -135,7 +137,7 @@ export function factsLine(facts, { travel = true } = {}) {
   ].filter(([, n]) => n !== null);
   if (tallies.length) lines.push(`- ${tallies.map(([label, n]) => `${label}: ${n}`).join(". ")}.`);
 
-  const objective = cleanObjective(facts.objective);
+  const objective = withObjective ? cleanObjective(facts.objective) : "";
   if (objective) {
     /* NEVER "HIS SCREEN". The first wording said the line was "on his screen", and Kaia told
        him "the game screen indicates that..." (Walt, 2026-09-23). The agents live in the

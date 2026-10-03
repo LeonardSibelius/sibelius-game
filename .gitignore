@@ -382,3 +382,24 @@ Tools/VendorSource/
 # The UnrealClaude editor plugin writes every script Claude runs in the editor here. Scratch,
 # not project content.
 Content/UnrealClaude/
+
+# --- Etherion Designs "Alien Planet Fantasy Environment - Jungle Plants" (Fab, Personal licence, ---
+# --- $109.99, bought 2026-10-02, "Generated with AI: No", "Allows usage with AI: No") ------------
+# Kaia's home planet behind the portal at the end of the hall (ACompilePortal "KaiaPortal").
+# Arrived as a launcher-created 5.6 project in C:\Users\wpark\projects\FabStaging (outside this
+# repo) and was copied in. Three vendor folders: the environment itself, the physics demo world
+# and the Etherion foliage plugin's C++ source, which Etherion's own install steps put in the
+# project root's Plugins/ - all three are the vendor's and never go in the public repo.
+Content/AlienJunglePlants/
+Content/AlienPhysicsWorld/
+Plugins/EDFoliagePhysics/
+# Kaia's home: a copy of the pack's Level_Jungle (Tools/Scripts/make_kaia_home.py), so its
+# landscape and foliage are Etherion's - like L_Bowling, never in git; back it up to E:.
+Content/Maps/L_KaiaHome.umap
+Content/Maps/L_KaiaHome_BuiltData.uasset
+
+# --- Dekogon Studios "Treasures VOL.1 - Ancient Treasures" (Fab, in Walt's library, -------------
+# --- "Allows usage with AI: No") - Refactor's treasure, added 2026-10-03 -------------------------
+# URefactorComponent names its gems, coin and gold pieces; Tools/Scripts/prepare_hoard.py gave
+# them collision boxes, so the local copy is changed from the download - back it up to E:.
+Content/AncientTreasures/

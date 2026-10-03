@@ -1106,6 +1106,13 @@ FName UDancerAgentComponent::ResolveChatId() const
 
 bool UDancerAgentComponent::HasAuthoredBusinessPending() const
 {
+	// At home nothing is handed over and nothing is pending: her welcome is the chat's
+	// own opening line, so E goes straight to the conversation.
+	if (IsAtHome())
+	{
+		return false;
+	}
+
 	// The slot trial owns E while she still has a power in hand.
 	if (HasPowerToGive())
 	{
@@ -1560,6 +1567,12 @@ bool UDancerAgentComponent::IsGuide() const
 	return Owner && !GuideTag.IsNone() && Owner->ActorHasTag(GuideTag);
 }
 
+bool UDancerAgentComponent::IsAtHome() const
+{
+	const AActor* Owner = GetOwner();
+	return Owner && !HomeTag.IsNone() && Owner->ActorHasTag(HomeTag);
+}
+
 int32 UDancerAgentComponent::GuideStage() const
 {
 	/* A DANCER WHO IS NOT A GUIDE IS ALWAYS STAGE 0. Kaia in the office has been in the
@@ -1994,6 +2007,12 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	   number, so the two can never drift apart. Highest stage first: adding stage 3 means
 	   one more clause here and one more entry in GuideVoiceNames. */
 	FString Line = TalkLine;
+	if (IsAtHome())
+	{
+		Line = HomeLine;
+		Line.ReplaceInline(TEXT("{0}"), *AgentName);
+		return Line;
+	}
 	if (IsGuide())
 	{
 		const int32 Stage = GuideStage();
@@ -2015,6 +2034,8 @@ FString UDancerAgentComponent::GetSpokenLine() const
 
 const TCHAR* UDancerAgentComponent::TalkVoiceBase() const
 {
+	// At home the line is the welcome, and so is the recording: dancer_home_<name>.
+	if (IsAtHome()) return TEXT("dancer_home");
 	if (!IsGuide()) return SharedVoiceName;
 	const int32 Stage = GuideStage();
 	if (Stage > 0 && Stage < 4 && !AProteinMachine::IsEnhanced(this))

@@ -10,8 +10,8 @@
 #
 # RUN with L_Office_v02 open, PIE stopped:
 #   py "C:/Users/wpark/projects/sibelius-game/Tools/Scripts/place_kaia_portal.py"
-# Safe to re-run: it replaces the KaiaPortal it made. Never loads a level (that crashes the
-# editor from a script - open L_Office_v02 by hand).
+# Safe to re-run: a KaiaPortal already there is only re-aimed. Never loads a level (that
+# crashes the editor from a script - open L_Office_v02 by hand).
 
 import unreal
 
@@ -19,6 +19,8 @@ TAG = "###KAIAPORTAL###"
 DOOR = "BP_Door_Outside_A3"
 LABEL = "KaiaPortal"
 CLEAR = 30.0        # cm between the door's face and the portal's centre
+DESTINATION = "L_KaiaHome"      # Tools/Scripts/make_kaia_home.py
+ARRIVAL_TAG = "KaiaHome"        # its PlayerStart
 
 eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
@@ -28,8 +30,25 @@ def say(text):
     print("%s %s" % (TAG, text))
 
 
+def aim(portal):
+    portal.set_editor_property("travel_target_level", DESTINATION)
+    portal.set_editor_property("arrival_tag", ARRIVAL_TAG)
+
+
 def main():
     actors = eas.get_all_level_actors()
+
+    # ONE ALREADY STANDING IS AIMED WHERE IT STANDS, not re-placed: the first one went in
+    # before L_KaiaHome existed, pointing nowhere ("THE PORTAL HUMS..." - Walt, 2026-10-03),
+    # and re-measuring would undo anything moved by hand since.
+    standing = [a for a in actors if a.get_actor_label() == LABEL]
+    if standing:
+        for portal in standing:
+            aim(portal)
+        les.save_current_level()
+        say("%d %s aimed at %s (tag %s), left where it stands. Saved." % (len(standing), LABEL, DESTINATION, ARRIVAL_TAG))
+        return
+
     door = next((a for a in actors if a.get_actor_label() == DOOR), None)
     start = next((a for a in actors if a.get_class().get_name() == "PlayerStart"
                   and not a.get_editor_property("player_start_tag")), None) \
@@ -37,8 +56,6 @@ def main():
     if not door or not start:
         say("need %s and a PlayerStart - open L_Office_v02." % DOOR)
         return
-    for old in [a for a in actors if a.get_actor_label() == LABEL]:
-        eas.destroy_actor(old)
 
     origin, ext = door.get_actor_bounds(False)
     # The door is thin along one horizontal axis: that axis is its facing.
@@ -57,6 +74,7 @@ def main():
 
     portal = eas.spawn_actor_from_class(unreal.CompilePortal, where, unreal.Rotator(0.0, 0.0, yaw))
     portal.set_actor_label(LABEL)
+    aim(portal)
     les.save_current_level()
     say("%s placed at %s, yaw %.0f, effect %s. Saved." % (
         LABEL, portal.get_actor_location(), yaw, portal.get_editor_property("portal_system")))
