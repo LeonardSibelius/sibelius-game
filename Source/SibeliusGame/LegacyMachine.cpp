@@ -56,6 +56,11 @@ namespace LegacyMachineSign
 	const FVector CompanyPlateScale(0.02f, 3.00f, 0.36f);
 	const FVector CompanyNameOffset(-1.6f, 0.0f, 0.0f);
 	constexpr float CompanyNameSize = 18.0f;
+
+	// The taped-on card and its marker writing, relative to the plate.
+	const FVector CardOffset(-3.0f, 4.0f, 8.0f);
+	const FVector CardTextOffset(-4.4f, 4.0f, 8.0f);
+	const FRotator CardFacing(0.0f, 180.0f, 4.0f);   // taped on crooked
 }
 
 ALegacyMachine::ALegacyMachine()
@@ -159,7 +164,7 @@ ALegacyMachine::ALegacyMachine()
 	   for headroom and depending on it for the joke. */
 	const FVector SignAnchor = LegacyMachineSign::Anchor;
 	const FRotator SignFacing = LegacyMachineSign::Facing;
-	const FRotator CardFacing(0.0f, 180.0f, 4.0f);   // taped on crooked
+	const FRotator CardFacing = LegacyMachineSign::CardFacing;
 
 	SignPlate = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SignPlate"));
 	SignPlate->SetupAttachment(Root);
@@ -289,29 +294,49 @@ void ALegacyMachine::ApplySignVisibility()
 	const bool bCompany = !bJoke && bShowCompanySign;
 	const bool bPlate = bJoke || bCompany;
 
+	/* THE WRITING FOLLOWS THE PLATE. Walt, 2026-10-02, after moving the sign back so a
+	   player can read it walking past: "i moved the dark background and not the writing."
+	   The plate is the part a person grabs in the editor, so its transform IS the sign's:
+	   everything written on it is placed from wherever the plate now is, and turns with it.
+	   The constant anchor only says where the plate starts. */
+	const FVector PlateLoc = SignPlate ? SignPlate->GetRelativeLocation() : LegacyMachineSign::Anchor;
+	const FQuat PlateRot = SignPlate ? SignPlate->GetRelativeRotation().Quaternion() : FQuat::Identity;
+	auto OnPlate = [&PlateLoc, &PlateRot](const FVector& Offset) { return PlateLoc + PlateRot.RotateVector(Offset); };
+	auto FacingOnPlate = [&PlateRot](const FRotator& Facing) { return (PlateRot * Facing.Quaternion()).Rotator(); };
+
+	// Visibility AND hidden-in-game on every part: a placed actor can carry a saved
+	// hidden-in-game flag on a component, which SetVisibility alone would not clear.
 	if (SignPlate)
 	{
 		SignPlate->SetRelativeScale3D(bCompany ? LegacyMachineSign::CompanyPlateScale : LegacyMachineSign::JokePlateScale);
 		SignPlate->SetVisibility(bPlate, /*bPropagateToChildren=*/true);
+		SignPlate->SetHiddenInGame(!bPlate);
 	}
 	if (SignOfficialText)
 	{
-		SignOfficialText->SetRelativeLocation(LegacyMachineSign::Anchor
-			+ (bCompany ? LegacyMachineSign::CompanyNameOffset : LegacyMachineSign::JokeNameOffset));
+		SignOfficialText->SetRelativeLocation(OnPlate(bCompany ? LegacyMachineSign::CompanyNameOffset : LegacyMachineSign::JokeNameOffset));
+		SignOfficialText->SetRelativeRotation(FacingOnPlate(LegacyMachineSign::Facing));
 		SignOfficialText->SetWorldSize(bCompany ? LegacyMachineSign::CompanyNameSize : LegacyMachineSign::JokeNameSize);
 		SignOfficialText->SetText(FText::FromString(bCompany ? CompanyName : OfficialName));
 		SignOfficialText->SetVisibility(bPlate, /*bPropagateToChildren=*/true);
+		SignOfficialText->SetHiddenInGame(!bPlate);
 	}
 
 	// The card and its writing only ever belong to the joke, and move together, so its
 	// text never floats in mid-air with nothing behind it.
 	if (SignCard)
 	{
+		SignCard->SetRelativeLocation(OnPlate(LegacyMachineSign::CardOffset));
+		SignCard->SetRelativeRotation(FacingOnPlate(LegacyMachineSign::CardFacing));
 		SignCard->SetVisibility(bJoke, /*bPropagateToChildren=*/true);
+		SignCard->SetHiddenInGame(!bJoke);
 	}
 	if (SignText)
 	{
+		SignText->SetRelativeLocation(OnPlate(LegacyMachineSign::CardTextOffset));
+		SignText->SetRelativeRotation(FacingOnPlate(LegacyMachineSign::CardFacing));
 		SignText->SetVisibility(bJoke, /*bPropagateToChildren=*/true);
+		SignText->SetHiddenInGame(!bJoke);
 	}
 }
 
