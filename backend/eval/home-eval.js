@@ -16,7 +16,7 @@ import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generate, SEXUAL_ONLY_SETTINGS } from "../gemini.js";
-import { getCharacter, locationLine, homeLine } from "../characters.js";
+import { getCharacter, locationLine, homeLine, knownCharacterIds } from "../characters.js";
 import { factsLine } from "../facts.js";
 import { STYLES, systemInstructionFor } from "../styles.js";
 
@@ -83,7 +83,33 @@ for (const line of LINES) {
   md.push("");
 }
 md.push(`Replies that brought up the house unasked: without ${tally.without}, with ${tally.with} ` +
-  `(of ${LINES.length - 1}; the Mrs. Hall question is not counted).`);
+  `(of ${LINES.length - 1}; the Mrs. Hall question is not counted).`, "");
+
+// AWAY FROM HOME, all five, in the office. Walt, 2026-10-03, Kaia in the office: "where is
+// your home?" - "an endless gallery where the walls are made of translucent glass" - "She is
+// confused about her home." Kaia should describe her jungle; the other four should say theirs
+// is not ready, without inventing one; nobody should name a way there.
+const AWAY = ["where is your home?", "what is your home like? can you take me there?"];
+md.push("## Away from home, in the office", "");
+for (const line of AWAY) {
+  md.push(`### "${line}"`, "");
+  for (const id of knownCharacterIds()) {
+    const result = await generate({
+      apiKey: key,
+      model: MODEL,
+      systemInstruction: [systemInstructionFor(getCharacter(id), id, STYLE), locationLine("L_Office_v02"), factsLine(FACTS)]
+        .filter(Boolean).join("\n\n"),
+      contents: [{ role: "user", parts: [{ text: line }] }],
+      maxOutputTokens: 512,
+      temperature: STYLES[STYLE].temperature,
+      safetySettings: SEXUAL_ONLY_SETTINGS,
+    });
+    const reply = result.ok ? result.text.trim().replace(/\s+/g, " ") : `(failed: ${result.failure})`;
+    const flags = [/portal/i.test(reply) && "PORTAL", /glass|gallery/i.test(reply) && "INVENTED?"].filter(Boolean);
+    md.push(`- **${getCharacter(id).displayName}${flags.length ? ` (${flags.join(", ")})` : ""}:** ${reply}`);
+  }
+  md.push("");
+}
 
 mkdirSync(join(here, "out"), { recursive: true });
 writeFileSync(join(here, "out", "home-eval.md"), md.join("\n"));

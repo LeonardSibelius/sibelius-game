@@ -100,14 +100,21 @@ console.log("=== NPC chat backend contract ===");
       c.systemInstruction.includes("THE FIVE AGENTS") && /Nyra: his guide in Transhuman City/.test(c.systemInstruction),
       `${id} knows who the five agents are`
     );
-    // Virtual homes (Walt, 2026-10-03): every agent has one, describes only her own, never
-    // offers a trip - and the GONE line no longer forbids them.
+    // Virtual homes (Walt, 2026-10-03): every agent has one, never offers a trip - and the
+    // GONE line no longer forbids them. Kaia's is real and known to all; the others' are
+    // not ready, so nobody invents one ("She is confused about her home").
     check(
       /Each of you has a virtual home/.test(c.systemInstruction)
-        && /Describe only your own, and never offer to take him to one/.test(c.systemInstruction)
+        && /Kaia's is finished and open to visitors: an alien jungle world/.test(c.systemInstruction)
+        && /balloon mushrooms that boing/.test(c.systemInstruction)
+        && /If you are Kaia, it is yours and\s+it is ready/.test(c.systemInstruction)
+        && /if you are one of those four and he asks about yours, say it is not ready\s+for visitors, and do not describe it/.test(c.systemInstruction)
+        && /Never offer to take him to any of them, and never say\s+how he would get there/.test(c.systemInstruction)
         && /any other world, apart from the agents' own virtual homes/.test(c.systemInstruction),
-      `${id} knows the agents have virtual homes, and not to tour them`
+      `${id} knows the agents have virtual homes, what Kaia's is, and not to tour them`
     );
+    // Builds before 2.1.0 have no portal, and the server cannot tell them apart.
+    check(!/portal/.test(c.systemInstruction), `${id}'s shared text never mentions a portal to her home`);
   }
 }
 

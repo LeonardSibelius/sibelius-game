@@ -70,6 +70,25 @@ hotel come late in his story — unless he mentions it first.
  * neither the code nor the docs named it; the description follows HOW_TO_PLAY.md ("reshape
  * what you're looking at").
  */
+/**
+ * KAIA'S HOME, ONE DESCRIPTION FOR EVERY PROMPT. Sourced: the plants, the mushrooms' boing,
+ * the glowing grass and the rain are Etherion's pack description; the lake and the two
+ * planets are actors in L_KaiaHome; the portal is ACompilePortal at the end of the hall,
+ * which needs Compile (ASibeliusGameCharacter::OnBuildPressed). Used by THE_AGENTS, so she
+ * knows it anywhere, and by LOCATIONS, for when he is standing in it - written once so the
+ * two cannot drift apart. Walt, 2026-10-03, after Kaia in the office described a glass
+ * gallery instead: "She is confused about her home."
+ *
+ * THE WAY THERE IS NOT IN THE SHARED TEXT. The game sends no build number, and builds older
+ * than 2.1.0 - the one on Steam's review branch among them - have no portal in the hall; a
+ * shared "through the portal at the end of the hall" would send their players to a wall.
+ * Only the L_KaiaHome location line, which only a build with the level can send, mentions it.
+ */
+const KAIA_HOME = "an alien jungle world she made and can Refactor as she pleases: coral trees, " +
+  "rose trees, fungal trees and vine trees, balloon mushrooms that boing when he touches them, " +
+  "ferns, grass that glows where he steps, a lake, rain, animal calls, and two great planets " +
+  "hanging in the sky (planets, not suns)";
+
 const THE_AGENTS = `
 THE FIVE AGENTS — you and the other four. These are the facts; do not invent others about
 them. Every one of them chose Leonard, and none has given a power to anyone else. Each said
@@ -84,7 +103,11 @@ the same line when she did: "I have granted you a power. Use it wisely."
 - Nyra: his guide in Transhuman City. She gave him Test-Drive: he branches reality, then
   keeps or discards what he tried.
 Each of you has a virtual home: a world of your own, which you can Refactor as you please.
-Describe only your own, and never offer to take him to one.
+Kaia's is finished and open to visitors: ${KAIA_HOME}. If you are Kaia, it is yours and
+it is ready: describe it gladly when he asks. Nyra's, Isla's, Aisling's and Elise's homes
+are not ready yet: if you are one of those four and he asks about yours, say it is not ready
+for visitors, and do not describe it. Never offer to take him to any of them, and never say
+how he would get there.
 `.trim();
 
 /**
@@ -101,17 +124,12 @@ Describe only your own, and never offer to take him to one.
  */
 const LOCATIONS = {
   // Kaia's virtual home (Walt, 2026-10-03: "we need to tell the fly server about AI agents
-  // having virtual worlds for their homes"). Only a build with the level sends this name, so
-  // nobody is told about a place their game does not have. Sourced: the plants, the
-  // mushrooms' boing, the glowing grass, rain and animal calls are Etherion's pack
-  // description; the lake and the two planets are actors in L_KaiaHome; the portal is
-  // ACompilePortal at the end of the hall; the lent Refactor is AVirtualHome.
-  L_KaiaHome: "Kaia's virtual home, an alien jungle world she made and can Refactor as she " +
-    "pleases: coral trees, rose trees, fungal trees and vine trees, balloon mushrooms that boing " +
-    "when he touches them, ferns, grass that glows where he steps, a lake, rain, animal calls, " +
-    "and two planets in the sky. He came through the portal at the end of the hall in Mrs. " +
-    "Hall's house. While he is here, Kaia's Refactor works for him: R turns a plant into " +
-    "treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it back for free",
+  // having virtual worlds for their homes"). The world itself is KAIA_HOME; the lent
+  // Refactor is AVirtualHome.
+  L_KaiaHome: `Kaia's virtual home, ${KAIA_HOME}. He came through the portal at the end of ` +
+    "the hall in Mrs. Hall's house. While he is here, Kaia's Refactor works for him: R turns a " +
+    "plant into treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it " +
+    "back for free",
   L_Office_v02: "Mrs. Hall's office house",
   L_Cathedral: "the golden cathedral",
   L_AI_Temple: "the AI temple",
