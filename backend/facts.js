@@ -36,7 +36,10 @@ export const TRAVEL_PLACES = {
   L_Cathedral: "the golden cathedral",
 };
 
-const TRAVEL_TAG = /\[\s*GO\s*:\s*([A-Za-z0-9_]+)\s*\]/gi;
+/* The tag, bracketed as she is asked to write it - OR BARE. Kaia once wrote "GO:L_Cathedral"
+   with no brackets, and the player saw it (Walt, 2026-10-04). A bare one counts only when it
+   names a level (L_...), so ordinary words with "go:" in them are left alone. */
+const TRAVEL_TAG = /\[\s*GO\s*:\s*([A-Za-z0-9_]+)\s*\]|\bGO\s*:\s*(L_[A-Za-z0-9_]+)\b/gi;
 
 /** The destinations the game says are open now, allowlisted. */
 export function destinationsFrom(facts) {
@@ -51,6 +54,12 @@ export function destinationsFrom(facts) {
 export const TRAVEL_INTENT =
   /\b(where|leave|travel|next|what now|now what|get me out|take me|head to|what (should|do|can) i do)\b/i;
 
+/* IN HER HOME, ONLY WHEN HE WANTS TO GO. "what can i do here?" in Kaia's home got the
+   cathedral, a button and all (Walt, 2026-10-04): there it means what to do HERE. So in a
+   virtual home only words about leaving can open an offer. */
+export const LEAVE_INTENT =
+  /\b(leave|go back|get me out|take me (back|home|to)|head (back|to)|travel|back to (the )?(office|house)|let me out)\b/i;
+
 /** How each open place is recognised when she names it without a tag. */
 const PLACE_WORDS = {
   L_City: /transhuman city|\bthe city\b/i,
@@ -63,14 +72,17 @@ const PLACE_WORDS = {
  * whatever it says — the player must never see "[GO:...]". An offer is made only when his
  * message asked where to go, what is next, or to leave; then her last valid tag wins, or,
  * with no tag, the first open place her reply names. Never a place the game did not list.
+ * options.leavingOnly: only words about leaving can open an offer (a virtual home).
  */
-export function extractTravel(text, facts, playerMessage = "") {
+export function extractTravel(text, facts, playerMessage = "", { leavingOnly = false } = {}) {
   const open = destinationsFrom(facts);
   const clean = String(text).replace(TRAVEL_TAG, "").replace(/[ \t]+\n/g, "\n").replace(/[ \t]{2,}/g, " ").trim();
-  if (!open.length || !TRAVEL_INTENT.test(String(playerMessage))) return { text: clean, travel: null };
+  const intent = leavingOnly ? LEAVE_INTENT : TRAVEL_INTENT;
+  if (!open.length || !intent.test(String(playerMessage))) return { text: clean, travel: null };
 
   let travel = null;
-  for (const [, id] of String(text).matchAll(TRAVEL_TAG)) {
+  for (const [, bracketed, bare] of String(text).matchAll(TRAVEL_TAG)) {
+    const id = bracketed || bare;
     if (open.includes(id)) travel = id;
   }
   if (!travel) {
@@ -112,7 +124,7 @@ export function cleanObjective(value) {
  * options.objective: false leaves out his next task (in an agent's virtual home it is a
  * task for the house, light years away: characters.js, homeLine).
  */
-export function factsLine(facts, { travel = true, objective: withObjective = true } = {}) {
+export function factsLine(facts, { travel = true, objective: withObjective = true, leavingOnly = false } = {}) {
   if (!facts || typeof facts !== "object" || Array.isArray(facts)) return "";
   const lines = [];
 
@@ -155,8 +167,11 @@ export function factsLine(facts, { travel = true, objective: withObjective = tru
   if (open.length) {
     lines.push(
       `- Places he can go right now at the press of a button: ${open.map((id) => `${TRAVEL_PLACES[id]} [GO:${id}]`).join(", ")}. ` +
-        "When he asks where to go or what to do next, or says he wants to leave, and your reply " +
-        "tells him to go to one of these places, end your reply with its tag exactly as written. " +
+        (leavingOnly
+          ? "Only when he says he wants to leave, and your reply tells him to go to one of "
+          : "When he asks where to go or what to do next, or says he wants to leave, and your reply " +
+            "tells him to go to one of ") +
+        "these places, end your reply with its tag exactly as written. " +
         "At most one tag, only from this list; the game turns it into a button and he decides. " +
         "Never mention the tag or the button."
     );

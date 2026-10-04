@@ -149,8 +149,9 @@ console.log("=== NPC chat backend contract ===");
       "the scene note beside his message names where they are");
     check(awayLine("kaia", "L_KaiaHome") === "" && awayLine("nyra", "L_Office_v02") === ""
         && awayLine("kaia", "L_Cine_KaiaIntro") === "" && awayLine("kaia", undefined) === ""
-        && sceneNote("kaia", "L_KaiaHome") === "" && sceneNote("nyra", "L_City") === "",
-      "no away block or scene note at home, for agents with no home, or where the place is unknown");
+        && sceneNote("nyra", "L_City") === "" && sceneNote("nyra", "L_KaiaHome") === ""
+        && sceneNote("kaia", "L_Cine_KaiaIntro") === "",
+      "no away block at home; no away block or scene note for agents with no home, or where the place is unknown");
     const houseTask = { sauce: 12, objective: "Slap the Refusers out of the office [F]" };
     check(/Slap the Refusers/.test(factsLine(houseTask)) && !/Slap the Refusers/.test(factsLine(houseTask, { objective: false }))
         && /Sauce in his wallet: 12/.test(factsLine(houseTask, { objective: false })),
@@ -716,6 +717,24 @@ await new Promise((resolve) => app.server.close(resolve));
   check(refused.travel === null && !refused.text.includes("[GO"), "travel: a place that is not open is refused, and its tag still removed");
   check(extractTravel("City! [GO:L_City]", { destinations: [] }, "where now?").travel === null, "travel: nothing open, nothing offered");
   check(extractTravel("[ go : L_City ] now", open).text === "now", "travel: a sloppy tag is still removed from the text");
+  // Kaia wrote it bare once, and the player saw "GO:L_Cathedral" (Walt, 2026-10-04).
+  {
+    const cath = { destinations: ["L_Cathedral"] };
+    const bare = extractTravel("or move toward the cathedral. GO:L_Cathedral", cath, "where should I go?");
+    check(!/GO:/i.test(bare.text) && bare.travel === "L_Cathedral", "travel: a bare GO:L_... tag is removed, and still counts");
+    check(extractTravel("Go: there is time.", cath, "where now?").text === "Go: there is time.",
+      "travel: an ordinary 'Go:' that names no level is left alone");
+    // In her home only leaving opens an offer: "what can i do here?" got the cathedral.
+    check(extractTravel("You could go to the cathedral. [GO:L_Cathedral]", cath, "what can i do here?", { leavingOnly: true }).travel === null,
+      "travel: in a virtual home, 'what can i do here?' gets no button");
+    check(extractTravel("The cathedral, then. [GO:L_Cathedral]", cath, "i want to leave", { leavingOnly: true }).travel === "L_Cathedral",
+      "travel: in a virtual home, wanting to leave still gets the button");
+    check(/Only when he says he wants to leave/.test(factsLine(cath, { leavingOnly: true }))
+        && !/Only when he says he wants to leave/.test(factsLine(cath)),
+      "travel: in a virtual home she is told to offer a place only when he wants to leave");
+  }
+  check(/your own virtual home/.test(sceneNote("kaia", "L_KaiaHome")) && /not Mrs\. Hall's house/.test(sceneNote("kaia", "L_KaiaHome")),
+    "at home, the scene note beside his message says so (Walt: back in her world, 'got office stuff again')");
 
   // His question decides whether there can be a button (Walt, 2026-09-23).
   const both = { destinations: ["L_City", "L_Cathedral"] };

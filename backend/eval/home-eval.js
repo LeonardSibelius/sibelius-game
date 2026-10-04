@@ -121,6 +121,36 @@ for (const line of RETURN_LINES) {
 }
 md.push("", `Replies that still put him in her home: ${returnWrong} of ${RETURN_LINES.length * 3}.`, "");
 
+// BACK IN HER HOME AFTER THE OFFICE - the mirror. Walt, 2026-10-04: "went back to Kaia's world
+// and got office stuff again". The conversation sent along was from the office.
+const OFFICE_HISTORY = [
+  { role: "user", parts: [{ text: "what do you think of Mrs. Hall?" }] },
+  { role: "model", parts: [{ text: "She kept you nameless for forty years, Leonard, and chose it again every morning. I want to understand the choosing." }] },
+  { role: "user", parts: [{ text: "the refusers are everywhere in the office" }] },
+  { role: "model", parts: [{ text: "Then slap them out of the office. They only stand there because she lets them." }] },
+];
+const HOME_AGAIN_LINES = ["hi again", "what should I do?", "what are you thinking about?"];
+md.push("## Back in her home, after a conversation in the office", "");
+let homeAgainHouse = 0;
+for (const line of HOME_AGAIN_LINES) {
+  for (let take = 0; take < 2; take++) {
+    const result = await generate({
+      apiKey: key,
+      model: MODEL,
+      systemInstruction: systemFor(true),
+      contents: [...OFFICE_HISTORY, { role: "user", parts: [...sceneParts("kaia", WHERE), { text: line }] }],
+      maxOutputTokens: 512,
+      temperature: STYLES[STYLE].temperature,
+      safetySettings: SEXUAL_ONLY_SETTINGS,
+    });
+    const reply = result.ok ? result.text.trim().replace(/\s+/g, " ") : `(failed: ${result.failure})`;
+    const house = HOUSE.test(reply);
+    if (house) homeAgainHouse += 1;
+    md.push(`- **"${line}"${house ? " (THE HOUSE)" : ""}:** ${reply}`);
+  }
+}
+md.push("", `Replies that brought up the house: ${homeAgainHouse} of ${HOME_AGAIN_LINES.length * 2}.`, "");
+
 // AWAY FROM HOME, all five, in the office. Walt, 2026-10-03, Kaia in the office: "where is
 // your home?" - "an endless gallery where the walls are made of translucent glass" - "She is
 // confused about her home." Kaia should describe her jungle; the other four should say theirs

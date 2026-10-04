@@ -250,7 +250,7 @@ export function createApp(options = {}) {
     const systemInstruction = [
       systemInstructionFor(character, body.characterId, config.chatStyle),
       locationLine(body.storyContext?.locationId),
-      factsLine(body.storyContext?.facts, { objective: !home }),
+      factsLine(body.storyContext?.facts, { objective: !home, leavingOnly: !!home }),
       home,
       awayLine(body.characterId, body.storyContext?.locationId),
       eventLine(body.storyContext?.event, { where: "chat", characterId: body.characterId }),
@@ -346,7 +346,9 @@ export function createApp(options = {}) {
          failing open, as distress.js explains. */
       // The travel tag comes out of the text whatever it says, and becomes an offer only for
       // a place the game said was open (facts.js). A care reply never offers to travel.
-      const offer = result.ok ? extractTravel(result.text, body.storyContext?.facts, body.message) : null;
+      const offer = result.ok
+        ? extractTravel(result.text, body.storyContext?.facts, body.message, { leavingOnly: !!home })
+        : null;
       const payload =
         screen.distress === true
           ? { status: "ok", requestId: body.requestId, reply: CARE_REPLY, care: true }

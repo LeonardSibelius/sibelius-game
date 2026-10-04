@@ -212,10 +212,17 @@ export function awayLine(characterId, locationId) {
  * ...AND THE SAME FACT BESIDE HIS NEWEST MESSAGE. Asked "where are we right now?" after a
  * conversation in her home, she still answered "We are in my virtual home" 2 times in 6 with
  * awayLine in the prompt: what sits next to the question outweighs the opening instructions.
- * So wherever awayLine applies, server.js puts this short note in front of his message, as a
- * part of its own. "" everywhere else.
+ * So wherever awayLine or homeLine applies, server.js puts this short note in front of his
+ * message, as a part of its own. "" everywhere else.
  */
 export function sceneNote(characterId, locationId) {
+  /* AND THE MIRROR, AT HOME. Walt, 2026-10-04, back in her home after the office: "got
+     office stuff again" - "what can i do here?" got the walls and furniture Mrs. Hall insisted
+     upon, and the cathedral. homeLine was in the prompt; the conversation was the office's. */
+  if (homeLine(characterId, locationId)) {
+    return "(Where you both are as he says this: your own virtual home, your alien jungle world - " +
+      "not Mrs. Hall's house, which is far away. \"Here\" means your home.)";
+  }
   if (!awayLine(characterId, locationId)) return "";
   return `(Where you both are as he says this: ${LOCATIONS[mapName(locationId)]}, not your virtual home.)`;
 }
