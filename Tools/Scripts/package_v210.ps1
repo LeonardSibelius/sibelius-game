@@ -17,12 +17,18 @@
 #   - The treasure is hard-referenced from URefactorComponent's constructor (no directory rule),
 #     so each piece is checked by name - a missing one would make R fall back to fewer kinds.
 #   - The portal's effect, NS_TeleporterHole, as for the spaceport.
+#
+# The 2.1.x builds that follow use it too (2.1.1, 2026-10-04: first person in her home, her
+# plants alive and slappable): pass -Version, and -Baseline for the build to measure against.
+param(
+  [string] $Version  = "2.1.0",
+  [string] $Baseline = "C:\Users\wpark\builds\sibelius-shipping-chat-20260928"
+)
 $root    = "C:\Users\wpark\projects\sibelius-game"
-$version = "2.1.0"
 $outDir  = "C:\Users\wpark\builds\sibelius-shipping-chat-$(Get-Date -Format yyyyMMdd)"
 $uat     = "C:\Program Files\Epic Games\UE_5.7\Engine\Build\BatchFiles\RunUAT.bat"
 $log     = "$root\pkg-v210.log"
-$baselinePaks = "C:\Users\wpark\builds\sibelius-shipping-chat-20260928\Windows\SibeliusGame\Content\Paks"
+$baselinePaks = "$Baseline\Windows\SibeliusGame\Content\Paks"
 
 # ---- chat ON for this package only ------------------------------------------
 # Each default is the line after "#if UE_BUILD_SHIPPING" in its cvar's declaration.
@@ -132,9 +138,9 @@ $archive = [math]::Round((Get-ChildItem $outDir -Recurse -File | Measure-Object 
 
 Write-Output ""
 Write-Output "---------------- SIZE ----------------"
-Write-Output ("pak  2026-09-28 chat : {0} GB" -f $old)
-Write-Output ("pak  v$version       : {0} GB" -f $new)
-if ($old -and $new) { Write-Output ("Kaia's home cost   : {0} GB" -f [math]::Round($new - $old, 2)) }
+Write-Output ("pak  {0} : {1} GB" -f (Split-Path $Baseline -Leaf), $old)
+Write-Output ("pak  v$Version : {0} GB" -f $new)
+if ($old -and $new) { Write-Output ("growth : {0} GB" -f [math]::Round($new - $old, 2)) }
 Write-Output ("whole archive      : {0} GB" -f $archive)
 Write-Output "--------------------------------------"
 
