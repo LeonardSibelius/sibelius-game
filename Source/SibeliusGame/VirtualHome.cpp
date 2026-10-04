@@ -4,6 +4,7 @@
 
 #include "BattleFormComponent.h"
 #include "RefactorComponent.h"
+#include "SlapComponent.h"
 #include "SibeliusGame.h"
 #include "EngineUtils.h"
 #include "GameFramework/Character.h"
@@ -12,6 +13,7 @@
 #include "Kismet/KismetMaterialLibrary.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "TimerManager.h"
+#include "UObject/UnrealType.h"
 
 AVirtualHome::AVirtualHome()
 {
@@ -100,6 +102,12 @@ void AVirtualHome::Arrive()
 		Refactor->SetMinTreasureSize(MinTreasureSize);
 	}
 
+	CarryFoliageInfluencer(Player);
+	if (USlapComponent* Slap = Player->FindComponentByClass<USlapComponent>())
+	{
+		Slap->SetPlantWobble(MushroomSound, PlantSound);
+	}
+
 	if (bThirdPerson)
 	{
 		if (UBattleFormComponent* Battle = Player->FindComponentByClass<UBattleFormComponent>())
@@ -116,4 +124,33 @@ void AVirtualHome::Arrive()
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[VirtualHome] arrived at %s's home: third person %s, %d power(s) lent, wild refactor up to %.0f cm, treasure at least %.0f cm."),
 		*AgentName, bThirdPerson ? TEXT("on") : TEXT("off"), LentPowers.Num(), WildRefactorMaxSize, MinTreasureSize);
+}
+
+void AVirtualHome::CarryFoliageInfluencer(ACharacter* Player)
+{
+	if (!FoliageInfluencer || !Player || CarriedInfluencer)
+	{
+		return;
+	}
+	// Deferred, so the radius is in place before its BeginPlay registers it.
+	AActor* Influencer = GetWorld()->SpawnActorDeferred<AActor>(FoliageInfluencer, Player->GetActorTransform(), Player,
+		nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (!Influencer)
+	{
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[VirtualHome] could not spawn %s - her plants will not answer him."), *FoliageInfluencer->GetName());
+		return;
+	}
+	// Radius is the plugin's own property; set by name so this module needs nothing of theirs.
+	FFloatProperty* Radius = FindFProperty<FFloatProperty>(Influencer->GetClass(), TEXT("Radius"));
+	if (Radius && FoliageInfluencerRadius > 0.0f)
+	{
+		Radius->SetPropertyValue_InContainer(Influencer, FoliageInfluencerRadius);
+	}
+	Influencer->FinishSpawning(Player->GetActorTransform());
+	Influencer->AttachToActor(Player, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	Influencer->SetActorEnableCollision(false);
+	CarriedInfluencer = Influencer;
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[VirtualHome] %s rides on him, radius %.0f cm: the plants near him come alive."),
+		*FoliageInfluencer->GetName(), Radius ? Radius->GetPropertyValue_InContainer(Influencer) : -1.0f);
 }

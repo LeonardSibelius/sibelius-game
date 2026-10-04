@@ -55,6 +55,30 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap")
 	USoundBase* SlapSound = nullptr;
 
+	/** How hard a swing shoves one of Etherion's live plants (Kaia's home), in the plant's
+	 *  own HitPlant units; their influencer's default for a bullet is 25. A sword is more. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap|Plants")
+	float PlantHitMagnitude = 60.f;
+
+	/** Damage a swing does to a live plant. 0: her plants sway and sound, they are not cut
+	 *  down - what a felled one does next is the pack's, and nobody has seen it. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap|Plants")
+	float PlantHitDamage = 0.f;
+
+	/** How far a slapped decorative plant squashes and stretches (0.25 = a quarter). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slap|Plants")
+	float PlantWobbleStrength = 0.25f;
+
+	/** Kaia's home turns this on (AVirtualHome): F makes her placed mushrooms bounce with a
+	 *  boing and her other placed plants wobble with a rustle (USquashWobbleComponent). Off
+	 *  everywhere else - a wobbling office plant was never asked for. */
+	void SetPlantWobble(USoundBase* InMushroomSound, USoundBase* InPlantSound)
+	{
+		bWobblePlants = true;
+		MushroomSound = InMushroomSound;
+		PlantSound = InPlantSound;
+	}
+
 	/** The red trace line for every swing. OFF by default since 2026-08-27.
 	 *
 	 *  Walt, after the first real battle: "those red streaks have become a huge annoyance
@@ -109,4 +133,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Slap")
 	void DoSlap();
+
+private:
+	// See SetPlantWobble.
+	bool bWobblePlants = false;
+	UPROPERTY() TObjectPtr<USoundBase> MushroomSound;
+	UPROPERTY() TObjectPtr<USoundBase> PlantSound;
 };

@@ -57,6 +57,14 @@ public:
 	UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> OriginalInstances;
 	UPROPERTY() int32 OriginalInstanceIndex = INDEX_NONE;
 	UPROPERTY() FTransform OriginalInstanceTransform;
+
+	/* ...BUT THE INDEX IS ONLY A FIRST GUESS. Etherion's foliage influencer, which Kaia's
+	   home hangs on him so her mushrooms answer him, swaps the plants near him for live
+	   physics copies by REMOVING their instances and adding them back at the end of the field
+	   when he walks away - renumbering the field, and taking the shrunk plant with it the
+	   moment he stands at the treasure to turn it back. So restore looks for the plant where
+	   it was left: at this transform. */
+	UPROPERTY() FTransform HiddenInstanceTransform;
 };
 
 UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))

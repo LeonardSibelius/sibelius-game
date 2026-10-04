@@ -95,6 +95,15 @@ $checks = [ordered]@{
   "the jungle's look"   = "$cooked\AlienJunglePlants\Materials\MPC_AlienJungleAppearance.uasset"
   "the way there"       = "$cooked\PortalVFX\NS\NS_TeleporterHole.uasset"
   "Kaia herself"        = "$cooked\MetaHumans\MHC_Kaia\BP_Dancer_Kaia.uasset"
+  # Reached only through the VirtualHome actor's FoliageInfluencer property: without it her
+  # mushrooms do not answer him (Walt, 2026-10-03).
+  "the living plants"   = "$cooked\AlienPhysicsWorld\FoliageSystem\BP_FoliageInfluencer.uasset"
+  # Which plants come alive: found by an asset-registry scan, cooked by the EDFoliageMap
+  # PrimaryAssetTypesToScan rule in DefaultGame.ini (AlwaysCook) - no reference reaches it.
+  "the foliage map"     = "$cooked\AlienJunglePlants\FoliageTypes\FoliageMap_AlienJunglePlants.uasset"
+  # F on her placed plants (AVirtualHome::MushroomSound / PlantSound).
+  "the boing"           = "$cooked\AlienPhysicsWorld\Sounds\Foliage\Balloon\SC_Balloon.uasset"
+  "the rustle"          = "$cooked\AlienPhysicsWorld\Sounds\Foliage\Rustling\SC_Foliage_Rustle.uasset"
 }
 # --- 2.1.0: THE TREASURE - every piece URefactorComponent names -----------
 foreach ($name in "SM_Gems_01a","SM_Gems_01b","SM_Gems_01c","SM_Gems_01d","SM_Coin_01a",

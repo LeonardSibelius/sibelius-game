@@ -8,12 +8,11 @@
 //
 // What placing one does, on arrival:
 //
-//   HE GOES AS GREYSTONE, in third person ("it will be good to have the third-person deal
-//   where our Epic Games character is viewed from behind") - battle form's avatar and camera,
-//   but with the powers LEFT ON. Battle form switches them off because they aimed from the
-//   camera behind his back; Refactor now aims from level with his eyes (SibeliusAim.h), and
-//   E always aimed from the first-person camera in his head, so on a planet with nothing to
-//   fight they can stay.
+//   HE GOES AS HIMSELF, in first person, as in the office (Walt, 2026-10-04 - see
+//   bThirdPerson). He went as Greystone at first ("it will be good to have the third-person
+//   deal where our Epic Games character is viewed from behind"): battle form's avatar and
+//   camera, with the powers LEFT ON, which SibeliusAim's eye-level rays made possible. That
+//   is still one switch away.
 //
 //   POWERS ARE LENT. ASibeliusGameCharacter::CheckPowerUnlocked asks LendsPower before the
 //   progression gate, so R works here whether or not the slot machine has granted it. Lent,
@@ -45,9 +44,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Virtual Home")
 	FString AgentName = TEXT("Kaia");
 
-	/** Arrive in Greystone's body, seen from behind. */
+	/** Arrive in Greystone's body, seen from behind. OFF since 2026-10-04 - Walt: "Greystone is
+	 *  starting to annoy me. I am thinking i want to go into Kaia world as first-person like in
+	 *  the office." Kept as a switch: everything it needs (battle form with the powers left
+	 *  on, SibeliusAim's eye-level rays) still works if a home wants it. */
 	UPROPERTY(EditAnywhere, Category = "Virtual Home")
-	bool bThirdPerson = true;
+	bool bThirdPerson = false;
 
 	/** Powers that work here without being earned. */
 	UPROPERTY(EditAnywhere, Category = "Virtual Home")
@@ -87,6 +89,35 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Virtual Home|Look")
 	TMap<FName, float> AppearanceScalars;
 
+	/* THE PLANTS ANSWER HIM. Etherion's foliage only comes alive - mushrooms that boing, ferns
+	   that part - near one of their influencer actors, which swaps the painted plants around it
+	   for live physics copies. Their demo mannequin carried three; Greystone carried none, so
+	   the "balloon mushrooms that boing when he touches them" Kaia talks about did nothing
+	   (Walt, 2026-10-03: "Greystone can't interact with the mushrooms in Kaia's world even
+	   though she says he can"). One rides on him from arrival. Set to the pack's
+	   BP_FoliageInfluencer on the placed actor (make_kaia_home.py); nothing is named in C++,
+	   as with Appearance. Its collision is switched off - it works from its radius, not
+	   physics, and must never be what an E or R ray meets. */
+	UPROPERTY(EditAnywhere, Category = "Virtual Home|Foliage")
+	TSubclassOf<AActor> FoliageInfluencer;
+
+	/* HER PLACED PLANTS BOUNCE WHEN SLAPPED. The big balloon mushrooms are plain static
+	   meshes the plugin never brings to life, so F squashes and stretches them itself
+	   (USlapComponent::SetPlantWobble) and plays these: a boing for mushrooms, a rustle for
+	   the rest. The pack's own sounds, set on the placed actor (make_kaia_home.py). */
+	UPROPERTY(EditAnywhere, Category = "Virtual Home|Foliage")
+	TObjectPtr<class USoundBase> MushroomSound;
+
+	UPROPERTY(EditAnywhere, Category = "Virtual Home|Foliage")
+	TObjectPtr<class USoundBase> PlantSound;
+
+	/** How far around him plants come alive, cm; 0 keeps the blueprint's own (200). As far as
+	 *  his sword swing reaches - 250 cm ahead plus its 150 cm sweep (USlapComponent) - since
+	 *  only a live plant can answer F (Walt: "some kind of noise and movement when he slaps
+	 *  them with F"). */
+	UPROPERTY(EditAnywhere, Category = "Virtual Home|Foliage", meta = (ClampMin = "0.0"))
+	float FoliageInfluencerRadius = 400.0f;
+
 	/** True when a virtual home in this world lends Verb. */
 	static bool LendsPower(const UObject* WorldContext, EPowerVerb Verb);
 
@@ -100,6 +131,11 @@ private:
 
 	FTimerHandle ArriveTimer;
 	int32 ArriveAttempts = 0;
+
+	/** Hang FoliageInfluencer on him. */
+	void CarryFoliageInfluencer(class ACharacter* Player);
+
+	UPROPERTY() TObjectPtr<AActor> CarriedInfluencer;
 
 	/** r.HairStrands.Raytracing as it was before this level changed it; INDEX_NONE if untouched. */
 	int32 SavedHairRaytracing = INDEX_NONE;

@@ -27,6 +27,10 @@
 #include "DancerAgentComponent.h"   // F on a dancer reshuffles her dance
 #include "InteractorComponent.h"    // ...using the same focus E uses
 #include "Components/StaticMeshComponent.h"
+#include "SibeliusGame.h"            // LogSibeliusGame
+#include "SquashWobbleComponent.h"   // her placed plants bounce when slapped
+#include "Engine/StaticMesh.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
 USlapComponent::USlapComponent()
 {
@@ -72,6 +76,54 @@ namespace
 			Actor = Next;
 		}
 		return nullptr;
+	}
+
+	/* ONE OF ETHERION'S LIVE PLANTS (Kaia's home), hit by the swing: shoved, and making its
+	   own noise. Walt, 2026-10-04: "the effect I am looking for is some kind of noise and
+	   movement when he slaps them with F". The foliage influencer her home hangs on him swaps
+	   the painted plants near him for live copies; those have HitPlant (the pack's blueprint
+	   does the shove) and PlaySoundEffect. Both are called BY NAME, so this module needs
+	   nothing of the vendor plugin's - it is gitignored, and the house must build without it.
+	   True if A was one. */
+	bool HitLivePlant(AActor* A, const FVector& Direction, float Magnitude, float Damage)
+	{
+		UFunction* Hit = A ? A->FindFunction(TEXT("HitPlant")) : nullptr;
+		if (!Hit)
+		{
+			return false;
+		}
+		uint8* Parms = static_cast<uint8*>(FMemory_Alloca(Hit->ParmsSize));
+		FMemory::Memzero(Parms, Hit->ParmsSize);
+		for (TFieldIterator<FProperty> It(Hit); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		{
+			It->InitializeValue_InContainer(Parms);
+		}
+		if (FStrProperty* P = FindFProperty<FStrProperty>(Hit, TEXT("HitterId")))
+		{
+			P->SetPropertyValue_InContainer(Parms, TEXT("Leonard"));
+		}
+		if (FStructProperty* P = FindFProperty<FStructProperty>(Hit, TEXT("Direction")); P && P->Struct == TBaseStructure<FVector>::Get())
+		{
+			*P->ContainerPtrToValuePtr<FVector>(Parms) = Direction;
+		}
+		if (FFloatProperty* P = FindFProperty<FFloatProperty>(Hit, TEXT("Magnitude")))
+		{
+			P->SetPropertyValue_InContainer(Parms, Magnitude);
+		}
+		if (FFloatProperty* P = FindFProperty<FFloatProperty>(Hit, TEXT("Damage")))
+		{
+			P->SetPropertyValue_InContainer(Parms, Damage);
+		}
+		A->ProcessEvent(Hit, Parms);
+		for (TFieldIterator<FProperty> It(Hit); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		{
+			It->DestroyValue_InContainer(Parms);
+		}
+		if (UFunction* Sound = A->FindFunction(TEXT("PlaySoundEffect")))
+		{
+			A->ProcessEvent(Sound, nullptr);
+		}
+		return true;
 	}
 }
 
@@ -240,6 +292,101 @@ void USlapComponent::DoSlap()
 	if (!bAnyHit)
 	{
 		return;
+	}
+
+	// Her plants answer the swing - every live one it passes through, each once (a plant
+	// has several shapes in the sweep). Then on to whatever else it met, as always.
+	TSet<AActor*> PlantsHit;
+	for (const FHitResult& Hit : Hits)
+	{
+		AActor* Plant = Hit.GetActor();
+		if (Plant && !PlantsHit.Contains(Plant)
+			&& HitLivePlant(Plant, (Plant->GetActorLocation() - ViewStart).GetSafeNormal(), PlantHitMagnitude, PlantHitDamage))
+		{
+			PlantsHit.Add(Plant);
+		}
+	}
+	if (PlantsHit.Num() > 0)
+	{
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Slap] %d live plant(s) hit."), PlantsHit.Num());
+	}
+
+	/* ...AND HER PLACED ONES BOUNCE (SetPlantWobble; Kaia's home only). Known by their mesh's
+	   name, the way the wild refactor knows architecture: mushrooms and balloons boing, other
+	   plants rustle. A tree or a rock is not on either list and stays put. Treasure is not
+	   scenery - it has its own slap below. */
+	if (bWobblePlants)
+	{
+		static const TCHAR* Bouncy[] = { TEXT("mushroom"), TEXT("balloon") };
+		static const TCHAR* Leafy[] = {
+			TEXT("flower"), TEXT("plant"), TEXT("fern"), TEXT("leaf"), TEXT("leaves"),
+			TEXT("fung"), TEXT("stalk"), TEXT("reed"), TEXT("bush"), TEXT("shrub"),
+		};
+		auto Named = [](const FString& Name, TArrayView<const TCHAR* const> Words)
+		{
+			for (const TCHAR* Word : Words)
+			{
+				if (Name.Contains(Word))
+				{
+					return true;
+				}
+			}
+			return false;
+		};
+		// One per plant: an actor, or one instance of a painted field (component + item).
+		TSet<TPair<const UPrimitiveComponent*, int32>> Wobbled;
+		for (const FHitResult& Hit : Hits)
+		{
+			AActor* Plant = Hit.GetActor();
+			UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(Hit.GetComponent());
+			if (!Plant || !Mesh || !Mesh->GetStaticMesh() || Plant == OwnerPawn || PlantsHit.Contains(Plant)
+				|| Cast<APawn>(Plant) || Plant->FindComponentByClass<UWildRefactorState>())
+			{
+				continue;
+			}
+			// The mesh the swing actually met, not the actor's first one.
+			const FString Name = Mesh->GetStaticMesh()->GetName().ToLower();
+			const bool bBouncy = Named(Name, Bouncy);
+			if (!bBouncy && !Named(Name, Leafy))
+			{
+				continue;
+			}
+			UInstancedStaticMeshComponent* Field = Cast<UInstancedStaticMeshComponent>(Mesh);
+			const TPair<const UPrimitiveComponent*, int32> Key(Mesh, Field ? Hit.Item : INDEX_NONE);
+			if (Wobbled.Contains(Key))
+			{
+				continue;
+			}
+			const float Strength = bBouncy ? PlantWobbleStrength : PlantWobbleStrength * 0.6f;
+			if (Field)
+			{
+				// A painted plant: that one instance - never the foliage actor that holds the field.
+				if (Hit.Item == INDEX_NONE)
+				{
+					continue;
+				}
+				USquashWobbleComponent::WobbleInstance(Field, Hit.Item, Strength);
+			}
+			else
+			{
+				// A placed one, if it is plant-sized: never shake a building that happens to
+				// carry a flower in its mesh's name.
+				if (Plant->GetComponentsBoundingBox().GetSize().GetMax() > 2000.0)
+				{
+					continue;
+				}
+				USquashWobbleComponent::Wobble(Plant, Strength);
+			}
+			if (USoundBase* Sound = bBouncy ? MushroomSound.Get() : PlantSound.Get())
+			{
+				UGameplayStatics::PlaySoundAtLocation(World, Sound, Hit.ImpactPoint);
+			}
+			Wobbled.Add(Key);
+		}
+		if (Wobbled.Num() > 0)
+		{
+			UE_LOG(LogSibeliusGame, Display, TEXT("[Slap] %d placed plant(s) wobbled."), Wobbled.Num());
+		}
 	}
 
 	// A dancer found by the FIGHT'S OWN sweep also counts.

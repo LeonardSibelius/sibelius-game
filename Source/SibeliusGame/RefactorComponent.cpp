@@ -221,10 +221,44 @@ namespace
 		// One plant out of a painted field: put it back exactly where and how it stood.
 		if (UInstancedStaticMeshComponent* Field = State->OriginalInstances)
 		{
-			Field->UpdateInstanceTransform(State->OriginalInstanceIndex, State->OriginalInstanceTransform,
-				/*bWorldSpace=*/true, /*bMarkRenderStateDirty=*/true, /*bTeleport=*/true);
-			UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s instance %d restored."),
-				*Field->GetName(), State->OriginalInstanceIndex);
+			// Find it where it was left, not by its old number (see HiddenInstanceTransform).
+			const FTransform& Left = State->HiddenInstanceTransform;
+			auto IsTheHiddenPlant = [Field, &Left](int32 Index)
+			{
+				FTransform Now;
+				return Field->GetInstanceTransform(Index, Now, /*bWorldSpace=*/true)
+					&& Now.GetLocation().Equals(Left.GetLocation(), 1.0)
+					&& Now.GetScale3D().GetAbsMax() <= Left.GetScale3D().GetAbsMax() * 2.0;
+			};
+			int32 Index = State->OriginalInstanceIndex;
+			if (!IsTheHiddenPlant(Index))
+			{
+				Index = INDEX_NONE;
+				for (int32 Each = 0; Each < Field->GetInstanceCount(); ++Each)
+				{
+					if (IsTheHiddenPlant(Each))
+					{
+						Index = Each;
+						break;
+					}
+				}
+			}
+			if (Index != INDEX_NONE)
+			{
+				Field->UpdateInstanceTransform(Index, State->OriginalInstanceTransform,
+					/*bWorldSpace=*/true, /*bMarkRenderStateDirty=*/true, /*bTeleport=*/true);
+				UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s instance %d restored (was %d)."),
+					*Field->GetName(), Index, State->OriginalInstanceIndex);
+			}
+			else
+			{
+				/* Not in the field: the influencer has it out as a live copy, still shrunk.
+				   Plant a new one where the original stood. The shrunk copy goes back into the
+				   field when he walks away - an invisible extra, not a missing plant. */
+				Field->AddInstance(State->OriginalInstanceTransform, /*bWorldSpace=*/true);
+				UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s: the hidden plant was out of the field (a live copy) - planted it again."),
+					*Field->GetName());
+			}
 		}
 		if (AActor* Original = State->OriginalActor)
 		{
@@ -504,6 +538,7 @@ bool URefactorComponent::TransmuteInstance(UInstancedStaticMeshComponent* Field,
 
 	FTransform Gone = Plant;
 	Gone.SetScale3D(FVector(0.001f));
+	State->HiddenInstanceTransform = Gone;
 	const bool bHidden = Field->UpdateInstanceTransform(Index, Gone, /*bWorldSpace=*/true,
 		/*bMarkRenderStateDirty=*/true, /*bTeleport=*/true);
 

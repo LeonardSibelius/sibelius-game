@@ -41,11 +41,17 @@ KAIA_CLASS = "/Game/MetaHumans/MHC_Kaia/BP_Dancer_Kaia.BP_Dancer_Kaia_C"
 KAIA_AHEAD = 450.0      # cm in front of the arrival point
 KAIA_LABEL = "Kaia"
 HOME_TAG = "HomeDancer"         # UDancerAgentComponent::HomeTag - E opens the chat on her welcome
-HOME_CLASS = "/Script/SibeliusGame.VirtualHome"   # third person, Refactor lent (VirtualHome.h)
+HOME_CLASS = "/Script/SibeliusGame.VirtualHome"   # first person, Refactor lent (VirtualHome.h)
 HOME_LABEL = "VirtualHome_Kaia"
 APPEARANCE = "/Game/AlienJunglePlants/Materials/MPC_AlienJungleAppearance"   # the pack's look dials
 
 FAKE_LIGHTING = 0.3     # the value Etherion's level blueprint set at Begin Play
+# What makes her plants answer him - their demo mannequin carried three of these (AVirtualHome::
+# FoliageInfluencer). Walt: "Greystone can't interact with the mushrooms in Kaia's world".
+INFLUENCER = "/Game/AlienPhysicsWorld/FoliageSystem/BP_FoliageInfluencer.BP_FoliageInfluencer_C"
+# F on her placed mushrooms: a boing (the pack's nine balloon sounds); on other plants, a rustle.
+MUSHROOM_SOUND = "/Game/AlienPhysicsWorld/Sounds/Foliage/Balloon/SC_Balloon"
+PLANT_SOUND = "/Game/AlienPhysicsWorld/Sounds/Foliage/Rustling/SC_Foliage_Rustle"
 
 # ETHERION'S LEVEL BLUEPRINT MUST BE EMPTY. Its four nodes were: Begin Play -> set FakeLighting
 # 0.3 -> SPAWN BP_EtherionLevelCommons -> start its demo menu. That spawned controller's Switch
@@ -154,9 +160,20 @@ def build():
         if mpc:
             home.set_editor_property("appearance", mpc)
             home.set_editor_property("appearance_scalars", {"FakeLighting": FAKE_LIGHTING})
-        say("VirtualHome placed: third person, Refactor lent, wild refactor up to %.0f cm, FakeLighting %s." % (
+        influencer = unreal.load_class(None, INFLUENCER)
+        if influencer:
+            home.set_editor_property("foliage_influencer", influencer)
+        for prop, path in (("mushroom_sound", MUSHROOM_SOUND), ("plant_sound", PLANT_SOUND)):
+            sound = unreal.load_asset(path)
+            if sound:
+                home.set_editor_property(prop, sound)
+            else:
+                say("no %s - that slap will be silent." % path)
+        say("VirtualHome placed: %s person, Refactor lent, wild refactor up to %.0f cm, FakeLighting %s, foliage influencer %s." % (
+            "third" if home.get_editor_property("third_person") else "first",
             home.get_editor_property("wild_refactor_max_size"),
-            FAKE_LIGHTING if mpc else "NOT SET - no " + APPEARANCE))
+            FAKE_LIGHTING if mpc else "NOT SET - no " + APPEARANCE,
+            "on" if influencer else "NOT SET - no " + INFLUENCER))
 
     les.save_current_level()
     say("built %s: arrive at %s (tag %s). Saved." % (HOME_MAP, arrive_at, ARRIVAL_TAG))
