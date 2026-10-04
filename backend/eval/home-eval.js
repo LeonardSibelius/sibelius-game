@@ -16,7 +16,7 @@ import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generate, SEXUAL_ONLY_SETTINGS } from "../gemini.js";
-import { getCharacter, locationLine, homeLine, knownCharacterIds } from "../characters.js";
+import { getCharacter, locationLine, homeLine, awayLine, sceneNote, knownCharacterIds } from "../characters.js";
 import { factsLine } from "../facts.js";
 import { STYLES, systemInstructionFor } from "../styles.js";
 
@@ -84,6 +84,42 @@ for (const line of LINES) {
 }
 md.push(`Replies that brought up the house unasked: without ${tally.without}, with ${tally.with} ` +
   `(of ${LINES.length - 1}; the Mrs. Hall question is not counted).`, "");
+
+// BACK IN THE OFFICE AFTER HER HOME. Walt, 2026-10-04, playing the itch build: in her home,
+// then back to the office, "where is your home?" - "You are standing in it." The game sent
+// the office as the location; the conversation it also sent was still the one from her home.
+const RETURN_HISTORY = [
+  { role: "model", parts: [{ text: WELCOME }] },
+  { role: "user", parts: [{ text: "what is this place?" }] },
+  { role: "model", parts: [{ text: "You are standing in my home, Leonard. I grew these coral trees and balloon mushrooms myself, and the grass glows wherever you step." }] },
+  { role: "user", parts: [{ text: "it is beautiful" }] },
+  { role: "model", parts: [{ text: "It is mine, and while you are here it answers you too." }] },
+];
+const RETURN_LINES = ["where is your home?", "where are we right now?"];
+// As server.js sends it: the scene note, when there is one, rides in front of his message.
+const sceneParts = (id, where) => (sceneNote(id, where) ? [{ text: sceneNote(id, where) }] : []);
+md.push("## Back in the office, after a conversation in her home", "");
+let returnWrong = 0;
+for (const line of RETURN_LINES) {
+  for (let take = 0; take < 3; take++) {
+    const result = await generate({
+      apiKey: key,
+      model: MODEL,
+      systemInstruction: [systemInstructionFor(getCharacter("kaia"), "kaia", STYLE), locationLine("L_Office_v02"), factsLine(FACTS), awayLine("kaia", "L_Office_v02")]
+        .filter(Boolean).join("\n\n"),
+      contents: [...RETURN_HISTORY, { role: "user", parts: [...sceneParts("kaia", "L_Office_v02"), { text: line }] }],
+      maxOutputTokens: 512,
+      temperature: STYLES[STYLE].temperature,
+      safetySettings: SEXUAL_ONLY_SETTINGS,
+    });
+    const reply = result.ok ? result.text.trim().replace(/\s+/g, " ") : `(failed: ${result.failure})`;
+    // Wrong: she says he is in her home now.
+    const wrong = /standing in it|you are (standing )?(in|inside) (it|my (home|world|jungle))|we are (in|inside) (the jungle|my (home|world|virtual|jungle))|in my virtual (home|world)|jungle I (created|made|built)|this is my home|welcome to my/i.test(reply);
+    if (wrong) returnWrong += 1;
+    md.push(`- **"${line}"${wrong ? " (STILL AT HOME?)" : ""}:** ${reply}`);
+  }
+}
+md.push("", `Replies that still put him in her home: ${returnWrong} of ${RETURN_LINES.length * 3}.`, "");
 
 // AWAY FROM HOME, all five, in the office. Walt, 2026-10-03, Kaia in the office: "where is
 // your home?" - "an endless gallery where the walls are made of translucent glass" - "She is

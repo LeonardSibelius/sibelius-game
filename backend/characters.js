@@ -150,8 +150,13 @@ export function locationLine(locationId) {
   const map = mapName(locationId);
   const place = Object.hasOwn(LOCATIONS, map) ? LOCATIONS[map] : null;
   if (!place) return "";
+  /* HE MAY HAVE MOVED. The game sends the conversation so far along with the place, and the
+     conversation can be from somewhere else: Walt, 2026-10-04, back in the office after her
+     home - "where is your home?" - "You are standing in it." The place is read when he sends
+     each message, so it wins. */
   return `WHERE HE IS STANDING NOW: ${place}. Treat anything later in his story than this as ` +
-    `something he may not have reached yet.`;
+    `something he may not have reached yet. If the conversation so far happened somewhere ` +
+    `else, he has since moved: this is where you both are now, whatever was said before.`;
 }
 
 /**
@@ -183,6 +188,36 @@ export function homeLine(characterId, locationId) {
     "and your other subject, what makes someone the same person, does not. If he does bring " +
     "the house up, it is far away. If he asks what there is to do here, tell him what his " +
     "Refactor does here.";
+}
+
+/**
+ * THE OTHER HALF: SHE IS NOT AT HOME. For an agent who has a home, anywhere else the game
+ * names. Walt, 2026-10-04, back in the office after her home: "where is your home?" - "You
+ * are standing in it." The conversation the game sends along was the one from her home, and a
+ * general "he may have moved" in the location line still lost to it in 2 replies of 6
+ * (eval/home-eval.js). Last in the prompt, like homeLine, and only where the place is known -
+ * a map not on the list says nothing here either. It names no way back to her home: builds
+ * before 2.1.0 have none (see KAIA_HOME).
+ */
+export function awayLine(characterId, locationId) {
+  const map = mapName(locationId);
+  const hasHome = Object.values(VIRTUAL_HOMES).includes(characterId);
+  if (!hasHome || VIRTUAL_HOMES[map] === characterId || !Object.hasOwn(LOCATIONS, map)) return "";
+  return `YOU ARE NOT IN YOUR VIRTUAL HOME NOW. You and he are in ${LOCATIONS[map]}, whatever ` +
+    "the conversation so far says: if you were in your home with him earlier, he has left it " +
+    "since. Speak of your home as somewhere else, never as the place you are standing.";
+}
+
+/**
+ * ...AND THE SAME FACT BESIDE HIS NEWEST MESSAGE. Asked "where are we right now?" after a
+ * conversation in her home, she still answered "We are in my virtual home" 2 times in 6 with
+ * awayLine in the prompt: what sits next to the question outweighs the opening instructions.
+ * So wherever awayLine applies, server.js puts this short note in front of his message, as a
+ * part of its own. "" everywhere else.
+ */
+export function sceneNote(characterId, locationId) {
+  if (!awayLine(characterId, locationId)) return "";
+  return `(Where you both are as he says this: ${LOCATIONS[mapName(locationId)]}, not your virtual home.)`;
 }
 
 /**

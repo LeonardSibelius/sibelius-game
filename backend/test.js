@@ -6,7 +6,7 @@
 
 import { createApp, LIMITS, CARE_REPLY } from "./server.js";
 import { createBudget } from "./budget.js";
-import { getCharacter, knownCharacterIds, locationLine, homeLine, capSentences, MAX_SENTENCES } from "./characters.js";
+import { getCharacter, knownCharacterIds, locationLine, homeLine, awayLine, sceneNote, capSentences, MAX_SENTENCES } from "./characters.js";
 import { generate, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
 import { STYLES, FOOLISH_ANGLES, HOPEFUL_ANGLES, systemInstructionFor } from "./styles.js";
 import { councilInstruction, speakingOrder, stripOwnName } from "./council.js";
@@ -140,6 +140,17 @@ console.log("=== NPC chat backend contract ===");
     check(homeLine("kaia", "L_Office_v02") === "" && homeLine("nyra", "L_KaiaHome") === ""
         && homeLine("kaia", undefined) === "" && homeLine("toString", "toString") === "",
       "anywhere else, or anyone else, gets no at-home block");
+    // Back from her home (Walt, 2026-10-04: in the office, "where is your home?" - "You are
+    // standing in it"): told she is away, in the prompt AND beside his message.
+    const away = awayLine("kaia", "/Game/L_Office_v02");
+    check(/YOU ARE NOT IN YOUR VIRTUAL HOME NOW/.test(away) && /Mrs\. Hall's office house/.test(away) && !/portal/.test(away),
+      "away from her home, Kaia is told so, with the place and no way back named");
+    check(/Mrs\. Hall's office house, not your virtual home/.test(sceneNote("kaia", "L_Office_v02")),
+      "the scene note beside his message names where they are");
+    check(awayLine("kaia", "L_KaiaHome") === "" && awayLine("nyra", "L_Office_v02") === ""
+        && awayLine("kaia", "L_Cine_KaiaIntro") === "" && awayLine("kaia", undefined) === ""
+        && sceneNote("kaia", "L_KaiaHome") === "" && sceneNote("nyra", "L_City") === "",
+      "no away block or scene note at home, for agents with no home, or where the place is unknown");
     const houseTask = { sauce: 12, objective: "Slap the Refusers out of the office [F]" };
     check(/Slap the Refusers/.test(factsLine(houseTask)) && !/Slap the Refusers/.test(factsLine(houseTask, { objective: false }))
         && /Sauce in his wallet: 12/.test(factsLine(houseTask, { objective: false })),

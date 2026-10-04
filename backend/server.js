@@ -10,7 +10,7 @@
 import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
-import { getCharacter, knownCharacterIds, locationLine, homeLine, capSentences } from "./characters.js";
+import { getCharacter, knownCharacterIds, locationLine, homeLine, awayLine, sceneNote, capSentences } from "./characters.js";
 import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
 import { COUNCIL_SEATS, speakingOrder, councilInstruction, stripOwnName } from "./council.js";
@@ -244,12 +244,15 @@ export function createApp(options = {}) {
     // In her own virtual home, the at-home block follows the facts and the house's next task
     // is left out of them (characters.js, homeLine). A story event (events.js), when the game
     // sent one, goes after all of it: it is about this reply only, and the last thing she reads.
+    // Anywhere else the game names, an agent with a home is told she is not in it
+    // (characters.js, awayLine) - the conversation sent along may be from her home.
     const home = homeLine(body.characterId, body.storyContext?.locationId);
     const systemInstruction = [
       systemInstructionFor(character, body.characterId, config.chatStyle),
       locationLine(body.storyContext?.locationId),
       factsLine(body.storyContext?.facts, { objective: !home }),
       home,
+      awayLine(body.characterId, body.storyContext?.locationId),
       eventLine(body.storyContext?.event, { where: "chat", characterId: body.characterId }),
     ].filter(Boolean).join("\n\n");
 
@@ -268,7 +271,10 @@ export function createApp(options = {}) {
       role: turn.role,
       parts: [{ text: turn.text }],
     }));
-    const contents = [...turns, { role: "user", parts: [{ text: body.message }] }];
+    // Where an agent with a home is away from it, the fact rides beside his newest message,
+    // where it outweighs a conversation that happened in her home (characters.js, sceneNote).
+    const scene = sceneNote(body.characterId, body.storyContext?.locationId);
+    const contents = [...turns, { role: "user", parts: [...(scene ? [{ text: scene }] : []), { text: body.message }] }];
 
     const estimatedInput =
       estimateTokens(systemInstruction) +

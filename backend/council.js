@@ -6,7 +6,7 @@
 // agent BY NAME", every tested variant argued. This file only builds prompts and decides the
 // order; server.js does the calling, the budget and the screen.
 
-import { getCharacter, locationLine } from "./characters.js";
+import { getCharacter, locationLine, awayLine } from "./characters.js";
 import { systemInstructionFor } from "./styles.js";
 import { eventLine } from "./events.js";
 import { factsLine } from "./facts.js";
@@ -92,6 +92,8 @@ ${soFar.length ? lines(soFar) : "(you speak first)"}
     locationLine(locationId),
     factsLine(facts, { travel: false }),   // no [Go] button at the table
     council,
+    // After the table's conversation, which may be from her home (characters.js, awayLine).
+    awayLine(id, locationId),
     // Last, so an event (events.js) outranks the usual arguing for this turn only.
     eventLine(event, { where: "council" }),
   ].filter(Boolean).join("\n\n");
