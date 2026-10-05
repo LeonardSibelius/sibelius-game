@@ -38,6 +38,23 @@ bool AVirtualHome::LendsPower(const UObject* WorldContext, EPowerVerb Verb)
 	return false;
 }
 
+const AVirtualHome* AVirtualHome::FindFor(const UObject* WorldContext, const FString& Agent)
+{
+	const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	if (!World)
+	{
+		return nullptr;
+	}
+	for (TActorIterator<AVirtualHome> It(const_cast<UWorld*>(World)); It; ++It)
+	{
+		if (It->AgentName.Equals(Agent, ESearchCase::IgnoreCase))
+		{
+			return *It;
+		}
+	}
+	return nullptr;
+}
+
 void AVirtualHome::BeginPlay()
 {
 	Super::BeginPlay();

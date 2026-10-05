@@ -85,9 +85,17 @@ hotel come late in his story — unless he mentions it first.
  * Only the L_KaiaHome location line, which only a build with the level can send, mentions it.
  */
 const KAIA_HOME = "an alien jungle world she made and can Refactor as she pleases: coral trees, " +
-  "rose trees, fungal trees and vine trees, balloon mushrooms that boing when he touches them, " +
-  "ferns, grass that glows where he steps, a lake, rain, animal calls, and two great planets " +
-  "hanging in the sky (planets, not suns)";
+  "rose trees, fungal trees and vine trees, balloon mushrooms that bounce and boing when he " +
+  "slaps them, ferns, grass that glows where he steps, a lake, rain, animal calls, and two " +
+  "great planets hanging in the sky (planets, not suns)";
+
+/* ELISE'S HOME, the same way (2026-10-05). Walt, who sees it: "Elise's home is a vast
+   grassland with the same mushrooms and rose trees that are in Kaia's world. It also has
+   ringed planets in the sky and the wind always blows." Its portal stands in front of her
+   bedroom window (place_home_portal.py) - named only in L_EliseHome's own line, as above. */
+const ELISE_HOME = "a vast alien grassland she made and can Refactor as she pleases: grass to " +
+  "the horizon, the same balloon mushrooms and rose trees that grow on Kaia's world, ringed " +
+  "planets in the sky, and a wind that never stops blowing";
 
 const THE_AGENTS = `
 THE FIVE AGENTS — you and the other four. These are the facts; do not invent others about
@@ -103,11 +111,12 @@ the same line when she did: "I have granted you a power. Use it wisely."
 - Nyra: his guide in Transhuman City. She gave him Test-Drive: he branches reality, then
   keeps or discards what he tried.
 Each of you has a virtual home: a world of your own, which you can Refactor as you please.
-Kaia's is finished and open to visitors: ${KAIA_HOME}. If you are Kaia, it is yours and
-it is ready: describe it gladly when he asks. Nyra's, Isla's, Aisling's and Elise's homes
-are not ready yet: if you are one of those four and he asks about yours, say it is not ready
-for visitors, and do not describe it. Never offer to take him to any of them, and never say
-how he would get there.
+Two are finished and open to visitors. Kaia's is ${KAIA_HOME}. Elise's is ${ELISE_HOME}.
+If you are Kaia or Elise, yours is ready and open to him: describe it gladly when he asks,
+and never call it unfinished or not ready - that is only the other three. Nyra's, Isla's and
+Aisling's homes are not ready yet: if you are one of those three and he asks about yours,
+say it is not ready for visitors, and do not describe it. Never offer to take him to any of
+them, and never say how he would get there.
 `.trim();
 
 /**
@@ -130,6 +139,11 @@ const LOCATIONS = {
     "the hall in Mrs. Hall's house. While he is here, Kaia's Refactor works for him: R turns a " +
     "plant into treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it " +
     "back for free",
+  // Elise's (2026-10-05): ELISE_HOME, through the portal in front of her bedroom window.
+  L_EliseHome: `Elise's virtual home, ${ELISE_HOME}. He came through the portal in front of ` +
+    "the window of her bedroom in Mrs. Hall's house. While he is here, Refactor works for him: " +
+    "R turns a plant into treasure, a giant gemstone or gold coins, for 10 sauce, and R again " +
+    "turns it back for free",
   L_Office_v02: "Mrs. Hall's office house",
   L_Cathedral: "the golden cathedral",
   L_AI_Temple: "the AI temple",
@@ -165,7 +179,10 @@ export function locationLine(locationId) {
  * world, and no refusers and no office." Her profile seats her "in the office where he
  * works" and has her raise Mrs. Hall unasked, and one location line does not outweigh that.
  */
-const VIRTUAL_HOMES = { L_KaiaHome: "kaia" };
+const VIRTUAL_HOMES = { L_KaiaHome: "kaia", L_EliseHome: "elise" };
+
+/** Each home in a few words, for the note beside his message there (sceneNote). */
+const HOME_IN_A_PHRASE = { kaia: "your alien jungle", elise: "your alien grassland" };
 
 /**
  * The block that says she is at home, or "" anywhere else, or for anyone else. It goes
@@ -184,10 +201,9 @@ export function homeLine(characterId, locationId) {
     "be done from here. Talk about this world: what grows here, what you made and why, what " +
     "you have Refactored and what you might change next. Do not mention Mrs. Hall, the " +
     "office, the Refusers or his work in the house at all, not even as a contrast or in " +
-    "passing, unless he brings them up first; here your wish to understand Mrs. Hall waits, " +
-    "and your other subject, what makes someone the same person, does not. If he does bring " +
-    "the house up, it is far away. If he asks what there is to do here, tell him what his " +
-    "Refactor does here.";
+    "passing, unless he brings them up first; here, whatever you usually say about Mrs. Hall " +
+    "waits, and the ideas you care about do not. If he does bring the house up, it is far " +
+    "away. If he asks what there is to do here, tell him what his Refactor does here.";
 }
 
 /**
@@ -220,7 +236,7 @@ export function sceneNote(characterId, locationId) {
      office stuff again" - "what can i do here?" got the walls and furniture Mrs. Hall insisted
      upon, and the cathedral. homeLine was in the prompt; the conversation was the office's. */
   if (homeLine(characterId, locationId)) {
-    return "(Where you both are as he says this: your own virtual home, your alien jungle world - " +
+    return `(Where you both are as he says this: your own virtual home, ${HOME_IN_A_PHRASE[characterId] ?? "your world"} - ` +
       "not Mrs. Hall's house, which is far away. \"Here\" means your home.)";
   }
   if (!awayLine(characterId, locationId)) return "";

@@ -393,10 +393,13 @@ Content/UnrealClaude/
 Content/AlienJunglePlants/
 Content/AlienPhysicsWorld/
 Plugins/EDFoliagePhysics/
-# Kaia's home: a copy of the pack's Level_Jungle (Tools/Scripts/make_kaia_home.py), so its
-# landscape and foliage are Etherion's - like L_Bowling, never in git; back it up to E:.
+# The agents' homes: copies of the pack's levels (Tools/Scripts/make_virtual_home.py) - Kaia's
+# of Level_Jungle, Elise's of Level_Grassland - so their landscape and foliage are Etherion's.
+# Like L_Bowling, never in git; back them up to E:.
 Content/Maps/L_KaiaHome.umap
 Content/Maps/L_KaiaHome_BuiltData.uasset
+Content/Maps/L_EliseHome.umap
+Content/Maps/L_EliseHome_BuiltData.uasset
 
 # --- Dekogon Studios "Treasures VOL.1 - Ancient Treasures" (Fab, in Walt's library, -------------
 # --- "Allows usage with AI: No") - Refactor's treasure, added 2026-10-03 -------------------------

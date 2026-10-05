@@ -18,6 +18,7 @@
 #include "SibeliusGameCharacter.h"          // OpenCouncil
 #include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
 #include "NpcChatSaveGame.h"                // FNpcChatTurn — what she remembers
+#include "VirtualHome.h"                    // her own home's welcome line
 #include "Blueprint/UserWidget.h"           // CreateWidget
 #include "Engine/GameInstance.h"            // GetSubsystem<UNpcChatSubsystem>
 #include "Framework/Application/SlateApplication.h" // hand the keyboard back on close
@@ -2009,7 +2010,9 @@ FString UDancerAgentComponent::GetSpokenLine() const
 	FString Line = TalkLine;
 	if (IsAtHome())
 	{
-		Line = HomeLine;
+		// Her own home's welcome (AVirtualHome::WelcomeLine), or the shared one.
+		const AVirtualHome* Home = AVirtualHome::FindFor(this, AgentName);
+		Line = Home && !Home->WelcomeLine.IsEmpty() ? Home->WelcomeLine : HomeLine;
 		Line.ReplaceInline(TEXT("{0}"), *AgentName);
 		return Line;
 	}

@@ -40,9 +40,20 @@ class SIBELIUSGAME_API AVirtualHome : public AActor
 public:
 	AVirtualHome();
 
-	/** Whose home this is, for the log. (Not "Owner": AActor already has one.) */
+	/** Whose home this is: matched against the dancer's AgentName for her welcome below.
+	 *  (Not "Owner": AActor already has one.) */
 	UPROPERTY(EditAnywhere, Category = "Virtual Home")
 	FString AgentName = TEXT("Kaia");
+
+	/** What she says when he presses E on her here - the chat's first line, and the line her
+	 *  dancer_home_<name> recording speaks. Each home has its own (Elise's came second,
+	 *  2026-10-05); set on the placed actor by make_virtual_home.py. Empty: the dancer's own
+	 *  UDancerAgentComponent::HomeLine. */
+	UPROPERTY(EditAnywhere, Category = "Virtual Home")
+	FString WelcomeLine;
+
+	/** The home in this world that belongs to Agent, or null. */
+	static const AVirtualHome* FindFor(const UObject* WorldContext, const FString& Agent);
 
 	/** Arrive in Greystone's body, seen from behind. OFF since 2026-10-04 - Walt: "Greystone is
 	 *  starting to annoy me. I am thinking i want to go into Kaia world as first-person like in
@@ -80,7 +91,7 @@ public:
 	   collection (MPC_AlienJungleAppearance): FakeLighting, which their level blueprint set
 	   to 0.3 at the start (their NOTE board explains it), and hue and wetness dials.
 	   L_KaiaHome's level blueprint is emptied - it also spawned their demo controller, which
-	   moved the player into the lake (see make_kaia_home.py) - so the values it needs are set
+	   moved the player into the lake (see make_virtual_home.py) - so the values it needs are set
 	   here instead. Set on the placed actor; the collection is the pack's, which is why
 	   nothing is named in C++. */
 	UPROPERTY(EditAnywhere, Category = "Virtual Home|Look")
@@ -95,7 +106,7 @@ public:
 	   the "balloon mushrooms that boing when he touches them" Kaia talks about did nothing
 	   (Walt, 2026-10-03: "Greystone can't interact with the mushrooms in Kaia's world even
 	   though she says he can"). One rides on him from arrival. Set to the pack's
-	   BP_FoliageInfluencer on the placed actor (make_kaia_home.py); nothing is named in C++,
+	   BP_FoliageInfluencer on the placed actor (make_virtual_home.py); nothing is named in C++,
 	   as with Appearance. Its collision is switched off - it works from its radius, not
 	   physics, and must never be what an E or R ray meets. */
 	UPROPERTY(EditAnywhere, Category = "Virtual Home|Foliage")
@@ -104,7 +115,7 @@ public:
 	/* HER PLACED PLANTS BOUNCE WHEN SLAPPED. The big balloon mushrooms are plain static
 	   meshes the plugin never brings to life, so F squashes and stretches them itself
 	   (USlapComponent::SetPlantWobble) and plays these: a boing for mushrooms, a rustle for
-	   the rest. The pack's own sounds, set on the placed actor (make_kaia_home.py). */
+	   the rest. The pack's own sounds, set on the placed actor (make_virtual_home.py). */
 	UPROPERTY(EditAnywhere, Category = "Virtual Home|Foliage")
 	TObjectPtr<class USoundBase> MushroomSound;
 

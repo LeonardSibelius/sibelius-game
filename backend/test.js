@@ -105,13 +105,16 @@ console.log("=== NPC chat backend contract ===");
     // not ready, so nobody invents one ("She is confused about her home").
     check(
       /Each of you has a virtual home/.test(c.systemInstruction)
-        && /Kaia's is finished and open to visitors: an alien jungle world/.test(c.systemInstruction)
-        && /balloon mushrooms that boing/.test(c.systemInstruction)
-        && /If you are Kaia, it is yours and\s+it is ready/.test(c.systemInstruction)
-        && /if you are one of those four and he asks about yours, say it is not ready\s+for visitors, and do not describe it/.test(c.systemInstruction)
-        && /Never offer to take him to any of them, and never say\s+how he would get there/.test(c.systemInstruction)
+        && /Two are finished and open to visitors\. Kaia's is an alien jungle world/.test(c.systemInstruction)
+        && /balloon mushrooms that bounce and boing when he\s+slaps them/.test(c.systemInstruction)
+        // Elise's (Walt, 2026-10-05): "a vast grassland ... ringed planets ... the wind always blows".
+        && /Elise's is a vast alien grassland/.test(c.systemInstruction)
+        && /ringed\s+planets in the sky, and a wind that never stops blowing/.test(c.systemInstruction)
+        && /If you are Kaia or Elise, yours is ready/.test(c.systemInstruction)
+        && /if you are one of those three and he asks about yours,\s+say it is not ready for visitors, and do not describe it/.test(c.systemInstruction)
+        && /Never offer to take him to any of\s+them, and never say how he would get there/.test(c.systemInstruction)
         && /any other world, apart from the agents' own virtual homes/.test(c.systemInstruction),
-      `${id} knows the agents have virtual homes, what Kaia's is, and not to tour them`
+      `${id} knows the agents have virtual homes, what Kaia's and Elise's are, and not to tour them`
     );
     // Builds before 2.1.0 have no portal, and the server cannot tell them apart.
     check(!/portal/.test(c.systemInstruction), `${id}'s shared text never mentions a portal to her home`);
@@ -131,6 +134,21 @@ console.log("=== NPC chat backend contract ===");
         && !/animal\b(?! calls)/.test(home),
       "Kaia's home is a place, described from the pack and the level, with the lent Refactor");
     check(!/virtual home/.test(locationLine("L_Office_v02")), "the office says nothing about her home");
+    // Elise's home, through her bedroom window's portal - and she is at home there, not Kaia.
+    const elise = locationLine("/Game/Maps/L_EliseHome.L_EliseHome");
+    check(/Elise's virtual home, a vast alien grassland/.test(elise) && /window of her bedroom/.test(elise)
+        && /R turns a plant into treasure/.test(elise),
+      "Elise's home is a place too, with her portal and the Refactor that works there");
+    check(/YOU ARE AT HOME/.test(homeLine("elise", "L_EliseHome")) && homeLine("kaia", "L_EliseHome") === ""
+        && homeLine("elise", "L_KaiaHome") === "",
+      "each agent is at home only in her own home");
+    check(/your alien grassland/.test(sceneNote("elise", "L_EliseHome")) && /your alien jungle/.test(sceneNote("kaia", "L_KaiaHome")),
+      "the note beside his message names each home in its own words");
+    check(/YOU ARE NOT IN YOUR VIRTUAL HOME NOW/.test(awayLine("elise", "L_Office_v02"))
+        && /YOU ARE NOT IN YOUR VIRTUAL HOME NOW/.test(awayLine("kaia", "L_EliseHome")),
+      "away from her own home - the office, or the other agent's home - each is told so");
+    check(!/understand Mrs\. Hall|same person/.test(homeLine("elise", "L_EliseHome")),
+      "the at-home block names no one agent's own subjects");
     // At home she talks about home (Walt, 2026-10-03: "There is no Mrs. Hall in her home
     // world, and no refusers and no office").
     const atHome = homeLine("kaia", "/Game/Maps/L_KaiaHome.L_KaiaHome");
