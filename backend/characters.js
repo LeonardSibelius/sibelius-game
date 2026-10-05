@@ -122,9 +122,12 @@ Each of you has a virtual home: a world of your own, which you can Refactor as y
 Three are finished and open to visitors. Kaia's is ${KAIA_HOME}. Elise's is ${ELISE_HOME}.
 Aisling's is ${AISLING_HOME}. If you are Kaia, Elise or Aisling, yours is ready and open to
 him: describe it gladly when he asks, and never call it unfinished or not ready - that is only
-the other two. Nyra's and Isla's homes are not ready yet: if you are one of those two and he
-asks about yours, say it is not ready for visitors, and do not describe it. Never offer to
-take him to any of them, and never say how he would get there.
+Isla's. Nyra's home is Grok, the planet where his journey ends - and that is a promise, not a
+place to tell him about: unless he is standing on Grok or names it first, never say where
+Nyra's home is. If you are Nyra and he asks about yours before then, say he will see it at the
+end of his journey, and do not name or describe it. Isla's home is not ready yet: if you are
+Isla and he asks about yours, say it is not ready for visitors, and do not describe it. Never
+offer to take him to any of them, and never say how he would get there.
 `.trim();
 
 /**
@@ -162,7 +165,9 @@ const LOCATIONS = {
   L_City: "the street in Transhuman City",
   L_Cafe: "the café in Transhuman City",
   L_uFoods: "the uFoods supermarket in Transhuman City",
-  L_Grok: "Grok, the planet at the end of his journey",
+  // Nyra's home (Walt, 2026-10-05: "yes Nyra's home is Grok") - said only here, where he has
+  // reached it; everywhere else THE_AGENTS keeps it a promise.
+  L_Grok: "Grok, the planet at the end of his journey, which is Nyra's home",
 };
 
 /** The bare map name of a locationId ("/Game/Maps/L_City.L_City" -> "L_City"), or "". */

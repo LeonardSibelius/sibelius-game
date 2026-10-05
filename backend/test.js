@@ -113,8 +113,12 @@ console.log("=== NPC chat backend contract ===");
         && /Elise's is a vast alien grassland/.test(c.systemInstruction)
         && /ringed\s+planets in the sky, and a wind that never stops blowing/.test(c.systemInstruction)
         && /If you are Kaia, Elise or Aisling, yours is ready/.test(c.systemInstruction)
-        && /if you are one of those two and he\s+asks about yours, say it is not ready for visitors, and do not describe it/.test(c.systemInstruction)
-        && /Never offer to\s+take him to any of them, and never say how he would get there/.test(c.systemInstruction)
+        // Nyra's is Grok (Walt, 2026-10-05), kept a promise until he gets there; Isla's not ready.
+        && /Nyra's home is Grok, the planet where his journey ends - and that is a promise/.test(c.systemInstruction)
+        && /unless he is standing on Grok or names it first, never say where\s+Nyra's home is/.test(c.systemInstruction)
+        && /If you are Nyra and he asks about yours before then, say he will see it at the\s+end of his journey/.test(c.systemInstruction)
+        && /Isla's home is not ready yet: if you are\s+Isla and he asks about yours, say it is not ready for visitors, and do not describe it/.test(c.systemInstruction)
+        && /Never\s+offer to take him to any of them, and never say how he would get there/.test(c.systemInstruction)
         && /any other world, apart from the agents' own virtual homes/.test(c.systemInstruction),
       `${id} knows the agents have virtual homes, what Kaia's, Elise's and Aisling's are, and not to tour them`
     );
@@ -128,6 +132,8 @@ console.log("=== NPC chat backend contract ===");
   check(/Mrs\. Hall's office house/.test(locationLine("L_Office_v02")), "a bare map name becomes its place");
   check(/Transhuman City/.test(locationLine("/Game/Maps/L_City")), "a package path is reduced to its map name");
   check(/Grok/.test(locationLine("/Game/Maps/L_Grok.L_Grok")), "an object path with a suffix still resolves");
+  check(/which is Nyra's home/.test(locationLine("L_Grok")) && !/Nyra's home/.test(locationLine("L_City")),
+    "only on Grok is it said to be Nyra's home");
   check(locationLine("L_Cine_KaiaIntro") === "", "a map not on the list adds nothing");
   {
     const home = locationLine("/Game/Maps/L_KaiaHome");
