@@ -104,6 +104,14 @@ $checks = [ordered]@{
   # Reached only through the VirtualHome actor's FoliageInfluencer property: without it her
   # mushrooms do not answer him (Walt, 2026-10-03).
   "the living plants"   = "$cooked\AlienPhysicsWorld\FoliageSystem\BP_FoliageInfluencer.uasset"
+  # --- 2.1.2: ELISE'S AND AISLING'S HOMES (2026-10-05) - one +MapsToCook line each, like Kaia's;
+  # the agents are plain MetaHumans set dancing by the level, so the dances ride on it too.
+  "Elise's home"        = "$cooked\Maps\L_EliseHome.umap"
+  "Aisling's home"      = "$cooked\Maps\L_AislingHome.umap"
+  "Elise herself"       = "$cooked\MetaHumans\MHC_Elise\BP_MHC_Elise.uasset"
+  "Aisling herself"     = "$cooked\MetaHumans\MHC_Aisling\BP_MHC_Aisling.uasset"
+  "Elise's dance"       = "$cooked\Characters\Retargeting\Anim_Slow_Rhythm_Dance_12_MH.uasset"
+  "Aisling's dance"     = "$cooked\Characters\Retargeting\Anim_Mid_Rhythm_Dance_10_MH.uasset"
   # Which plants come alive: found by an asset-registry scan, cooked by the EDFoliageMap
   # PrimaryAssetTypesToScan rule in DefaultGame.ini (AlwaysCook) - no reference reaches it.
   "the foliage map"     = "$cooked\AlienJunglePlants\FoliageTypes\FoliageMap_AlienJunglePlants.uasset"
