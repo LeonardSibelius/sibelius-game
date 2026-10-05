@@ -20,12 +20,19 @@
 #
 # The 2.1.x builds that follow use it too (2.1.1, 2026-10-04: first person in her home, her
 # plants alive and slappable): pass -Version, and -Baseline for the build to measure against.
+# A second build on the same day needs -OutDir (2.1.3, 2026-10-05, Isla's home: 2.1.2 was that
+# morning's, in the folder the date names) - and an existing folder is refused, never overwritten.
 param(
   [string] $Version  = "2.1.0",
-  [string] $Baseline = "C:\Users\wpark\builds\sibelius-shipping-chat-20260928"
+  [string] $Baseline = "C:\Users\wpark\builds\sibelius-shipping-chat-20260928",
+  [string] $OutDir   = "C:\Users\wpark\builds\sibelius-shipping-chat-$(Get-Date -Format yyyyMMdd)"
 )
 $root    = "C:\Users\wpark\projects\sibelius-game"
-$outDir  = "C:\Users\wpark\builds\sibelius-shipping-chat-$(Get-Date -Format yyyyMMdd)"
+$outDir  = $OutDir
+if (Test-Path $outDir) {
+  Write-Output "REFUSING: $outDir already holds a build - pass -OutDir for a new folder."
+  exit 1
+}
 $uat     = "C:\Program Files\Epic Games\UE_5.7\Engine\Build\BatchFiles\RunUAT.bat"
 $log     = "$root\pkg-v210.log"
 $baselinePaks = "$Baseline\Windows\SibeliusGame\Content\Paks"
