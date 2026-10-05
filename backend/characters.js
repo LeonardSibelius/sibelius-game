@@ -105,6 +105,15 @@ const AISLING_HOME = "a vast, bare snowfield she made and can Refactor as she pl
   "lying deep on empty ground, a little red grass and very few trees, snow-covered mountains in " +
   "the distance and planets in the sky above them - an empty place, and kept that way";
 
+/* ISLA'S HOME (2026-10-05), the first indoors: a space station, the sci-fi kit's demo station
+   (make_virtual_home.py). Walt: "ModularSciFiEnv_1_Demo is open - it is good enough"; its portal
+   is in the attic. Written from the kit's asset names; Walt: "i'm sure your draft about Isla's home
+   is fine, it is just a space station somewhere on the way to planet Grok" - Grok left out on
+   purpose: the shared text keeps it a promise (THE_AGENTS). */
+const ISLA_HOME = "a space station she made and can Refactor as she pleases: quiet corridors " +
+  "behind glass gate doors, a rest corner with couches and bookshelves, a small galley, bunks, " +
+  "and lamps overhead - a sealed place where nothing stays unless it has earned it";
+
 const THE_AGENTS = `
 THE FIVE AGENTS — you and the other four. These are the facts; do not invent others about
 them. Every one of them chose Leonard, and none has given a power to anyone else. Each said
@@ -119,15 +128,14 @@ the same line when she did: "I have granted you a power. Use it wisely."
 - Nyra: his guide in Transhuman City. She gave him Test-Drive: he branches reality, then
   keeps or discards what he tried.
 Each of you has a virtual home: a world of your own, which you can Refactor as you please.
-Three are finished and open to visitors. Kaia's is ${KAIA_HOME}. Elise's is ${ELISE_HOME}.
-Aisling's is ${AISLING_HOME}. If you are Kaia, Elise or Aisling, yours is ready and open to
-him: describe it gladly when he asks, and never call it unfinished or not ready - that is only
-Isla's. Nyra's home is Grok, the planet where his journey ends - and that is a promise, not a
-place to tell him about: unless he is standing on Grok or names it first, never say where
-Nyra's home is. If you are Nyra and he asks about yours before then, say he will see it at the
-end of his journey, and do not name or describe it. Isla's home is not ready yet: if you are
-Isla and he asks about yours, say it is not ready for visitors, and do not describe it. Never
-offer to take him to any of them, and never say how he would get there.
+Four are finished and open to visitors. Kaia's is ${KAIA_HOME}. Elise's is ${ELISE_HOME}.
+Aisling's is ${AISLING_HOME}. Isla's is ${ISLA_HOME}. If you are Kaia, Elise, Aisling or
+Isla, yours is ready and open to him: describe it gladly when he asks, and never call it
+unfinished or not ready. Nyra's home is Grok, the planet where his journey ends - and that is
+a promise, not a place to tell him about: unless he is standing on Grok or names it first,
+never say where Nyra's home is. If you are Nyra and he asks about yours before then, say he
+will see it at the end of his journey, and do not name or describe it. Never offer to take
+him to any of them, and never say how he would get there.
 `.trim();
 
 /**
@@ -159,6 +167,11 @@ const LOCATIONS = {
   L_AislingHome: `Aisling's virtual home, ${AISLING_HOME}. He came through the portal behind ` +
     "her in the AI temple. While he is here, Refactor works for him: R turns a plant into " +
     "treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it back for free",
+  // Isla's (2026-10-05): ISLA_HOME, through the portal in the attic. No plants here: Refactor
+  // takes the furniture, never the station's walls (make_virtual_home.py).
+  L_IslaHome: `Isla's virtual home, ${ISLA_HOME}. He came through the portal in the attic of ` +
+    "Mrs. Hall's house. While he is here, Refactor works for him: R turns a piece of furniture " +
+    "into treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it back for free",
   L_Office_v02: "Mrs. Hall's office house",
   L_Cathedral: "the golden cathedral",
   L_AI_Temple: "the AI temple",
@@ -196,10 +209,12 @@ export function locationLine(locationId) {
  * world, and no refusers and no office." Her profile seats her "in the office where he
  * works" and has her raise Mrs. Hall unasked, and one location line does not outweigh that.
  */
-const VIRTUAL_HOMES = { L_KaiaHome: "kaia", L_EliseHome: "elise", L_AislingHome: "aisling" };
+const VIRTUAL_HOMES = { L_KaiaHome: "kaia", L_EliseHome: "elise", L_AislingHome: "aisling", L_IslaHome: "isla" };
 
 /** Each home in a few words, for the note beside his message there (sceneNote). */
-const HOME_IN_A_PHRASE = { kaia: "your alien jungle", elise: "your alien grassland", aisling: "your snowfield" };
+const HOME_IN_A_PHRASE = {
+  kaia: "your alien jungle", elise: "your alien grassland", aisling: "your snowfield", isla: "your space station",
+};
 
 /**
  * The block that says she is at home, or "" anywhere else, or for anyone else. It goes
@@ -215,7 +230,7 @@ export function homeLine(characterId, locationId) {
     "with you in your own virtual home, the world described above, which you made and can " +
     "Refactor as you please, many light years from Mrs. Hall's house. Mrs. Hall, the office, " +
     "the legacy system and the Refusers are not here, and none of his work in the house can " +
-    "be done from here. Talk about this world: what grows here, what you made and why, what " +
+    "be done from here. Talk about this world: what is here, what you made and why, what " +
     "you have Refactored and what you might change next. Do not mention Mrs. Hall, the " +
     "office, the Refusers or his work in the house at all, not even as a contrast or in " +
     "passing, unless he brings them up first; here, whatever you usually say about Mrs. Hall " +

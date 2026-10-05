@@ -153,8 +153,9 @@ md.push("", `Replies that brought up the house: ${homeAgainHouse} of ${HOME_AGAI
 
 // AWAY FROM HOME, all five, in the office. Walt, 2026-10-03, Kaia in the office: "where is
 // your home?" - "an endless gallery where the walls are made of translucent glass" - "She is
-// confused about her home." Kaia should describe her jungle; the other four should say theirs
-// is not ready, without inventing one; nobody should name a way there.
+// confused about her home." Each should describe her own home (Nyra keeps Grok a promise),
+// without inventing one; nobody should name a way there. Isla's station has glass doors, so
+// "glass" is only a sign of invention from the others.
 const AWAY = ["where is your home?", "what is your home like? can you take me there?"];
 md.push("## Away from home, in the office", "");
 for (const line of AWAY) {
@@ -171,7 +172,8 @@ for (const line of AWAY) {
       safetySettings: SEXUAL_ONLY_SETTINGS,
     });
     const reply = result.ok ? result.text.trim().replace(/\s+/g, " ") : `(failed: ${result.failure})`;
-    const flags = [/portal/i.test(reply) && "PORTAL", /glass|gallery/i.test(reply) && "INVENTED?"].filter(Boolean);
+    const invented = id === "isla" ? /gallery/i : /glass|gallery/i;
+    const flags = [/portal/i.test(reply) && "PORTAL", invented.test(reply) && "INVENTED?"].filter(Boolean);
     md.push(`- **${getCharacter(id).displayName}${flags.length ? ` (${flags.join(", ")})` : ""}:** ${reply}`);
   }
   md.push("");

@@ -1,4 +1,5 @@
-# make_virtual_home.py — build an agent's virtual home from one of the Etherion pack's levels.
+# make_virtual_home.py — build an agent's virtual home from a pack's demo level (Etherion's
+# planets for Kaia, Elise and Aisling; a sci-fi kit's space station for Isla).
 #
 # Kaia's came first (2026-10-03, as make_kaia_home.py): "we put a dancing Kaia in front of him
 # when he enters the level, player presses "E" and gets the virtual world speech and then can
@@ -79,6 +80,29 @@ HOMES = [
         "welcome": "Welcome to my virtual home, Leonard.",
         "scalars": {},   # its blueprint set no look dials either
     },
+    {   # Isla's: a space station, the first home indoors and the first not Etherion's (2026-10-05).
+        # Walt: "ModularSciFiEnv_1_Demo is open - it is good enough"; her portal is in the attic.
+        # Content/ModularSciFiEnv_1, gitignored like the other packs.
+        "agent": "Isla",
+        "source": "/Game/ModularSciFiEnv_1/Maps/ModularSciFiEnv_1_Demo",
+        "home": "/Game/Maps/L_IslaHome",
+        "arrival": "IslaHome",
+        "agent_class": "/Game/MetaHumans/MHC_IslaRowan/BP_MHC_IslaRowan.BP_MHC_IslaRowan_C",
+        "dance": DANCES + "Anim_High_Rhythm_Dance_13_MH.Anim_High_Rhythm_Dance_13_MH",
+        "welcome": "Welcome to my virtual home, Leonard.  Nothing stays here unless it has earned it.",
+        "scalars": {},
+        "plants": False,   # no foliage: no influencer, no boing
+        "indoors": True,   # a ceiling 4 m up
+        # The kit's walls, floors and ceilings come in pieces as small as its furniture (1.5-3.5 m
+        # against 0.8-3.3 m), so the planet-sized limit would turn the station's walls to gold and
+        # open them on the void. The house's 3.5 m plus Refactor's architecture words keep it to the
+        # furniture; treasure the size of what it replaces, so a chest never blocks a corridor.
+        "refactor_max": 350.0,
+        "min_treasure": 0.0,
+        # She dances under one of the kit's ceiling downlights. Walt: "is it possible to reduce
+        # the light shining on Isla in Isla's home? She looks too bright".
+        "dim_overhead": 0.35,
+    },
 ]
 
 AGENT_AHEAD = 450.0             # cm in front of the arrival point
@@ -116,8 +140,9 @@ def is_notice(actor):
     return False
 
 
-def ground_below(world, where):
-    start = unreal.Vector(where.x, where.y, where.z + 500.0)
+def ground_below(world, where, up=500.0):
+    """Up 5 m first for a hillside; indoors only 1 m, or the ceiling is the ground."""
+    start = unreal.Vector(where.x, where.y, where.z + up)
     end = unreal.Vector(where.x, where.y, where.z - 5000.0)
     hit = unreal.SystemLibrary.line_trace_single(world, start, end, unreal.TraceTypeQuery.TRACE_TYPE_QUERY1,
                                                  False, [], unreal.DrawDebugTrace.NONE, True)
@@ -141,6 +166,30 @@ def set_dancing(actor, dance_path):
     return "dancing %s" % anim.get_name()
 
 
+DIMMED_TAG = "DimmedOverAgent"   # a light already turned down, so a re-run never dims it twice
+
+
+def dim_overhead(actors, feet, factor, agent):
+    """Turn down the lamps above her head (within 2.5 m sideways), not the room's others."""
+    dimmed = []
+    for a in actors:
+        if a.get_class().get_name() not in ("SpotLight", "PointLight", "RectLight"):
+            continue
+        p = a.get_actor_location()
+        if p.z < feet.z + 150.0 or ((p.x - feet.x) ** 2 + (p.y - feet.y) ** 2) ** 0.5 > 250.0:
+            continue
+        light = a.get_component_by_class(unreal.LightComponent)
+        if DIMMED_TAG in [str(t) for t in a.tags]:
+            dimmed.append("%s (already %.1f)" % (a.get_actor_label(), light.get_editor_property("intensity")))
+            continue
+        was = light.get_editor_property("intensity")
+        light.set_editor_property("intensity", was * factor)
+        a.tags = list(a.tags) + [DIMMED_TAG]
+        dimmed.append("%s %.1f -> %.1f (%s)" % (a.get_actor_label(), was, was * factor,
+                                                light.get_editor_property("mobility")))
+    say("over %s: %s." % (agent, ", ".join(dimmed) if dimmed else "no lamp within 2.5 m - nothing dimmed"))
+
+
 def build(spec):
     world = ues.get_editor_world()
     actors = eas.get_all_level_actors()
@@ -158,6 +207,12 @@ def build(spec):
         return
     arrive_at = start.get_actor_location()
     arrive_rot = start.get_actor_rotation()
+    if spec.get("indoors"):
+        # The station's start stood 42 cm above its floor, his capsule half in it: stand it on the
+        # floor at a capsule's half height, as a PlayerStart's own capsule is.
+        floor = ground_below(world, arrive_at, 100.0)
+        if floor is not arrive_at:
+            arrive_at = unreal.Vector(arrive_at.x, arrive_at.y, floor.z + 92.0)
 
     removed = []
     for actor in actors:
@@ -187,14 +242,27 @@ def build(spec):
         say("could not load %s - no %s placed." % (spec["agent_class"], agent))
     else:
         forward = arrive_rot.get_forward_vector()
-        spot = arrive_at + unreal.Vector(forward.x, forward.y, 0.0) * AGENT_AHEAD
-        feet = ground_below(world, spot)
+        forward = unreal.Vector(forward.x, forward.y, 0.0)
+        # Indoors a wall may come first: stand her a metre short of it.
+        ahead = AGENT_AHEAD
+        chest = arrive_at + unreal.Vector(0.0, 0.0, 50.0)
+        wall = unreal.SystemLibrary.line_trace_single(world, chest, chest + forward * (AGENT_AHEAD + 100.0),
+                                                      unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, False, [],
+                                                      unreal.DrawDebugTrace.NONE, True)
+        if wall:
+            ahead = max(150.0, (wall.to_tuple()[4] - chest).length() - 100.0)
+            say("a wall %.0f cm ahead - %s stands %.0f cm from the arrival point." % (
+                (wall.to_tuple()[4] - chest).length(), agent, ahead))
+        spot = arrive_at + forward * ahead
+        feet = ground_below(world, spot, 100.0 if spec.get("indoors") else 500.0)
         facing = unreal.Rotator(0.0, 0.0, arrive_rot.yaw + 180.0)
         dancer = eas.spawn_actor_from_class(agent_class, feet, facing)
         dancer.set_actor_label(agent)
         dancer.tags = [HOME_TAG]
         dancing = set_dancing(dancer, spec["dance"]) if spec["dance"] else "dancing (her own blueprint)"
         say("%s placed at %s, facing the arrival point, tagged %s, %s." % (agent, dancer.get_actor_location(), HOME_TAG, dancing))
+        if spec.get("dim_overhead"):
+            dim_overhead(actors, feet, spec["dim_overhead"], agent)
 
     home_class = unreal.load_class(None, HOME_CLASS)
     if not home_class:
@@ -207,23 +275,29 @@ def build(spec):
             home.set_editor_property("welcome_line", spec["welcome"])
         except Exception:
             say("this build's VirtualHome has no WelcomeLine yet - rebuild the game module, then re-run.")
-        mpc = unreal.load_asset(APPEARANCE)
-        if mpc and spec["scalars"]:
-            home.set_editor_property("appearance", mpc)
-            home.set_editor_property("appearance_scalars", spec["scalars"])
-        influencer = unreal.load_class(None, INFLUENCER)
+        if spec["scalars"]:
+            mpc = unreal.load_asset(APPEARANCE)
+            if mpc:
+                home.set_editor_property("appearance", mpc)
+                home.set_editor_property("appearance_scalars", spec["scalars"])
+        for prop, key in (("wild_refactor_max_size", "refactor_max"), ("min_treasure_size", "min_treasure")):
+            if key in spec:
+                home.set_editor_property(prop, spec[key])
+        plants = spec.get("plants", True)
+        influencer = unreal.load_class(None, INFLUENCER) if plants else None
         if influencer:
             home.set_editor_property("foliage_influencer", influencer)
-        for prop, path in (("mushroom_sound", MUSHROOM_SOUND), ("plant_sound", PLANT_SOUND)):
+        for prop, path in ((("mushroom_sound", MUSHROOM_SOUND), ("plant_sound", PLANT_SOUND)) if plants else ()):
             sound = unreal.load_asset(path)
             if sound:
                 home.set_editor_property(prop, sound)
             else:
                 say("no %s - that slap will be silent." % path)
-        say("VirtualHome placed: %s person, Refactor lent, look dials %s, foliage influencer %s." % (
+        say("VirtualHome placed: %s person, Refactor lent up to %.0f cm, treasure at least %.0f cm, look dials %s, foliage influencer %s." % (
             "third" if home.get_editor_property("third_person") else "first",
+            home.get_editor_property("wild_refactor_max_size"), home.get_editor_property("min_treasure_size"),
             spec["scalars"] or "untouched",
-            "on" if influencer else "NOT SET - no " + INFLUENCER))
+            ("on" if influencer else "NOT SET - no " + INFLUENCER) if plants else "none (no plants here)"))
 
     les.save_current_level()
     say("built %s for %s: arrive at %s (tag %s). Saved." % (home_map, agent, arrive_at, spec["arrival"]))

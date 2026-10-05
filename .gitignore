@@ -402,6 +402,9 @@ Content/Maps/L_EliseHome.umap
 Content/Maps/L_EliseHome_BuiltData.uasset
 Content/Maps/L_AislingHome.umap
 Content/Maps/L_AislingHome_BuiltData.uasset
+# Isla's is a copy of ModularSciFiEnv_1's demo station - the kit's, so the same rule.
+Content/Maps/L_IslaHome.umap
+Content/Maps/L_IslaHome_BuiltData.uasset
 
 # --- Dekogon Studios "Treasures VOL.1 - Ancient Treasures" (Fab, in Walt's library, -------------
 # --- "Allows usage with AI: No") - Refactor's treasure, added 2026-10-03 -------------------------

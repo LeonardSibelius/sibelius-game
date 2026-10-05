@@ -101,26 +101,29 @@ console.log("=== NPC chat backend contract ===");
       `${id} knows who the five agents are`
     );
     // Virtual homes (Walt, 2026-10-03): every agent has one, never offers a trip - and the
-    // GONE line no longer forbids them. Kaia's is real and known to all; the others' are
-    // not ready, so nobody invents one ("She is confused about her home").
+    // GONE line no longer forbids them. Each is described in the shared text, so nobody
+    // invents one ("She is confused about her home"); Nyra's stays a promise.
     check(
       /Each of you has a virtual home/.test(c.systemInstruction)
-        && /Three are finished and open to visitors\. Kaia's is an alien jungle world/.test(c.systemInstruction)
+        && /Four are finished and open to visitors\. Kaia's is an alien jungle world/.test(c.systemInstruction)
+        // Isla's (Walt, 2026-10-05): the sci-fi kit's station, "good enough".
+        && /Isla's is a space station she made/.test(c.systemInstruction)
         // Aisling's (Walt, 2026-10-05): "very empty and bleak with snow covered mountains".
         && /Aisling's is a vast, bare snowfield/.test(c.systemInstruction)
         && /balloon mushrooms that bounce and boing when he\s+slaps them/.test(c.systemInstruction)
         // Elise's (Walt, 2026-10-05): "a vast grassland ... ringed planets ... the wind always blows".
         && /Elise's is a vast alien grassland/.test(c.systemInstruction)
         && /ringed\s+planets in the sky, and a wind that never stops blowing/.test(c.systemInstruction)
-        && /If you are Kaia, Elise or Aisling, yours is ready/.test(c.systemInstruction)
-        // Nyra's is Grok (Walt, 2026-10-05), kept a promise until he gets there; Isla's not ready.
-        && /Nyra's home is Grok, the planet where his journey ends - and that is a promise/.test(c.systemInstruction)
-        && /unless he is standing on Grok or names it first, never say where\s+Nyra's home is/.test(c.systemInstruction)
-        && /If you are Nyra and he asks about yours before then, say he will see it at the\s+end of his journey/.test(c.systemInstruction)
-        && /Isla's home is not ready yet: if you are\s+Isla and he asks about yours, say it is not ready for visitors, and do not describe it/.test(c.systemInstruction)
-        && /Never\s+offer to take him to any of them, and never say how he would get there/.test(c.systemInstruction)
+        && /If you are Kaia, Elise, Aisling or\s+Isla, yours is ready/.test(c.systemInstruction)
+        && !/not ready yet|not ready for visitors/.test(c.systemInstruction)
+        // Nyra's is Grok (Walt, 2026-10-05), kept a promise until he gets there.
+        // (Spaces as \s+: these sentences re-wrap whenever a home is added.)
+        && /Nyra's\s+home\s+is\s+Grok,\s+the\s+planet\s+where\s+his\s+journey\s+ends\s+-\s+and\s+that\s+is\s+a\s+promise/.test(c.systemInstruction)
+        && /unless\s+he\s+is\s+standing\s+on\s+Grok\s+or\s+names\s+it\s+first,\s+never\s+say\s+where\s+Nyra's\s+home\s+is/.test(c.systemInstruction)
+        && /If\s+you\s+are\s+Nyra\s+and\s+he\s+asks\s+about\s+yours\s+before\s+then,\s+say\s+he\s+will\s+see\s+it\s+at\s+the\s+end\s+of\s+his\s+journey/.test(c.systemInstruction)
+        && /Never\s+offer\s+to\s+take\s+him\s+to\s+any\s+of\s+them,\s+and\s+never\s+say\s+how\s+he\s+would\s+get\s+there/.test(c.systemInstruction)
         && /any other world, apart from the agents' own virtual homes/.test(c.systemInstruction),
-      `${id} knows the agents have virtual homes, what Kaia's, Elise's and Aisling's are, and not to tour them`
+      `${id} knows the agents have virtual homes, what Kaia's, Elise's, Aisling's and Isla's are, and not to tour them`
     );
     // Builds before 2.1.0 have no portal, and the server cannot tell them apart.
     check(!/portal/.test(c.systemInstruction), `${id}'s shared text never mentions a portal to her home`);
@@ -159,7 +162,15 @@ console.log("=== NPC chat backend contract ===");
     check(/Aisling's virtual home, a vast, bare snowfield/.test(locationLine("L_AislingHome")) && /behind\s+her in the AI temple/.test(locationLine("L_AislingHome"))
         && /YOU ARE AT HOME/.test(homeLine("aisling", "L_AislingHome")) && /your snowfield/.test(sceneNote("aisling", "L_AislingHome"))
         && /YOU ARE NOT IN YOUR VIRTUAL HOME NOW/.test(awayLine("aisling", "/Game/Maps/L_AI_Temple")),
-      "Aisling's home is a place, she is at home only there, and told she is away in the temple");    check(!/understand Mrs\. Hall|same person/.test(homeLine("elise", "L_EliseHome")),
+      "Aisling's home is a place, she is at home only there, and told she is away in the temple");
+    // Isla's station, through the portal in the attic - furniture, not plants, for Refactor.
+    check(/Isla's virtual home, a space station/.test(locationLine("L_IslaHome")) && /portal in the attic/.test(locationLine("L_IslaHome"))
+        && /R turns a piece of furniture\s+into treasure/.test(locationLine("L_IslaHome"))
+        && /YOU ARE AT HOME/.test(homeLine("isla", "L_IslaHome")) && homeLine("isla", "L_KaiaHome") === ""
+        && /your space station/.test(sceneNote("isla", "L_IslaHome"))
+        && /YOU ARE NOT IN YOUR VIRTUAL HOME NOW/.test(awayLine("isla", "L_Office_v02")),
+      "Isla's home is a place, she is at home only there, and told she is away in the office");
+    check(!/understand Mrs\. Hall|same person/.test(homeLine("elise", "L_EliseHome")),
       "the at-home block names no one agent's own subjects");
     // At home she talks about home (Walt, 2026-10-03: "There is no Mrs. Hall in her home
     // world, and no refusers and no office").

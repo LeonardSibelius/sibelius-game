@@ -1,4 +1,5 @@
-# place_home_portal.py — the portals to the agents' virtual homes, in the house and the AI temple.
+# place_home_portal.py — the portals to the agents' virtual homes: in the house (the hall, Elise's
+# bedroom, the attic) and the AI temple.
 #
 # Kaia's (2026-10-02, as place_kaia_portal.py): "when the player starts the game he is looking
 # down the hall at BP_Door_Outside_A3. I want one of the portals from my portal pack right there
@@ -20,6 +21,7 @@
 #   py "C:/Users/wpark/projects/sibelius-game/Tools/Scripts/place_home_portal.py"
 # Never loads a level (that crashes the editor from a script - open it by hand).
 
+import math
 import unreal
 
 TAG = "###HOMEPORTAL###"
@@ -32,6 +34,12 @@ PORTALS = [
     # stand it in front of, so it stands BEHIND her - she dances in front of her own portal.
     {"label": "AislingPortal", "map": "L_AI_Temple", "behind": "Aisling",
      "destination": "L_AislingHome", "arrival": "AislingHome", "clear": 300.0},
+    # Isla's (2026-10-05): "Isla's portal can be in the attic". Among the attic's storage, by the
+    # old clock (she is the one who asks what deserves to last), on the one stretch of floor
+    # measured clear of boxes all round with 4 m under the sloping roof, 2.5 m from the hatch,
+    # the cathedral door and the ladder - and facing the hatch, so he sees it as he climbs in.
+    {"label": "IslaPortal", "map": "L_Office_v02", "at": (-2040.0, 9385.0, 580.0), "face": "HatchLock",
+     "destination": "L_IslaHome", "arrival": "IslaHome"},
 ]
 PORTAL_HALF_HEIGHT = 110.0   # its centre this far above the floor - the hall door's centre height
 
@@ -81,9 +89,31 @@ def place_behind(spec, actors, world):
     return True
 
 
+def place_at(spec, actors, world):
+    """On a measured spot, turned to face an actor (yaw 0 faces along Y, as in place_behind)."""
+    x, y, floor_guess = spec["at"]
+    where = unreal.Vector(x, y, floor_guess + 100.0)
+    floor = floor_below(world, where, [])
+    where.z = (floor if floor is not None else floor_guess) + PORTAL_HALF_HEIGHT
+    target = next((a for a in actors if a.get_actor_label() == spec["face"]), None)
+    yaw = 0.0
+    if target:
+        t = target.get_actor_location()
+        yaw = math.degrees(math.atan2(t.y - y, t.x - x)) - 90.0
+    portal = eas.spawn_actor_from_class(unreal.CompilePortal, where, unreal.Rotator(0.0, 0.0, yaw))
+    portal.set_actor_label(spec["label"])
+    aim(portal, spec)
+    say("%s placed at %s, yaw %.0f (facing %s), floor %s, to %s (tag %s)." % (
+        spec["label"], portal.get_actor_location(), yaw, spec["face"] if target else "nothing - NO " + spec["face"],
+        "%.0f" % floor if floor is not None else "NOT FOUND", spec["destination"], spec["arrival"]))
+    return True
+
+
 def place(spec, actors, world):
     if "behind" in spec:
         return place_behind(spec, actors, world)
+    if "at" in spec:
+        return place_at(spec, actors, world)
     anchor = next((a for a in actors if a.get_actor_label() == spec["anchor"]), None)
     if spec["side_of"] == "player":
         side = next((a for a in actors if a.get_class().get_name() == "PlayerStart"

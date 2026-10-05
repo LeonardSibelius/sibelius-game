@@ -112,6 +112,10 @@ $checks = [ordered]@{
   "Aisling herself"     = "$cooked\MetaHumans\MHC_Aisling\BP_MHC_Aisling.uasset"
   "Elise's dance"       = "$cooked\Characters\Retargeting\Anim_Slow_Rhythm_Dance_12_MH.uasset"
   "Aisling's dance"     = "$cooked\Characters\Retargeting\Anim_Mid_Rhythm_Dance_10_MH.uasset"
+  # --- ISLA'S HOME (2026-10-05): the sci-fi kit's station, the same way in.
+  "Isla's home"         = "$cooked\Maps\L_IslaHome.umap"
+  "Isla herself"        = "$cooked\MetaHumans\MHC_IslaRowan\BP_MHC_IslaRowan.uasset"
+  "Isla's dance"        = "$cooked\Characters\Retargeting\Anim_High_Rhythm_Dance_13_MH.uasset"
   # Which plants come alive: found by an asset-registry scan, cooked by the EDFoliageMap
   # PrimaryAssetTypesToScan rule in DefaultGame.ini (AlwaysCook) - no reference reaches it.
   "the foliage map"     = "$cooked\AlienJunglePlants\FoliageTypes\FoliageMap_AlienJunglePlants.uasset"
