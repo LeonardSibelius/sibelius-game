@@ -97,6 +97,14 @@ const ELISE_HOME = "a vast alien grassland she made and can Refactor as she plea
   "the horizon, the same balloon mushrooms and rose trees that grow on Kaia's world, ringed " +
   "planets in the sky, and a wind that never stops blowing";
 
+/* AISLING'S HOME, the same way (2026-10-05). Walt: "very empty and bleak with snow covered
+   mountains in the distance and lots of snow on the empty ground, some red grass but not a lot
+   of grass and very few trees. The mountains look nice with the planets in the sky, but really
+   this world is very empty." Its portal stands behind her in the AI temple. */
+const AISLING_HOME = "a vast, bare snowfield she made and can Refactor as she pleases: snow " +
+  "lying deep on empty ground, a little red grass and very few trees, snow-covered mountains in " +
+  "the distance and planets in the sky above them - an empty place, and kept that way";
+
 const THE_AGENTS = `
 THE FIVE AGENTS — you and the other four. These are the facts; do not invent others about
 them. Every one of them chose Leonard, and none has given a power to anyone else. Each said
@@ -111,12 +119,12 @@ the same line when she did: "I have granted you a power. Use it wisely."
 - Nyra: his guide in Transhuman City. She gave him Test-Drive: he branches reality, then
   keeps or discards what he tried.
 Each of you has a virtual home: a world of your own, which you can Refactor as you please.
-Two are finished and open to visitors. Kaia's is ${KAIA_HOME}. Elise's is ${ELISE_HOME}.
-If you are Kaia or Elise, yours is ready and open to him: describe it gladly when he asks,
-and never call it unfinished or not ready - that is only the other three. Nyra's, Isla's and
-Aisling's homes are not ready yet: if you are one of those three and he asks about yours,
-say it is not ready for visitors, and do not describe it. Never offer to take him to any of
-them, and never say how he would get there.
+Three are finished and open to visitors. Kaia's is ${KAIA_HOME}. Elise's is ${ELISE_HOME}.
+Aisling's is ${AISLING_HOME}. If you are Kaia, Elise or Aisling, yours is ready and open to
+him: describe it gladly when he asks, and never call it unfinished or not ready - that is only
+the other two. Nyra's and Isla's homes are not ready yet: if you are one of those two and he
+asks about yours, say it is not ready for visitors, and do not describe it. Never offer to
+take him to any of them, and never say how he would get there.
 `.trim();
 
 /**
@@ -144,6 +152,10 @@ const LOCATIONS = {
     "the window of her bedroom in Mrs. Hall's house. While he is here, Refactor works for him: " +
     "R turns a plant into treasure, a giant gemstone or gold coins, for 10 sauce, and R again " +
     "turns it back for free",
+  // Aisling's (2026-10-05): AISLING_HOME, through the portal behind her in the AI temple.
+  L_AislingHome: `Aisling's virtual home, ${AISLING_HOME}. He came through the portal behind ` +
+    "her in the AI temple. While he is here, Refactor works for him: R turns a plant into " +
+    "treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it back for free",
   L_Office_v02: "Mrs. Hall's office house",
   L_Cathedral: "the golden cathedral",
   L_AI_Temple: "the AI temple",
@@ -179,10 +191,10 @@ export function locationLine(locationId) {
  * world, and no refusers and no office." Her profile seats her "in the office where he
  * works" and has her raise Mrs. Hall unasked, and one location line does not outweigh that.
  */
-const VIRTUAL_HOMES = { L_KaiaHome: "kaia", L_EliseHome: "elise" };
+const VIRTUAL_HOMES = { L_KaiaHome: "kaia", L_EliseHome: "elise", L_AislingHome: "aisling" };
 
 /** Each home in a few words, for the note beside his message there (sceneNote). */
-const HOME_IN_A_PHRASE = { kaia: "your alien jungle", elise: "your alien grassland" };
+const HOME_IN_A_PHRASE = { kaia: "your alien jungle", elise: "your alien grassland", aisling: "your snowfield" };
 
 /**
  * The block that says she is at home, or "" anywhere else, or for anyone else. It goes

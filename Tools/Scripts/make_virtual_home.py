@@ -67,6 +67,18 @@ HOMES = [
         "welcome": "Welcome to my virtual home, Leonard.",
         "scalars": {},   # Level_Grassland's blueprint set no look dials
     },
+    {   # Aisling's: the pack's physics world (2026-10-05). Walt: "very empty and bleak with snow
+        # covered mountains in the distance and lots of snow on the empty ground" - "I think I
+        # will assign it to Aisling".
+        "agent": "Aisling",
+        "source": "/Game/AlienPhysicsWorld/Levels/Level_AlienPhysicsWorld",
+        "home": "/Game/Maps/L_AislingHome",
+        "arrival": "AislingHome",
+        "agent_class": "/Game/MetaHumans/MHC_Aisling/BP_MHC_Aisling.BP_MHC_Aisling_C",
+        "dance": DANCES + "Anim_Mid_Rhythm_Dance_10_MH.Anim_Mid_Rhythm_Dance_10_MH",
+        "welcome": "Welcome to my virtual home, Leonard.",
+        "scalars": {},   # its blueprint set no look dials either
+    },
 ]
 
 AGENT_AHEAD = 450.0             # cm in front of the arrival point

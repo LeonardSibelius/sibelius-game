@@ -1,4 +1,4 @@
-# place_home_portal.py — the portals in Mrs. Hall's house to the agents' virtual homes.
+# place_home_portal.py — the portals to the agents' virtual homes, in the house and the AI temple.
 #
 # Kaia's (2026-10-02, as place_kaia_portal.py): "when the player starts the game he is looking
 # down the hall at BP_Door_Outside_A3. I want one of the portals from my portal pack right there
@@ -16,18 +16,22 @@
 # SAVES ONLY A CLEAN MAP. If the office already had unsaved changes when this ran, the portal is
 # placed but the map is left for Walt to save, so nothing of his is saved without him seeing it.
 #
-# RUN with L_Office_v02 open, PIE stopped:
+# RUN with the level its portal stands in open (L_Office_v02, L_AI_Temple), PIE stopped:
 #   py "C:/Users/wpark/projects/sibelius-game/Tools/Scripts/place_home_portal.py"
-# Never loads a level (that crashes the editor from a script - open L_Office_v02 by hand).
+# Never loads a level (that crashes the editor from a script - open it by hand).
 
 import unreal
 
 TAG = "###HOMEPORTAL###"
 PORTALS = [
-    {"label": "KaiaPortal", "anchor": "BP_Door_Outside_A3", "side_of": "player",
+    {"label": "KaiaPortal", "map": "L_Office_v02", "anchor": "BP_Door_Outside_A3", "side_of": "player",
      "destination": "L_KaiaHome", "arrival": "KaiaHome", "clear": 30.0},
-    {"label": "ElisePortal", "anchor": "SM_Window_Floor2_A3_402", "side_of": "Elise",
+    {"label": "ElisePortal", "map": "L_Office_v02", "anchor": "SM_Window_Floor2_A3_402", "side_of": "Elise",
      "destination": "L_EliseHome", "arrival": "EliseHome", "clear": 90.0},
+    # Aisling's (2026-10-05) in the AI temple, "where she is already dancing anyway": no object to
+    # stand it in front of, so it stands BEHIND her - she dances in front of her own portal.
+    {"label": "AislingPortal", "map": "L_AI_Temple", "behind": "Aisling",
+     "destination": "L_AislingHome", "arrival": "AislingHome", "clear": 300.0},
 ]
 PORTAL_HALF_HEIGHT = 110.0   # its centre this far above the floor - the hall door's centre height
 
@@ -52,7 +56,34 @@ def floor_below(world, where, ignore):
     return hit.to_tuple()[4].z if hit else None
 
 
+def place_behind(spec, actors, world):
+    """CLEAR behind the agent, opposite the way she faces, facing the same way she does."""
+    agent = next((a for a in actors if spec["behind"].lower() in a.get_actor_label().lower()
+                  and a.get_class().get_name() != "CompilePortal"), None)
+    if not agent:
+        say("%s: no %s in this level to stand behind." % (spec["label"], spec["behind"]))
+        return False
+    at = agent.get_actor_location()
+    facing = agent.get_actor_rotation()
+    forward = facing.get_forward_vector()
+    where = unreal.Vector(at.x - forward.x * spec["clear"], at.y - forward.y * spec["clear"], at.z + 100.0)
+    floor = floor_below(world, where, [agent])
+    if floor is not None:
+        where.z = floor + PORTAL_HALF_HEIGHT
+    # A yaw-0 portal faces along Y (the window's); turn it to face along her forward.
+    yaw = facing.yaw - 90.0
+    portal = eas.spawn_actor_from_class(unreal.CompilePortal, where, unreal.Rotator(0.0, 0.0, yaw))
+    portal.set_actor_label(spec["label"])
+    aim(portal, spec)
+    say("%s placed %.0f cm behind %s (she faces yaw %.0f) at %s, floor %s, to %s (tag %s)." % (
+        spec["label"], spec["clear"], agent.get_actor_label(), facing.yaw, portal.get_actor_location(),
+        "%.0f" % floor if floor is not None else "NOT FOUND", spec["destination"], spec["arrival"]))
+    return True
+
+
 def place(spec, actors, world):
+    if "behind" in spec:
+        return place_behind(spec, actors, world)
     anchor = next((a for a in actors if a.get_actor_label() == spec["anchor"]), None)
     if spec["side_of"] == "player":
         side = next((a for a in actors if a.get_class().get_name() == "PlayerStart"
@@ -62,7 +93,7 @@ def place(spec, actors, world):
         side = next((a for a in actors if spec["side_of"].lower() in a.get_actor_label().lower()
                      and a.get_class().get_name() != "CompilePortal"), None)
     if not anchor or not side:
-        say("%s: need %s and %s to stand beside - open L_Office_v02." % (spec["label"], spec["anchor"], spec["side_of"]))
+        say("%s: need %s and %s to stand beside." % (spec["label"], spec["anchor"], spec["side_of"]))
         return False
 
     origin, ext = anchor.get_actor_bounds(False)
@@ -94,13 +125,16 @@ def place(spec, actors, world):
 
 def main():
     world = ues.get_editor_world()
-    if "L_Office_v02" not in world.get_path_name():
-        say("REFUSING: the open map is %s, not L_Office_v02. Nothing changed." % world.get_path_name())
+    here = world.get_path_name()
+    specs = [s for s in PORTALS if "/%s." % s["map"] in here]
+    if not specs:
+        say("REFUSING: the open map is %s - no portal belongs there. Nothing changed." % here)
         return
-    was_dirty = any("L_Office_v02" in str(p) for p in unreal.EditorLoadingAndSavingUtils.get_dirty_map_packages())
+    map_name = specs[0]["map"]
+    was_dirty = any(map_name in str(p) for p in unreal.EditorLoadingAndSavingUtils.get_dirty_map_packages())
     actors = eas.get_all_level_actors()
     changed = False
-    for spec in PORTALS:
+    for spec in specs:
         standing = [a for a in actors if a.get_actor_label() == spec["label"]]
         if standing:
             for portal in standing:
@@ -109,10 +143,10 @@ def main():
         else:
             changed = place(spec, actors, world) or changed
     if was_dirty:
-        say("NOT SAVED: the office already had unsaved changes before this ran - look them over and save it yourself (Ctrl+S).")
+        say("NOT SAVED: %s already had unsaved changes before this ran - look them over and save it yourself (Ctrl+S)." % map_name)
     else:
         les.save_current_level()
-        say("saved L_Office_v02.")
+        say("saved %s." % map_name)
 
 
 main()
