@@ -185,7 +185,10 @@ export async function generate({
 
   const candidate = payload?.candidates?.[0];
   const finish = candidate?.finishReason;
-  if (finish === "SAFETY" || finish === "PROHIBITED_CONTENT" || finish === "BLOCKLIST") {
+  /* RECITATION too: the provider stopped because the reply was reproducing existing text
+     (lyrics, a book) - possibly part-written. Valve, 2026-10-06, asked what stops players
+     generating copyrighted material; a half-recited verse is never shown. */
+  if (finish === "SAFETY" || finish === "PROHIBITED_CONTENT" || finish === "BLOCKLIST" || finish === "RECITATION") {
     return { ok: false, failure: "blocked", usage };
   }
 

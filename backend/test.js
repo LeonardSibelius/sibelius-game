@@ -127,6 +127,12 @@ console.log("=== NPC chat backend contract ===");
     );
     // Builds before 2.1.0 have no portal, and the server cannot tell them apart.
     check(!/portal/.test(c.systemInstruction), `${id}'s shared text never mentions a portal to her home`);
+    // Valve, 2026-10-06: "What steps are you taking to guarantee that users can't generate
+    // copyrighted material?"
+    check(/OTHER PEOPLE'S WORDS ARE NOT YOURS TO REPEAT/.test(c.systemInstruction)
+        && /no song\s+lyrics, not even one line/.test(c.systemInstruction)
+        && /never write new scenes or stories with other people's characters/.test(c.systemInstruction),
+      `${id} never reproduces lyrics, poems, passages or other people's characters`);
   }
 }
 
@@ -417,6 +423,10 @@ console.log("=== NPC chat backend contract ===");
   check(!filtered.ok && filtered.failure === "blocked", "a filtered reply is `blocked`, never shown");
   const refusedPrompt = await call({ promptFeedback: { blockReason: "SAFETY" } });
   check(!refusedPrompt.ok && refusedPrompt.failure === "blocked", "a filtered prompt is `blocked`");
+  // Valve, 2026-10-06: what stops players generating copyrighted material? A reply the
+  // provider stopped for reciting existing text is never shown, even part-written.
+  const recited = await call({ candidates: [{ content: { parts: [{ text: "Is this the real life, is" }] }, finishReason: "RECITATION" }] });
+  check(!recited.ok && recited.failure === "blocked", "a reply stopped for recitation is `blocked`, never shown");
 }
 
 /* --- the distress screen: a player in trouble gets the authored reply, never a joke.

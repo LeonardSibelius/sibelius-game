@@ -5,7 +5,13 @@
 # the reasoning someone will eventually "tidy" one of them.
 #
 #   ONE MACHINE (no scale, HA off). The spend ledger is a file and the dedup table and
-#   rate limiter live in memory. A second machine makes the $45 cap advisory.
+#   rate limiter live in memory. A second machine makes the monthly cap advisory.
+#
+#   THE CAPS ARE AN EMERGENCY BRAKE, NOT A LIMIT (2026-10-06). Valve, on the chat review: "if
+#   a feature is included in the game, it should be accessible for all users at all times."
+#   A reply costs about $0.0011, so $5/day is ~4,500 replies and $50/month ~45,000; normal
+#   use never reaches them (October's first week: $0.07). Walt: "option A with $5/day and
+#   $50/month". PER_IP_PER_MINUTE is the per-player limit against abuse.
 #
 #   ALWAYS ON (auto_stop off, min 1). A cold start costs seconds against a measured p50
 #   of 957 ms. A player watching Kaia's face wait for a container is worse than the
@@ -23,10 +29,10 @@ primary_region = 'sjc'
 [env]
   BUDGET_FILE = '/data/budget.json'
   CHAT_DISABLED = '0'
-  DAILY_CAP_USD = '1.50'
+  DAILY_CAP_USD = '5'
   GEMINI_MODEL = 'gemini-3.1-flash-lite'
   MAX_OUTPUT_TOKENS = '512'
-  MONTHLY_CAP_USD = '45'
+  MONTHLY_CAP_USD = '50'
   PER_IP_PER_MINUTE = '12'
   PORT = '8787'
   UPSTREAM_TIMEOUT_MS = '20000'
