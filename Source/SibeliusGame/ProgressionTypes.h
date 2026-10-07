@@ -191,6 +191,12 @@ struct SIBELIUSGAME_API FProgressionState
 	void BumpStat(FName Key, int32 Delta = 1);   // Delta <= 0 or NAME_None ignored
 	void RaiseStat(FName Key, int32 Value);      // record semantics: only ever raises
 
+	/* THE DANCE HE CHOSE FOR EACH AGENT from her F menu (UDanceMenuWidget), by her chat id
+	   ("kaia") -> the animation's name ("Anim_Slow_Rhythm_Dance_12_MH"). She starts on it in
+	   every level. Additive: old saves load it empty, and she dances what the level gave her. */
+	UPROPERTY(SaveGame)
+	TMap<FName, FName> AgentDances;
+
 	/**
 	 * The player's par sheet, stored as the FOUR DIAL VALUES rather than as a par sheet.
 	 *

@@ -16,6 +16,7 @@
 #include "NpcCouncilSession.h"              // the panel's Council button
 #include "ChatEasterEggs.h"                 // egg 1, the Pigeon Ledger
 #include "ChatDilemmas.h"                   // she asks him for advice
+#include "DanceMenuWidget.h"                // F: choose her dance
 #include "SibeliusGameCharacter.h"          // OpenCouncil
 #include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
 #include "NpcChatSaveGame.h"                // FNpcChatTurn — what she remembers
@@ -69,6 +70,57 @@ namespace
 		TEXT("/Game/Characters/Retargeting/Anim_Slow_Rhythm_Dance_13_MH.Anim_Slow_Rhythm_Dance_13_MH"),
 		TEXT("/Game/Characters/Retargeting/Anim_Slow_Rhythm_Dance_14_MH.Anim_Slow_Rhythm_Dance_14_MH"),
 		TEXT("/Game/Characters/Retargeting/Anim_Slow_Rhythm_Dance_15_MH.Anim_Slow_Rhythm_Dance_15_MH"),
+
+		/* AND 44 FROM ADOBE MIXAMO (2026-10-07), for the F dance menu (DanceMenuWidget.h). Walt:
+		   "maybe all the Morro dances plus all the Mixamo dances as well". Imported and retargeted
+		   onto the same MetaHuman skeleton by Tools/Scripts/import_mixamo_dances.py, from the FBX in
+		   SourceArt/Mixamo. Content/Mixamo is gitignored like the retargets above (Mixamo's terms:
+		   in a game, not as loose files) - these lines are what cook them. The menu shows each by
+		   its name: "Anim_Hip_Hop_Shimmy_MH" -> "Hip Hop Shimmy". */
+		TEXT("/Game/Mixamo/Retargeted/Anim_African_Rainbow_MH.Anim_African_Rainbow_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Ballet_MH.Anim_Ballet_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Belly_Dance_MH.Anim_Belly_Dance_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Body_Wave_MH.Anim_Body_Wave_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Boogaloo_MH.Anim_Boogaloo_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Cabbage_Patch_MH.Anim_Cabbage_Patch_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Can_Can_MH.Anim_Can_Can_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Charleston_MH.Anim_Charleston_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Chicken_Dance_MH.Anim_Chicken_Dance_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Gangnam_Style_MH.Anim_Gangnam_Style_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Arms_MH.Anim_Hip_Hop_Arms_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Locking_MH.Anim_Hip_Hop_Locking_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Quake_MH.Anim_Hip_Hop_Quake_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Robot_MH.Anim_Hip_Hop_Robot_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Shimmy_MH.Anim_Hip_Hop_Shimmy_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Slide_MH.Anim_Hip_Hop_Slide_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Snake_MH.Anim_Hip_Hop_Snake_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Step_MH.Anim_Hip_Hop_Step_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Tut_MH.Anim_Hip_Hop_Tut_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hip_Hop_Wave_MH.Anim_Hip_Hop_Wave_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Hokey_Pokey_MH.Anim_Hokey_Pokey_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_House_MH.Anim_House_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Jazz_Around_The_World_MH.Anim_Jazz_Around_The_World_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Jazz_Rockette_Kick_MH.Anim_Jazz_Rockette_Kick_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Macarena_MH.Anim_Macarena_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Maraschino_Step_MH.Anim_Maraschino_Step_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Moonwalk_MH.Anim_Moonwalk_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Northern_Soul_MH.Anim_Northern_Soul_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Raise_The_Roof_MH.Anim_Raise_The_Roof_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Rumba_MH.Anim_Rumba_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Running_Man_MH.Anim_Running_Man_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Salsa_MH.Anim_Salsa_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Samba_Funky_MH.Anim_Samba_Funky_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Samba_MH.Anim_Samba_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Shim_Sham_MH.Anim_Shim_Sham_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Shopping_Cart_MH.Anim_Shopping_Cart_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Shuffling_MH.Anim_Shuffling_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Silly_Twist_MH.Anim_Silly_Twist_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_The_Twist_MH.Anim_The_Twist_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Thriller_1_MH.Anim_Thriller_1_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Thriller_2_MH.Anim_Thriller_2_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Thriller_3_MH.Anim_Thriller_3_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_Thriller_4_MH.Anim_Thriller_4_MH"),
+		TEXT("/Game/Mixamo/Retargeted/Anim_YMCA_MH.Anim_YMCA_MH"),
 	};
 
 	/** "BP_Dancer_Kaia_C_2" / "MHC_Nyra" / "BP_MHC_Isla_2" -> "Kaia" / "Nyra" / "Isla". */
@@ -447,6 +499,24 @@ void UDancerAgentComponent::BeginPlay()
 	if (const USkeletalMeshComponent* Mesh = FindDanceMesh())
 	{
 		CurrentDanceIndex = Dances.IndexOfByKey(Mesh->AnimationData.AnimToPlay);
+	}
+
+	/* THE DANCE HE CHOSE FOR HER, if any (her F menu, saved per agent) - only if she arrived
+	   dancing at all; a guide stage below may still stop her, as it would any dance. */
+	if (CurrentDanceIndex != INDEX_NONE)
+	{
+		if (const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+		{
+			const FName Chosen = Progression->GetAgentDance(ResolveChatId());
+			const int32 ChosenIndex = Dances.IndexOfByPredicate([Chosen](const TObjectPtr<UAnimSequence>& Dance)
+			{
+				return Dance && Dance->GetFName() == Chosen;
+			});
+			if (ChosenIndex != INDEX_NONE && ChosenIndex != CurrentDanceIndex)
+			{
+				PlayDance(ChosenIndex);
+			}
+		}
 	}
 
 	// Join the registry the interactor's aim-assist reads. Doing it here rather than in
@@ -972,12 +1042,12 @@ FText UDancerAgentComponent::GetPrompt() const
 	if (HasPowerToGive())
 	{
 		return FText::FromString(FString::Printf(
-			TEXT("[E] ask %s for %s     [F] change her dance"),
+			TEXT("[E] ask %s for %s     [F] choose her dance"),
 			Who, *PowerVerbDisplayName(PowerVerb)));
 	}
 
 	return FText::FromString(FString::Printf(
-		TEXT("[E] talk to %s     [F] change her dance"), Who));
+		TEXT("[E] talk to %s     [F] choose her dance"), Who));
 }
 
 void UDancerAgentComponent::Greet()
@@ -2689,17 +2759,84 @@ bool UDancerAgentComponent::ShuffleDance()
 		++NextIndex;
 	}
 
-	UAnimSequence* NextDance = Dances.IsValidIndex(NextIndex) ? Dances[NextIndex].Get() : nullptr;
-	if (!NextDance)
+	if (!PlayDance(NextIndex))
+	{
+		return false;
+	}
+	LastShuffleTime = Now;
+	return true;
+}
+
+bool UDancerAgentComponent::PlayDance(int32 Index)
+{
+	UAnimSequence* Dance = Dances.IsValidIndex(Index) ? Dances[Index].Get() : nullptr;
+	USkeletalMeshComponent* Mesh = Dance ? FindDanceMesh() : nullptr;
+	if (!Mesh)
 	{
 		return false;
 	}
 
 	Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-	Mesh->PlayAnimation(NextDance, /*bLooping=*/true);
-	CurrentDanceIndex = NextIndex;
+	Mesh->PlayAnimation(Dance, /*bLooping=*/true);
+	CurrentDanceIndex = Index;
+
+	// His choice, kept: she starts on it in every level (ProgressionTypes.h, AgentDances).
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->SetAgentDance(ResolveChatId(), Dance->GetFName());
+	}
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s -> %s"), *AgentName, *Dance->GetName());
+	return true;
+}
+
+FString UDancerAgentComponent::DanceDisplayName(const UAnimSequence* Dance)
+{
+	if (!Dance)
+	{
+		return FString();
+	}
+	FString Name = Dance->GetName();
+	Name.RemoveFromStart(TEXT("Anim_"));
+	Name.RemoveFromEnd(TEXT("_MH"));
+	Name.ReplaceInline(TEXT("_Dance_"), TEXT("_"));
+	Name.ReplaceInline(TEXT("_"), TEXT(" "));
+	return Name.TrimStartAndEnd();
+}
+
+bool UDancerAgentComponent::OpenDanceMenu()
+{
+	if (Dances.Num() < 2 || !FindDanceMesh())
+	{
+		return false;
+	}
+
+	// The same rule as the shuffle: F held repeats every frame, and a menu must open once.
+	const UWorld* World = GetWorld();
+	const double Now = World ? World->GetTimeSeconds() : 0.0;
+	if (Now - LastShuffleTime < ShuffleCooldown)
+	{
+		return true;
+	}
 	LastShuffleTime = Now;
 
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s -> %s"), *AgentName, *NextDance->GetName());
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	if (!PC)
+	{
+		return false;
+	}
+
+	// F mid-greeting drops the greeting; whatever she plays next comes from the menu.
+	CancelGreeting(/*bResumeDance=*/true);
+
+	if (!DanceMenu)
+	{
+		DanceMenu = CreateWidget<UDanceMenuWidget>(PC, UDanceMenuWidget::StaticClass());
+	}
+	if (!DanceMenu)
+	{
+		return false;
+	}
+	DanceMenu->Open(this);
 	return true;
 }

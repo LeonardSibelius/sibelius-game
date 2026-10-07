@@ -119,6 +119,11 @@ $checks = [ordered]@{
   "Aisling herself"     = "$cooked\MetaHumans\MHC_Aisling\BP_MHC_Aisling.uasset"
   "Elise's dance"       = "$cooked\Characters\Retargeting\Anim_Slow_Rhythm_Dance_12_MH.uasset"
   "Aisling's dance"     = "$cooked\Characters\Retargeting\Anim_Mid_Rhythm_Dance_10_MH.uasset"
+  # --- THE DANCE MENU (2026-10-07): 44 Mixamo dances, cooked only by DancePaths in
+  # DancerAgentComponent.cpp (Content/Mixamo is gitignored). First, last and one between.
+  "Mixamo: African Rainbow" = "$cooked\Mixamo\Retargeted\Anim_African_Rainbow_MH.uasset"
+  "Mixamo: Hip Hop Shimmy"  = "$cooked\Mixamo\Retargeted\Anim_Hip_Hop_Shimmy_MH.uasset"
+  "Mixamo: YMCA"            = "$cooked\Mixamo\Retargeted\Anim_YMCA_MH.uasset"
   # --- ISLA'S HOME (2026-10-05): the sci-fi kit's station, the same way in.
   "Isla's home"         = "$cooked\Maps\L_IslaHome.umap"
   "Isla herself"        = "$cooked\MetaHumans\MHC_IslaRowan\BP_MHC_IslaRowan.uasset"

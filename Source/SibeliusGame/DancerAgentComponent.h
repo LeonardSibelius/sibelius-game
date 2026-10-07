@@ -646,6 +646,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Dancer")
 	bool ShuffleDance();
 
+	/**
+	 * F — the dance menu (UDanceMenuWidget): every dance she knows, the one she is on marked,
+	 * "Surprise me" for the old random switch. Walt, 2026-10-07: "would it be possible for F
+	 * change her dance to pull up a big menu of dances ... and the player can select from them?"
+	 * Returns false where ShuffleDance would (nothing to choose, no body), so F falls through.
+	 */
+	bool OpenDanceMenu();
+
+	/** Play Dances[Index], looping, and remember it as his choice for her (saved). False if she cannot. */
+	bool PlayDance(int32 Index);
+
+	/** The menu's name for a dance: "Anim_Slow_Rhythm_Dance_12_MH" -> "Slow Rhythm 12". */
+	static FString DanceDisplayName(const UAnimSequence* Dance);
+
+	int32 GetCurrentDanceIndex() const { return CurrentDanceIndex; }
+
 	/** The prompt shown while the player is looking at her. */
 	FText GetPrompt() const;
 
@@ -909,6 +925,10 @@ private:
 	/** The open panel. Created once per agent, hidden rather than destroyed. */
 	UPROPERTY()
 	TObjectPtr<class UNpcChatWidget> ChatWidget;
+
+	/** Her dance menu, created on first F. */
+	UPROPERTY()
+	TObjectPtr<class UDanceMenuWidget> DanceMenu;
 
 	/** Re-leases the cinematic HUD hold while the panel is open. See TickChatHudLease. */
 	FTimerHandle ChatHudTimer;

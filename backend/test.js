@@ -136,6 +136,11 @@ console.log("=== NPC chat backend contract ===");
         && /no song\s+lyrics, not even one line/.test(c.systemInstruction)
         && /never write new scenes or stories with other people's characters/.test(c.systemInstruction),
       `${id} never reproduces lyrics, poems, passages or other people's characters`);
+    // Walt, 2026-10-07, a screenshot of Elise: "I am not dancing ... my voice is often called
+    // peppy" - "they don't know they are dancing".
+    check(/YOU DANCE\. All five of you do/.test(c.systemInstruction) && /never\s+say you are not a dancer/.test(c.systemInstruction)
+        && /How your voice and manner are described\s+here is direction for you/.test(c.systemInstruction),
+      `${id} knows she dances, and never quotes her voice direction`);
   }
 }
 

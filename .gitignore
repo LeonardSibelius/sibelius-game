@@ -406,6 +406,13 @@ Content/Maps/L_AislingHome_BuiltData.uasset
 Content/Maps/L_IslaHome.umap
 Content/Maps/L_IslaHome_BuiltData.uasset
 
+# --- Adobe Mixamo dances (2026-10-07, Walt: "download your favorite dances to C:\dances") -------
+# 44 FBX, Without Skin, for the agents' F dance menu. Mixamo's terms allow them inside a game but
+# not as loose files, and the repo is public: neither the downloads nor the imported or
+# retargeted assets go in git. Back them up to E: (the projects robocopy covers SourceArt).
+SourceArt/Mixamo/
+Content/Mixamo/
+
 # --- Dekogon Studios "Treasures VOL.1 - Ancient Treasures" (Fab, in Walt's library, -------------
 # --- "Allows usage with AI: No") - Refactor's treasure, added 2026-10-03 -------------------------
 # URefactorComponent names its gems, coin and gold pieces; Tools/Scripts/prepare_hoard.py gave

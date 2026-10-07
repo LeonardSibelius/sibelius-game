@@ -183,7 +183,8 @@ void USlapComponent::DoSlap()
 	{
 		if (UDancerAgentComponent* Agent = FindDancerAgent(Interactor->GetFocusedActor()))
 		{
-			if (Agent->ShuffleDance())
+			// Her dance menu since 2026-10-07 (DanceMenuWidget.h); "Surprise me" in it is the old shuffle.
+			if (Agent->OpenDanceMenu())
 			{
 				return;   // handled — no fight, no sauce, no stat bump
 			}
@@ -401,7 +402,7 @@ void USlapComponent::DoSlap()
 	{
 		if (UDancerAgentComponent* Agent = FindDancerAgent(Hit.GetActor()))
 		{
-			if (Agent->ShuffleDance())
+			if (Agent->OpenDanceMenu())
 			{
 				return;
 			}

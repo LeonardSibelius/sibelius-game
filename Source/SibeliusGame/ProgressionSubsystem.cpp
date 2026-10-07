@@ -105,6 +105,16 @@ void UProgressionSubsystem::RecordPurchase(FName OfferKey)
 	SaveNow();
 }
 
+void UProgressionSubsystem::SetAgentDance(FName Agent, FName Dance)
+{
+	if (Agent.IsNone() || Dance.IsNone() || GetAgentDance(Agent) == Dance)
+	{
+		return;
+	}
+	State.AgentDances.Add(Agent, Dance);
+	SaveNow();
+}
+
 void UProgressionSubsystem::BumpStat(FName Key, int32 Delta)
 {
 	const int32 Before = State.GetStat(Key);

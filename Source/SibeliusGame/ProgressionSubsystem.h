@@ -77,6 +77,10 @@ public:
 	// --- Lifetime stats (APPEAL-5, the RECORDS tab) ---
 	// Keys live in SibeliusStats:: — every bump site spells them from there.
 	// GrantSauce bumps SauceEarned itself, so earn sites never double-book.
+	// --- The dance he chose for each agent (her F menu) ---
+	FName GetAgentDance(FName Agent) const { const FName* Dance = State.AgentDances.Find(Agent); return Dance ? *Dance : NAME_None; }
+	void SetAgentDance(FName Agent, FName Dance);   // saves on change
+
 	int32 GetStat(FName Key) const { return State.GetStat(Key); }
 	void BumpStat(FName Key, int32 Delta = 1);   // saves on change
 	void RaiseStat(FName Key, int32 Value);      // record semantics; saves only on a new record
