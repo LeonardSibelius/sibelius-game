@@ -14,7 +14,7 @@
 #   - On the recovery stick, E:\builds\steam-upload\  - the defaults find the chat build
 #     one folder up. No path arguments needed.
 #   - In the repo, Tools\Steam\recovery-kit\  - pass -ContentRoot, e.g.
-#     -ContentRoot C:\Users\wpark\builds\sibelius-shipping-chat-20261006\Windows
+#     -ContentRoot C:\Users\wpark\builds\sibelius-shipping-chat-20261007\Windows
 #
 # ---------------------------------------------------------------------------
 # DO NOT RUN THIS UNTIL VALVE HAS ACCEPTED THE 2.0 CONTENT-SURVEY AMENDMENT.
@@ -56,8 +56,8 @@ param(
     # Folder containing sdk\tools\ContentBuilder\builder\steamcmd.exe
     [string] $SdkPath = 'C:\steamworks_sdk',
 
-    # The packaged build's Windows folder. Default: the 2.1.4 chat build beside this kit (switched
-    # from 2.1.3 on 2026-10-07, Walt: "switch the kit to 2.1.4"; 2.1.3, 2.1.2, 2.1.1 and 2.1.0 had
+    # The packaged build's Windows folder. Default: the 2.1.5 chat build beside this kit (switched
+    # from 2.1.4 on 2026-10-07 after 2.1.5 shipped to itch; 2.1.4, 2.1.3, 2.1.2, 2.1.1 and 2.1.0 had
     # each replaced the one before, back to the 2026-09-28 build).
     [string] $ContentRoot,
 
@@ -82,7 +82,7 @@ if (-not $AmendmentAccepted) {
 $Kit      = $PSScriptRoot
 $AppVdf   = Join-Path $Kit 'app_build_5249380.vdf'
 $DepotVdf = Join-Path $Kit 'depot_build_5249381.vdf'
-if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-chat-20261006\Windows' }
+if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-chat-20261007\Windows' }
 if (-not $BuildOutput) { $BuildOutput = Join-Path $Kit 'buildoutput' }
 
 # ---------------------------------------------------------------------------
@@ -144,7 +144,7 @@ Write-Host  '  app       5249380  Leonard Sibelius'
 Write-Host  '  depot     5249381  Leonard Sibelius Content'
 Write-Host ("  content   {0}" -f $ContentRoot)
 Write-Host ("  on disk   {0:N2} GB, less {1:N2} GB of .pdb excluded = ~{2:N2} GB uploading" -f $sizeGB, $pdbGB, ($sizeGB - $pdbGB))
-Write-Host  '  build     v2.1.4 - AI CHAT COMPILED IN, four agents'' homes, the agents ask his advice'
+Write-Host  '  build     v2.1.5 - AI CHAT COMPILED IN, four agents'' homes, their advice, the dance menu'
 Write-Host  '  setlive   (none - you set the branch yourself in Steamworks afterwards)'
 if ($Preview) {
     Write-Host '  MODE      PREVIEW - nothing will be uploaded' -ForegroundColor Yellow
