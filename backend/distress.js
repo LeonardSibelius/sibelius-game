@@ -48,15 +48,26 @@ DISTRESS or OK.
 `.trim();
 
 /**
+ * What the screen reads: his message, or - when he is answering a question a character just
+ * asked - the question first, marked as not his words. Without it, Isla's dilemma got the
+ * helpline: "Delete the old ones. I'm not them any more." is about copies of him in her
+ * archive, and out of context it read as a person in trouble (2026-10-06, live).
+ */
+export function screenText(text, context = "") {
+  return context ? `[Context, not his words: ${context}]\n\nHis message: ${text}` : text;
+}
+
+/**
  * Screen one player message. Returns { distress: true | false | null, usage }.
  * null means the screen itself failed; see the note above on failing open.
+ * context: what he is answering (dilemmas.js, screenContext), or nothing.
  */
-export async function screenMessage({ apiKey, model = "gemini-3.1-flash-lite", text, fetchImpl }) {
+export async function screenMessage({ apiKey, model = "gemini-3.1-flash-lite", text, context = "", fetchImpl }) {
   const result = await generate({
     apiKey,
     model,
     systemInstruction: SCREEN_INSTRUCTION,
-    contents: [{ role: "user", parts: [{ text }] }],
+    contents: [{ role: "user", parts: [{ text: screenText(text, context) }] }],
     maxOutputTokens: 8,
     temperature: 0,
     timeoutMs: 8000,

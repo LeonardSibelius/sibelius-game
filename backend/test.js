@@ -12,6 +12,9 @@ import { STYLES, FOOLISH_ANGLES, HOPEFUL_ANGLES, systemInstructionFor } from "./
 import { councilInstruction, speakingOrder, stripOwnName } from "./council.js";
 import { eventLine, STORY_EVENTS } from "./events.js";
 import { factsLine, cleanObjective, OBJECTIVE_MAX_CHARS, destinationsFrom, extractTravel } from "./facts.js";
+import { DILEMMAS, dilemmaEvent, dilemmaLine, adviceFor, adviceLine, extractAdvice, screenContext } from "./dilemmas.js";
+import { screenText } from "./distress.js";
+import { hasFeature, curiosityLine, screenContextFor } from "./curiosity.js";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -811,6 +814,110 @@ await new Promise((resolve) => app.server.close(resolve));
   const notOpen = await send("__travel:L_City__ where now?", { destinations: ["L_Office_v02"] });
   check(notOpen.travel === undefined && !notOpen.reply.includes("[GO"), "travel: a closed place is not offered over the wire either");
   await new Promise((resolve) => t.server.close(resolve));
+}
+
+/* --- the dilemmas (dilemmas.js): each agent asks Leonard's advice once and lives with it.
+   Walt, 2026-10-06: "let's just do the feature for all agents". */
+{
+  const ids = Object.values(DILEMMAS).map((d) => d.id);
+  check(knownCharacterIds().every((id) => Object.hasOwn(DILEMMAS, id) && Object.keys(DILEMMAS[id].choices).length === 2)
+      && new Set(ids).size === ids.length,
+    "dilemmas: every agent has one, with exactly two answers, and no two share an id");
+  check(dilemmaEvent("isla") === "dilemma_isla_versions" && dilemmaEvent("mrs_hall") === "",
+    "dilemmas: the event is dilemma_ + its id, and only agents have one");
+
+  // The game shows the question as her turn; the server quotes it. They must be the same words.
+  const here = dirname(fileURLToPath(import.meta.url));
+  const cpp = readFileSync(join(here, "..", "Source", "SibeliusGame", "ChatDilemmas.cpp"), "utf8");
+  check(Object.values(DILEMMAS).every((d) => cpp.includes(d.question.replace(/"/g, '\\"'))
+      && Object.keys(d.choices).every((c) => cpp.includes(`TEXT("${c}")`))),
+    "dilemmas: ChatDilemmas.cpp asks each question in the server's exact words, with its answers");
+
+  const open = dilemmaLine("dilemma_isla_versions", "isla");
+  check(open.includes(DILEMMAS.isla.question) && open.includes("[ADVICE:keep]") && open.includes("[ADVICE:delete]")
+      && /in the end do what he advises/.test(open) && /Never pretend you need\s+him/.test(open),
+    "dilemmas: while it is open she is given her question, both tags, and told not to press him");
+  check(dilemmaLine("dilemma_isla_versions", "kaia") === "" && dilemmaLine("", "isla") === ""
+      && dilemmaLine(undefined, "isla") === "" && dilemmaLine("egg_fold_early", "isla") === "",
+    "dilemmas: only her own event opens it - not another agent's, not an egg, not nothing");
+
+  check(adviceFor("isla", { advice: ["isla_versions:keep"] }) === "keep"
+      && adviceFor("isla", { advice: ["isla_versions:sing"] }) === null
+      && adviceFor("isla", { advice: ["kaia_name:refuse"] }) === null
+      && adviceFor("isla", { advice: "isla_versions:keep" }) === null
+      && adviceFor("isla", undefined) === null,
+    "dilemmas: facts.advice is allowlisted - her own dilemma, one of its two answers, an array");
+  const after = adviceLine("isla", { advice: ["kaia_name:refuse", "isla_versions:delete"] });
+  check(after.includes("advised you to delete the old versions") && after.includes(DILEMMAS.isla.choices.delete.aftermath)
+      && adviceLine("kaia", { advice: ["isla_versions:delete"] }) === "" && adviceLine("isla", {}) === "",
+    "dilemmas: afterwards she knows what he advised and how it turned out - and only her own");
+
+  check(extractAdvice("Then I keep them. [ADVICE:keep]", "isla", "dilemma_isla_versions").advice === "keep"
+      && extractAdvice("Then I keep them. [ADVICE:keep]", "isla", "dilemma_isla_versions").text === "Then I keep them.",
+    "dilemmas: the tag becomes the advice and leaves the text");
+  check(extractAdvice("Fine. [ADVICE:keep]", "isla", undefined).advice === null
+      && extractAdvice("Fine. [ADVICE:keep]", "isla", undefined).text === "Fine.",
+    "dilemmas: with her question not open, a tag counts for nothing - and is still never shown");
+  check(extractAdvice("No. [ADVICE:sing]", "isla", "dilemma_isla_versions").advice === null
+      && extractAdvice("Hm. [ADVICE:keep] No - [ADVICE:delete]", "isla", "dilemma_isla_versions").advice === "delete",
+    "dilemmas: an answer she does not have counts for nothing; her last valid one wins");
+
+  // The distress screen reads her question while it is open (found live, 2026-10-06: "Delete
+  // the old ones. I'm not them any more." got the helpline). eval/dilemma-screen-eval.js: 0 of 15
+  // answers flagged with it (2 without), 0 of 19 real distress missed.
+  const ctx = screenContext("dilemma_isla_versions", "isla");
+  check(ctx.includes(DILEMMAS.isla.question) && screenContext(undefined, "isla") === "" && screenContext("dilemma_isla_versions", "kaia") === "",
+    "dilemmas: the screen is told what he is answering only while her own question is open");
+  check(screenText("Delete the old ones.", ctx).startsWith("[Context, not his words: ") && screenText("Delete the old ones.", ctx).endsWith("His message: Delete the old ones.")
+      && screenText("hello") === "hello",
+    "dilemmas: the screen's context is marked as not his words, and absent otherwise");
+
+  // Through the real server, in mock mode.
+  const d = createApp({ mock: true, stateFile: join(scratch, `dilemma-${uuid()}.json`), perIpPerMinute: 60 });
+  await new Promise((resolve) => d.server.listen(0, resolve));
+  const url = `http://127.0.0.1:${d.server.address().port}/v1/npc-chat`;
+  const send = async (message, event) => {
+    const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify(ask({ characterId: "isla", message, storyContext: { locationId: "L_Office_v02", ...(event ? { event } : {}) } })) });
+    return res.json();
+  };
+  const advised = await send("__advice:delete__ delete them", "dilemma_isla_versions");
+  check(advised.advice === "delete" && !advised.reply.includes("[ADVICE"), "dilemmas: the reply carries his advice, and the player never sees the tag");
+  const notAsked = await send("__advice:delete__ delete them");
+  check(notAsked.advice === undefined && !notAsked.reply.includes("[ADVICE"), "dilemmas: an older build, which never opens one, gets no advice field");
+  await new Promise((resolve) => d.server.close(resolve));
+}
+
+/* --- curiosity (curiosity.js): what it is like to be human - never his private life. New builds
+   only. Walt, 2026-10-06: "do it with the same switch as the dilemmas". */
+{
+  const on = { locationId: "L_Office_v02", features: ["human_questions"] };
+  check(hasFeature(on, "human_questions") && !hasFeature({ features: ["mind_reading"] }, "mind_reading")
+      && !hasFeature({ features: "human_questions" }, "human_questions") && !hasFeature({}, "human_questions") && !hasFeature(undefined, "human_questions"),
+    "curiosity: the switch is an allowlisted feature in an array, and nothing else turns it on");
+  check(knownCharacterIds().every((id) => /WHAT IT IS LIKE TO BE HUMAN/.test(curiosityLine(id, on))
+      && /Never ask about his private life: not his relationships, family, health, money, loneliness,\s+age or death/.test(curiosityLine(id, on))
+      && /at most once in it/.test(curiosityLine(id, on)) && /never\s+press/.test(curiosityLine(id, on))),
+    "curiosity: with the switch on, every agent may ask - once, about being human, never his private life, never pressing");
+  check(knownCharacterIds().every((id) => curiosityLine(id, { locationId: "L_Office_v02" }) === "") && curiosityLine("mrs_hall", on) === "",
+    "curiosity: a build that does not send the switch - Valve's - gets nothing new");
+  check(curiosityLine("isla", { ...on, event: "dilemma_isla_versions" }) === "" && curiosityLine("isla", { ...on, event: "egg_fold_early" }) !== "",
+    "curiosity: not while her dilemma is open - she has already asked him something");
+  check(/food actually tastes like/.test(curiosityLine("aisling", on)) && /only one place at a time/.test(curiosityLine("nyra", on)),
+    "curiosity: each wonders from her own subject");
+  check(/RARELY - never in your first reply of a conversation, at most once in it/.test(curiosityLine("kaia", on)),
+    "curiosity: rarely - never first, at most once a conversation (eval/curiosity-convo-eval.js)");
+
+  // The distress screen reads the question her last reply asked, in a build with the switch:
+  // eval/curiosity-eval.js, 3 of 10 everyday answers flagged without it, 1 with it, 0 of 14 missed.
+  const asked = [{ role: "user", text: "I just had a coffee" }, { role: "model", text: "Lovely. What does coffee actually taste like?" }];
+  check(screenContextFor(on, asked) === 'a character in the game has just asked him: "What does coffee actually taste like?"',
+    "curiosity: the screen is told the question he is answering");
+  check(screenContextFor({ locationId: "L_Office_v02" }, asked) === ""
+      && screenContextFor(on, [{ role: "model", text: "Lovely." }]) === ""
+      && screenContextFor(on, [...asked, { role: "user", text: "hm" }]) === ""
+      && screenContextFor(on, [{ role: "model", text: `${"x".repeat(400)}?` }]) === "" && screenContextFor(on, undefined) === "",
+    "curiosity: no context without the switch, without a question last, or past 300 characters");
 }
 
 console.log(`=== ${failures} failure(s) ===`);

@@ -11,6 +11,7 @@
 #include "SibeliusSaveIO.h"
 #include "PowerGrant.h"
 #include "ChatEasterEggs.h"
+#include "ChatDilemmas.h"
 #include "ProgressionTypes.h"   // FProgressionState, for the eggs on a throwaway state
 
 #include "Engine/Engine.h"
@@ -803,6 +804,37 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 				&& EvaluateChatLine(BothFound, FName(TEXT("nyra")), TEXT("poetry")).Egg.IsNone(),
 			TEXT("eggs: Fold Early and the Memo Poetry Reading are found once per save"));
 
+		/* The dilemmas (ChatDilemmas.h), on throwaway states too: she asks once, after they have
+		   talked; it stays open until he advises her; the advice is one of her two answers. */
+		{
+			using namespace ChatDilemmas;
+			const FDilemma* Isla = Find(FName(TEXT("isla")));
+			R.Check(Isla && Find(FName(TEXT("kaia"))) && Find(FName(TEXT("nyra"))) && Find(FName(TEXT("aisling")))
+					&& Find(FName(TEXT("elise"))) && !Find(FName(TEXT("mrs_hall"))),
+				TEXT("dilemmas: all five agents have one, and no one else"));
+			if (Isla)
+			{
+				FProgressionState New;
+				R.Check(!ShouldAsk(New, FName(TEXT("isla")), TurnsBeforeAsking - 1) && ShouldAsk(New, FName(TEXT("isla")), TurnsBeforeAsking)
+						&& !IsOpen(New, FName(TEXT("isla"))),
+					TEXT("dilemmas: not in their first talk, then she asks"));
+				FProgressionState Asked;
+				Asked.Claim(AskedGrant(*Isla));
+				R.Check(!ShouldAsk(Asked, FName(TEXT("isla")), 16) && IsOpen(Asked, FName(TEXT("isla")))
+						&& StoryEvent(*Isla) == TEXT("dilemma_isla_versions"),
+					TEXT("dilemmas: asked once, then open - her requests carry its event"));
+				FProgressionState Answered = Asked;
+				Answered.Claim(AdvisedGrant(*Isla, TEXT("delete")));
+				R.Check(!IsOpen(Answered, FName(TEXT("isla"))) && AdviceGiven(Answered, *Isla) == TEXT("delete")
+						&& AdviceFacts(Answered) == TArray<FString>{ TEXT("isla_versions:delete") } && AdviceFacts(Asked).Num() == 0,
+					TEXT("dilemmas: once he has advised her it closes, and the facts carry what he said"));
+				R.Check(ValidChoice(*Isla, TEXT(" KEEP ")) == TEXT("keep") && ValidChoice(*Isla, TEXT("sing")).IsEmpty()
+						&& ChoiceNamedIn(*Isla, TEXT("Keep them all.")) == TEXT("keep")
+						&& ChoiceNamedIn(*Isla, TEXT("the keeper of nothing")).IsEmpty(),
+					TEXT("dilemmas: only her two answers count, as whole words"));
+			}
+		}
+
 		// Facts: his playthrough, as the agents may know it (backend/facts.js reads these).
 		{
 			FNpcStoryFacts Facts;
@@ -841,6 +873,24 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 					&& UNpcChatSubsystem::ParseTravelOffer(TEXT("{\"status\":\"ok\",\"reply\":\"Hello.\"}")).IsEmpty()
 					&& UNpcChatSubsystem::ParseTravelOffer(TEXT("not json")).IsEmpty(),
 				TEXT("travel: an offer is read when present, and nothing otherwise"));
+
+			// The dilemmas (ChatDilemmas.h): his advice goes out in the facts, and comes back.
+			FNpcStoryFacts Advised = Facts;
+			Advised.Advice = { TEXT("isla_versions:keep") };
+			R.Check(UNpcChatSubsystem::BuildRequestJson(TEXT("facts-request-5"), TEXT("isla"), TEXT("hi"),
+					TEXT("L_Office_v02"), {}, FString(), &Advised).Contains(TEXT("\"advice\":[\"isla_versions:keep\"]"))
+					&& !UNpcChatSubsystem::BuildRequestJson(TEXT("facts-request-6"), TEXT("isla"), TEXT("hi"),
+						TEXT("L_Office_v02"), {}, FString(), &Facts).Contains(TEXT("\"advice\"")),
+				TEXT("dilemmas: the facts carry his advice once he has given some, and no field before"));
+			R.Check(UNpcChatSubsystem::ParseAdvice(TEXT("{\"status\":\"ok\",\"reply\":\"Fine.\",\"advice\":\"keep\"}")) == TEXT("keep")
+					&& UNpcChatSubsystem::ParseAdvice(TEXT("{\"status\":\"ok\",\"reply\":\"Hello.\"}")).IsEmpty()
+					&& UNpcChatSubsystem::ParseAdvice(TEXT("not json")).IsEmpty(),
+				TEXT("dilemmas: advice is read when present, and nothing otherwise"));
+
+			// The switch for what only new builds do (backend/curiosity.js).
+			R.Check(UNpcChatSubsystem::BuildRequestJson(TEXT("features-request-1"), TEXT("aisling"), TEXT("hi"),
+					TEXT("L_Office_v02"), {}).Contains(TEXT("\"features\":[\"human_questions\"]")),
+				TEXT("curiosity: every chat request says this build may ask what being human is like"));
 
 			FNpcStoryFacts NoObjective = Facts;
 			NoObjective.Objective.Reset();

@@ -22,6 +22,7 @@
 #include "SibeliusHUD.h"            // the facts: the gold objective line
 #include "GameFramework/PlayerController.h"
 #include "SibeliusGameCharacter.h"  // the facts: where the travel keys can take him now
+#include "ChatDilemmas.h"           // the facts: what he advised each agent
 
 namespace
 {
@@ -308,6 +309,12 @@ FString UNpcChatSubsystem::BuildRequestJson(
 	{
 		WriteStoryFacts(Story, *Facts);
 	}
+	/* WHAT THIS BUILD KNOWS HOW TO DO, so the server can add a behaviour without changing it for
+	   builds already in players' hands - or the one under Valve's review (backend/curiosity.js).
+	   human_questions: she may ask what being human is like, never about his life (2026-10-06). */
+	TArray<TSharedPtr<FJsonValue>> Features;
+	Features.Add(MakeShared<FJsonValueString>(TEXT("human_questions")));
+	Story->SetArrayField(TEXT("features"), Features);
 	Root->SetObjectField(TEXT("storyContext"), Story);
 
 	TArray<TSharedPtr<FJsonValue>> Turns;
@@ -342,6 +349,17 @@ FString UNpcChatSubsystem::ParseTravelOffer(const FString& Body)
 		Root->TryGetStringField(TEXT("travel"), Travel);
 	}
 	return Travel;
+}
+
+FString UNpcChatSubsystem::ParseAdvice(const FString& Body)
+{
+	TSharedPtr<FJsonObject> Root;
+	FString Advice;
+	if (FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Body), Root) && Root.IsValid())
+	{
+		Root->TryGetStringField(TEXT("advice"), Advice);
+	}
+	return Advice;
 }
 
 bool UNpcChatSubsystem::ParseReplyJson(const FString& Body, FString& OutReply, ENpcChatFailure& OutFailure)
@@ -409,6 +427,7 @@ int32 UNpcChatSubsystem::Send(const FString& CharacterId, const FString& Message
 
 	InFlightId = NextRequestId++;
 	LastTravelOffer.Reset();   // an offer belongs to the reply it came with, never the next
+	LastAdvice.Reset();        // and so does his advice
 	PendingReply = OnReply;
 	PendingCharacterId = CharacterId;
 	PendingMessage = Message;
@@ -492,6 +511,16 @@ void UNpcChatSubsystem::DeliverMockReply(int32 RequestId)
 	FOnNpcChatReply Reply = PendingReply;
 	const FString Character = PendingCharacterId;
 	const FString Message = PendingMessage;
+
+	/* THE MOCK TAKES ADVICE TOO, so a walk-test without the server can finish a dilemma: with
+	   her question open on this request, a line naming one of her answers ("keep them") is it. */
+	if (const ChatDilemmas::FDilemma* Dilemma = ChatDilemmas::Find(FName(*Character)))
+	{
+		if (PendingEvent == ChatDilemmas::StoryEvent(*Dilemma))
+		{
+			LastAdvice = ChatDilemmas::ChoiceNamedIn(*Dilemma, Message);
+		}
+	}
 
 	InFlightId = 0;
 	PendingReply.Unbind();
@@ -578,6 +607,16 @@ void UNpcChatSubsystem::WriteStoryFacts(const TSharedRef<FJsonObject>& Story, co
 		Destinations.Add(MakeShared<FJsonValueString>(Destination));
 	}
 	Out->SetArrayField(TEXT("destinations"), Destinations);
+	// Only once he has advised someone: until then the facts are exactly what they were.
+	if (Facts.Advice.Num() > 0)
+	{
+		TArray<TSharedPtr<FJsonValue>> Advice;
+		for (const FString& Entry : Facts.Advice)
+		{
+			Advice.Add(MakeShared<FJsonValueString>(Entry));
+		}
+		Out->SetArrayField(TEXT("advice"), Advice);
+	}
 	Story->SetObjectField(TEXT("facts"), Out);
 }
 
@@ -602,6 +641,8 @@ FNpcStoryFacts UNpcChatSubsystem::CurrentStoryFacts() const
 		Facts.RefusersFought = Progression->GetStat(SibeliusStats::RefusersSlapped);
 		Facts.BooksCollected = Progression->GetStat(SibeliusStats::BooksCollected);
 		Facts.ChaptersCompleted = Progression->GetStat(SibeliusStats::ChaptersCompleted);
+		// What he advised the agents; the server tells each only her own (backend/dilemmas.js).
+		Facts.Advice = ChatDilemmas::AdviceFacts(Progression->GetStateForRead());
 	}
 
 	/* THE SAME LINE THE SCREEN SHOWS. The HUD already derives "the ONE next thing" from live
@@ -698,6 +739,7 @@ bool UNpcChatSubsystem::SendOverHttp(int32 RequestId, const FString& CharacterId
 				if (RequestId == Self->InFlightId)
 				{
 					Self->LastTravelOffer = ParseTravelOffer(Content);
+					Self->LastAdvice = ParseAdvice(Content);
 				}
 				Self->CompleteRequest(RequestId, Reply, ENpcChatFailure::None);
 			}

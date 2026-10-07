@@ -11,11 +11,13 @@ import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
 import { getCharacter, knownCharacterIds, locationLine, homeLine, awayLine, sceneNote, capSentences } from "./characters.js";
-import { screenMessage, SCREEN_INSTRUCTION } from "./distress.js";
+import { screenMessage, screenText, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
 import { COUNCIL_SEATS, speakingOrder, councilInstruction, stripOwnName } from "./council.js";
 import { eventLine } from "./events.js";
 import { factsLine, extractTravel } from "./facts.js";
+import { dilemmaLine, adviceLine, extractAdvice, screenContext } from "./dilemmas.js";
+import { curiosityLine, screenContextFor } from "./curiosity.js";
 
 /**
  * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
@@ -246,14 +248,20 @@ export function createApp(options = {}) {
     // sent one, goes after all of it: it is about this reply only, and the last thing she reads.
     // Anywhere else the game names, an agent with a home is told she is not in it
     // (characters.js, awayLine) - the conversation sent along may be from her home.
+    // Her dilemma (dilemmas.js): what he advised her, once he has; while her question is open,
+    // the instruction to listen and record it - the event slot, last, like an Easter egg's.
     const home = homeLine(body.characterId, body.storyContext?.locationId);
     const systemInstruction = [
       systemInstructionFor(character, body.characterId, config.chatStyle),
       locationLine(body.storyContext?.locationId),
       factsLine(body.storyContext?.facts, { objective: !home, leavingOnly: !!home }),
+      adviceLine(body.characterId, body.storyContext?.facts),
+      // New builds only (curiosity.js): she may ask what being human is like, never about his life.
+      curiosityLine(body.characterId, body.storyContext),
       home,
       awayLine(body.characterId, body.storyContext?.locationId),
       eventLine(body.storyContext?.event, { where: "chat", characterId: body.characterId }),
+      dilemmaLine(body.storyContext?.event, body.characterId),
     ].filter(Boolean).join("\n\n");
 
     /* TRIMMED, NOT REFUSED. The oldest turns go, which is the same thing the client
@@ -282,7 +290,12 @@ export function createApp(options = {}) {
 
     // The screen reads only the new message, never the history: it judges what the
     // player just said, and a long history would make every screen cost as much as a reply.
-    const screenInput = estimateTokens(SCREEN_INSTRUCTION) + estimateTokens(body.message);
+    // While her dilemma is open it also reads her question, marked as not his (dilemmas.js,
+    // screenContext): "Delete the old ones. I'm not them any more." got the helpline without it.
+    // In a build with the curiosity switch, the question her last reply asked (curiosity.js).
+    const screenFor = screenContext(body.storyContext?.event, body.characterId)
+      || screenContextFor(body.storyContext, body.recentTurns);
+    const screenInput = estimateTokens(SCREEN_INSTRUCTION) + estimateTokens(screenText(body.message, screenFor));
 
     const overspent = budget.check(estimatedInput + (config.distressScreen ? screenInput : 0));
     if (overspent) {
@@ -307,7 +320,7 @@ export function createApp(options = {}) {
         ? Promise.resolve({ distress: false, usage: null, skipped: true })
         : config.mock
           ? Promise.resolve(mockScreen(body))
-          : screenMessage({ apiKey: config.apiKey, model: config.screenModel, text: body.message });
+          : screenMessage({ apiKey: config.apiKey, model: config.screenModel, text: body.message, context: screenFor });
       const replying = config.mock
         ? Promise.resolve(mockGenerate(body))
         : generate({
@@ -346,14 +359,21 @@ export function createApp(options = {}) {
          failing open, as distress.js explains. */
       // The travel tag comes out of the text whatever it says, and becomes an offer only for
       // a place the game said was open (facts.js). A care reply never offers to travel.
+      // So does the advice tag (dilemmas.js), before the sentence cap can cut it off; it counts
+      // only while her question was open on this request.
+      const advised = result.ok ? extractAdvice(result.text, body.characterId, body.storyContext?.event) : null;
       const offer = result.ok
-        ? extractTravel(result.text, body.storyContext?.facts, body.message, { leavingOnly: !!home })
+        ? extractTravel(advised.text, body.storyContext?.facts, body.message, { leavingOnly: !!home })
         : null;
       const payload =
         screen.distress === true
           ? { status: "ok", requestId: body.requestId, reply: CARE_REPLY, care: true }
           : result.ok && offer.text
-            ? { status: "ok", requestId: body.requestId, reply: capSentences(offer.text), ...(offer.travel ? { travel: offer.travel } : {}) }
+            ? {
+                status: "ok", requestId: body.requestId, reply: capSentences(offer.text),
+                ...(offer.travel ? { travel: offer.travel } : {}),
+                ...(advised.advice ? { advice: advised.advice } : {}),
+              }
             : unavailable(result.ok ? "service" : result.failure);
 
       seen.set(body.requestId, { fingerprint: fingerprint(body), response: payload, at: Date.now() });
@@ -541,6 +561,9 @@ export function createApp(options = {}) {
     // __travel:<id>__ makes the mock end its reply with that tag, for the travel tests.
     const travel = /__travel:([A-Za-z0-9_]+)__/.exec(body.message);
     if (travel) return { ok: true, text: `Off you go, Leonard. [GO:${travel[1]}]`, usage };
+    // __advice:<choice>__ makes the mock end its reply with that advice tag, for the dilemma tests.
+    const advice = /__advice:([A-Za-z_]+)__/.exec(body.message);
+    if (advice) return { ok: true, text: `Then that is what I will do. [ADVICE:${advice[1]}]`, usage };
     return { ok: true, text: `Mock reply to: ${body.message.slice(0, 80)}`, usage };
   }
 

@@ -15,6 +15,7 @@
 #include "NpcChatWidget.h"                  // step 4: the typed conversation panel
 #include "NpcCouncilSession.h"              // the panel's Council button
 #include "ChatEasterEggs.h"                 // egg 1, the Pigeon Ledger
+#include "ChatDilemmas.h"                   // she asks him for advice
 #include "SibeliusGameCharacter.h"          // OpenCouncil
 #include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
 #include "NpcChatSaveGame.h"                // FNpcChatTurn — what she remembers
@@ -1234,6 +1235,22 @@ void UDancerAgentComponent::BeginChat()
 			}
 			ChatWidget->AppendTurn(FString(), TEXT("--- now ---"));
 		}
+
+		/* HER QUESTION (ChatDilemmas.h) - once, the first time they talk after they have already
+		   talked. Printed as her turn and remembered as one, so the server sees she asked; the
+		   requests that follow carry its event until he answers. Walt, 2026-10-06: "how about
+		   if the agents ask the player for personal advice?" */
+		UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+		const ChatDilemmas::FDilemma* Dilemma = ChatDilemmas::Find(ResolveChatId());
+		if (Progression && Dilemma
+			&& ChatDilemmas::ShouldAsk(Progression->GetStateForRead(), ResolveChatId(), Remembered.Num()))
+		{
+			ChatWidget->AppendTurn(AgentName, Dilemma->Question);
+			Memory->RecordTurn(ResolveChatId(), /*bFromPlayer=*/false, Dilemma->Question);
+			Memory->SaveNow();
+			ChatDilemmas::MarkAsked(Progression, *Dilemma);
+			UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] %s: asked for his advice (%s)"), *AgentName, Dilemma->Id);
+		}
 	}
 
 	/* HER SPOKEN LINE IS DELIBERATELY NOT PRINTED, and this is the second time this
@@ -1454,7 +1471,14 @@ void UDancerAgentComponent::HandleChatSend(const FString& PlayerLine)
 	const ChatEasterEggs::FCheck Egg =
 		ChatEasterEggs::EvaluateChatLine(Progression, ResolveChatId(), PlayerLine, EarlierLines);
 
-	ChatRequestId = Chat->Send(ResolveChatId().ToString(), PlayerLine, Reply, Egg.StoryEvent);
+	/* AN EGG WINS THE ONE EVENT SLOT; otherwise her open question rides on every message until
+	   he has advised her (ChatDilemmas.h) - it may take him a few lines, or another visit. */
+	FString StoryEvent = Egg.StoryEvent;
+	if (StoryEvent.IsEmpty() && Progression && ChatDilemmas::IsOpen(Progression->GetStateForRead(), ResolveChatId()))
+	{
+		StoryEvent = ChatDilemmas::StoryEvent(*ChatDilemmas::Find(ResolveChatId()));
+	}
+	ChatRequestId = Chat->Send(ResolveChatId().ToString(), PlayerLine, Reply, StoryEvent);
 
 	if (ChatRequestId == 0)
 	{
@@ -1519,6 +1543,20 @@ void UDancerAgentComponent::HandleChatReply(const FString& Reply, ENpcChatFailur
 					Offer == FName(TEXT("L_City")) ? TEXT("Go to Transhuman City")
 					: Offer == FName(TEXT("L_Cathedral")) ? TEXT("Go to the golden cathedral")
 					: TEXT("Go back to the office"));
+			}
+
+			/* HIS ADVICE, IF THIS REPLY CARRIED IT (ChatDilemmas.h). Recorded once, only while her
+			   question was open and only as one of her two answers; the panel says so, so he
+			   knows it counted. */
+			const FString Advice = Service->TakeAdvice();
+			if (!Advice.IsEmpty())
+			{
+				const FString Note = ChatDilemmas::CommitAdvice(UProgressionSubsystem::Get(this), ResolveChatId(), Advice);
+				if (!Note.IsEmpty())
+				{
+					ChatWidget->AppendTurn(FString(), Note);
+					UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] %s: advised \"%s\""), *AgentName, *Advice);
+				}
 			}
 		}
 

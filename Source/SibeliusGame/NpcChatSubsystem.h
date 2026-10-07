@@ -68,6 +68,7 @@ struct FNpcStoryFacts
 	int32 ChaptersCompleted = 0;
 	FString Objective;             // the HUD's gold objective line, or empty
 	TArray<FString> Destinations;  // where a [Go] button may take him now (OpenTravelDestinations)
+	TArray<FString> Advice;        // what he advised each agent, "isla_versions:keep" (ChatDilemmas)
 };
 
 /**
@@ -294,6 +295,15 @@ public:
 	/** The last reply's travel offer, handed over once: reading it clears it. */
 	FString TakeTravelOffer() { FString Offer = MoveTemp(LastTravelOffer); LastTravelOffer.Reset(); return Offer; }
 
+	/**
+	 * Which way he advised her ("advice", one of her dilemma's two answers), or empty. The
+	 * server sends it only while her question was open on that request (ChatDilemmas.h).
+	 */
+	static FString ParseAdvice(const FString& Body);
+
+	/** The last reply's advice, handed over once, like the travel offer. */
+	FString TakeAdvice() { FString Advice = MoveTemp(LastAdvice); LastAdvice.Reset(); return Advice; }
+
 	/** Map the allowlisted reason strings; anything unrecognised is Service. */
 	static ENpcChatFailure FailureFromReason(const FString& Reason);
 
@@ -354,6 +364,9 @@ private:
 
 	/** Set when a reply arrives with an offer; taken by the panel in its reply handler. */
 	FString LastTravelOffer;
+
+	/** Set when a reply arrives with his advice; taken by the panel the same way. */
+	FString LastAdvice;
 
 	FTimerHandle MockTimer;
 
