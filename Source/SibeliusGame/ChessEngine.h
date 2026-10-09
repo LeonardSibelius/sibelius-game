@@ -123,6 +123,7 @@ struct FChessStrength
 	static FChessStrength Beginner();   // depth 2, careless
 	static FChessStrength Hustler();    // depth 3, a little careless: the park table
 	static FChessStrength Master();     // depth 5, always the best move it finds
+	static FChessStrength Coach();      // depth 7: deeper than any ghost, for hints
 };
 
 struct FChessSearchResult
@@ -192,6 +193,62 @@ struct FChessPosition
 // The count of legal move sequences of exactly Depth plies: the move generator's oracle.
 uint64_t ChessPerft(const FChessPosition& Position, int Depth);
 
+// ===========================================================================
+// THE COACH (Walt, 2026-10-09: "so the player can actually learn the game"). A move alone
+// teaches little; the reason teaches. Both come from the search the ghost already trusts:
+// the line it expects says what is won or lost, and a second, quicker search of the same
+// position with the OTHER side to move says what the opponent is threatening. The sentence
+// is written here, not by the table, so the tests hold the words to the position.
+
+enum class EChessHintReason : uint8_t
+{
+	None,           // no legal move: the game is over
+	Mates,          // it forces checkmate
+	Doomed,         // the opponent mates whatever is played; this holds out longest
+	Promotes,       // a pawn becomes a new piece
+	WinsMaterial,   // the line it expects comes out ahead
+	EscapesCheck,   // in check: the best way out
+	StopsMate,      // the opponent threatened mate; this stops it
+	SavesPiece,     // a piece was about to be taken; this moves it to safety
+	StopsThreat,    // the opponent threatened to win material; this is the best answer
+	LeastLoss,      // something is lost whatever is played; this loses least
+	Castles,
+	Develops,       // a knight or bishop leaves its home rank
+	Centre,         // an early pawn to d4, e4, d5 or e5
+	Best,           // nothing to name: the strongest move it found
+};
+
+struct FChessAdvice
+{
+	EChessHintReason Reason = EChessHintReason::None;
+	FChessSearchResult Search;      // Search.Best is the move it suggests
+	FChessMove Threat;              // the opponent's threat it answers, when there is one
+	int Gain = 0;                   // centipawns the expected line wins (negative: loses)
+	int MateInMoves = 0;            // with Reason Mates
+	std::string Text;               // "Nxe5 wins a pawn. You're ahead by about 1.2 pawns."
+	std::string LineSan;            // "Nxe5 Nxe5 d4": the start of the line it expects
+};
+
+// What the coach makes of a move once it is played. Silent (bMistake false) unless the move
+// threw away a mate, allowed one, or cost a pawn and a half or more against the best move.
+struct FChessReview
+{
+	bool bMistake = false;
+	int Loss = 0;                   // centipawns given up against the best move
+	FChessMove Played;
+	FChessMove Better;              // the coach's move; null when the played move was it
+	FChessMove Answer;              // the opponent's best answer to the played move
+	std::string Text;               // "Qxd5 loses your queen for a pawn: the ghost can answer cxd5. Better was Qd3."
+};
+
+// Opponent is what the sentences call the other player ("the ghost").
+FChessAdvice ChessAdvise(const FChessPosition& Position, const FChessStrength& Coach,
+	const std::vector<uint64_t>& History, const std::string& Opponent);
+
+// BestBefore, when given, is a search of Before already made (the hint), so it is not repeated.
+FChessReview ChessReviewMove(const FChessPosition& Before, const FChessMove& Played, const FChessStrength& Coach,
+	const std::vector<uint64_t>& History, const std::string& Opponent, const FChessSearchResult* BestBefore = nullptr);
+
 enum class EChessOutcome : uint8_t
 {
 	InProgress,
@@ -243,6 +300,11 @@ public:
 	std::string MoveListText(int MaxMoves = 0) const;
 
 	FChessSearchResult Think(const FChessStrength& Strength) const;
+
+	// The coach on the position now, and on the move that led to it.
+	FChessAdvice Advise(const FChessStrength& Coach, const std::string& Opponent) const;
+	FChessReview ReviewLastMove(const FChessStrength& Coach, const std::string& Opponent,
+		const FChessSearchResult* BestBefore = nullptr) const;
 
 private:
 	std::vector<FChessPosition> Positions;  // [0] is where the game began; back() is now

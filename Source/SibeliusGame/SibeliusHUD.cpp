@@ -129,10 +129,11 @@ void ASibeliusHUD::DrawHUD()
 	}
 }
 
-void ASibeliusHUD::ShowTablePanel(const FString& Status, const FString& Controls, float Seconds)
+void ASibeliusHUD::ShowTablePanel(const FString& Status, const FString& Controls, float Seconds, const FString& Note)
 {
 	TableStatus = Status;
 	TableControls = Controls;
+	TableNote = Note;
 	TablePanelUntil = (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0) + Seconds;
 }
 
@@ -153,8 +154,8 @@ void ASibeliusHUD::DrawTablePanel()
 	const float Unit = Canvas->ClipY / 1080.0f;
 
 	// One block of lines, centred, on its own strip; Top is its top edge, or its bottom
-	// edge when bFromBottom.
-	auto DrawBlock = [this, Font](const FString& Block, float Scale, float Edge, bool bFromBottom, const FLinearColor& Color)
+	// edge when bFromBottom. Returns the strip's bottom edge.
+	auto DrawBlock = [this, Font](const FString& Block, float Scale, float Edge, bool bFromBottom, const FLinearColor& Color) -> float
 	{
 		TArray<FString> Lines;
 		Block.ParseIntoArray(Lines, TEXT("\n"), false);
@@ -178,11 +179,17 @@ void ASibeliusHUD::DrawTablePanel()
 			DrawText(Line, Color, (Canvas->ClipX - W) * 0.5f, Y, Font, Scale);
 			Y += LineH;
 		}
+		return Y0 + TotalH + Pad * 0.5f;
 	};
 
+	float StatusBottom = Canvas->ClipY * 0.035f;
 	if (!TableStatus.IsEmpty())
 	{
-		DrawBlock(TableStatus, 2.2f * Unit, Canvas->ClipY * 0.035f, false, FLinearColor(1.0f, 0.93f, 0.78f));
+		StatusBottom = DrawBlock(TableStatus, 2.2f * Unit, StatusBottom, false, FLinearColor(1.0f, 0.93f, 0.78f));
+	}
+	if (!TableNote.IsEmpty())
+	{
+		DrawBlock(TableNote, 1.8f * Unit, StatusBottom + 14.0f * Unit, false, FLinearColor(0.70f, 1.0f, 0.80f));
 	}
 	if (!TableControls.IsEmpty())
 	{

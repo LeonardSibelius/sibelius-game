@@ -734,6 +734,18 @@ FChessStrength FChessStrength::Master()
 	return S;
 }
 
+// Two plies past the master. It thinks while the player does, on a worker thread, so the
+// budget is a couple of seconds rather than the ghost's moment; the node limit keeps the
+// last depth it finished when a crowded middlegame will not let it reach seven.
+FChessStrength FChessStrength::Coach()
+{
+	FChessStrength S;
+	S.MaxDepth = 7;
+	S.NodeLimit = 5000000;
+	S.NoiseCentipawns = 0;
+	return S;
+}
+
 // =====================================================================================
 // POSITIONS
 
@@ -1495,6 +1507,453 @@ uint64_t ChessPerft(const FChessPosition& Position, int Depth)
 }
 
 // =====================================================================================
+// THE COACH
+
+namespace ChessDetail
+{
+	const char* const PieceNames[7] = { "", "pawn", "knight", "bishop", "rook", "queen", "king" };
+
+	// Below this a line's gain is where the pieces stand, not what was taken: a pawn, less a
+	// little for the piece-square tables.
+	constexpr int WorthNaming = 90;
+
+	// What each side loses along a line, by piece type. A pawn that promotes is lost as a pawn
+	// and gained as its new piece (a loss of minus one), so a new queen taken straight back
+	// has cost only the pawn it was.
+	struct FTally
+	{
+		int Lost[2][7] = {};
+
+		// Centipawns Side comes out ahead.
+		int Net(int Side) const
+		{
+			int Score = 0;
+			for (int T = 1; T <= 5; ++T)
+			{
+				Score += (Lost[1 - Side][T] - Lost[Side][T]) * PieceValue[T];
+			}
+			return Score;
+		}
+	};
+
+	FTally TallyLine(const FChessPosition& Start, const std::vector<FChessMove>& Line, size_t MaxPlies = 1000)
+	{
+		FTally Tally;
+		FChessPosition P = Start;
+		for (size_t I = 0; I < Line.size() && I < MaxPlies; ++I)
+		{
+			FChessMove Move;
+			if (!P.FindMove(Line[I].From, Line[I].To, Line[I].Promotion, Move))
+			{
+				break;   // a line is only ever read as far as it is legal
+			}
+			const int Mover = Index(P.SideToMove);
+			if (Move.IsCapture())
+			{
+				const EChessPieceType Victim = (Move.Flags & ChessMoveFlag::EnPassant) ? EChessPieceType::Pawn : TypeOf(P.Board[Move.To]);
+				++Tally.Lost[1 - Mover][static_cast<int>(Victim)];
+			}
+			if (Move.Promotion != EChessPieceType::None)
+			{
+				++Tally.Lost[Mover][static_cast<int>(EChessPieceType::Pawn)];
+				--Tally.Lost[Mover][static_cast<int>(Move.Promotion)];
+			}
+			P = P.Played(Move);
+		}
+		return Tally;
+	}
+
+	const char* NumberWord(int N)
+	{
+		static const char* const Words[9] = { "no", "one", "two", "three", "four", "five", "six", "seven", "eight" };
+		return N >= 0 && N <= 8 ? Words[N] : "several";
+	}
+
+	// "the queen", "a knight", "two pawns", "a rook and a pawn"; bYours: "your knight".
+	std::string PieceWords(const int Counts[7], bool bYours)
+	{
+		std::vector<std::string> Parts;
+		for (int T = 5; T >= 1; --T)
+		{
+			const int N = Counts[T];
+			if (N <= 0)
+			{
+				continue;
+			}
+			const std::string Name = PieceNames[T];
+			if (N > 1)
+			{
+				Parts.push_back(std::string(NumberWord(N)) + " " + Name + "s");
+			}
+			else if (bYours && T != 1)
+			{
+				Parts.push_back("your " + Name);
+			}
+			else
+			{
+				Parts.push_back(T == 5 ? std::string("the queen") : "a " + Name);
+			}
+		}
+		std::string Text;
+		for (size_t I = 0; I < Parts.size(); ++I)
+		{
+			Text += (I == 0 ? "" : (I + 1 == Parts.size() ? " and " : ", ")) + Parts[I];
+		}
+		return Text;
+	}
+
+	// What Gainer comes out ahead by, like cancelled against like: "a knight", "a rook for a
+	// knight". bLoserIsYou words the loser's pieces as "your". Empty when nothing is won, or
+	// when a promotion makes the count too tangled to say plainly.
+	std::string GainWords(const FTally& Tally, int Gainer, bool bLoserIsYou)
+	{
+		int Won[7] = {};
+		int Paid[7] = {};
+		bool bAny = false;
+		for (int T = 1; T <= 5; ++T)
+		{
+			const int Theirs = Tally.Lost[1 - Gainer][T];
+			const int Ours = Tally.Lost[Gainer][T];
+			if (Theirs < 0 || Ours < 0)
+			{
+				return std::string();
+			}
+			const int Both = std::min(Theirs, Ours);
+			Won[T] = Theirs - Both;
+			Paid[T] = Ours - Both;
+			bAny = bAny || Won[T] > 0;
+		}
+		if (!bAny)
+		{
+			return std::string();
+		}
+		const std::string Paying = PieceWords(Paid, false);
+		return PieceWords(Won, bLoserIsYou) + (Paying.empty() ? std::string() : " for " + Paying);
+	}
+
+	// 120 -> "1.2 pawns", 100 -> "1 pawn", 300 -> "3 pawns".
+	std::string PawnsText(int Centipawns)
+	{
+		const int Tenths = (std::abs(Centipawns) + 5) / 10;
+		std::string Text = std::to_string(Tenths / 10);
+		if (Tenths % 10 != 0)
+		{
+			Text += "." + std::to_string(Tenths % 10);
+		}
+		return Text + (Tenths == 10 ? " pawn" : " pawns");
+	}
+
+	bool IsMateScore(int Score)
+	{
+		return Score > MateScore - 1000 || Score < -(MateScore - 1000);
+	}
+
+	// Mates count as fifty pawns, so a loss can be measured across one.
+	int Clamped(int Score)
+	{
+		return std::max(-5000, std::min(5000, Score));
+	}
+
+	// Where the side to move stands at the end of the line the coach expects.
+	std::string Standing(int Score)
+	{
+		if (IsMateScore(Score))
+		{
+			return std::string();
+		}
+		if (std::abs(Score) < 40)
+		{
+			return "The position is about even.";
+		}
+		return std::string(Score > 0 ? "You're ahead by about " : "You're behind by about ") + PawnsText(Score) + ".";
+	}
+
+	std::string Capitalised(std::string Text)
+	{
+		if (!Text.empty() && Text[0] >= 'a' && Text[0] <= 'z')
+		{
+			Text[0] = static_cast<char>(Text[0] - 'a' + 'A');
+		}
+		return Text;
+	}
+
+	std::string LineSanText(const FChessPosition& Start, const std::vector<FChessMove>& Line, size_t MaxPlies)
+	{
+		std::string Text;
+		FChessPosition P = Start;
+		for (size_t I = 0; I < Line.size() && I < MaxPlies; ++I)
+		{
+			FChessMove Move;
+			if (!P.FindMove(Line[I].From, Line[I].To, Line[I].Promotion, Move))
+			{
+				break;
+			}
+			Text += (Text.empty() ? "" : " ") + P.ToSan(Move);
+			P = P.Played(Move);
+		}
+		return Text;
+	}
+
+	/* The reasons are tried in the order a teacher would give them: a mate beats everything,
+	   material won beats a threat parried (the search has already weighed the threat), and
+	   the quiet reasons - castling, developing, the centre - are for when nothing is hanging. */
+	FChessAdvice AdviseImpl(const FChessPosition& P, const FChessStrength& Coach, const std::vector<uint64_t>& History, const std::string& Opponent)
+	{
+		FChessAdvice A;
+		A.Search = P.Search(Coach, History);
+		const FChessMove Best = A.Search.Best;
+		if (Best.IsNull())
+		{
+			return A;
+		}
+		const int Us = Index(P.SideToMove);
+		const std::string San = P.ToSan(Best);
+		const std::string They = Capitalised(Opponent);
+		A.LineSan = LineSanText(P, A.Search.Line, 6);
+		const FTally Tally = TallyLine(P, A.Search.Line);
+		A.Gain = Tally.Net(Us);
+
+		if (A.Search.IsMate())
+		{
+			const int Moves = (A.Search.MateInPlies() + 1) / 2;
+			if (A.Search.Score > 0)
+			{
+				A.Reason = EChessHintReason::Mates;
+				A.MateInMoves = Moves;
+				A.Text = Moves <= 1 ? San + " is checkmate!" : San + " forces checkmate in " + std::to_string(Moves) + " moves.";
+			}
+			else
+			{
+				A.Reason = EChessHintReason::Doomed;
+				A.Text = They + " has a forced checkmate whatever you play. " + San + " holds out longest.";
+			}
+			return A;
+		}
+
+		const std::string Where = Standing(A.Search.Score);
+		auto Say = [&A, &Where](EChessHintReason Reason, const std::string& Sentence)
+		{
+			A.Reason = Reason;
+			A.Text = Where.empty() ? Sentence : Sentence + " " + Where;
+			return A;
+		};
+
+		if (Best.Promotion != EChessPieceType::None)
+		{
+			return Say(EChessHintReason::Promotes, San + " makes a new " + PieceNames[static_cast<int>(Best.Promotion)] + ".");
+		}
+
+		if (A.Gain >= WorthNaming)
+		{
+			std::string Words = GainWords(Tally, Us, false);
+			if (Words.empty())
+			{
+				Words = "about " + PawnsText(A.Gain) + " of material";
+			}
+			// Won at once, or at the end of a plan he should see coming?
+			size_t Realised = A.Search.Line.size();
+			for (size_t N = 1; N <= A.Search.Line.size(); ++N)
+			{
+				if (TallyLine(P, A.Search.Line, N).Net(Us) >= A.Gain - 50)
+				{
+					Realised = N;
+					break;
+				}
+			}
+			return Say(EChessHintReason::WinsMaterial, San + (Realised <= 4 ? " wins " : " starts a plan that wins ") + Words + ".");
+		}
+
+		if (P.InCheck())
+		{
+			return Say(EChessHintReason::EscapesCheck, "You're in check: " + San + " is the best way out.");
+		}
+
+		// THE THREAT: what the opponent would do if he could pass. A search of the same
+		// position with the other side to move - shallow, because a threat worth naming is
+		// a near one.
+		FChessPosition Passed = P;
+		Passed.SideToMove = ChessOpponent(P.SideToMove);
+		Passed.EnPassant = -1;
+		FChessStrength Quick = Coach;
+		Quick.MaxDepth = std::min(4, Coach.MaxDepth);
+		Quick.NodeLimit = std::min<int64_t>(400000, Coach.NodeLimit);
+		Quick.NoiseCentipawns = 0;
+		const FChessSearchResult Threat = Passed.Search(Quick);
+		const bool bThreatMates = !Threat.Best.IsNull() && Threat.IsMate() && Threat.Score > 0;
+		const FTally ThreatTally = TallyLine(Passed, Threat.Line);
+		if (!Threat.Best.IsNull() && (bThreatMates || ThreatTally.Net(1 - Us) >= WorthNaming))
+		{
+			A.Threat = Threat.Best;
+			const std::string ThreatSan = Passed.ToSan(Threat.Best);
+			if (A.Gain <= -WorthNaming)
+			{
+				return Say(EChessHintReason::LeastLoss, They + " threatens " + ThreatSan + ", and nothing saves everything: " + San + " loses the least.");
+			}
+			if (bThreatMates)
+			{
+				const int Moves = (Threat.MateInPlies() + 1) / 2;
+				return Say(EChessHintReason::StopsMate, They + (Moves <= 1 ? " threatens checkmate with " + ThreatSan
+					: " threatens a checkmate that starts with " + ThreatSan) + ". " + San + " stops it.");
+			}
+			if (Threat.Best.IsCapture() && Threat.Best.To == Best.From)
+			{
+				const std::string Piece = PieceNames[static_cast<int>(TypeOf(P.Board[Best.From]))];
+				return Say(EChessHintReason::SavesPiece, "Your " + Piece + " is in danger from " + ThreatSan + ". " + San + " moves it to safety.");
+			}
+			// "Deals with it", not "stops it": the best answer is sometimes a counter-attack
+			// that lets the threat happen and takes as much back.
+			const std::string Words = GainWords(ThreatTally, 1 - Us, true);
+			return Say(EChessHintReason::StopsThreat, They + " threatens " + ThreatSan
+				+ (Words.empty() ? std::string() : ", winning " + Words) + ". " + San + " deals with it.");
+		}
+
+		if (A.Gain <= -WorthNaming)
+		{
+			return Say(EChessHintReason::LeastLoss, "Something is lost whatever you play; " + San + " loses the least.");
+		}
+
+		if (Best.Flags & ChessMoveFlag::Castle)
+		{
+			return Say(EChessHintReason::Castles, San + " castles: your king is safer, and a rook comes into play.");
+		}
+		const EChessPieceType Mover = TypeOf(P.Board[Best.From]);
+		if ((Mover == EChessPieceType::Knight || Mover == EChessPieceType::Bishop) && RankOf(Best.From) == (Us == 0 ? 0 : 7))
+		{
+			return Say(EChessHintReason::Develops, San + " brings a " + PieceNames[static_cast<int>(Mover)] + " into the game.");
+		}
+		const int ToFile = FileOf(Best.To);
+		const int ToRank = RankOf(Best.To);
+		if (Mover == EChessPieceType::Pawn && P.FullmoveNumber <= 12 && (ToFile == 3 || ToFile == 4) && (ToRank == 3 || ToRank == 4))
+		{
+			return Say(EChessHintReason::Centre, San + " claims a share of the centre.");
+		}
+		return Say(EChessHintReason::Best, San + " is the strongest move the coach can find.");
+	}
+
+	/* A move is judged by the best move against it: the coach's score before the move, and
+	   the opponent's best answer after it, a ply shallower so both look as far past the
+	   position before the move. The difference is what the move cost. The words then say
+	   which kind of cost it was: a mate let go, a mate allowed, material lost, a win missed. */
+	FChessReview ReviewImpl(const FChessPosition& Before, const FChessMove& PlayedIn, const FChessStrength& Coach,
+		const std::vector<uint64_t>& History, const std::string& Opponent, const FChessSearchResult* BestBefore)
+	{
+		FChessReview R;
+		FChessMove Played;
+		if (!Before.FindMove(PlayedIn.From, PlayedIn.To, PlayedIn.Promotion, Played))
+		{
+			return R;
+		}
+		R.Played = Played;
+		const FChessSearchResult Best = BestBefore ? *BestBefore : Before.Search(Coach, History);
+		if (Best.Best.IsNull() || Best.Best.SameAs(Played))
+		{
+			return R;   // the move the coach would have played
+		}
+		R.Better = Best.Best;
+
+		const FChessPosition After = Before.Played(Played);
+		std::vector<uint64_t> AfterHistory = History;
+		if (AfterHistory.empty() || AfterHistory.back() != Before.Hash())
+		{
+			AfterHistory.push_back(Before.Hash());
+		}
+		AfterHistory.push_back(After.Hash());
+		FChessStrength Reply = Coach;
+		Reply.MaxDepth = std::max(1, Coach.MaxDepth - 1);
+		Reply.NodeLimit = std::max<int64_t>(1, Coach.NodeLimit / 2);
+		Reply.NoiseCentipawns = 0;
+		const FChessSearchResult Answer = After.Search(Reply, AfterHistory);
+		R.Answer = Answer.Best;
+
+		const int BestValue = Clamped(Best.Score);
+		const int PlayedValue = -Clamped(Answer.Score);
+		R.Loss = std::max(0, BestValue - PlayedValue);
+
+		const int Us = Index(Before.SideToMove);
+		const int Them = 1 - Us;
+		const std::string PlayedSan = Before.ToSan(Played);
+		const std::string BetterSan = Before.ToSan(Best.Best);
+
+		// A forced mate let go. A long one missed while still winning easily is not worth a word.
+		const bool bStillMates = Answer.IsMate() && Answer.Score < 0;
+		if (Best.IsMate() && Best.Score > 0 && !bStillMates)
+		{
+			const int Moves = (Best.MateInPlies() + 1) / 2;
+			if (Moves <= 3 || PlayedValue < 600)
+			{
+				R.bMistake = true;
+				R.Text = PlayedSan + " misses a checkmate: " + (Moves <= 1 ? BetterSan + " is mate."
+					: BetterSan + " forces mate in " + std::to_string(Moves) + " moves.");
+			}
+			return R;
+		}
+
+		if (Answer.Best.IsNull() && !After.InCheck() && BestValue >= 150)
+		{
+			R.bMistake = true;
+			R.Text = PlayedSan + " is stalemate: the game is a draw. " + BetterSan + " kept winning.";
+			return R;
+		}
+
+		if (Answer.IsMate() && Answer.Score > 0 && !(Best.IsMate() && Best.Score < 0))
+		{
+			const int Moves = (Answer.MateInPlies() + 1) / 2;
+			const std::string AnswerSan = After.ToSan(Answer.Best);
+			R.bMistake = true;
+			R.Text = PlayedSan + (Moves <= 1 ? " allows checkmate: " + Opponent + " can answer " + AnswerSan + "."
+				: " lets " + Opponent + " force checkmate, starting with " + AnswerSan + ".") + " Better was " + BetterSan + ".";
+			return R;
+		}
+
+		if (R.Loss < 150 || (PlayedValue >= 600 && R.Loss < 400))
+		{
+			return R;   // close enough, or still winning so easily that it does not matter
+		}
+		R.bMistake = true;
+
+		// What the answer wins, counting the played move itself: "loses your queen for a pawn".
+		std::vector<FChessMove> Line(1, Played);
+		Line.insert(Line.end(), Answer.Line.begin(), Answer.Line.end());
+		const FTally Lost = TallyLine(Before, Line);
+		if (!Answer.Best.IsNull() && Lost.Net(Them) >= WorthNaming)
+		{
+			std::string Words = GainWords(Lost, Them, true);
+			if (Words.empty())
+			{
+				Words = "about " + PawnsText(Lost.Net(Them)) + " of material";
+			}
+			R.Text = PlayedSan + " loses " + Words + ": " + Opponent + " can answer " + After.ToSan(Answer.Best) + ". Better was " + BetterSan + ".";
+			return R;
+		}
+		const FTally Missed = TallyLine(Before, Best.Line);
+		if (Missed.Net(Us) - Lost.Net(Us) >= WorthNaming)
+		{
+			std::string Words = GainWords(Missed, Us, false);
+			if (Words.empty())
+			{
+				Words = "about " + PawnsText(Missed.Net(Us)) + " of material";
+			}
+			R.Text = PlayedSan + " misses a chance: " + BetterSan + " wins " + Words + ".";
+			return R;
+		}
+		R.Text = PlayedSan + " gives away about " + PawnsText(R.Loss) + " of advantage. Better was " + BetterSan + ".";
+		return R;
+	}
+}
+
+FChessAdvice ChessAdvise(const FChessPosition& Position, const FChessStrength& Coach,
+	const std::vector<uint64_t>& History, const std::string& Opponent)
+{
+	return ChessDetail::AdviseImpl(Position, Coach, History, Opponent);
+}
+
+FChessReview ChessReviewMove(const FChessPosition& Before, const FChessMove& Played, const FChessStrength& Coach,
+	const std::vector<uint64_t>& History, const std::string& Opponent, const FChessSearchResult* BestBefore)
+{
+	return ChessDetail::ReviewImpl(Before, Played, Coach, History, Opponent, BestBefore);
+}
+
+// =====================================================================================
 // THE GAME
 
 FChessGame::FChessGame()
@@ -1624,6 +2083,21 @@ std::string FChessGame::MoveListText(int MaxMoves) const
 FChessSearchResult FChessGame::Think(const FChessStrength& Strength) const
 {
 	return Position().Search(Strength, Hashes);
+}
+
+FChessAdvice FChessGame::Advise(const FChessStrength& Coach, const std::string& Opponent) const
+{
+	return ChessAdvise(Position(), Coach, Hashes, Opponent);
+}
+
+FChessReview FChessGame::ReviewLastMove(const FChessStrength& Coach, const std::string& Opponent, const FChessSearchResult* BestBefore) const
+{
+	if (PlayedMoves.empty())
+	{
+		return FChessReview();
+	}
+	const std::vector<uint64_t> Before(Hashes.begin(), Hashes.end() - 1);
+	return ChessReviewMove(Positions[Positions.size() - 2], PlayedMoves.back(), Coach, Before, Opponent, BestBefore);
 }
 
 void FChessGame::Refresh()

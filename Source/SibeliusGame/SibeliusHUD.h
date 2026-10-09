@@ -92,8 +92,10 @@ public:
 	 * table renews it every frame, and it goes by itself if the table stops ticking.
 	 * Lines may contain newlines. First tried as 3D text hung in front of the table's
 	 * camera, which smeared, clipped and drew too large: the canvas is the right place.
+	 * Note, when given, goes just under the status in smaller type and its own colour:
+	 * the chess coach's voice, kept apart from the game's.
 	 */
-	void ShowTablePanel(const FString& Status, const FString& Controls, float Seconds = 0.25f);
+	void ShowTablePanel(const FString& Status, const FString& Controls, float Seconds = 0.25f, const FString& Note = FString());
 
 	// SIB-39 dev overlay visibility. Static so the toggle key (character) and the
 	// ScanForSite log gate (UBuildComponent) share one flag without a HUD lookup.
@@ -269,6 +271,7 @@ private:
 	void DrawTablePanel();
 	FString TableStatus;
 	FString TableControls;
+	FString TableNote;
 	double TablePanelUntil = 0.0;
 
 	/** Full-screen video for the duration of a cutscene, or null. See SetCinematicVideo. */

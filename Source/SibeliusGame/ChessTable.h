@@ -23,6 +23,12 @@
 // the answer (ThinkTicket). It waits at least a moment before moving: an instant reply from
 // across a park table feels like a machine, which the ghost would rather you forgot.
 //
+// THE COACH (Walt, 2026-10-09: "so the player can actually learn the game"). [H] lights up
+// the move the coach would play and says why, in a sentence ChessAdvise writes from its own
+// search: what it wins, what it saves, which threat it stops. After each of his moves the
+// coach reviews it (ChessReviewMove) and speaks only when it was a real mistake, naming the
+// answer that punishes it and the better move; [U] takes it back, [K] silences the coach.
+//
 // Frame: the actor's origin is the centre of the board's playing surface. Local +X points
 // from White's side to Black's; +Y from the a-file to the h-file (White's right).
 
@@ -90,6 +96,11 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Chess")
 	TArray<TObjectPtr<UStaticMeshComponent>> MoveDots;
 
+	/** The coach's suggestion: the piece to move, and where. Their own array, not two more
+	    SquareMarks, because the placed table has SquareMarks saved in the level. */
+	UPROPERTY(VisibleAnywhere, Category = "Chess")
+	TArray<TObjectPtr<UStaticMeshComponent>> HintMarks;
+
 	UPROPERTY(VisibleAnywhere, Category = "Chess")
 	TObjectPtr<UCameraComponent> TableCamera;
 
@@ -125,6 +136,10 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Chess", meta = (ClampMin = "0.0"))
 	float BoardLightLumens = 180.0f;
+
+	/** The coach speaks up after a bad move. [K] turns it off and on; [H] asks for a hint either way. */
+	UPROPERTY(EditAnywhere, Category = "Chess")
+	bool bCoachWarnings = true;
 
 protected:
 	virtual void BeginPlay() override;
@@ -181,6 +196,8 @@ private:
 	void OnLevel2();
 	void OnLevel3();
 	void OnLeave();
+	void OnHint();
+	void OnCoachToggle();
 	void MoveCursor(int32 DFile, int32 DRank);
 	void SelectOrMove(int32 Square);
 
@@ -214,6 +231,35 @@ private:
 	FChessPosition GhostThoughtFrom;       // the position it was thinking about
 	bool bHaveGhostThought = false;
 
+	// THE COACH (2026-10-09). Two searches of its own, beside the ghost's: the hint for his
+	// move, started the moment it is his turn so it is ready when he asks, and the review of
+	// the move he just made, which reuses that hint's search when it finished in time. Both
+	// run on copies, like the ghost; CoachEpoch moves on at a take-back or a new game, and
+	// anything the coach was still working out for the old position is thrown away.
+	void StartHint();
+	void StartReview();
+	void PollCoach();
+	void ForgetCoach();
+	bool HintIsCurrent() const;
+	FString CoachNote() const;
+
+	TFuture<FChessAdvice> HintFuture;
+	bool bHintThinking = false;
+	int32 HintEpoch = 0;
+	int32 HintPly = -1;                    // the ply the hint is for
+	FChessAdvice Hint;
+	bool bHaveHint = false;
+	bool bShowHint = false;                // he pressed [H] on this move
+
+	TFuture<FChessReview> ReviewFuture;
+	bool bReviewThinking = false;
+	int32 ReviewEpoch = 0;
+	FChessReview Review;
+	bool bHaveReview = false;
+
+	int32 CoachEpoch = 0;
+	float CoachToggleShown = 0.0f;         // seconds left to show "coach warnings on/off"
+
 	float SoundCountdown = -1.0f;          // the piece lands when its move ends
 	bool bSoundIsCapture = false;
 	FVector2D LastMouse = FVector2D(-1.0, -1.0);
@@ -234,4 +280,7 @@ private:
 
 	UPROPERTY()
 	TArray<TObjectPtr<UMaterialInstanceDynamic>> MarkMaterials;
+
+	UPROPERTY()
+	TObjectPtr<UMaterialInstanceDynamic> HintMaterial;
 };

@@ -2,12 +2,13 @@
 //
 // No engine, no editor, no cook. Run it with Tools/Tests/run_chess_engine_tests.ps1.
 //
-// Three kinds of claim. PERFT: the move generator agrees, to the move, with the published
+// Four kinds of claim. PERFT: the move generator agrees, to the move, with the published
 // counts for six positions chosen by the chess programming community to exercise every
 // rule. RULES: castling, en passant, promotion, mate, stalemate, the draws, notation, each
 // shown on a position built for it. PLAY: it takes what is free, does not give away what
 // is not, finds a forced mate and proves it, and every game - random or engine against
-// engine - ends.
+// engine - ends. COACH: the hint and its reason, word for word, on positions where both
+// are known, and a review that is silent about sound moves and exact about bad ones.
 
 #include "ChessEngine.h"
 
@@ -487,6 +488,162 @@ namespace
 	}
 
 	// -------------------------------------------------------------------------------------
+	// THE COACH: the move it suggests, and the reason in words, held to positions where both
+	// are known; and the review of a played move, silent for good moves and specific about
+	// bad ones.
+
+	bool Says(const std::string& Text, const char* Part)
+	{
+		return Text.find(Part) != std::string::npos;
+	}
+
+	FChessGame GameAfter(std::initializer_list<const char*> Moves)
+	{
+		FChessGame Game;
+		for (const char* Uci : Moves)
+		{
+			Game.PlayUci(Uci);
+		}
+		return Game;
+	}
+
+	void TestCoachAdvice()
+	{
+		const FChessStrength Coach = FChessStrength::Coach();
+		const std::string Ghost = "the ghost";
+		auto Advise = [&](const FChessPosition& P) { return ChessAdvise(P, Coach, {}, Ghost); };
+
+		const FChessAdvice Mate = Advise(Fen("6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1"));
+		Check(Mate.Reason == EChessHintReason::Mates && Mate.MateInMoves == 1 && Mate.Text == "Ra8# is checkmate!",
+			"coach: a mate in one is named as one", Mate.Text);
+
+		const FChessAdvice Free = Advise(Fen("4k3/8/8/3q4/8/8/8/3QK3 w - - 0 1"));
+		Check(Free.Reason == EChessHintReason::WinsMaterial && Says(Free.Text, "Qxd5 wins the queen."),
+			"coach: a free queen is taken, and said so", Free.Text);
+
+		// The bishop on c4 is attacked by a pawn that is itself defended: taking it loses the
+		// bishop, so the lesson is to move it.
+		const FChessAdvice Save = Advise(Fen("4k3/8/2p5/1p6/2B5/8/8/4K3 w - - 0 1"));
+		Check(Save.Reason == EChessHintReason::SavesPiece && Save.Search.Best.From == ChessParseSquare("c4")
+			&& Says(Save.Text, "Your bishop is in danger from bxc4."),
+			"coach: an attacked bishop is moved to safety, and the threat named", Save.Text);
+
+		// 1.e4 e5 2.Bc4 Nc6 3.Qh5: White threatens Qxf7#.
+		const FChessGame Scholar = GameAfter({ "e2e4", "e7e5", "f1c4", "b8c6", "d1h5" });
+		const FChessAdvice Stop = Scholar.Advise(Coach, Ghost);
+		FChessPosition AfterStop = Scholar.Position().Played(Stop.Search.Best);
+		bool bStillMate = false;
+		for (const FChessMove& Reply : AfterStop.LegalMoves())
+		{
+			const FChessPosition Next = AfterStop.Played(Reply);
+			bStillMate = bStillMate || (Next.InCheck() && Next.LegalMoves().empty());
+		}
+		Check(Stop.Reason == EChessHintReason::StopsMate && Says(Stop.Text, "The ghost threatens checkmate with Qxf7#.") && !bStillMate,
+			"coach: the scholar's mate threat is named, and its move stops it", Stop.Text);
+
+		const FChessAdvice Out = Advise(Fen("3kr3/8/8/8/8/8/PP6/4K3 w - - 0 1"));
+		Check(Out.Reason == EChessHintReason::EscapesCheck && Says(Out.Text, "You're in check: K"),
+			"coach: in check, the way out", Out.Text);
+
+		const FChessAdvice Opening = Advise(FChessPosition::Start());
+		Check((Opening.Reason == EChessHintReason::Centre || Opening.Reason == EChessHintReason::Develops
+			|| Opening.Reason == EChessHintReason::Best) && !Opening.LineSan.empty(),
+			"coach: the first move of the game is a sound opening move", Opening.Text + " | " + Opening.LineSan);
+
+		const FChessAdvice None = Advise(Fen("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1"));
+		Check(None.Reason == EChessHintReason::None && None.Text.empty(), "coach: no advice when there is no move");
+
+		const char* Middlegames[] = {
+			"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+			"r1bq1rk1/pp2ppbp/2np1np1/8/3NP3/2N1BP2/PPPQ2PP/R3KB1R w KQ - 0 9",
+		};
+		for (const char* Text : Middlegames)
+		{
+			const auto Start = std::chrono::steady_clock::now();
+			const FChessAdvice Middle = Advise(Fen(Text));
+			std::printf("      coach d%d %lld nodes %.2f s: %s  [%s]\n", Middle.Search.DepthReached,
+				static_cast<long long>(Middle.Search.Nodes), Seconds(Start), Middle.Text.c_str(), Middle.LineSan.c_str());
+		}
+	}
+
+	void TestCoachReview()
+	{
+		const FChessStrength Coach = FChessStrength::Coach();
+		const std::string Ghost = "the ghost";
+		auto Review = [&](const FChessPosition& P, const char* Uci)
+		{
+			FChessMove Move;
+			P.FindMove(Uci, Move);
+			return ChessReviewMove(P, Move, Coach, {}, Ghost);
+		};
+
+		const FChessReview Queen = Review(Fen("4k3/8/2p5/3p4/8/8/8/3QK3 w - - 0 1"), "d1d5");
+		Check(Queen.bMistake && Queen.Answer.ToUci() == "c6d5" && Says(Queen.Text, "Qxd5 loses your queen for a pawn: the ghost can answer cxd5."),
+			"review: a queen given away for a pawn", Queen.Text);
+
+		const FChessPosition BackRank = Fen("6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1");
+		const FChessReview Missed = Review(BackRank, "a1a2");
+		Check(Missed.bMistake && Missed.Better.ToUci() == "a1a8" && Says(Missed.Text, "misses a checkmate: Ra8# is mate."),
+			"review: a mate in one missed", Missed.Text);
+		const FChessReview Found = Review(BackRank, "a1a8");
+		Check(!Found.bMistake && Found.Text.empty(), "review: silent when the move was the coach's own");
+
+		const FChessPosition Start = FChessPosition::Start();
+		bool bQuiet = true;
+		std::string Spoke;
+		for (const char* Uci : { "e2e4", "d2d4", "g1f3", "b1c3", "c2c4" })
+		{
+			const FChessReview Fine = Review(Start, Uci);
+			bQuiet = bQuiet && !Fine.bMistake;
+			Spoke += Fine.bMistake ? std::string(Uci) + ": " + Fine.Text + " " : std::string();
+		}
+		Check(bQuiet, "review: silent about every sound first move", Spoke);
+
+		FChessGame Scholar = GameAfter({ "e2e4", "e7e5", "f1c4", "b8c6", "d1h5" });
+		const FChessAdvice Hint = Scholar.Advise(Coach, Ghost);
+		Scholar.PlayUci("g8f6");
+		const FChessReview Allowed = Scholar.ReviewLastMove(Coach, Ghost, &Hint.Search);
+		Check(Allowed.bMistake && Allowed.Answer.ToUci() == "h5f7" && Says(Allowed.Text, "Nf6 allows checkmate: the ghost can answer Qxf7#."),
+			"review: a move that allows mate, reusing the hint's search", Allowed.Text);
+		const FChessReview Again = Scholar.ReviewLastMove(Coach, Ghost);
+		Check(Again.bMistake == Allowed.bMistake && Again.Text == Allowed.Text, "review: the same with or without the hint's search", Again.Text);
+
+		// A game of the beginner ghost against the coach, the way the table runs it: a hint
+		// searched before each beginner move, then the review of the move it made. Every
+		// word the review says must be backed by its own numbers.
+		FChessGame Game;
+		int Reviewed = 0;
+		int Spoken = 0;
+		bool bBacked = true;
+		std::string Said;
+		const auto Clock = std::chrono::steady_clock::now();
+		FChessStrength Beginner = FChessStrength::Beginner();
+		while (!Game.Result().IsOver() && Game.PliesPlayed() < 40)
+		{
+			if (Game.SideToMove() == EChessColor::White)
+			{
+				const FChessAdvice Before = Game.Advise(Coach, Ghost);
+				Beginner.Seed = static_cast<uint32_t>(7 + Game.PliesPlayed());
+				Game.Play(Game.Think(Beginner).Best);
+				const FChessReview R = Game.ReviewLastMove(Coach, Ghost, &Before.Search);
+				++Reviewed;
+				if (R.bMistake)
+				{
+					++Spoken;
+					bBacked = bBacked && !R.Text.empty() && !R.Better.IsNull();
+					Said += "\n        " + R.Text;
+				}
+			}
+			else
+			{
+				Game.Play(Game.Think(FChessStrength::Master()).Best);
+			}
+		}
+		Check(bBacked, "review: every warning names the better move",
+			Fmt("%d of %d beginner moves flagged, %.1f s", Spoken, Reviewed, Seconds(Clock)) + Said);
+	}
+
+	// -------------------------------------------------------------------------------------
 	// WHOLE GAMES MUST END - the lesson the pinball's wedge taught.
 
 	bool Sane(const FChessGame& Game, std::string& Why)
@@ -613,6 +770,8 @@ int main()
 	TestGameBookkeeping();
 	TestTactics();
 	TestStrength();
+	TestCoachAdvice();
+	TestCoachReview();
 	TestRandomGames();
 	TestEngineGames();
 

@@ -43,6 +43,34 @@ namespace ChessTableDetail
 		FLinearColor(1.00f, 0.12f, 0.10f, 0.55f),
 	};
 	const FLinearColor DotColor(0.20f, 0.95f, 0.35f, 0.65f);
+	const FLinearColor HintColor(0.15f, 0.85f, 1.00f, 0.50f);
+
+	// What the coach's sentences call the other player.
+	const char* const Opponent = "the ghost";
+
+	// The coach's sentences, broken at spaces into lines of at most Width characters: the
+	// panel is centred text on a strip and does not wrap by itself.
+	FString Wrapped(const FString& Text, int32 Width)
+	{
+		TArray<FString> Words;
+		Text.ParseIntoArray(Words, TEXT(" "), true);
+		FString Out;
+		FString Line;
+		for (const FString& Word : Words)
+		{
+			if (!Line.IsEmpty() && Line.Len() + 1 + Word.Len() > Width)
+			{
+				Out += Out.IsEmpty() ? Line : TEXT("\n") + Line;
+				Line.Reset();
+			}
+			Line += Line.IsEmpty() ? Word : TEXT(" ") + Word;
+		}
+		if (!Line.IsEmpty())
+		{
+			Out += Out.IsEmpty() ? Line : TEXT("\n") + Line;
+		}
+		return Out;
+	}
 	constexpr int32 DotCount = 28;       // a queen in the middle of an empty board has 27
 	constexpr double ShapeSize = 100.0;  // the engine's basic shapes
 	constexpr double MarkLift = 0.06;    // cm above the playing surface
@@ -169,6 +197,25 @@ AChessTable::AChessTable()
 		}
 		Dot->SetVisibility(false);
 		MoveDots[I] = Dot;
+	}
+
+	HintMarks.SetNum(2);
+	for (int32 I = 0; I < HintMarks.Num(); ++I)
+	{
+		UStaticMeshComponent* Mark = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("HintMark%d"), I));
+		Mark->SetupAttachment(SceneRoot);
+		MakeVisualOnly(Mark);
+		Mark->SetCastShadow(false);
+		if (PlaneMesh.Succeeded())
+		{
+			Mark->SetStaticMesh(PlaneMesh.Object);
+		}
+		if (MarkMaterial.Succeeded())
+		{
+			Mark->SetMaterial(0, MarkMaterial.Object);
+		}
+		Mark->SetVisibility(false);
+		HintMarks[I] = Mark;
 	}
 
 	TableCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TableCamera"));
@@ -324,6 +371,20 @@ void AChessTable::BeginPlay()
 			Dot->SetMaterial(0, DotMaterial);
 		}
 	}
+	HintMaterial = (HintMarks.Num() > 0 && HintMarks[0]) ? HintMarks[0]->CreateAndSetMaterialInstanceDynamic(0) : nullptr;
+	if (HintMaterial)
+	{
+		const FLinearColor& C = ChessTableDetail::HintColor;
+		HintMaterial->SetVectorParameterValue(TEXT("Color"), FLinearColor(C.R, C.G, C.B, 1.0f));
+		HintMaterial->SetScalarParameterValue(TEXT("Opacity"), C.A);
+		for (UStaticMeshComponent* Mark : HintMarks)
+		{
+			if (Mark)
+			{
+				Mark->SetMaterial(0, HintMaterial);
+			}
+		}
+	}
 	if (BoardLight)
 	{
 		BoardLight->SetIntensity(BoardLightLumens);
@@ -336,6 +397,7 @@ void AChessTable::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	StopPlaying();   // whatever tore this down, he gets his controls and his eyes back
 	++ThinkTicket;   // and an answer still on its way is thrown away
+	ForgetCoach();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -349,12 +411,14 @@ void AChessTable::NewGame()
 	bHaveGhostThought = false;
 	Selected = -1;
 	Game.Reset();
+	ForgetCoach();
 	GameSeed = static_cast<uint32>(FMath::Rand()) | 1u;
 	ResetPieces();
 	if (!IsPlayersTurn() && !Game.Result().IsOver())
 	{
 		StartGhostThinking();
 	}
+	StartHint();
 }
 
 /* Every mesh to where the position says, at once: a new game, a take-back. Pieces that are
@@ -540,6 +604,7 @@ void AChessTable::TryPlayerMove(int32 From, int32 To)
 	if (Game.Play(Move))
 	{
 		AnimateMove(Before, Move);
+		StartReview();   // even a last move gets one: a stalemate thrown away is worth a word
 		AfterMove();
 	}
 }
@@ -554,10 +619,171 @@ void AChessTable::AfterMove()
 			UTF8_TO_TCHAR(Game.MoveListText().c_str()));
 		return;
 	}
-	if (!IsPlayersTurn())
+	if (IsPlayersTurn())
+	{
+		StartHint();
+	}
+	else
 	{
 		StartGhostThinking();
 	}
+}
+
+// =====================================================================================
+// THE COACH
+
+bool AChessTable::HintIsCurrent() const
+{
+	return HintEpoch == CoachEpoch && HintPly == Game.PliesPlayed();
+}
+
+void AChessTable::StartHint()
+{
+	// Only for a seated player, on his own move, and only once a move.
+	if (!bPlaying || !IsPlayersTurn() || (HintIsCurrent() && (bHintThinking || bHaveHint)))
+	{
+		return;
+	}
+	bHintThinking = true;
+	bHaveHint = false;
+	bShowHint = false;
+	HintEpoch = CoachEpoch;
+	HintPly = Game.PliesPlayed();
+	const FChessGame Copy = Game;
+	HintFuture = Async(EAsyncExecution::ThreadPool, [Copy]()
+	{
+		return Copy.Advise(FChessStrength::Coach(), ChessTableDetail::Opponent);
+	});
+}
+
+void AChessTable::StartReview()
+{
+	bHaveReview = false;
+	bReviewThinking = false;
+	if (!bCoachWarnings || Game.PliesPlayed() == 0)
+	{
+		return;
+	}
+	// The hint for the position he moved from is half the review, if it finished in time.
+	const bool bHintFits = bHaveHint && HintEpoch == CoachEpoch && HintPly == Game.PliesPlayed() - 1;
+	const FChessSearchResult Best = bHintFits ? Hint.Search : FChessSearchResult();
+	const FChessGame Copy = Game;
+	bReviewThinking = true;
+	ReviewEpoch = CoachEpoch;
+	ReviewFuture = Async(EAsyncExecution::ThreadPool, [Copy, Best, bHintFits]()
+	{
+		return Copy.ReviewLastMove(FChessStrength::Coach(), ChessTableDetail::Opponent, bHintFits ? &Best : nullptr);
+	});
+}
+
+void AChessTable::PollCoach()
+{
+	if (bHintThinking && HintFuture.IsValid() && HintFuture.IsReady())
+	{
+		const FChessAdvice Result = HintFuture.Get();
+		HintFuture = TFuture<FChessAdvice>();
+		bHintThinking = false;
+		if (HintIsCurrent())
+		{
+			Hint = Result;
+			bHaveHint = true;
+			if (bShowHint)
+			{
+				UE_LOG(LogSibeliusGame, Display, TEXT("[Chess] hint: %s  [%s]"), UTF8_TO_TCHAR(Hint.Text.c_str()), UTF8_TO_TCHAR(Hint.LineSan.c_str()));
+			}
+		}
+	}
+	if (bReviewThinking && ReviewFuture.IsValid() && ReviewFuture.IsReady())
+	{
+		const FChessReview Result = ReviewFuture.Get();
+		ReviewFuture = TFuture<FChessReview>();
+		bReviewThinking = false;
+		if (ReviewEpoch == CoachEpoch && bCoachWarnings)
+		{
+			Review = Result;
+			bHaveReview = Review.bMistake;
+			if (bHaveReview)
+			{
+				UE_LOG(LogSibeliusGame, Display, TEXT("[Chess] coach: %s"), UTF8_TO_TCHAR(Review.Text.c_str()));
+			}
+		}
+	}
+}
+
+// A take-back or a new game: nothing the coach was saying or working out still applies. The
+// searches already running finish on their own and are never read.
+void AChessTable::ForgetCoach()
+{
+	++CoachEpoch;
+	bHintThinking = false;
+	bHaveHint = false;
+	bShowHint = false;
+	bReviewThinking = false;
+	bHaveReview = false;
+	HintFuture = TFuture<FChessAdvice>();
+	ReviewFuture = TFuture<FChessReview>();
+}
+
+void AChessTable::OnHint()
+{
+	if (!IsPlayersTurn())
+	{
+		return;
+	}
+	StartHint();   // already thinking or thought: this does nothing
+	bShowHint = true;
+	if (bHaveHint && HintIsCurrent())
+	{
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Chess] hint: %s  [%s]"), UTF8_TO_TCHAR(Hint.Text.c_str()), UTF8_TO_TCHAR(Hint.LineSan.c_str()));
+	}
+}
+
+void AChessTable::OnCoachToggle()
+{
+	bCoachWarnings = !bCoachWarnings;
+	if (!bCoachWarnings)
+	{
+		bHaveReview = false;
+		bReviewThinking = false;
+	}
+	CoachToggleShown = 2.5f;
+}
+
+FString AChessTable::CoachNote() const
+{
+	using namespace ChessTableDetail;
+	constexpr int32 Width = 70;
+	FString Note;
+	auto Add = [&Note](const FString& Text)
+	{
+		Note += Note.IsEmpty() ? Text : TEXT("\n") + Text;
+	};
+
+	if (CoachToggleShown > 0.0f)
+	{
+		Add(bCoachWarnings ? TEXT("COACH: warnings on. I'll speak up after a bad move.")
+			: TEXT("COACH: warnings off. [H] still asks me for a hint."));
+	}
+	if (bHaveReview && bCoachWarnings)
+	{
+		Add(Wrapped(TEXT("COACH: ") + FString(UTF8_TO_TCHAR(Review.Text.c_str())) + TEXT("  [U] takes it back."), Width));
+	}
+	if (bShowHint && IsPlayersTurn())
+	{
+		if (bHaveHint && HintIsCurrent())
+		{
+			Add(Wrapped(TEXT("HINT: ") + FString(UTF8_TO_TCHAR(Hint.Text.c_str())), Width));
+			if (!Hint.LineSan.empty())
+			{
+				Add(TEXT("The line it expects: ") + FString(UTF8_TO_TCHAR(Hint.LineSan.c_str())));
+			}
+		}
+		else
+		{
+			Add(TEXT("HINT: the coach is thinking..."));
+		}
+	}
+	return Note;
 }
 
 void AChessTable::StartGhostThinking()
@@ -664,6 +890,7 @@ void AChessTable::StartPlaying(APlayerController* PC)
 	{
 		StartGhostThinking();
 	}
+	StartHint();
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Chess] sat down (%s)."), *GetActorNameOrLabel());
 }
 
@@ -726,6 +953,9 @@ void AChessTable::BindTableKeys()
 	Bind({ EKeys::Two }, &AChessTable::OnLevel2);
 	Bind({ EKeys::Three }, &AChessTable::OnLevel3);
 	Bind({ EKeys::Escape, EKeys::E, EKeys::Gamepad_FaceButton_Right }, &AChessTable::OnLeave);
+	// H is the dev overlay on foot; seated, the table hears it first and it is the hint.
+	Bind({ EKeys::H, EKeys::Gamepad_LeftShoulder }, &AChessTable::OnHint);
+	Bind({ EKeys::K }, &AChessTable::OnCoachToggle);
 }
 
 void AChessTable::OnClick()
@@ -801,11 +1031,13 @@ void AChessTable::OnTakeBack()
 	}
 	bHaveGhostThought = false;
 	Selected = -1;
+	ForgetCoach();
 	ResetPieces();
 	if (!IsPlayersTurn() && !Game.Result().IsOver())
 	{
 		StartGhostThinking();   // he played Black and took back the whole game
 	}
+	StartHint();
 }
 
 void AChessTable::OnSwapSides()
@@ -833,6 +1065,8 @@ void AChessTable::Tick(float DeltaSeconds)
 	}
 
 	PollGhost(DeltaSeconds);
+	PollCoach();
+	CoachToggleShown = FMath::Max(0.0f, CoachToggleShown - DeltaSeconds);
 	UpdatePieces(DeltaSeconds);
 
 	if (bPlaying)
@@ -916,6 +1150,24 @@ void AChessTable::UpdateMarks()
 	Show(CursorMark, IsPlayersTurn() ? Cursor : -1);
 	const FChessPosition& P = Game.Position();
 	Show(Check, P.InCheck() ? P.KingSquare[P.SideToMove == EChessColor::White ? 0 : 1] : -1);
+
+	// The coach's move, from and to, a little above the other marks.
+	const bool bHint = bPlaying && bShowHint && bHaveHint && HintIsCurrent() && IsPlayersTurn() && !Hint.Search.Best.IsNull();
+	for (int32 I = 0; I < HintMarks.Num(); ++I)
+	{
+		UStaticMeshComponent* M = HintMarks[I];
+		if (!M)
+		{
+			continue;
+		}
+		M->SetVisibility(bHint);
+		if (bHint)
+		{
+			const int32 Square = I == 0 ? Hint.Search.Best.From : Hint.Search.Best.To;
+			M->SetRelativeLocationAndRotation(SquareLocal(Square) + FVector(0.0, 0.0, MarkLift + 0.08 + 0.01 * I), FRotator::ZeroRotator);
+			M->SetRelativeScale3D(FVector(Size, Size, 1.0));
+		}
+	}
 
 	int32 Used = 0;
 	if (bPlaying && Selected >= 0)
@@ -1035,10 +1287,11 @@ void AChessTable::RefreshPanel()
 		Status += FString::Printf(TEXT("\nCODE VISION: the ghost played %s, %s."), *LineInSan(G), *Rating);
 	}
 
-	const FString Controls = TEXT("Click a piece, then its square   (or arrows and Enter)\n")
-		TEXT("[U] take back   [R] new game   [C] swap sides   [1] [2] [3] the ghost's strength   hold [V] to read its mind\n")
-		TEXT("[ESC] walk away   [O] back to the office");
-	Hud->ShowTablePanel(Status, Controls);
+	const FString Controls = FString(TEXT("Click a piece, then its square   (or arrows and Enter)\n"))
+		+ FString::Printf(TEXT("[H] a hint from the coach   [K] coach warnings: %s   [U] take back\n"), bCoachWarnings ? TEXT("on") : TEXT("off"))
+		+ TEXT("[R] new game   [C] swap sides   [1] [2] [3] the ghost's strength   hold [V] to read its mind\n")
+		+ TEXT("[ESC] walk away   [O] back to the office");
+	Hud->ShowTablePanel(Status, Controls, 0.25f, CoachNote());
 }
 
 ASibeliusHUD* AChessTable::GetHud() const
