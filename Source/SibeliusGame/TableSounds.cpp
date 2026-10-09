@@ -173,11 +173,115 @@ namespace TableSoundsDetail
 					+ (T > 0.055f ? 0.30f * Sine(1480.0f, Second) * Decay(70.0f, Second) + 0.22f * N * Decay(220.0f, Second) : 0.0f);
 			});
 			break;
+		case ETableSound::KartBeep:
+			Pcm = Build(0.22f, 61, 6000.0f, [](float T, float N) { return 0.38f * Sine(660.0f, T) * Decay(9.0f, T) + 0.02f * N; });
+			break;
+		case ETableSound::KartGo:
+			Pcm = Build(0.65f, 62, 6000.0f, [](float T, float N) { return 0.40f * Sine(1320.0f, T) * Decay(4.0f, T) + 0.15f * Sine(660.0f, T) * Decay(5.0f, T) + 0.02f * N; });
+			break;
+		case ETableSound::KartBump:   Pcm = Knock(0.20f, 63, 85.0f, 26.0f, 0.70f, 600.0f, 0.04f); break;
+		case ETableSound::KartPickup:
+			Pcm = Build(0.35f, 64, 7000.0f, [](float T, float N)
+			{
+				const float Second = FMath::Max(0.0f, T - 0.09f);
+				return 0.30f * Sine(988.0f, T) * Decay(18.0f, T) + (T > 0.09f ? 0.32f * Sine(1480.0f, Second) * Decay(10.0f, Second) : 0.0f) + 0.03f * N * Decay(60.0f, T);
+			});
+			break;
+		case ETableSound::KartBoost:
+			// Air rushing past, its pitch climbing: noise through a rising band plus a low surge.
+			Pcm = Build(0.80f, 65, 4500.0f, [](float T, float N)
+			{
+				const float Swell = FMath::Min(T / 0.08f, 1.0f) * FMath::Clamp((0.8f - T) / 0.5f, 0.0f, 1.0f);
+				return Swell * (0.55f * N + 0.18f * Sine(110.0f + 260.0f * T, T));
+			});
+			break;
+		case ETableSound::KartSlap:   Pcm = Knock(0.16f, 66, 320.0f, 40.0f, 0.95f, 2400.0f, 0.06f); break;
+		case ETableSound::KartChest:
+			Pcm = Build(0.90f, 67, 8000.0f, [](float T, float N)
+			{
+				const float Fall = 1800.0f - 1300.0f * FMath::Min(T / 0.6f, 1.0f);
+				const float Thud = T > 0.6f ? 0.55f * Sine(70.0f, T - 0.6f) * Decay(14.0f, T - 0.6f) + 0.3f * N * Decay(40.0f, T - 0.6f) : 0.0f;
+				return 0.22f * Sine(Fall, T) * Decay(2.5f, T) + 0.12f * Sine(Fall * 1.5f, T) * Decay(3.5f, T) + Thud;
+			});
+			break;
+		case ETableSound::KartLap:
+			Pcm = Build(0.75f, 68, 7000.0f, [](float T, float)
+			{
+				float S = 0.0f;
+				const float Notes[3] = { 784.0f, 988.0f, 1175.0f };
+				for (int32 K = 0; K < 3; ++K)
+				{
+					const float U = T - 0.11f * K;
+					S += U >= 0.0f ? 0.26f * Sine(Notes[K], U) * Decay(6.0f, U) : 0.0f;
+				}
+				return S;
+			});
+			break;
+		case ETableSound::KartFinish:
+			Pcm = Build(1.80f, 69, 7000.0f, [](float T, float)
+			{
+				float S = 0.0f;
+				const float Notes[5] = { 523.3f, 659.3f, 784.0f, 1046.5f, 1318.5f };
+				for (int32 K = 0; K < 5; ++K)
+				{
+					const float U = T - 0.13f * K;
+					const float Hold = K == 4 ? 1.6f : 4.5f;
+					S += U >= 0.0f ? 0.20f * (Sine(Notes[K], U) + 0.3f * Sine(Notes[K] * 2.0f, U)) * Decay(Hold, U) : 0.0f;
+				}
+				return S;
+			});
+			break;
 		default:
 			break;
 		}
 		return Pcm;
 	}
+
+	// Half a second of engine: a 60 Hz two-stroke - a buzzy fundamental, its harmonics, and
+	// the firing pulses as a 30 Hz throb - every component a whole number of cycles in half a
+	// second, so the loop's seam is silent. The noise is left out for the same reason.
+	const TArray<uint8>& EngineLoop()
+	{
+		static TArray<uint8> Pcm;
+		if (Pcm.Num() > 0)
+		{
+			return Pcm;
+		}
+		const int32 N = SND_SR / 2;
+		Pcm.Reserve(N * 2);
+		for (int32 I = 0; I < N; ++I)
+		{
+			const float T = static_cast<float>(I) / SND_SR;
+			const float Throb = 0.75f + 0.25f * Sine(30.0f, T);
+			const float Buzz = 0.30f * Sine(60.0f, T) + 0.18f * Sine(120.0f, T) + 0.12f * Sine(180.0f, T)
+				+ 0.07f * Sine(240.0f, T) + 0.05f * Sine(360.0f, T);
+			AppendSample(Pcm, 0.55f * Buzz * Throb);
+		}
+		return Pcm;
+	}
+}
+
+USoundWaveProcedural* TableSounds::MakeKartEngine()
+{
+	USoundWaveProcedural* Wave = NewObject<USoundWaveProcedural>(GetTransientPackage());
+	Wave->SetSampleRate(SND_SR);
+	Wave->NumChannels = 1;
+	// Unreal's INDEFINITELY_LOOPING_DURATION, the length it gives a sound that never ends.
+	// Not more: the mixer multiplies it by the DEVICE's rate (48 kHz) into an int32 frame
+	// count, and 100000 s overflowed that and asserted (NumTotalFrames > 0) the moment the
+	// engine started - the first time Walt got into a kart, 2026-10-09.
+	Wave->Duration = 10000.0f;
+	Wave->SoundGroup = SOUNDGROUP_Effects;
+	Wave->bLooping = false;
+	const TArray<uint8>& Loop = TableSoundsDetail::EngineLoop();
+	Wave->QueueAudio(Loop.GetData(), Loop.Num());
+	// Called on the audio thread when it runs low: the static loop is read-only by then.
+	Wave->OnSoundWaveProceduralUnderflow = FOnSoundWaveProceduralUnderflow::CreateLambda([](USoundWaveProcedural* InWave, int32)
+	{
+		const TArray<uint8>& Again = TableSoundsDetail::EngineLoop();
+		InWave->QueueAudio(Again.GetData(), Again.Num());
+	});
+	return Wave;
 }
 
 void TableSounds::Play(const UObject* WorldContext, ETableSound Sound, float Volume, float Pitch)

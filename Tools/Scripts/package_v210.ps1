@@ -124,6 +124,11 @@ $checks = [ordered]@{
   "Mixamo: African Rainbow" = "$cooked\Mixamo\Retargeted\Anim_African_Rainbow_MH.uasset"
   "Mixamo: Hip Hop Shimmy"  = "$cooked\Mixamo\Retargeted\Anim_Hip_Hop_Shimmy_MH.uasset"
   "Mixamo: YMCA"            = "$cooked\Mixamo\Retargeted\Anim_YMCA_MH.uasset"
+  # --- THE TRANSHUMAN GRAND PRIX (2026-10-09): L_Kart by one +MapsToCook line; the race kart
+  # (Content/Fab/Race_kart, gitignored) and a colour variant only by AKartRace's constructor.
+  "the kart race"       = "$cooked\Maps\L_Kart.umap"
+  "the race kart"       = "$cooked\Fab\Race_kart\Race_Kart.uasset"
+  "a kart's colours"    = "$cooked\Fab\Race_kart\Wheel_Blue_D.uasset"
   # --- ISLA'S HOME (2026-10-05): the sci-fi kit's station, the same way in.
   "Isla's home"         = "$cooked\Maps\L_IslaHome.umap"
   "Isla herself"        = "$cooked\MetaHumans\MHC_IslaRowan\BP_MHC_IslaRowan.uasset"

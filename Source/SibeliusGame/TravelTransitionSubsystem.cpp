@@ -249,6 +249,11 @@ FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 	{
 		return NSLOCTEXT("Travel", "EnterBowling", "The Transhuman Bowling Alley...");
 	}
+	if (LevelName.Contains(TEXT("Kart")))
+	{
+		// L_Kart, before L_City's "City" catch-all below: it is the city's streets, raced.
+		return NSLOCTEXT("Travel", "EnterKart", "The Transhuman Grand Prix...");
+	}
 	if (LevelName.Contains(TEXT("Office")))
 	{
 		return NSLOCTEXT("Travel", "ReturnOffice", "Returning to the office...");

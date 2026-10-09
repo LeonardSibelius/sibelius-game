@@ -47,8 +47,21 @@ enum class ETableSound : uint8
 	ChessPlace,    // a felted boxwood piece set down on the board: a soft, low tok
 	ChessCapture,  // the taker set down hard where the taken piece stood
 
+	// The Transhuman Grand Prix
+	KartBeep,      // the countdown's 3, 2, 1
+	KartGo,        // and GO, an octave up
+	KartBump,      // kart on wall, kart on kart
+	KartPickup,    // an item out of a box: two bright notes
+	KartBoost,     // a whoosh that climbs
+	KartSlap,      // the slap landing
+	KartChest,     // Refactor: a shimmer down into a heavy chest
+	KartLap,       // a new lap: three rising notes
+	KartFinish,    // over the line: the fanfare
+
 	Count
 };
+
+class USoundWaveProcedural;
 
 namespace TableSounds
 {
@@ -56,4 +69,9 @@ namespace TableSounds
 	    Volume 0..1-ish; Pitch 1 is as built, and a little randomness keeps a rack of
 	    clicks from sounding like one sample repeated. */
 	void Play(const UObject* WorldContext, ETableSound Sound, float Volume, float Pitch = 1.0f);
+
+	/** A kart engine that never stops: half a second of two-stroke buzz, every frequency in
+	    it a whole number of cycles long, queued again each time it runs dry. Play it on an
+	    audio component and ride its pitch with the speed. */
+	USoundWaveProcedural* MakeKartEngine();
 }

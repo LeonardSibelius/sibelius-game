@@ -97,6 +97,14 @@ public:
 	 */
 	void ShowTablePanel(const FString& Status, const FString& Controls, float Seconds = 0.25f, const FString& Note = FString());
 
+	/**
+	 * Lines to show just above "[O] Back to Office" while he is on foot in another world - the
+	 * kart race's controls, read before he gets in (Walt, 2026-10-09: "place the instructions
+	 * for the racing controls above the [O] Back to Office"). A lease like ShowTablePanel:
+	 * renewed every frame, gone by itself.
+	 */
+	void ShowAwayHint(const FString& Text, float Seconds = 0.25f);
+
 	// SIB-39 dev overlay visibility. Static so the toggle key (character) and the
 	// ScanForSite log gate (UBuildComponent) share one flag without a HUD lookup.
 	// Default ON (Walt likes seeing it).
@@ -273,6 +281,8 @@ private:
 	FString TableControls;
 	FString TableNote;
 	double TablePanelUntil = 0.0;
+	FString AwayHint;
+	double AwayHintUntil = 0.0;
 
 	/** Full-screen video for the duration of a cutscene, or null. See SetCinematicVideo. */
 	UPROPERTY(Transient)

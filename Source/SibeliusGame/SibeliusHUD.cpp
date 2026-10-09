@@ -1080,6 +1080,40 @@ void ASibeliusHUD::DrawBackToOfficeHint()
 	const float HintY = Canvas->ClipY - HintH - 48.0f;   // a hand above the bottom edge
 	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f), HintX - 10.0f, HintY - 6.0f, HintW + 20.0f, HintH + 12.0f);
 	DrawText(Hint, FLinearColor(1.0f, 1.0f, 1.0f, 0.9f), HintX, HintY, nullptr, OverlayTextScale);
+
+	// What this world asks of him, stacked just above it, on one strip.
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (Now < AwayHintUntil && !AwayHint.IsEmpty())
+	{
+		TArray<FString> Lines;
+		AwayHint.ParseIntoArray(Lines, TEXT("\n"), false);
+		const float Scale = OverlayTextScale * 0.85f;
+		float MaxW = 0.0f, LineH = 0.0f;
+		for (const FString& Line : Lines)
+		{
+			float W = 0.0f, H = 0.0f;
+			GetTextSize(Line.IsEmpty() ? FString(TEXT(" ")) : Line, W, H, nullptr, Scale);
+			MaxW = FMath::Max(MaxW, W);
+			LineH = FMath::Max(LineH, H);
+		}
+		const float Bottom = HintY - 6.0f - 14.0f;
+		float Y = Bottom - LineH * Lines.Num();
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.6f), (Canvas->ClipX - MaxW) * 0.5f - 12.0f, Y - 6.0f, MaxW + 24.0f, LineH * Lines.Num() + 12.0f);
+		for (int32 I = 0; I < Lines.Num(); ++I)
+		{
+			float W = 0.0f, H = 0.0f;
+			GetTextSize(Lines[I], W, H, nullptr, Scale);
+			DrawText(Lines[I], I == 0 ? FLinearColor(1.0f, 0.85f, 0.4f, 0.95f) : FLinearColor(1.0f, 1.0f, 1.0f, 0.9f),
+				(Canvas->ClipX - W) * 0.5f, Y, nullptr, Scale);
+			Y += LineH;
+		}
+	}
+}
+
+void ASibeliusHUD::ShowAwayHint(const FString& Text, float Seconds)
+{
+	AwayHint = Text;
+	AwayHintUntil = (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0) + Seconds;
 }
 
 void ASibeliusHUD::DrawMachineHint()
