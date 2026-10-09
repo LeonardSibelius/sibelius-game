@@ -40,6 +40,7 @@ class UAudioComponent;
 class UBoxComponent;
 class UCameraComponent;
 class UInstancedStaticMeshComponent;
+class USkeletalMeshComponent;
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class USplineComponent;
@@ -82,6 +83,15 @@ struct FKartVisual
 	UPROPERTY()
 	TObjectPtr<UMaterialInstanceDynamic> SparkMaterial;
 
+	UPROPERTY()
+	TArray<TObjectPtr<UStaticMeshComponent>> Driver;    // the plain driver, hidden while an agent drives
+
+	UPROPERTY()
+	TObjectPtr<AActor> Agent;                            // her MetaHuman in the seat, at play only
+
+	UPROPERTY()
+	TObjectPtr<USkeletalMeshComponent> Manny;            // or, in Leonard's kart, the mannequin
+
 	float GroundZ = 0.0f;
 	FVector GroundNormal = FVector::UpVector;
 	bool bHaveGround = false;
@@ -122,6 +132,24 @@ namespace KartShapes
 
 	// Loads the accent textures by name, as hard references so they reach the pak.
 	void FindAccents(TArray<TObjectPtr<class UTexture2D>>& Out);
+
+	// THE AGENTS AT THE WHEEL: each MetaHuman grows by DriverScale to fill the oversized kart and
+	// sits with her mesh's origin at DriverOrigin (kart-local cm). Both come from
+	// Tools/Scripts/bake_kart_driving.py, which aimed Anim_Driving_Kart_MH's hands at the wheel and
+	// feet at the footwell for exactly this placement: change them there, then re-bake.
+	const TCHAR* const DrivePath = TEXT("/Game/Mixamo/Driving/Anim_Driving_Kart_MH.Anim_Driving_Kart_MH");
+	constexpr float DriverScale = 1.3f;
+	const FVector DriverOrigin(-15.6, -1.0, -35.2);
+
+	// LEONARD AT THE WHEEL: Manny, the engine's mannequin (Walt, 2026-10-09: "from behind he might
+	// look like a man wearing a racing helmet"). Taller than the agents, so grown less; the bake
+	// shifts his pose's root so his hips land where theirs do from the same DriverOrigin.
+	const TCHAR* const MannyPath = TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple");
+	const TCHAR* const MannyDrivePath = TEXT("/Game/Mixamo/Driving/Anim_Driving_Kart_Manny.Anim_Driving_Kart_Manny");
+	constexpr float MannyScale = 1.2f;
+
+	// Her MetaHuman Blueprint's class, 0..4 the agents; null for Leonard, who has none.
+	const TCHAR* AgentBlueprint(int32 Kart);
 }
 
 UCLASS()
@@ -216,6 +244,17 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Kart", meta = (ClampMin = "0.1"))
 	float KartModelScale = 0.85f;
 
+	/** The agents drive their own karts (Walt, 2026-10-09: "put the metahumans in the karts"):
+	    each one's MetaHuman, spawned at play, in Mixamo's driving pose re-seated for the kart.
+	    Off, or a Blueprint missing, and that kart keeps its plain driver. */
+	UPROPERTY(EditAnywhere, Category = "Kart|Drivers")
+	bool bAgentDrivers = true;
+
+	/** Moves all five agents in their seats, kart-local cm (+X forward, +Z up). Small moves only:
+	    the pose's hands and feet were aimed from the seat bake_kart_driving.py assumes. */
+	UPROPERTY(EditAnywhere, Category = "Kart|Drivers")
+	FVector DriverNudge = FVector::ZeroVector;
+
 	/** Rebuilt from TrackSpline on every construction, so the kerbs show in the editor. */
 	UFUNCTION(CallInEditor, Category = "Kart")
 	void RebuildTrack();
@@ -247,7 +286,7 @@ private:
 	void PlaceKerbs();
 	void UpdateKarts(float DeltaSeconds);
 	void UpdateTrackProps(float DeltaSeconds);
-	float GroundAt(const FVector2D& XY, float Guess, FVector* Normal = nullptr) const;
+	float GroundAt(const FVector2D& XY, float Street, FVector* Normal = nullptr) const;   // Street: the track's height there
 	FVector WorldAt(double S, double D, float Lift = 0.0f) const;
 	UStaticMeshComponent* MakePart(USceneComponent* Parent, UStaticMesh* Mesh, const FVector& Location,
 		const FRotator& Rotation, const FVector& Scale, UMaterialInterface* Material);
@@ -276,6 +315,19 @@ private:
 
 	UPROPERTY()
 	TArray<TObjectPtr<UMaterialInstanceDynamic>> Paints;   // every MID made, kept alive
+
+	void SeatAgents();       // at play, a tick after BeginPlay: the MetaHumans into karts 0-4
+	void SeatManny(FKartVisual& V);   // and Manny into Leonard's
+	void UnseatAgents();
+
+	UPROPERTY()
+	TObjectPtr<class UAnimSequence> DriveAnim;
+
+	UPROPERTY()
+	TObjectPtr<class USkeletalMesh> MannyMesh;
+
+	UPROPERTY()
+	TObjectPtr<class UAnimSequence> MannyDriveAnim;
 
 	UPROPERTY()
 	TObjectPtr<UMaterialInstanceDynamic> DotGreen;

@@ -129,6 +129,9 @@ $checks = [ordered]@{
   "the kart race"       = "$cooked\Maps\L_Kart.umap"
   "the race kart"       = "$cooked\Fab\Race_kart\Race_Kart.uasset"
   "a kart's colours"    = "$cooked\Fab\Race_kart\Wheel_Blue_D.uasset"
+  # The agents at the wheel (2026-10-09): their pose, only by AKartRace's constructor too.
+  "the agents' kart pose" = "$cooked\Mixamo\Driving\Anim_Driving_Kart_MH.uasset"
+  "Manny's kart pose"     = "$cooked\Mixamo\Driving\Anim_Driving_Kart_Manny.uasset"
   # --- ISLA'S HOME (2026-10-05): the sci-fi kit's station, the same way in.
   "Isla's home"         = "$cooked\Maps\L_IslaHome.umap"
   "Isla herself"        = "$cooked\MetaHumans\MHC_IslaRowan\BP_MHC_IslaRowan.uasset"

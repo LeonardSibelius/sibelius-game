@@ -10,16 +10,19 @@
 #include "TableSounds.h"
 #include "TravelTransitionSubsystem.h"
 
+#include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/AudioComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/CollisionProfile.h"
+#include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
@@ -233,6 +236,19 @@ FLinearColor KartShapes::DriverColor(int32 Kart)
 	}
 }
 
+const TCHAR* KartShapes::AgentBlueprint(int32 Kart)
+{
+	switch (Kart)
+	{
+	case 0:  return TEXT("/Game/MetaHumans/MHC_Kaia/BP_MHC_Kaia.BP_MHC_Kaia_C");
+	case 1:  return TEXT("/Game/MetaHumans/MHC_NyraSolmere/BP_MHC_NyraSolmere.BP_MHC_NyraSolmere_C");
+	case 2:  return TEXT("/Game/MetaHumans/MHC_IslaRowan/BP_MHC_IslaRowan.BP_MHC_IslaRowan_C");
+	case 3:  return TEXT("/Game/MetaHumans/MHC_Aisling/BP_MHC_Aisling.BP_MHC_Aisling_C");
+	case 4:  return TEXT("/Game/MetaHumans/MHC_Elise/BP_MHC_Elise.BP_MHC_Elise_C");
+	default: return nullptr;
+	}
+}
+
 // =====================================================================================
 // THE RACE ACTOR
 
@@ -255,6 +271,14 @@ AKartRace::AKartRace()
 	static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Model(KartShapes::ModelPath);
 	KartModel = Model.Get();
 	KartShapes::FindAccents(Accents);
+	// The agents' pose, the same way (Content/Mixamo is gitignored too). Not the agents
+	// themselves: a hard reference here would hold five MetaHumans in memory in every level.
+	static ConstructorHelpers::FObjectFinderOptional<UAnimSequence> Drive(KartShapes::DrivePath);
+	DriveAnim = Drive.Get();
+	static ConstructorHelpers::FObjectFinderOptional<USkeletalMesh> Manny(KartShapes::MannyPath);
+	MannyMesh = Manny.Get();
+	static ConstructorHelpers::FObjectFinderOptional<UAnimSequence> MannyDrive(KartShapes::MannyDrivePath);
+	MannyDriveAnim = MannyDrive.Get();
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
@@ -378,26 +402,38 @@ bool AKartRace::BuildModelTrack()
 	return bTrackOk;
 }
 
-float AKartRace::GroundAt(const FVector2D& XY, float Guess, FVector* Normal) const
+float AKartRace::GroundAt(const FVector2D& XY, float Street, FVector* Normal) const
 {
+	/* THE STREET, NOT WHATEVER IS ON TOP. This traced down from the kart's last ground and took
+	   the first thing it hit: a kart scraping a prop at the road's edge climbed onto it, the next
+	   trace started from up there, and once past it the road was out of reach - Walt drove the
+	   rest of the race in the air (2026-10-09). Now every trace starts from the street's own
+	   height (the track's), and anything more than a kerb's step above it is looked through. */
+	constexpr float MaxStep = 60.0f;
 	const UWorld* World = GetWorld();
-	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(KartGround), false, this);
-	const FVector From(XY.X, XY.Y, Guess + 250.0f);
-	const FVector To(XY.X, XY.Y, Guess - 700.0f);
-	if (World && World->LineTraceSingleByObjectType(Hit, From, To, FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+	const FVector To(XY.X, XY.Y, Street - 300.0f);
+	FVector From(XY.X, XY.Y, Street + 200.0f);
+	FHitResult Hit;
+	for (int32 Try = 0; World && Try < 8
+		&& World->LineTraceSingleByObjectType(Hit, From, To, FCollisionObjectQueryParams(ECC_WorldStatic), Params); ++Try)
 	{
-		if (Normal)
+		if (Hit.ImpactPoint.Z <= Street + MaxStep)
 		{
-			*Normal = Hit.ImpactNormal;
+			if (Normal)
+			{
+				*Normal = Hit.ImpactNormal;
+			}
+			return Hit.ImpactPoint.Z;
 		}
-		return Hit.ImpactPoint.Z;
+		Params.AddIgnoredComponent(Hit.GetComponent());   // a lamp's arm, a canopy: look past it
+		From.Z = Hit.ImpactPoint.Z;
 	}
 	if (Normal)
 	{
 		*Normal = FVector::UpVector;
 	}
-	return Guess;
+	return Street;
 }
 
 FVector AKartRace::WorldAt(double S, double D, float Lift) const
@@ -518,13 +554,146 @@ void AKartRace::BeginPlay()
 	{
 		BuildKarts();
 		ResetRace(false);
+		// Next tick, not now: actors spawned while the world is still handing out BeginPlay may
+		// miss their own, and the MetaHuman sets her body and face up in hers.
+		GetWorldTimerManager().SetTimerForNextTick(this, &AKartRace::SeatAgents);
 	}
 }
 
 void AKartRace::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	StopPlaying();
+	UnseatAgents();
 	Super::EndPlay(EndPlayReason);
+}
+
+void AKartRace::SeatAgents()
+{
+	UnseatAgents();
+	UWorld* World = GetWorld();
+	if (!bAgentDrivers || !DriveAnim || !World || !World->IsGameWorld())
+	{
+		return;
+	}
+	const float Length = DriveAnim->GetPlayLength();
+	for (int32 K = 0; K < Karts.Num(); ++K)
+	{
+		FKartVisual& V = Karts[K];
+		if (K == PlayerKart)
+		{
+			SeatManny(V);
+			continue;
+		}
+		// Loaded here, as L_Kart opens; the office's levels already cook every one of them.
+		const TCHAR* Path = KartShapes::AgentBlueprint(K);
+		UClass* Class = Path ? LoadClass<AActor>(nullptr, Path) : nullptr;
+		if (!Class || !V.Root)
+		{
+			continue;
+		}
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AActor* Agent = World->SpawnActor<AActor>(Class, V.Root->GetComponentTransform(), Params);
+		if (!Agent || !Agent->GetRootComponent())
+		{
+			continue;
+		}
+		Agent->SetActorEnableCollision(false);
+		Agent->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+		Agent->AttachToComponent(V.Root, FAttachmentTransformRules::KeepRelativeTransform);
+		// A MetaHuman faces her +Y: a quarter turn faces her up the kart.
+		Agent->SetActorRelativeTransform(FTransform(FRotator(0.0f, -90.0f, 0.0f),
+			KartShapes::DriverOrigin + DriverNudge, FVector(KartShapes::DriverScale)));
+
+		// The body plays the pose and the face and clothes follow it, as for the dances
+		// (UDancerAgentComponent::PlayDance); each starts at her own point of the loop.
+		TArray<USkeletalMeshComponent*> Meshes;
+		Agent->GetComponents<USkeletalMeshComponent>(Meshes);
+		bool bPosed = false;
+		for (USkeletalMeshComponent* Mesh : Meshes)
+		{
+			if (Mesh && Mesh->GetName().Contains(TEXT("Body")))
+			{
+				/* HER BLUEPRINT'S OWN DANCE, written over too. PlayAnimation leaves AnimationData
+				   naming it, and UDancerAgentSubsystem's 5-second scan adopts anyone whose mesh
+				   names a known dance - Isla and Kaia got a dancer component and their saved
+				   dances, and danced in their karts (Walt, 2026-10-09: "oops - Isla is dancing"). */
+				Mesh->AnimationData.AnimToPlay = DriveAnim;
+				Mesh->AnimationData.bSavedLooping = true;
+				Mesh->AnimationData.bSavedPlaying = true;
+				Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+				Mesh->PlayAnimation(DriveAnim, /*bLooping=*/true);
+				Mesh->SetPosition(Length * static_cast<float>(K) / 5.0f, /*bFireNotifies=*/false);
+				bPosed = true;
+			}
+		}
+		if (!bPosed)
+		{
+			UE_LOG(LogSibeliusGame, Warning, TEXT("[Kart] %s has no Body mesh to drive with"), *Agent->GetName());
+			Agent->Destroy();
+			continue;
+		}
+		for (UStaticMeshComponent* Part : V.Driver)
+		{
+			Part->SetVisibility(false);
+		}
+		V.Agent = Agent;
+	}
+}
+
+void AKartRace::SeatManny(FKartVisual& V)
+{
+	// The pose was baked after this build's editor started, so the constructor may have missed
+	// it: look again by name.
+	if (!MannyDriveAnim)
+	{
+		MannyDriveAnim = LoadObject<UAnimSequence>(nullptr, KartShapes::MannyDrivePath);
+	}
+	if (!MannyMesh || !MannyDriveAnim || !V.Root)
+	{
+		return;
+	}
+	USkeletalMeshComponent* Mesh = NewObject<USkeletalMeshComponent>(this);
+	Mesh->SetupAttachment(V.Root);
+	Mesh->SetRelativeTransform(FTransform(FRotator(0.0f, -90.0f, 0.0f),
+		KartShapes::DriverOrigin + DriverNudge, FVector(KartShapes::MannyScale)));
+	Mesh->SetSkeletalMesh(MannyMesh);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Mesh->SetCanEverAffectNavigation(false);
+	Mesh->RegisterComponent();
+	AddInstanceComponent(Mesh);
+	Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+	Mesh->PlayAnimation(MannyDriveAnim, /*bLooping=*/true);
+	for (UStaticMeshComponent* Part : V.Driver)
+	{
+		Part->SetVisibility(false);
+	}
+	V.Manny = Mesh;
+}
+
+void AKartRace::UnseatAgents()
+{
+	for (FKartVisual& V : Karts)
+	{
+		if (V.Agent)
+		{
+			V.Agent->Destroy();
+			V.Agent = nullptr;
+		}
+		if (V.Manny)
+		{
+			V.Manny->DestroyComponent();
+			V.Manny = nullptr;
+		}
+		for (UStaticMeshComponent* Part : V.Driver)
+		{
+			if (Part)
+			{
+				Part->SetVisibility(true);
+			}
+		}
+	}
 }
 
 UStaticMeshComponent* AKartRace::MakePart(USceneComponent* Parent, UStaticMesh* Mesh, const FVector& Location,
@@ -615,6 +784,10 @@ void AKartRace::BuildKarts()
 			if (Part.bShell)
 			{
 				V.Shell.Add(Mesh);
+			}
+			if (Part.Paint == EPaint::Driver)
+			{
+				V.Driver.Add(Mesh);
 			}
 			if (Part.Paint == EPaint::Chest)
 			{
@@ -771,9 +944,8 @@ void AKartRace::UpdateKarts(float DeltaSeconds)
 		{
 			continue;
 		}
-		const float Guess = V.bHaveGround ? V.GroundZ : static_cast<float>(Track.HeightAt(K.S));
 		FVector Normal;
-		const float Z = GroundAt(FVector2D(K.P.X, K.P.Y), Guess, &Normal);
+		const float Z = GroundAt(FVector2D(K.P.X, K.P.Y), static_cast<float>(Track.HeightAt(K.S)), &Normal);
 		if (V.bHaveGround && DeltaSeconds > 0.0f)
 		{
 			V.GroundZ = FMath::FInterpTo(V.GroundZ, Z, DeltaSeconds, 20.0f);
@@ -855,7 +1027,7 @@ void AKartRace::UpdateTrackProps(float DeltaSeconds)
 		if (bThere)
 		{
 			const FKartObstacle& O = Obstacles[static_cast<size_t>(I)];
-			const float Z = GroundAt(FVector2D(O.P.X, O.P.Y), Karts.Num() > 0 ? Karts[0].GroundZ : 0.0f);
+			const float Z = GroundAt(FVector2D(O.P.X, O.P.Y), static_cast<float>(Track.HeightAt(Track.Locate(O.P).S)));
 			Cone->SetWorldLocationAndRotation(FVector(O.P.X, O.P.Y, Z + 45.0f), FRotator::ZeroRotator);
 			Cone->SetWorldScale3D(FVector(0.7, 0.7, 0.9));
 		}

@@ -13,7 +13,7 @@
 "appbuild"
 {
 	"appid"			"5249380"
-	"desc"			"v2.1.6 AI chat, four agents' homes, their advice, the dance menu, the chess coach - from the E: recovery kit"
+	"desc"			"v2.1.7 AI chat, four agents' homes, their advice, the dance menu, the chess coach, the Grand Prix - from the E: recovery kit"
 
 	"buildoutput"	"SET-BY-SCRIPT"
 	"contentroot"	"SET-BY-SCRIPT"

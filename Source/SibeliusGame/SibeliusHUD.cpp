@@ -1087,7 +1087,7 @@ void ASibeliusHUD::DrawBackToOfficeHint()
 	{
 		TArray<FString> Lines;
 		AwayHint.ParseIntoArray(Lines, TEXT("\n"), false);
-		const float Scale = OverlayTextScale * 0.85f;
+		const float Scale = OverlayTextScale;   // was 0.85x: Walt, 2026-10-09, "just a bit bigger"
 		float MaxW = 0.0f, LineH = 0.0f;
 		for (const FString& Line : Lines)
 		{
