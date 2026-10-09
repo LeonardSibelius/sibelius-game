@@ -15,6 +15,7 @@ import { factsLine, cleanObjective, OBJECTIVE_MAX_CHARS, destinationsFrom, extra
 import { DILEMMAS, dilemmaEvent, dilemmaLine, adviceFor, adviceLine, extractAdvice, screenContext } from "./dilemmas.js";
 import { screenText } from "./distress.js";
 import { hasFeature, curiosityLine, screenContextFor } from "./curiosity.js";
+import { boastLine, BOAST_ODDS } from "./boasts.js";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -923,6 +924,26 @@ await new Promise((resolve) => app.server.close(resolve));
       && screenContextFor(on, [...asked, { role: "user", text: "hm" }]) === ""
       && screenContextFor(on, [{ role: "model", text: `${"x".repeat(400)}?` }]) === "" && screenContextFor(on, undefined) === "",
     "curiosity: no context without the switch, without a question last, or past 300 characters");
+}
+
+/* --- boasts (boasts.js): the Grand Prix, and pride in racing and dancing. New builds only.
+   Walt, 2026-10-09: "brag about their racing and dancing abilities, and from time to time do
+   that randomly as well as when asked about it". */
+{
+  const on = { locationId: "L_Office_v02", features: ["human_questions"] };
+  check(knownCharacterIds().every((id) => /THE TRANSHUMAN GRAND PRIX is real, and you race in it/.test(boastLine(id, on, 0.99))
+      && /YOU BRAG/.test(boastLine(id, on, 0.99)) && /fifty-four/.test(boastLine(id, on, 0.99))
+      && /never sneer at him, never be cruel/.test(boastLine(id, on, 0.99))),
+    "boasts: with the switch on, every agent knows the race, brags about racing and dancing, never cruelly");
+  check(knownCharacterIds().every((id) => boastLine(id, { locationId: "L_Office_v02" }, 0) === "") && boastLine("mrs_hall", on, 0) === "",
+    "boasts: a build that does not send the switch - Valve's, with no Grand Prix - gets nothing new");
+  check(!/THIS REPLY/.test(boastLine("kaia", on, BOAST_ODDS)) && /THIS REPLY/.test(boastLine("kaia", on, BOAST_ODDS - 0.01)),
+    "boasts: one reply in BOAST_ODDS is told to boast unprompted, the rest only when asked");
+  check(!/THIS REPLY/.test(boastLine("isla", { ...on, event: "dilemma_isla_versions" }, 0)),
+    "boasts: never unprompted while her dilemma is open");
+  check(/Refactor - your own power/.test(boastLine("kaia", on, 0.99)) && /Generate - your own power/.test(boastLine("aisling", on, 0.99))
+      && /not about results/.test(boastLine("nyra", on, 0.99)),
+    "boasts: each wins her own way, and none invents his race results");
 }
 
 console.log(`=== ${failures} failure(s) ===`);

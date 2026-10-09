@@ -18,6 +18,7 @@ import { eventLine } from "./events.js";
 import { factsLine, extractTravel } from "./facts.js";
 import { dilemmaLine, adviceLine, extractAdvice, screenContext } from "./dilemmas.js";
 import { curiosityLine, screenContextFor } from "./curiosity.js";
+import { boastLine } from "./boasts.js";
 
 /**
  * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
@@ -258,6 +259,9 @@ export function createApp(options = {}) {
       adviceLine(body.characterId, body.storyContext?.facts),
       // New builds only (curiosity.js): she may ask what being human is like, never about his life.
       curiosityLine(body.characterId, body.storyContext),
+      // New builds only (boasts.js): the Grand Prix, her pride in her racing and dancing, and now
+      // and then a boast unprompted.
+      boastLine(body.characterId, body.storyContext),
       home,
       awayLine(body.characterId, body.storyContext?.locationId),
       eventLine(body.storyContext?.event, { where: "chat", characterId: body.characterId }),
