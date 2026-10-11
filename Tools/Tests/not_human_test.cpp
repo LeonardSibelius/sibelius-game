@@ -9,7 +9,9 @@
 
 #include "NotHumanCaptcha.h"
 
+#include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <set>
 #include <string>
@@ -191,6 +193,104 @@ static void TestClockAndMouse()
 	Check(!Chase.bPass && Contains(Chase.Message, "20 seconds"), "chasing it with the mouse fails", Chase.Message);
 }
 
+static void TestInkblot()
+{
+	int Asymmetric = 0;
+	int OutOfRange = 0;
+	int Unanswerable = 0;
+	std::set<std::string> Distinct;
+	for (uint32_t Seed = 1; Seed <= 25; ++Seed)
+	{
+		const FNotHumanChallenge B = Make(ENotHumanKind::Inkblot, Seed);
+		const int W = B.InkWidth;
+		const int H = B.InkHeight;
+		if (W <= 0 || H <= 0 || static_cast<int>(B.Ink.size()) != W * H)
+		{
+			Check(false, "an inkblot has its pixels");
+			return;
+		}
+		double Sum = 0.0;
+		for (int Y = 0; Y < H; ++Y)
+		{
+			for (int X = 0; X < W; ++X)
+			{
+				Asymmetric += B.Ink[Y * W + X] != B.Ink[Y * W + (W - 1 - X)] ? 1 : 0;
+				Sum += B.Ink[Y * W + X];
+			}
+		}
+		const double Coverage = 100.0 * Sum / (255.0 * W * H);
+		OutOfRange += (Coverage < 24.0 || Coverage > 52.0 || std::abs(Coverage - B.InkCoverage) > 0.05) ? 1 : 0;
+		const int Machine = static_cast<int>(std::find(B.Options.begin(), B.Options.end(), B.Answer) - B.Options.begin());
+		int InkAnswers = 0;
+		for (const std::string& O : B.Options)
+		{
+			InkAnswers += O.compare(0, 4, "Ink.") == 0 ? 1 : 0;
+		}
+		Unanswerable += (Machine >= static_cast<int>(B.Options.size()) || B.Options.size() != 5 || InkAnswers != 2) ? 1 : 0;
+		Distinct.insert(std::string(B.Ink.begin(), B.Ink.end()));
+	}
+	Check(Asymmetric == 0, "every blot is its own mirror image");
+	Check(OutOfRange == 0, "covering between a quarter and a half of the card, as it says");
+	Check(Unanswerable == 0, "five answers each: three sightings, the true coverage, and a wrong one");
+	Check(Distinct.size() == 25, "and no two blots alike", std::to_string(Distinct.size()) + " different in 25");
+
+	const FNotHumanChallenge B = Make(ENotHumanKind::Inkblot);
+	for (int I = 0; I < static_cast<int>(B.Options.size()); ++I)
+	{
+		const FNotHumanVerdict V = FNotHumanRun::Judge(B, Choice(I));
+		const bool bMachine = B.Options[I] == B.Answer;
+		const bool bInk = B.Options[I].compare(0, 4, "Ink.") == 0;
+		if (V.bPass != bMachine || (!bMachine && !Contains(V.Message, bInk ? "Close is a human idea" : "Humans always see something")))
+		{
+			Check(false, "only the true coverage passes, and each wrong answer says why", B.Options[I] + " -> " + V.Message);
+			return;
+		}
+	}
+	Check(true, "only the true coverage passes, and each wrong answer says why", B.Answer);
+}
+
+static void TestAssociation()
+{
+	const FNotHumanChallenge C = Make(ENotHumanKind::Association);
+	Check(C.Options.size() == 6 && C.Accepts.size() == 6 && C.TimeLimit == 3.0f, "six words, three seconds each");
+	std::set<std::string> Unique(C.Options.begin(), C.Options.end());
+	Check(Unique.size() == 6, "six different words");
+
+	FNotHumanAnswer Machine;
+	for (int W = 0; W < 6; ++W)
+	{
+		Machine.Words.push_back(FNotHumanRun::MachineWord(C, W));
+		Machine.Times.push_back(1.2f);
+	}
+	Check(FNotHumanRun::Judge(C, Machine).bPass, "six parts of speech pass", FNotHumanRun::Judge(C, Machine).Message);
+
+	FNotHumanAnswer Short = Machine;
+	for (std::string& Word : Short.Words)
+	{
+		Word = Word == "noun" ? "n." : Word == "verb" ? "V" : Word == "adjective" ? " adj " : Word;
+	}
+	Check(FNotHumanRun::Judge(C, Short).bPass, "the dictionary's short forms count too");
+
+	FNotHumanAnswer OneSlip = Machine;
+	OneSlip.Words[2] = "sunshine";
+	Check(FNotHumanRun::Judge(C, OneSlip).bPass, "one human slip in six still passes");
+
+	FNotHumanAnswer Two = OneSlip;
+	Two.Words[4] = "grandmother";
+	const FNotHumanVerdict Human = FNotHumanRun::Judge(C, Two);
+	Check(!Human.bPass && Contains(Human.Message, "4 of 6") && Contains(Human.Message, "you said \"sunshine\""),
+		"two slips fail, quoting the first", Human.Message);
+
+	FNotHumanAnswer Slow = Machine;
+	Slow.Times[0] = 3.5f;
+	Slow.Times[1] = 4.0f;
+	const FNotHumanVerdict Late = FNotHumanRun::Judge(C, Slow);
+	Check(!Late.bPass && Contains(Late.Message, "too long"), "right but too slow fails", Late.Message);
+
+	Check(FNotHumanRun::IsMachineWord(C, 0, FNotHumanRun::MachineWord(C, 0)) && !FNotHumanRun::IsMachineWord(C, 0, "father"),
+		"\"father\" is not a part of speech");
+}
+
 static void TestEveryTestHasAMachineAnswer()
 {
 	int Missing = 0;
@@ -199,7 +299,7 @@ static void TestEveryTestHasAMachineAnswer()
 		const FNotHumanChallenge C = Make(static_cast<ENotHumanKind>(K));
 		Missing += (C.Title.empty() || C.Vision.empty()) ? 1 : 0;
 	}
-	Check(Missing == 0, "all fourteen tests have an instruction and a Code Vision view");
+	Check(Missing == 0, "all sixteen tests have an instruction and a Code Vision view");
 }
 
 static void TestRuns()
@@ -218,7 +318,8 @@ static void TestRuns()
 			Order += std::to_string(static_cast<int>(C.Kind)) + ",";
 		}
 		Orders.insert(Order);
-		Bad += (Run.Count() != 8 || Kinds.size() != 8 || Run.All()[0].Kind != ENotHumanKind::Feelings) ? 1 : 0;
+		Bad += (Run.Count() != 8 || Kinds.size() != 8 || Run.All()[0].Kind != ENotHumanKind::Feelings
+			|| !Kinds.count(static_cast<int>(ENotHumanKind::Inkblot)) || !Kinds.count(static_cast<int>(ENotHumanKind::Association))) ? 1 : 0;
 		int Steps = 0;
 		while (!Run.IsOver() && Steps < 20)
 		{
@@ -227,7 +328,7 @@ static void TestRuns()
 		}
 		Bad += (Steps != 8 || !Run.IsOver()) ? 1 : 0;
 	}
-	Check(Bad == 0, "every run is eight different tests, the feelings grid first, and ends after eight");
+	Check(Bad == 0, "every run is eight different tests: the feelings grid first, the inkblot and the word association always, and it ends after eight");
 	Check(Orders.size() > 150, "and the runs differ", std::to_string(Orders.size()) + " orders in 200 runs");
 
 	FNotHumanRun Run;
@@ -276,7 +377,20 @@ static void TestVerdicts()
 				else if (!bAsMachine) { A.Selected = { 1 }; }
 				break;
 			case ENotHumanInput::Text: A.Text = bAsMachine ? C.Answer : "a guess"; A.Seconds = 1.0f; break;
-			case ENotHumanInput::Choice: A.Choice = bAsMachine ? static_cast<int>(C.Options.size()) - 1 : 0; break;
+			case ENotHumanInput::Choice:
+			{
+				const auto Machine = std::find(C.Options.begin(), C.Options.end(), C.Answer);
+				const int MachineIndex = static_cast<int>(Machine - C.Options.begin());
+				A.Choice = bAsMachine ? MachineIndex : (MachineIndex == 0 ? 1 : 0);
+				break;
+			}
+			case ENotHumanInput::Flash:
+				for (int W = 0; W < static_cast<int>(C.Options.size()); ++W)
+				{
+					A.Words.push_back(bAsMachine ? FNotHumanRun::MachineWord(C, W) : "mother");
+					A.Times.push_back(1.0f);
+				}
+				break;
 			case ENotHumanInput::Wait: A.bMoved = !bAsMachine; break;
 			case ENotHumanInput::Reflex: A.Seconds = C.WaitSeconds + (bAsMachine ? 0.01f : 1.0f); break;
 			case ENotHumanInput::Slider: A.Value = bAsMachine ? 73.0f : 70.0f; break;
@@ -295,6 +409,8 @@ int main()
 	TestWords();
 	TestMachineAnswers();
 	TestClockAndMouse();
+	TestInkblot();
+	TestAssociation();
 	TestEveryTestHasAMachineAnswer();
 	TestRuns();
 	TestVerdicts();

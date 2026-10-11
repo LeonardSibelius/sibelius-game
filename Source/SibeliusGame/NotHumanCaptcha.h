@@ -13,9 +13,16 @@
 // presents it, and the parts that need a clock or a mouse (the stillness test, the reflex
 // test, the fleeing checkbox) measure them and hand this model the numbers.
 //
-// A RUN is eight tests drawn from fourteen without repeats, the first always the feelings grid
-// (the joke that explains all the others). The verdict is the share passed - "you are 63%
-// machine" - with a rank and a line from one of the agents.
+// A RUN is eight tests drawn from sixteen without repeats: the feelings grid first (the joke that
+// explains all the others), and always the two that make it a psychological exam - THE INKBLOT
+// and WORD ASSOCIATION (Walt, 2026-10-11: "can we do both"). The verdict is the share passed -
+// "you are 63% machine" - with a rank and a line from one of the agents.
+//
+// THE INKBLOT is drawn here, a new one every time: blobs of ink on the left half, mirrored onto
+// the right, edges roughened, then thresholded to a coverage between 28% and 48%. People see a
+// butterfly; a machine sees ink, and how much of it. WORD ASSOCIATION flashes six words, three
+// seconds each: people answer with a word the first one brings to mind; a machine files it, and
+// answers with its part of speech.
 //
 // Every question is written here, in the game. Nothing goes to the chat server: the build
 // under Steam's review is unchanged by this app.
@@ -35,6 +42,7 @@ enum class ENotHumanInput : uint8_t
 	Reflex,     // click when the button turns green: the widget reports the timing
 	Slider,     // set a value exactly
 	Checkbox,   // tick a box that runs from the mouse: a key press ticks it
+	Flash,      // words one at a time, a few seconds each: the widget reports each answer and its time
 };
 
 enum class ENotHumanKind : uint8_t
@@ -53,6 +61,8 @@ enum class ENotHumanKind : uint8_t
 	Slider,
 	Checkbox,
 	Squares,
+	Inkblot,
+	Association,
 	Count
 };
 
@@ -69,6 +79,15 @@ struct FNotHumanChallenge
 	float WaitSeconds = 0.0f;           // Stillness: how long to hold still; Reflex: when the button turns green
 	std::string Vision;                 // what Code Vision shows: the machine's view
 	std::string Answer;                 // the machine's answer, for the record and the tests
+
+	// Inkblot: the blot, as ink per pixel (0 paper .. 255 ink), row by row, and how much is ink.
+	std::vector<uint8_t> Ink;
+	int InkWidth = 0;
+	int InkHeight = 0;
+	float InkCoverage = 0.0f;           // percent
+
+	// Association: for each of Options (the words), the answers a machine gives, '|'-separated.
+	std::vector<std::string> Accepts;
 };
 
 struct FNotHumanAnswer
@@ -80,6 +99,8 @@ struct FNotHumanAnswer
 	bool bMoved = false;                // Wait: he moved the mouse or touched a key
 	float Value = 0.0f;                 // Slider
 	bool bByKeyboard = false;           // Checkbox: ticked with a key (a machine's way)
+	std::vector<std::string> Words;     // Flash: what he typed for each word
+	std::vector<float> Times;           // Flash: how long each took
 };
 
 struct FNotHumanVerdict
@@ -114,6 +135,10 @@ public:
 
 	// Every test, built for a seed: the tests check each one's machine answer passes.
 	static FNotHumanChallenge Make(ENotHumanKind Kind, uint32_t Seed);
+
+	// The machine's answer to one association word ("noun"), and whether a reply is one of them.
+	static std::string MachineWord(const FNotHumanChallenge& Challenge, int Word);
+	static bool IsMachineWord(const FNotHumanChallenge& Challenge, int Word, const std::string& Reply);
 	static FNotHumanVerdict Judge(const FNotHumanChallenge& Challenge, const FNotHumanAnswer& Answer);
 
 private:

@@ -110,6 +110,135 @@ namespace NotHumanDetail
 	const char* const MemoryLetters = "ABCDEFGHJKLMNPQRSTUWXYZ23456789";
 	constexpr int MemoryLetterCount = 31;
 	const char* const PiDigits = "3.14159265358979323846";
+
+	const char* const Sightings[] = {
+		"A butterfly", "Two people dancing", "My father, disappointed", "A bat", "Two bears high-fiving",
+		"The ocean at night", "A moth looking at me", "Two women gossiping", "My first car, crashed", "A pelvis",
+	};
+
+	// The association words, and every part of speech a machine could fairly file each under.
+	struct FWord
+	{
+		const char* Word;
+		const char* Accepts;
+	};
+	const FWord AssociationList[] = {
+		{ "mother", "noun" }, { "run", "verb|noun" }, { "blue", "adjective|noun" }, { "slowly", "adverb" },
+		{ "she", "pronoun" }, { "eat", "verb" }, { "red", "adjective|noun" }, { "house", "noun|verb" },
+		{ "sing", "verb" }, { "happy", "adjective" }, { "quickly", "adverb" }, { "and", "conjunction" },
+		{ "Tuesday", "noun" }, { "forgive", "verb" }, { "lonely", "adjective" }, { "home", "noun|adverb" },
+		{ "never", "adverb" }, { "under", "preposition|adverb" }, { "we", "pronoun" }, { "dream", "noun|verb" },
+	};
+	constexpr int AssociationWords = 6;
+	constexpr float AssociationSeconds = 3.0f;
+	constexpr int AssociationToPass = 5;
+
+	// The short forms a dictionary uses count too: n, v, adj, adv, pron, conj, prep.
+	std::string Abbreviation(const std::string& Part)
+	{
+		if (Part == "noun") { return "n"; }
+		if (Part == "verb") { return "v"; }
+		if (Part == "adjective") { return "adj"; }
+		if (Part == "adverb") { return "adv"; }
+		if (Part == "pronoun") { return "pron"; }
+		if (Part == "conjunction") { return "conj"; }
+		if (Part == "preposition") { return "prep"; }
+		return Part;
+	}
+
+	std::vector<std::string> Split(const std::string& Text, char By)
+	{
+		std::vector<std::string> Out(1);
+		for (char Ch : Text)
+		{
+			if (Ch == By)
+			{
+				Out.emplace_back();
+			}
+			else
+			{
+				Out.back() += Ch;
+			}
+		}
+		return Out;
+	}
+
+	/* A Rorschach-style blot: soft round blobs of ink on the left half, the right half its mirror,
+	   the edge roughened by a few waves of noise, and the threshold moved until the ink covers
+	   the coverage chosen for it. Alpha is smoothstepped across the threshold so the edge is soft. */
+	void DrawBlot(FRng& Rng, int W, int H, std::vector<uint8_t>& Ink, float& Coverage)
+	{
+		const int Half = W / 2;
+		struct FBlob { float X, Y, R, Weight; };
+		std::vector<FBlob> Blobs;
+		const int Big = 8 + Rng.Below(6);
+		for (int I = 0; I < Big; ++I)
+		{
+			Blobs.push_back({ Rng.Between(Half * 0.25f, Half * 1.0f), Rng.Between(H * 0.12f, H * 0.88f), Rng.Between(W * 0.06f, W * 0.17f), Rng.Between(0.7f, 1.2f) });
+		}
+		for (int I = 0; I < 3; ++I)   // the spine down the fold, so the halves join
+		{
+			Blobs.push_back({ static_cast<float>(Half), Rng.Between(H * 0.25f, H * 0.75f), Rng.Between(W * 0.05f, W * 0.09f), 1.0f });
+		}
+		const int Spatter = 6 + Rng.Below(8);
+		for (int I = 0; I < Spatter; ++I)
+		{
+			Blobs.push_back({ Rng.Between(Half * 0.05f, Half * 0.9f), Rng.Between(H * 0.05f, H * 0.95f), Rng.Between(W * 0.012f, W * 0.035f), 1.4f });
+		}
+		float Phase[6];
+		for (float& P : Phase)
+		{
+			P = Rng.Between(0.0f, 6.2831853f);
+		}
+
+		std::vector<float> Field(static_cast<size_t>(W) * H, 0.0f);
+		for (int Y = 0; Y < H; ++Y)
+		{
+			for (int X = 0; X < W; ++X)
+			{
+				const float Mx = static_cast<float>(X < Half ? X : W - 1 - X);
+				float F = 0.0f;
+				for (const FBlob& B : Blobs)
+				{
+					const float Dx = Mx - B.X;
+					const float Dy = static_cast<float>(Y) - B.Y;
+					F += B.Weight * std::exp(-(Dx * Dx + Dy * Dy) / (B.R * B.R));
+				}
+				const float U = Mx / static_cast<float>(W);
+				const float V = static_cast<float>(Y) / static_cast<float>(H);
+				F += 0.10f * std::sin(41.0f * U + 23.0f * V + Phase[0]) * std::sin(37.0f * V + Phase[1])
+					+ 0.06f * std::sin(97.0f * U + Phase[2]) * std::sin(83.0f * V + Phase[3])
+					+ 0.04f * std::sin(173.0f * (U + V) + Phase[4]);
+				Field[static_cast<size_t>(Y) * W + X] = F;
+			}
+		}
+
+		// Move the threshold until the ink covers the chosen share of the card.
+		const float Target = Rng.Between(0.28f, 0.48f);
+		float Lo = 0.05f;
+		float Hi = 2.5f;
+		float Threshold = 0.6f;
+		for (int Step = 0; Step < 24; ++Step)
+		{
+			Threshold = 0.5f * (Lo + Hi);
+			size_t Covered = 0;
+			for (float F : Field)
+			{
+				Covered += F > Threshold ? 1u : 0u;
+			}
+			(static_cast<float>(Covered) / static_cast<float>(Field.size()) > Target ? Lo : Hi) = Threshold;
+		}
+		Ink.assign(Field.size(), 0);
+		double Sum = 0.0;
+		for (size_t I = 0; I < Field.size(); ++I)
+		{
+			const float T = std::min(1.0f, std::max(0.0f, (Field[I] - (Threshold - 0.03f)) / 0.06f));
+			const float A = T * T * (3.0f - 2.0f * T);
+			Ink[I] = static_cast<uint8_t>(std::lround(255.0f * A));
+			Sum += Ink[I];
+		}
+		Coverage = static_cast<float>(100.0 * Sum / (255.0 * static_cast<double>(Field.size())));
+	}
 }
 
 FNotHumanChallenge FNotHumanRun::Make(ENotHumanKind Kind, uint32_t Seed)
@@ -262,6 +391,55 @@ FNotHumanChallenge FNotHumanRun::Make(ENotHumanKind Kind, uint32_t Seed)
 		C.Vision = "slider.value = 73.0000 (Code Vision lets you set the value)";
 		C.Answer = "73.0000";
 		break;
+	case ENotHumanKind::Inkblot:
+	{
+		C.Input = ENotHumanInput::Choice;
+		C.Title = "What do you see?";
+		C.Detail = "Take your time. There are no wrong answers. (There are.)";
+		C.InkWidth = 200;
+		C.InkHeight = 240;
+		DrawBlot(Rng, C.InkWidth, C.InkHeight, C.Ink, C.InkCoverage);
+		// The machine's answer, with its real coverage; a machine answer with the wrong coverage;
+		// and three things a person might see.
+		const float Wrong = C.InkCoverage + (Rng.Below(2) ? 1.0f : -1.0f) * Rng.Between(9.0f, 15.0f);
+		C.Answer = Fmt("Ink. %.1f%% coverage.", C.InkCoverage);
+		std::vector<std::string> Pool(std::begin(Sightings), std::end(Sightings));
+		for (int I = static_cast<int>(Pool.size()) - 1; I > 0; --I)
+		{
+			std::swap(Pool[I], Pool[Rng.Below(I + 1)]);
+		}
+		C.Options = { Pool[0], Pool[1], Pool[2], C.Answer, Fmt("Ink. %.1f%% coverage.", std::max(3.0f, Wrong)) };
+		for (int I = static_cast<int>(C.Options.size()) - 1; I > 0; --I)
+		{
+			std::swap(C.Options[I], C.Options[Rng.Below(I + 1)]);
+		}
+		C.Vision = Fmt("ink coverage = %.1f%%, mirror-symmetric  (pixels inked / pixels on the card)", C.InkCoverage);
+		break;
+	}
+	case ENotHumanKind::Association:
+	{
+		C.Input = ENotHumanInput::Flash;
+		C.Title = "Type the first word that comes into your head.";
+		C.Detail = "Six words, three seconds each. Don't think.";
+		std::vector<int> Order;
+		for (int I = 0; I < static_cast<int>(sizeof(AssociationList) / sizeof(AssociationList[0])); ++I)
+		{
+			Order.push_back(I);
+		}
+		for (int I = static_cast<int>(Order.size()) - 1; I > 0; --I)
+		{
+			std::swap(Order[I], Order[Rng.Below(I + 1)]);
+		}
+		for (int I = 0; I < AssociationWords; ++I)
+		{
+			C.Options.push_back(AssociationList[Order[I]].Word);
+			C.Accepts.push_back(AssociationList[Order[I]].Accepts);
+		}
+		C.TimeLimit = AssociationSeconds;
+		C.Vision = "association = part of speech";
+		C.Answer = "the part of speech of each";
+		break;
+	}
 	case ENotHumanKind::Checkbox:
 		C.Input = ENotHumanInput::Checkbox;
 		C.Title = "Tick the box to confirm you are not a human.";
@@ -377,6 +555,56 @@ FNotHumanVerdict FNotHumanRun::Judge(const FNotHumanChallenge& C, const FNotHuma
 		V.bPass = std::fabs(A.Value - 73.0f) < 0.00005f;
 		V.Message = V.bPass ? "73.0000. Exactly. Unsettling." : Fmt("%.4f%%. Close is a human idea.", A.Value);
 		break;
+	case ENotHumanKind::Inkblot:
+	{
+		const std::string Picked = A.Choice >= 0 && A.Choice < static_cast<int>(C.Options.size()) ? C.Options[A.Choice] : std::string();
+		V.bPass = Picked == C.Answer;
+		const bool bInk = Picked.compare(0, 4, "Ink.") == 0;
+		V.Message = V.bPass ? Fmt("Ink, %.1f%%. That's all it ever is.", C.InkCoverage)
+			: bInk ? Fmt("Ink, yes - but it's %.1f%%, not that. Close is a human idea.", C.InkCoverage)
+			: Picked.empty() ? "You saw nothing. Promising, but you have to say so."
+			: Fmt("%s? Humans always see something. A machine sees ink: %.1f%% of the card.", Picked.c_str(), C.InkCoverage);
+		break;
+	}
+	case ENotHumanKind::Association:
+	{
+		const int Total = static_cast<int>(C.Options.size());
+		int Good = 0;
+		int FirstHuman = -1;
+		int FirstLate = -1;
+		for (int I = 0; I < Total; ++I)
+		{
+			const std::string Reply = I < static_cast<int>(A.Words.size()) ? A.Words[I] : std::string();
+			const float Took = I < static_cast<int>(A.Times.size()) ? A.Times[I] : C.TimeLimit + 1.0f;
+			const bool bLate = Took > C.TimeLimit;
+			const bool bMachine = IsMachineWord(C, I, Reply);
+			Good += (bMachine && !bLate) ? 1 : 0;
+			if (!bMachine && !bLate && !Trimmed(Reply).empty() && FirstHuman < 0)
+			{
+				FirstHuman = I;
+			}
+			if ((bLate || Trimmed(Reply).empty()) && FirstLate < 0)
+			{
+				FirstLate = I;
+			}
+		}
+		V.bPass = Good >= AssociationToPass;
+		if (V.bPass)
+		{
+			V.Message = Fmt("%d of %d filed, not felt. \"%s\": %s. Very machine.", Good, Total, C.Options[0].c_str(), MachineWord(C, 0).c_str());
+		}
+		else if (FirstHuman >= 0)
+		{
+			V.Message = Fmt("%d of %d. To \"%s\" you said \"%s\". A machine says \"%s\".", Good, Total, C.Options[FirstHuman].c_str(),
+				Trimmed(A.Words[FirstHuman]).c_str(), MachineWord(C, FirstHuman).c_str());
+		}
+		else
+		{
+			V.Message = Fmt("%d of %d. You took too long over \"%s\". A machine doesn't think about words; it files them.", Good, Total,
+				C.Options[FirstLate >= 0 ? FirstLate : 0].c_str());
+		}
+		break;
+	}
 	case ENotHumanKind::Checkbox:
 		V.bPass = A.bByKeyboard;
 		V.Message = V.bPass ? "Ticked without touching the mouse. Very machine."
@@ -396,22 +624,75 @@ void FNotHumanRun::Start(uint32_t Seed, int InCount)
 	PassCount = 0;
 	Challenges.clear();
 	FRng Rng(RunSeed);
-	// The feelings grid first: the joke that explains all the others. Then a shuffle of the rest.
-	std::vector<ENotHumanKind> Rest;
+	// The feelings grid first: the joke that explains all the others. Then the inkblot and the word
+	// association, which every run has, and the rest of the run drawn from the others - all of it
+	// after the first shuffled together.
+	std::vector<ENotHumanKind> Others;
 	for (int K = 1; K < static_cast<int>(ENotHumanKind::Count); ++K)
 	{
-		Rest.push_back(static_cast<ENotHumanKind>(K));
+		const ENotHumanKind Kind = static_cast<ENotHumanKind>(K);
+		if (Kind != ENotHumanKind::Inkblot && Kind != ENotHumanKind::Association)
+		{
+			Others.push_back(Kind);
+		}
+	}
+	for (int I = static_cast<int>(Others.size()) - 1; I > 0; --I)
+	{
+		std::swap(Others[I], Others[Rng.Below(I + 1)]);
+	}
+	const int Count = std::max(1, std::min(InCount, static_cast<int>(ENotHumanKind::Count)));
+	std::vector<ENotHumanKind> Rest;
+	if (Count >= 3)
+	{
+		Rest = { ENotHumanKind::Inkblot, ENotHumanKind::Association };
+	}
+	for (int I = 0; static_cast<int>(Rest.size()) + 1 < Count && I < static_cast<int>(Others.size()); ++I)
+	{
+		Rest.push_back(Others[I]);
 	}
 	for (int I = static_cast<int>(Rest.size()) - 1; I > 0; --I)
 	{
 		std::swap(Rest[I], Rest[Rng.Below(I + 1)]);
 	}
-	const int Count = std::max(1, std::min(InCount, static_cast<int>(ENotHumanKind::Count)));
 	Challenges.push_back(Make(ENotHumanKind::Feelings, RunSeed));
-	for (int I = 0; I + 1 < Count; ++I)
+	for (int I = 0; I < static_cast<int>(Rest.size()); ++I)
 	{
 		Challenges.push_back(Make(Rest[I], RunSeed + static_cast<uint32_t>(I) * 7919u));
 	}
+}
+
+std::string FNotHumanRun::MachineWord(const FNotHumanChallenge& C, int Word)
+{
+	if (Word < 0 || Word >= static_cast<int>(C.Accepts.size()))
+	{
+		return std::string();
+	}
+	return NotHumanDetail::Split(C.Accepts[Word], '|')[0];
+}
+
+bool FNotHumanRun::IsMachineWord(const FNotHumanChallenge& C, int Word, const std::string& Reply)
+{
+	using namespace NotHumanDetail;
+	if (Word < 0 || Word >= static_cast<int>(C.Accepts.size()))
+	{
+		return false;
+	}
+	std::string Given;
+	for (char Ch : Trimmed(Reply))
+	{
+		if (Ch != '.')
+		{
+			Given += static_cast<char>(std::tolower(static_cast<unsigned char>(Ch)));
+		}
+	}
+	for (const std::string& Part : Split(C.Accepts[Word], '|'))
+	{
+		if (Given == Part || Given == Abbreviation(Part))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void FNotHumanRun::StartSingle(ENotHumanKind Kind, uint32_t Seed)

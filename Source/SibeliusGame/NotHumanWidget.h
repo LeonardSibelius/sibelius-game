@@ -27,6 +27,7 @@ class SButton;
 class SEditableTextBox;
 class STextBlock;
 class SVerticalBox;
+class UTexture2D;
 
 DECLARE_DELEGATE(FOnNotHumanClosed);
 
@@ -76,6 +77,8 @@ private:
 	void Advance();
 	void Close();
 	void FocusForStage();
+	void BuildInkTexture(const FNotHumanChallenge& Challenge);   // the inkblot, as a picture
+	void RecordFlash();                                         // one association word answered, or out of time
 	void RefreshChrome();      // header, progress, footer button, result line
 
 	bool IsVisionOn() const { return bVHeld && bCanSee; }
@@ -95,6 +98,17 @@ private:
 	bool bMoved = false;
 	FVector2D LastCursor = FVector2D::ZeroVector;
 	FVector2D BoxPos = FVector2D(380.0, 150.0);
+
+	// Word association: which word is up, when it went up, and what he typed for each so far.
+	int32 FlashIndex = 0;
+	float FlashStart = 0.0f;
+	TArray<FString> FlashWords;
+	TArray<float> FlashTimes;
+
+	// The inkblot's picture, made from the model's pixels when the test comes up.
+	UPROPERTY()
+	TObjectPtr<UTexture2D> InkTexture;
+	FSlateBrush InkBrush;
 
 	// What has been judged, for the verdict's list.
 	FNotHumanChallenge Judging;     // the test just answered (Run has moved on)

@@ -6,6 +6,7 @@
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "HAL/IConsoleManager.h"
 #include "Components/NativeWidgetHost.h"
+#include "Engine/Texture2D.h"
 #include "Framework/Application/SlateApplication.h"
 #include "InputCoreTypes.h"
 #include "Styling/CoreStyle.h"
@@ -15,6 +16,7 @@
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SSpacer.h"
+#include "Widgets/Images/SImage.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SCanvas.h"
@@ -218,6 +220,11 @@ TSharedRef<SWidget> UNotHumanWidget::BuildLayout()
 										return FText::FromString(TEXT("CODE VISION: not yours yet. Kaia gives it to you upstairs."));
 									}
 									const FNotHumanChallenge& C = Stage == EStage::Judged ? Judging : Test();
+									if (Stage == EStage::Test && C.Input == ENotHumanInput::Flash && FlashIndex < static_cast<int32>(C.Options.size()))
+									{
+										return FText::FromString(FString::Printf(TEXT("CODE VISION:  \"%s\" is filed under: %s"),
+											UTF8_TO_TCHAR(C.Options[FlashIndex].c_str()), UTF8_TO_TCHAR(FNotHumanRun::MachineWord(C, FlashIndex).c_str())));
+									}
 									return FText::FromString(TEXT("CODE VISION:  ") + FString(UTF8_TO_TCHAR(C.Vision.c_str())));
 								})
 							]
@@ -298,6 +305,14 @@ void UNotHumanWidget::ShowTest()
 	bMoved = false;
 	LastCursor = FSlateApplication::IsInitialized() ? FSlateApplication::Get().GetCursorPos() : FVector2D::ZeroVector;
 	BoxPos = FVector2D(NotHumanWidgetDetail::BodyWidth * 0.5 - 23.0, NotHumanWidgetDetail::BodyHeight * 0.4);
+	FlashIndex = 0;
+	FlashStart = 0.0f;
+	FlashWords.Reset();
+	FlashTimes.Reset();
+	if (C.Kind == ENotHumanKind::Inkblot)
+	{
+		BuildInkTexture(C);
+	}
 	if (BodyHolder)
 	{
 		BodyHolder->SetContent(BuildTestBody());
@@ -358,6 +373,10 @@ void UNotHumanWidget::RefreshChrome()
 		{
 			Action = FText::FromString(TEXT("I GIVE UP"));
 		}
+		else if (C.Input == ENotHumanInput::Flash)
+		{
+			bAction = false;   // Enter files each word; the clock moves on by itself
+		}
 		else
 		{
 			bAction = false;   // the choice buttons, the stillness and the reflex button answer for themselves
@@ -389,7 +408,7 @@ void UNotHumanWidget::FocusForStage()
 	{
 		return;
 	}
-	if (Stage == EStage::Test && Test().Input == ENotHumanInput::Text && TextField.IsValid())
+	if (Stage == EStage::Test && (Test().Input == ENotHumanInput::Text || Test().Input == ENotHumanInput::Flash) && TextField.IsValid())
 	{
 		FSlateApplication::Get().SetKeyboardFocus(TextField, EFocusCause::SetDirectly);
 		return;
@@ -546,6 +565,48 @@ TSharedRef<SWidget> UNotHumanWidget::BuildTestBody()
 			];
 	}
 	case ENotHumanInput::Choice:
+	if (C.Kind == ENotHumanKind::Inkblot)
+	{
+		TSharedRef<SVerticalBox> Answers = SNew(SVerticalBox);
+		for (int32 I = 0; I < static_cast<int32>(C.Options.size()); ++I)
+		{
+			Answers->AddSlot().AutoHeight().Padding(FMargin(0.0f, 4.0f))
+			[
+				SNew(SBox).HeightOverride(60.0f)
+				[
+					SNew(SButton).ButtonStyle(&Flat()).ButtonColorAndOpacity(Tile).HAlign(HAlign_Left).VAlign(VAlign_Center)
+					.ContentPadding(FMargin(16.0f, 0.0f))
+					.OnClicked_Lambda([this, I]()
+					{
+						if (Stage == EStage::Test)
+						{
+							FNotHumanAnswer A;
+							A.Choice = I;
+							A.Seconds = StageTime;
+							Submit(A);
+						}
+						return FReply::Handled();
+					})
+					[
+						SNew(STextBlock).Font(Font("Regular", 18)).ColorAndOpacity(Ink).AutoWrapText(true).Text(Utf8(C.Options[I]))
+					]
+				]
+			];
+		}
+		return SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+			[
+				SNew(SBox).WidthOverride(300.0f).HeightOverride(360.0f)
+				[
+					SNew(SImage).Image(&InkBrush)
+				]
+			]
+			+ SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center).Padding(FMargin(24.0f, 0.0f, 0.0f, 0.0f))
+			[
+				Answers
+			];
+	}
+	else
 	{
 		TSharedRef<SVerticalBox> List = SNew(SVerticalBox);
 		for (int32 I = 0; I < static_cast<int32>(C.Options.size()); ++I)
@@ -574,6 +635,63 @@ TSharedRef<SWidget> UNotHumanWidget::BuildTestBody()
 		}
 		return SNew(SBox).VAlign(VAlign_Center).Padding(FMargin(120.0f, 0.0f))[ List ];
 	}
+	case ENotHumanInput::Flash:
+		return SNew(SVerticalBox)
+			+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+			[
+				SNew(STextBlock).Font(Font("Regular", 16)).ColorAndOpacity(Soft)
+				.Text_Lambda([this]()
+				{
+					const int32 Total = static_cast<int32>(Test().Options.size());
+					return FText::FromString(Stage == EStage::Test
+						? FString::Printf(TEXT("Word %d of %d"), FMath::Min(FlashIndex + 1, Total), Total) : FString());
+				})
+			]
+			+ SVerticalBox::Slot().FillHeight(1.0f).HAlign(HAlign_Center).VAlign(VAlign_Center)
+			[
+				SNew(STextBlock).Font(Font("Bold", 72)).ColorAndOpacity(Ink)
+				.Text_Lambda([this]()
+				{
+					const FNotHumanChallenge& Now = Test();
+					return Stage == EStage::Test && FlashIndex < static_cast<int32>(Now.Options.size())
+						? Utf8(Now.Options[FlashIndex]) : FText::GetEmpty();
+				})
+			]
+			+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right)
+			[
+				SNew(STextBlock).Font(Font("Bold", 18)).ColorAndOpacity(Fail)
+				.Text_Lambda([this]()
+				{
+					return Stage == EStage::Test
+						? FText::FromString(FString::Printf(TEXT("%.1f s"), FMath::Max(0.0f, Test().TimeLimit - (StageTime - FlashStart))))
+						: FText::GetEmpty();
+				})
+			]
+			+ SVerticalBox::Slot().AutoHeight().Padding(FMargin(0.0f, 8.0f, 0.0f, 0.0f))
+			[
+				SAssignNew(TextField, SEditableTextBox)
+				.Style(&Field())
+				.Font(Font("Regular", 26))
+				.HintText(FText::FromString(TEXT("The first word, then Enter")))
+				.ClearKeyboardFocusOnCommit(false)
+				.OnTextChanged_Lambda([this](const FText& Text) { Typed = Text.ToString(); })
+				.OnTextCommitted_Lambda([this](const FText& Text, ETextCommit::Type How)
+				{
+					if (How != ETextCommit::OnEnter)
+					{
+						return;
+					}
+					if (Stage == EStage::Test)
+					{
+						Typed = Text.ToString();
+						RecordFlash();
+					}
+					else
+					{
+						OnAction();
+					}
+				})
+			];
 	case ENotHumanInput::Wait:
 		return SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
 			[
@@ -755,6 +873,70 @@ void UNotHumanWidget::Submit(const FNotHumanAnswer& Answer)
 	FocusForStage();
 }
 
+void UNotHumanWidget::RecordFlash()
+{
+	if (Stage != EStage::Test || Test().Input != ENotHumanInput::Flash)
+	{
+		return;
+	}
+	FlashWords.Add(Typed);
+	FlashTimes.Add(StageTime - FlashStart);
+	Typed.Reset();
+	if (TextField.IsValid())
+	{
+		TextField->SetText(FText::GetEmpty());
+	}
+	++FlashIndex;
+	FlashStart = StageTime;
+	if (FlashIndex >= static_cast<int32>(Test().Options.size()))
+	{
+		FNotHumanAnswer A;
+		for (int32 I = 0; I < FlashWords.Num(); ++I)
+		{
+			A.Words.push_back(TCHAR_TO_UTF8(*FlashWords[I]));
+			A.Times.push_back(FlashTimes[I]);
+		}
+		A.Seconds = StageTime;
+		Submit(A);
+	}
+}
+
+void UNotHumanWidget::BuildInkTexture(const FNotHumanChallenge& Challenge)
+{
+	const int32 W = Challenge.InkWidth;
+	const int32 H = Challenge.InkHeight;
+	if (W <= 0 || H <= 0 || static_cast<int32>(Challenge.Ink.size()) != W * H)
+	{
+		return;
+	}
+	// Ink on card: the near-black of real Rorschach plates on an old cream stock.
+	const FLinearColor Paper(0.93f, 0.90f, 0.82f);
+	const FLinearColor Inked(0.008f, 0.007f, 0.012f);   // linear: 0.06 came out grey-violet once converted to sRGB
+	TArray<uint8> Pixels;
+	Pixels.SetNumUninitialized(W * H * 4);
+	for (int32 I = 0; I < W * H; ++I)
+	{
+		const float A = Challenge.Ink[I] / 255.0f;
+		const FColor C = FMath::Lerp(Paper, Inked, A).ToFColor(true);
+		Pixels[I * 4 + 0] = C.B;
+		Pixels[I * 4 + 1] = C.G;
+		Pixels[I * 4 + 2] = C.R;
+		Pixels[I * 4 + 3] = 255;
+	}
+	UTexture2D* Texture = UTexture2D::CreateTransient(W, H, PF_B8G8R8A8, NAME_None, TConstArrayView64<uint8>(Pixels.GetData(), Pixels.Num()));
+	if (!Texture)
+	{
+		return;
+	}
+	Texture->Filter = TF_Bilinear;
+	Texture->UpdateResource();
+	InkTexture = Texture;
+	InkBrush = FSlateBrush();
+	InkBrush.SetResourceObject(Texture);
+	InkBrush.ImageSize = FVector2D(300.0, 360.0);
+	InkBrush.DrawAs = ESlateBrushDrawType::Image;
+}
+
 void UNotHumanWidget::SubmitCurrent()
 {
 	const FNotHumanChallenge& C = Test();
@@ -841,6 +1023,12 @@ void UNotHumanWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		if (C.TimeLimit > 0.0f && StageTime > C.TimeLimit + 0.05f)
 		{
 			SubmitCurrent();   // out of time: judged as it stands
+		}
+		break;
+	case ENotHumanInput::Flash:
+		if (StageTime - FlashStart > C.TimeLimit + 0.05f)
+		{
+			RecordFlash();     // out of time for this word: whatever he had typed, late
 		}
 		break;
 	case ENotHumanInput::Wait:
