@@ -231,6 +231,34 @@ namespace TableSoundsDetail
 				return S;
 			});
 			break;
+		case ETableSound::GoPlace:
+			// Slate on kaya: the snap of stone on wood, a bright click, and the board's ring - a
+			// real goban is hollowed underneath so that it rings.
+			Pcm = Build(0.18f, 71, 8000.0f, [](float T, float N)
+			{
+				return 0.40f * N * Decay(380.0f, T)
+					+ 0.30f * Sine(3400.0f, T) * Decay(160.0f, T)
+					+ 0.38f * Sine(720.0f, T) * Decay(42.0f, T)
+					+ 0.14f * Sine(1180.0f, T) * Decay(60.0f, T);
+			});
+			break;
+		case ETableSound::GoCapture:
+			// The taken stones picked up, clicking against each other in the hand.
+			Pcm = Build(0.32f, 72, 7000.0f, [](float T, float N)
+			{
+				float S = 0.0f;
+				const float Clicks[3] = { 0.0f, 0.065f, 0.12f };
+				for (int32 K = 0; K < 3; ++K)
+				{
+					const float U = T - Clicks[K];
+					if (U >= 0.0f)
+					{
+						S += (0.32f - 0.07f * K) * (Sine(2900.0f - 300.0f * K, U) * Decay(190.0f, U) + 0.6f * N * Decay(420.0f, U));
+					}
+				}
+				return S;
+			});
+			break;
 		default:
 			break;
 		}

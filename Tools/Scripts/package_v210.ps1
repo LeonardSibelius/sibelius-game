@@ -132,6 +132,10 @@ $checks = [ordered]@{
   # The agents at the wheel (2026-10-09): their pose, only by AKartRace's constructor too.
   "the agents' kart pose" = "$cooked\Mixamo\Driving\Anim_Driving_Kart_MH.uasset"
   "Manny's kart pose"     = "$cooked\Mixamo\Driving\Anim_Driving_Kart_Manny.uasset"
+  # --- GO IN THE CHESS PARK (2026-10-10): AGoTable in L_Chess; its board material only by the
+  # placed table's SurfaceMaterial, and the grain only by the material.
+  "the Go board's wood"   = "$cooked\Go\M_GoSurface.uasset"
+  "the Go board's grain"  = "$cooked\Go\T_GoWood.uasset"
   # --- ISLA'S HOME (2026-10-05): the sci-fi kit's station, the same way in.
   "Isla's home"         = "$cooked\Maps\L_IslaHome.umap"
   "Isla herself"        = "$cooked\MetaHumans\MHC_IslaRowan\BP_MHC_IslaRowan.uasset"

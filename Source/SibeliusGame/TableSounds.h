@@ -58,6 +58,10 @@ enum class ETableSound : uint8
 	KartLap,       // a new lap: three rising notes
 	KartFinish,    // over the line: the fanfare
 
+	// Go
+	GoPlace,       // a slate stone snapped down on a kaya board: a bright click and the wood's ring
+	GoCapture,     // the taken stones lifted off, clicking together in the hand
+
 	Count
 };
 
