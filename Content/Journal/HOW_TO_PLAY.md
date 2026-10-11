@@ -14,13 +14,14 @@ carry all six verbs to the cathedral for the Three-Part Synthesis.
 
 ## THE LOOP
 
-You start with a job. Mrs. Hall's legacy system is in the living room,
-rejecting everything. Hold **V** and read the parts. One of them is lying.
-**R** is not yet yours — an AI agent upstairs has the verb. Take it, come
-back, fix the liar. When the next piece lands in ACCEPT, the ticket is done.
+Mrs. Hall still gripes about her legacy system. Everyone ignores her;
+so can you. An AI agent upstairs has your first power — go and take it.
 
-Poker is through the glass when you want it. The rest of the house opens
-after the job.
+On the desk in the living room, under the PROVE YOU'RE NOT HUMAN sign, the
+laptop has a test that only a machine can pass. Press **E** on it, and hold
+**V** while you take it.
+
+Poker is through the glass when you want it.
 
 Explore. Collect. Earn Sauce. Spend it. Earn the next power.
 Everything you do feeds the next thing.
@@ -45,9 +46,8 @@ Each power is granted at a glowing shrine somewhere in the office —
 walk into it and the power is yours, forever. In order:
 
   CODE VISION (hold V) — you begin with this. See the hidden structure
-    of things: concealed doors, and the true names on the legacy system.
-    On a healthy part the plaque and the true name agree. On a liar, they
-    do not.
+    of things: concealed doors, the true names of things, and on the
+    living-room laptop, the machine's answer to every test.
 
   REFACTOR (R) — reshape what you're looking at. Tagged objects shrink,
     fade, or move aside.
