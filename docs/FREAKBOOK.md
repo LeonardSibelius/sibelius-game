@@ -3,7 +3,8 @@
 **Designed 2026-10-12** (Walt: "let us call it Freakbook and the five people are all computer
 programmers, using Java, COBOL, Python, Javascript and C. They work on boring projects that
 they hate and they talk about their fantasies, which are comical"). **Built 2026-10-13**
-(Walt: "can you make Freakbook now?") - see *What is built* below.
+(Walt: "can you make Freakbook now?") - see *What is built* below. **Shipped in 2.2.0** the
+same day: itch build #2118792, and the build the Steam kit uploads when Valve accepts the chat.
 
 **Nothing here goes to the chat server before Valve accepts the chat amendment on ticket
 HT-65HH-2V43-8C45.** Freakbook is new chat behaviour; during the review the server stays as it is.
@@ -201,5 +202,6 @@ programmers, it is on the work that was done to them. Write every post and reply
   `AFreakbookItem` with Person `gunther` or `brent`, anywhere in any level.
 - The pictures are drawn by a script Claude wrote (shapes and Comic Sans, no image model), the
   way the GO and chess door signs were. Steam's Pre-Generated disclosure today names only the
-  ElevenLabs voices (`STEAM_RELEASE_2.1.9.md`). Whether it should also say the code and the
+  ElevenLabs voices (`STEAM_RELEASE_2.2.0.md`), and its notes call the door signs and the Go board
+  "drawn by ordinary code"; these are the same. Whether it should also say the code and the
   drawn art were written with AI is Walt's call, for the signs as much as for these.

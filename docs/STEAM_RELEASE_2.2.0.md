@@ -1,11 +1,12 @@
-# STEAM_RELEASE_2.1.9 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.2.0 — the store page and the steps, for the day Valve accepts chat
 
-**Prepared 2026-10-11** (Walt: "draft the store page update and make the instructions ready to
-put it on Steam when we do 2.1.9"). 2.1.9 is the build that goes to Steam's `default` branch:
-it is on itch as build #2109650, and `E:\builds\sibelius-shipping-chat-20261011-v2.1.9\` is
-the copy the upload script sends.
+**Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
+in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
+whose every word is written in the game, and the chat is the one Valve is reviewing). 2.2.0 is
+the build that goes to Steam's `default` branch: it is on itch as build #2118792, and
+`E:\builds\sibelius-shipping-chat-20261013-v2.2.0\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.1.9**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.2.0**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -30,7 +31,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.1.9 from the stick
+### 3. Upload 2.2.0 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -38,7 +39,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.1.9 - AI CHAT COMPILED IN ... Go, the not-human laptop"**. If it
+The banner should read **"v2.2.0 - AI CHAT COMPILED IN ... the not-human laptop, Freakbook"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -143,6 +144,9 @@ players, in 2016. The coach plays here too.
 and a [b]video poker[/b] cabinet.
 [*]A laptop on the desk that asks you to [b]prove you're not human[/b]: a test only a
 machine can pass.
+[*][b]Freakbook[/b], on the same laptop: a social network of five programmers who hate
+their jobs and post about what they dream of instead. Write to them. They remember what you
+said, and they gossip about it.
 [/list]
 
 Behind a wall only the fully-merged can drop sits [b]Celestial Fortune[/b]: a complete
@@ -273,10 +277,12 @@ Guardrails:
   - The Go board, the inkblots and the door signs are drawn by ordinary code.
   - The Mixamo animations are motion capture.
   - The laptop's questions are all written in the game.
+  - Freakbook's posts and replies are all written in the game, and its cartoons are drawn by
+    ordinary code, as the door signs are. Nothing on it is generated while you play.
 
 ### §4. System requirements
 
-The 2.1.9 package measures **8.3 GB**, over the 8 GB the page says now. Change **Storage** in
+The 2.2.0 package measures **8.3 GB**, over the 8 GB the page says now. Change **Storage** in
 both rows to **10 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
@@ -296,7 +302,8 @@ The eight in `C:\STEAM\screenshots_final\` predate everything since September. W
 - the chess coach with a hint lit;
 - the 19×19 Go board;
 - an agent dancing in her world;
-- the laptop's CAPTCHA card or an inkblot.
+- the laptop's CAPTCHA card or an inkblot;
+- Freakbook's feed.
 
-You take the ones with bought art in them, as always. I can render the Go board and the laptop
-screens, because they're entirely the game's own art.
+You take the ones with bought art in them, as always. I can render the Go board, the laptop
+screens and Freakbook, because they're entirely the game's own art.
