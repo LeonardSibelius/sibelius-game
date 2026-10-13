@@ -1,8 +1,9 @@
 # STEAM_STORE_COPY — paste-ready, field by field
 
-> **FOR 2.2.0, USE `STEAM_RELEASE_2.2.0.md` (2026-10-11, moved to 2.2.0 on 2026-10-13).** It has
-> the store text rewritten for everything since 2.1.0 (the agents who talk back and their worlds,
-> the dance menu, the Grand Prix, the chess coach, Go, the laptop, Freakbook), the Live-Generated
+> **FOR 2.2.1, USE `STEAM_RELEASE_2.2.1.md` (2026-10-11, moved to 2.2.0 and then 2.2.1 on
+> 2026-10-13).** It has the store text rewritten for everything since 2.1.0 (the agents who talk
+> back and their worlds, the dance menu, the Grand Prix, the chess coach, Go, the laptop,
+> Freakbook, R on the agents), the Live-Generated
 > disclosure as the chat server stands
 > now, storage at 10 GB, and the release-day steps. §1-§4 below are the copy for the builds before
 > it; §5-§6 (why the copy reads as it does, the capsules) still apply.

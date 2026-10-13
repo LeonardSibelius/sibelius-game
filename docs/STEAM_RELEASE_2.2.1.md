@@ -1,12 +1,14 @@
-# STEAM_RELEASE_2.2.0 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.2.1 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
-whose every word is written in the game, and the chat is the one Valve is reviewing). 2.2.0 is
-the build that goes to Steam's `default` branch: it is on itch as build #2118792, and
-`E:\builds\sibelius-shipping-chat-20261013-v2.2.0\` is the copy the upload script sends.
+whose every word is written in the game, and the chat is the one Valve is reviewing), **and to
+2.2.1 that afternoon** (Walt: "switch the kit and copy 2.2.1 to e:"): GemShader's gems for
+Refactor, and R turning an agent into Manny, Echo, Aurora, Shinbi or Yin - no new chat either.
+2.2.1 is the build that goes to Steam's `default` branch: it is on itch as build #2120939, and
+`E:\builds\sibelius-shipping-chat-20261013-v2.2.1\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.2.0**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.2.1**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -31,7 +33,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.2.0 from the stick
+### 3. Upload 2.2.1 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -39,7 +41,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.2.0 - AI CHAT COMPILED IN ... the not-human laptop, Freakbook"**. If it
+The banner should read **"v2.2.1 - AI CHAT COMPILED IN ... Freakbook, R on the agents"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -129,7 +131,8 @@ remember what you told her.
 Four of them have a world of their own beyond a portal: an alien jungle, a windswept
 grassland under ringed planets, a snowfield below the mountains, a space station. And
 every one of them dances. There are fifty-four dances, from swing to the YMCA, and she
-keeps the one you pick for her.
+keeps the one you pick for her. Press [b]R[/b] on her and she's someone else entirely,
+still dancing the same dance.
 
 [h2]A living room full of games[/h2]
 
@@ -188,17 +191,23 @@ Characters Nyra, Isla, Kaia, Aisling and Elise by [b]xAndrei[/b] · Dance animat
 PurePolygons[/b] · Office by [b]QuadArt[/b] · Space Port by [b]PackDev[/b] · Sibelius Hotel
 architecture by [b]DmitriyDryzhak[/b] · Pinball machine by [b]Speedbump Games[/b] · Pool
 table by [b]PijayArt[/b] · Bowling alley by [b]PixelForgeESP[/b] · Chess set by [b]Tomas
-Dvorak[/b] · The agents' worlds by [b]Etherion[/b] · Treasure by [b]Dekogon[/b] · Race kart
-by [b]Polygonal Assets[/b] · Space station by [b][VENDOR — confirm on Fab][/b]
+Dvorak[/b] · The agents' worlds by [b]Etherion[/b] · Treasure by [b]Dekogon[/b] and
+[b][GEM VENDOR — confirm on Fab][/b] · Race kart by [b]Polygonal Assets[/b] · Space station
+by [b][VENDOR — confirm on Fab][/b]
 ```
 
-**Before pasting, confirm three things in the copy:**
+**Before pasting, confirm four things in the copy:**
 1. **The space station's vendor.** The sci-fi kit behind Isla's station
    (`Content/ModularSciFiEnv_K`): its Fab listing names the seller. Put that name in place of
    `[VENDOR — confirm on Fab]`.
-2. **The music.** You mentioned "the fine music" in Kaia's and Elise's worlds. If it comes with
+2. **The gems' vendor** (new in 2.2.1). Refactor's gems are the GemShader pack
+   (`Content/GemShader`, probably Fab's *Realistic Gem Shader*): put its seller in place of
+   `[GEM VENDOR — confirm on Fab]`, or drop the "and ..." if you'd rather not credit it. Manny,
+   Echo and the three Paragon heroes R turns the agents into are Epic Games' own, like Gideon
+   and Greystone, whom the line has never credited.
+3. **The music.** You mentioned "the fine music" in Kaia's and Elise's worlds. If it comes with
    a pack that asks for credit (Etherion's, or another), add it to the line.
-3. **Etherion and Dekogon** are credited by their seller names. If you'd rather name the packs,
+4. **Etherion and Dekogon** are credited by their seller names. If you'd rather name the packs,
    for example Dekogon's *Treasures Vol. 1*, add them.
 
 **Kept on purpose:** the hook, Celestial Fortune near the top, *"And then you can launch it"*,
@@ -279,11 +288,13 @@ Guardrails:
   - The laptop's questions are all written in the game.
   - Freakbook's posts and replies are all written in the game, and its cartoons are drawn by
     ordinary code, as the door signs are. Nothing on it is generated while you play.
+  - 2.2.1: the characters R turns an agent into (Manny, Echo, Aurora, Shinbi, Yin) are Epic
+    Games' own hand-made characters, and the gems are a bought shader pack.
 
 ### §4. System requirements
 
-The 2.2.0 package measures **8.3 GB**, over the 8 GB the page says now. Change **Storage** in
-both rows to **10 GB**, rounded up for patches. Everything else stays as in
+The 2.2.1 package measures **8.6 GB** (9,262,904,542 bytes; 2.2.0 was 8.3 GB), over the 8 GB
+the page says now. Change **Storage** in both rows to **10 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
 ### §5. Tags (optional)
