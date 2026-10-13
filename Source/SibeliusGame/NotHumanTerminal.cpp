@@ -2,6 +2,7 @@
 
 #include "NotHumanTerminal.h"
 
+#include "FreakbookWidget.h"
 #include "NotHumanWidget.h"
 #include "ProgressionSubsystem.h"
 #include "SibeliusGame.h"   // LogSibeliusGame
@@ -11,6 +12,40 @@
 #include "Framework/Application/SlateApplication.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "HAL/IConsoleManager.h"
+
+#if !UE_BUILD_SHIPPING
+// Named, not anonymous: the unity-build rule (see PinballTable.cpp).
+namespace NotHumanTerminalDetail
+{
+	// The open laptop, for the dev command below.
+	TWeakObjectPtr<ANotHumanTerminal> OpenLaptop;
+
+	FAutoConsoleCommand FreakbookCommand(
+		TEXT("sib.Freakbook.Open"),
+		TEXT("With the laptop open: Freakbook at page V (0 login, 1 feed, 2 profile, 3 thread, 4 dashboard, 5 bank) for person P (0 Dee .. 4 Jaxx)."),
+		FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
+		{
+			if (ANotHumanTerminal* Laptop = OpenLaptop.Get())
+			{
+				Laptop->DebugFreakbook(Args.Num() > 0 ? FCString::Atoi(*Args[0]) : 0, Args.Num() > 1 ? FCString::Atoi(*Args[1]) : 0);
+			}
+		}));
+}
+
+void ANotHumanTerminal::DebugFreakbook(int32 View, int32 Person)
+{
+	if (!bOpen)
+	{
+		return;
+	}
+	OpenFreakbook();
+	if (Book)
+	{
+		Book->DebugShow(View, Person);
+	}
+}
+#endif
 
 ANotHumanTerminal::ANotHumanTerminal()
 {
@@ -58,24 +93,72 @@ void ANotHumanTerminal::Interact_Implementation(AActor* Interactor)
 			return;
 		}
 		Screen->OnClosed.BindUObject(this, &ANotHumanTerminal::Close);
+		Screen->OnFreakbook.BindUObject(this, &ANotHumanTerminal::OpenFreakbook);
 	}
 	if (!Screen->IsInViewport())
 	{
 		Screen->AddToViewport(70);
 	}
 	Screen->SetVisibility(ESlateVisibility::Visible);
+	if (Book)
+	{
+		Book->SetVisibility(ESlateVisibility::Collapsed);
+	}
 
 	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
 	Screen->Open(Progression && Progression->IsUnlocked(EPowerVerb::CodeVision));
 
+	UsingPC = PC;
+	bOpen = true;
+	Focus(Screen);
+#if !UE_BUILD_SHIPPING
+	NotHumanTerminalDetail::OpenLaptop = this;
+#endif
+	UE_LOG(LogSibeliusGame, Display, TEXT("[NotHuman] the laptop is open."));
+}
+
+void ANotHumanTerminal::OpenFreakbook()
+{
+	APlayerController* PC = UsingPC.Get();
+	if (!bOpen || !PC)
+	{
+		return;
+	}
+	if (!Book)
+	{
+		Book = CreateWidget<UFreakbookWidget>(PC, UFreakbookWidget::StaticClass());
+		if (!Book)
+		{
+			return;
+		}
+		Book->OnClosed.BindUObject(this, &ANotHumanTerminal::Close);
+	}
+	if (!Book->IsInViewport())
+	{
+		Book->AddToViewport(70);
+	}
+	if (Screen)
+	{
+		Screen->SetVisibility(ESlateVisibility::Collapsed);   // collapsed, never destroyed mid-callback
+	}
+	Book->SetVisibility(ESlateVisibility::Visible);
+	Book->Open();
+	Focus(Book);
+	UE_LOG(LogSibeliusGame, Display, TEXT("[NotHuman] Freakbook is open."));
+}
+
+void ANotHumanTerminal::Focus(UUserWidget* Widget)
+{
+	APlayerController* PC = UsingPC.Get();
+	if (!PC || !Widget)
+	{
+		return;
+	}
 	FInputModeUIOnly Mode;
-	Mode.SetWidgetToFocus(Screen->TakeWidget());
+	Mode.SetWidgetToFocus(Widget->TakeWidget());
 	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	PC->SetInputMode(Mode);
 	PC->SetShowMouseCursor(true);
-	UsingPC = PC;
-	bOpen = true;
-	UE_LOG(LogSibeliusGame, Display, TEXT("[NotHuman] the laptop is open."));
 }
 
 void ANotHumanTerminal::Close()
@@ -88,6 +171,10 @@ void ANotHumanTerminal::Close()
 	if (Screen)
 	{
 		Screen->SetVisibility(ESlateVisibility::Collapsed);   // collapsed, never destroyed mid-callback
+	}
+	if (Book)
+	{
+		Book->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	if (APlayerController* PC = UsingPC.Get())
 	{
@@ -109,6 +196,10 @@ void ANotHumanTerminal::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (Screen)
 	{
 		Screen->RemoveFromParent();
+	}
+	if (Book)
+	{
+		Book->RemoveFromParent();
 	}
 	Super::EndPlay(EndPlayReason);
 }

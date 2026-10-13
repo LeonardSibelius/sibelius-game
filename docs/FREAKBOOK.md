@@ -2,10 +2,44 @@
 
 **Designed 2026-10-12** (Walt: "let us call it Freakbook and the five people are all computer
 programmers, using Java, COBOL, Python, Javascript and C. They work on boring projects that
-they hate and they talk about their fantasies, which are comical"). Nothing is built yet.
+they hate and they talk about their fantasies, which are comical"). **Built 2026-10-13**
+(Walt: "can you make Freakbook now?") - see *What is built* below.
 
 **Nothing here goes to the chat server before Valve accepts the chat amendment on ticket
 HT-65HH-2V43-8C45.** Freakbook is new chat behaviour; during the review the server stays as it is.
+So the replies in the game today are written ones (below), and no request leaves the laptop.
+
+---
+
+## What is built (2026-10-13)
+
+- **The model** - `Source/SibeliusGame/FreakbookModel.h/.cpp`, the house method: standard library
+  only, deterministic, every word written in. The five, 30 posts (15 on the first visit, five
+  more on the second and third, one each when a want comes true), comments, the replies, the
+  gossip and the save. Tested standalone: `Tools/Tests/run_freakbook_tests.ps1` (64 tests; it
+  also checks every picture the content names has been drawn).
+- **Replies**: picked by what Leonard wrote about - a greeting, their work, their fantasy, the
+  thing they want (or have, once it came true), a question, anything else - rotating so nobody
+  says the same thing twice running. Every third reply or so quotes something he said before,
+  word for word. The first thing anyone says back is hello.
+- **Gossip**: anything he writes of three words or more, one of the other four posts the next
+  day ("Leonard told Dee ..."), quoting him. Never the one he told.
+- **The wants, decided by the game only**: Margo's dashboard counts its first view when he opens
+  it from her profile; Jaxx's banner takes its first Accept on the bank's page (the X and the
+  Settings banner are there to be clicked too); Dee's binder lies in the attic
+  (`AFreakbookItem`, placed by `Tools/Scripts/place_freakbook_binder.py`) and her profile mails it
+  once he has picked it up. Each one done makes that person a Friend instead of an Acquaintance.
+  Gunther's coconut and Brent's belt are written and the item actor makes them, but **they are
+  not placed anywhere yet** - their profiles say nobody has seen one around here.
+- **The screen** - `UFreakbookWidget`: login (notHUMAN's verdict is the login - "Close enough."),
+  feed, profiles, conversations with a moment of "typing...", the dashboard, the bank. Esc logs
+  out. notHUMAN offers LOG IN TO FREAKBOOK on its verdict, and on its checkbox page once he has
+  been judged before. `ANotHumanTerminal` swaps the two screens.
+- **The state** - `UFreakbookSubsystem`, its own save slot `Freakbook` (`UFreakbookSaveGame`, one
+  string written by `FFreakbook::SaveText`), saved on every change.
+- **The pictures** - 27 cartoons drawn by `Tools/Scripts/make_freakbook_pictures.py` into
+  `SourceArt/Freakbook/`, imported as `/Game/Freakbook/T_FB_*` by `make_freakbook_assets.py`,
+  cooked by `DirectoriesToAlwaysCook` and checked by `package_v210.ps1`.
 
 ---
 
@@ -163,7 +197,9 @@ programmers, it is on the work that was done to them. Write every post and reply
 
 ### Open questions for Walt
 
-- Who draws the pictures. If any are made with an image model, the Steam Pre-Generated
-  disclosure needs a line.
-- Where the wanted things are: which attic, room or world holds the binder, the coconut and the
-  belt's parts.
+- Where Gunther's coconut and Brent's belt go (the binder is in the attic). Placing one is
+  `AFreakbookItem` with Person `gunther` or `brent`, anywhere in any level.
+- The pictures are drawn by a script Claude wrote (shapes and Comic Sans, no image model), the
+  way the GO and chess door signs were. Steam's Pre-Generated disclosure today names only the
+  ElevenLabs voices (`STEAM_RELEASE_2.1.9.md`). Whether it should also say the code and the
+  drawn art were written with AI is Walt's call, for the signs as much as for these.

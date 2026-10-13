@@ -136,6 +136,10 @@ $checks = [ordered]@{
   # placed table's SurfaceMaterial, and the grain only by the material.
   "the Go board's wood"   = "$cooked\Go\M_GoSurface.uasset"
   "the Go board's grain"  = "$cooked\Go\T_GoWood.uasset"
+  # --- FREAKBOOK ON THE LAPTOP (2026-10-12): its pictures, loaded by name by UFreakbookWidget and
+  # cooked only by the /Game/Freakbook DirectoriesToAlwaysCook line. A profile picture and a post.
+  "Freakbook's faces"     = "$cooked\Freakbook\T_FB_dee_avatar.uasset"
+  "Freakbook's photos"    = "$cooked\Freakbook\T_FB_jaxx_banner.uasset"
   # --- ISLA'S HOME (2026-10-05): the sci-fi kit's station, the same way in.
   "Isla's home"         = "$cooked\Maps\L_IslaHome.umap"
   "Isla herself"        = "$cooked\MetaHumans\MHC_IslaRowan\BP_MHC_IslaRowan.uasset"

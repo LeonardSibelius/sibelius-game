@@ -19,7 +19,10 @@ so can you. An AI agent upstairs has your first power — go and take it.
 
 On the desk in the living room, under the PROVE YOU'RE NOT HUMAN sign, the
 laptop has a test that only a machine can pass. Press **E** on it, and hold
-**V** while you take it.
+**V** while you take it. Once it has judged you, LOG IN TO FREAKBOOK: five
+programmers who hate their jobs post about what they dream of instead.
+Write to them; they remember. Each one wants something, and only you can
+get it for them. Dee says she left hers in somebody's attic.
 
 Poker is through the glass when you want it.
 

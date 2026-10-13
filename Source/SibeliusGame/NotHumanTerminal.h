@@ -9,6 +9,9 @@
 // E opens UNotHumanWidget full screen and gives it the keyboard (UIOnly, cursor on); closing it
 // (Esc) gives both back to the game - the input mode AND Slate's keyboard focus, the second half
 // that SibeliusGameCharacter::CloseGenerate learned the hard way.
+//
+// FREAKBOOK lives on the same laptop (docs/FREAKBOOK.md; the sign says FREAKBOOK LOGIN): notHUMAN's
+// LOG IN TO FREAKBOOK swaps its screen for UFreakbookWidget's, and logging out closes the laptop.
 
 #pragma once
 
@@ -18,7 +21,9 @@
 #include "NotHumanTerminal.generated.h"
 
 class UBoxComponent;
+class UFreakbookWidget;
 class UNotHumanWidget;
+class UUserWidget;
 class APlayerController;
 
 UCLASS()
@@ -38,14 +43,24 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Not Human")
 	FText PromptText = FText::FromString(TEXT("Prove you're not human [E]"));
 
+#if !UE_BUILD_SHIPPING
+	/** Development (sib.Freakbook.Open): with the laptop open, Freakbook at one page. */
+	void DebugFreakbook(int32 View, int32 Person);
+#endif
+
 protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
 	void Close();
+	void OpenFreakbook();
+	void Focus(UUserWidget* Widget);
 
 	UPROPERTY()
 	TObjectPtr<UNotHumanWidget> Screen;
+
+	UPROPERTY()
+	TObjectPtr<UFreakbookWidget> Book;
 
 	TWeakObjectPtr<APlayerController> UsingPC;
 	bool bOpen = false;

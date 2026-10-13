@@ -9,6 +9,7 @@
 #include "EngineUtils.h"
 #include "Engine/MapBuildDataRegistry.h"
 #include "NotHumanTerminal.h"   // the living-room laptop: PROVE YOU'RE NOT HUMAN
+#include "FreakbookItem.h"      // and Freakbook on it: Dee's binder, up in the attic
 
 #if WITH_EDITOR
 #include "FileHelpers.h" // UEditorLoadingAndSavingUtils (editor-only)
@@ -155,6 +156,16 @@ for (TActorIterator<ANotHumanTerminal> It(World); It; ++It)
 	++Terminals;
 }
 R.Check(Terminals == 1, FString::Printf(TEXT("NOT HUMAN: one laptop terminal in the living room (found %d)"), Terminals));
+
+/* FREAKBOOK (docs/FREAKBOOK.md): on the same laptop, past notHUMAN. Dee wants her binder back, and
+   it is the one want that has to be found in this house - in the attic - before the laptop can
+   mail it to her. Its model is tested standalone by Tools/Tests/run_freakbook_tests.ps1. */
+int32 Binders = 0;
+for (TActorIterator<AFreakbookItem> It(World); It; ++It)
+{
+	Binders += It->Person == FName(TEXT("dee")) ? 1 : 0;
+}
+R.Check(Binders == 1, FString::Printf(TEXT("FREAKBOOK: Dee's binder lies in the attic (found %d)"), Binders));
 
 const ULevel* PersistentLevel = World->PersistentLevel;
 const bool bHasBuildData = PersistentLevel && PersistentLevel->MapBuildData != nullptr;

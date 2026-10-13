@@ -2,6 +2,8 @@
 
 #include "NotHumanWidget.h"
 
+#include "FreakbookSubsystem.h"
+
 #include "Blueprint/WidgetTree.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "HAL/IConsoleManager.h"
@@ -240,6 +242,20 @@ TSharedRef<SWidget> UNotHumanWidget::BuildLayout()
 							[
 								SAssignNew(ProgressText, STextBlock).Font(Font("Regular", 16)).ColorAndOpacity(Soft)
 							]
+							// notHUMAN is Freakbook's login (docs/FREAKBOOK.md): judged, he may go in.
+							+ SHorizontalBox::Slot().AutoWidth().Padding(FMargin(0.0f, 0.0f, 12.0f, 0.0f))
+							[
+								SNew(SButton)
+								.ButtonStyle(&Flat())
+								.ButtonColorAndOpacity(FLinearColor(0.30f, 0.06f, 0.45f, 1.0f))
+								.ContentPadding(FMargin(26.0f, 10.0f))
+								.Visibility_Lambda([this]() { return Stage == EStage::Verdict ? EVisibility::Visible : EVisibility::Collapsed; })
+								.OnClicked_Lambda([this]() { bVHeld = false; OnFreakbook.ExecuteIfBound(); return FReply::Handled(); })
+								[
+									SNew(STextBlock).Font(Font("Bold", 18)).ColorAndOpacity(FLinearColor(1.0f, 0.70f, 0.02f, 1.0f))
+									.Text(FText::FromString(TEXT("LOG IN TO FREAKBOOK")))
+								]
+							]
 							+ SHorizontalBox::Slot().AutoWidth()
 							[
 								SAssignNew(ActionButton, SButton)
@@ -325,6 +341,11 @@ void UNotHumanWidget::ShowVerdict()
 {
 	Stage = EStage::Verdict;
 	StageTime = 0.0f;
+	// Judged, whatever the verdict: Freakbook lets him in from now on ("Close enough.").
+	if (UFreakbookSubsystem* Book = UFreakbookSubsystem::Get(this))
+	{
+		Book->SetVerified(Run.MachinePercent());
+	}
 	if (BodyHolder)
 	{
 		BodyHolder->SetContent(BuildVerdictBody());
@@ -422,55 +443,75 @@ void UNotHumanWidget::FocusForStage()
 TSharedRef<SWidget> UNotHumanWidget::BuildIntroBody()
 {
 	using namespace NotHumanWidgetDetail;
+	// Judged before: Freakbook lets him straight in, without another run (docs/FREAKBOOK.md).
+	const UFreakbookSubsystem* Book = UFreakbookSubsystem::Get(this);
+	const bool bVerified = Book && Book->IsVerified();
 	return SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
 		[
-			SNew(SBorder).BorderImage(White()).BorderBackgroundColor(FLinearColor(0.93f, 0.93f, 0.93f, 1.0f)).Padding(FMargin(22.0f, 18.0f))
+			SNew(SVerticalBox)
+			+ SVerticalBox::Slot().AutoHeight()
 			[
-				SNew(SHorizontalBox)
-				+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+				SNew(SBorder).BorderImage(White()).BorderBackgroundColor(FLinearColor(0.93f, 0.93f, 0.93f, 1.0f)).Padding(FMargin(22.0f, 18.0f))
 				[
-					SNew(SBox).WidthOverride(BoxSize).HeightOverride(BoxSize)
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
 					[
-						SNew(SButton)
-						.ButtonStyle(&Box())
-						.OnClicked_Lambda([this]()
-						{
-							Seed = static_cast<uint32>(FMath::Rand()) | 1u;
-							Run.Start(Seed);
-							Stage = EStage::Verifying;
-							StageTime = 0.0f;
-							if (BodyHolder)
+						SNew(SBox).WidthOverride(BoxSize).HeightOverride(BoxSize)
+						[
+							SNew(SButton)
+							.ButtonStyle(&Box())
+							.OnClicked_Lambda([this]()
 							{
-								BodyHolder->SetContent(SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
-									[
-										SNew(STextBlock).Font(Font("Regular", 28)).ColorAndOpacity(Soft)
-										.Text_Lambda([this]()
-										{
-											const int32 Dots = 1 + static_cast<int32>(StageTime * 4.0f) % 3;
-											return FText::FromString(TEXT("Checking for a pulse") + FString::ChrN(Dots, TEXT('.')));
-										})
-									]);
-							}
-							RefreshChrome();
-							return FReply::Handled();
-						})
+								Seed = static_cast<uint32>(FMath::Rand()) | 1u;
+								Run.Start(Seed);
+								Stage = EStage::Verifying;
+								StageTime = 0.0f;
+								if (BodyHolder)
+								{
+									BodyHolder->SetContent(SNew(SBox).HAlign(HAlign_Center).VAlign(VAlign_Center)
+										[
+											SNew(STextBlock).Font(Font("Regular", 28)).ColorAndOpacity(Soft)
+											.Text_Lambda([this]()
+											{
+												const int32 Dots = 1 + static_cast<int32>(StageTime * 4.0f) % 3;
+												return FText::FromString(TEXT("Checking for a pulse") + FString::ChrN(Dots, TEXT('.')));
+											})
+										]);
+								}
+								RefreshChrome();
+								return FReply::Handled();
+							})
+						]
+					]
+					+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(FMargin(16.0f, 0.0f, 60.0f, 0.0f))
+					[
+						SNew(STextBlock).Font(Font("Regular", 26)).ColorAndOpacity(Ink).Text(FText::FromString(TEXT("I'm not a human")))
+					]
+					+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+					[
+						SNew(SVerticalBox)
+						+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+						[
+							SNew(STextBlock).Font(Font("Bold", 18)).ColorAndOpacity(Header).Text(FText::FromString(TEXT("notHUMAN")))
+						]
+						+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
+						[
+							SNew(STextBlock).Font(Font("Regular", 11)).ColorAndOpacity(Soft).Text(FText::FromString(TEXT("Privacy - Terms - Feelings")))
+						]
 					]
 				]
-				+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(FMargin(16.0f, 0.0f, 60.0f, 0.0f))
+			]
+			+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center).Padding(FMargin(0.0f, 26.0f, 0.0f, 0.0f))
+			[
+				SNew(SButton)
+				.ButtonStyle(&Flat())
+				.ButtonColorAndOpacity(FLinearColor(0.30f, 0.06f, 0.45f, 1.0f))
+				.ContentPadding(FMargin(22.0f, 9.0f))
+				.Visibility(bVerified ? EVisibility::Visible : EVisibility::Collapsed)
+				.OnClicked_Lambda([this]() { bVHeld = false; OnFreakbook.ExecuteIfBound(); return FReply::Handled(); })
 				[
-					SNew(STextBlock).Font(Font("Regular", 26)).ColorAndOpacity(Ink).Text(FText::FromString(TEXT("I'm not a human")))
-				]
-				+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
-				[
-					SNew(SVerticalBox)
-					+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
-					[
-						SNew(STextBlock).Font(Font("Bold", 18)).ColorAndOpacity(Header).Text(FText::FromString(TEXT("notHUMAN")))
-					]
-					+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Center)
-					[
-						SNew(STextBlock).Font(Font("Regular", 11)).ColorAndOpacity(Soft).Text(FText::FromString(TEXT("Privacy - Terms - Feelings")))
-					]
+					SNew(STextBlock).Font(Font("Bold", 16)).ColorAndOpacity(FLinearColor(1.0f, 0.70f, 0.02f, 1.0f))
+					.Text(FText::FromString(TEXT("Already verified? LOG IN TO FREAKBOOK")))
 				]
 			]
 		];

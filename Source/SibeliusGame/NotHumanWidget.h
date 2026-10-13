@@ -30,6 +30,7 @@ class SVerticalBox;
 class UTexture2D;
 
 DECLARE_DELEGATE(FOnNotHumanClosed);
+DECLARE_DELEGATE(FOnNotHumanFreakbook);
 
 UCLASS()
 class SIBELIUSGAME_API UNotHumanWidget : public UUserWidget
@@ -40,6 +41,12 @@ public:
 	UNotHumanWidget(const FObjectInitializer& ObjectInitializer);
 
 	FOnNotHumanClosed OnClosed;
+
+	/**
+	 * LOG IN TO FREAKBOOK (docs/FREAKBOOK.md): offered on the verdict, and on the checkbox page once
+	 * he has been judged before - notHUMAN is the login. ANotHumanTerminal swaps the screens.
+	 */
+	FOnNotHumanFreakbook OnFreakbook;
 
 	/** Back to the checkbox, with a fresh run. bHasCodeVision: whether [V] shows the machine's view. */
 	void Open(bool bHasCodeVision);
