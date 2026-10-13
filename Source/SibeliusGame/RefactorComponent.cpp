@@ -21,6 +21,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/PoseableMeshComponent.h"   // a Paragon hero, posed from her
+#include "Components/CapsuleComponent.h"        // ...and his reach
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/SkeletalMesh.h"
@@ -63,7 +64,8 @@ URefactorComponent::URefactorComponent()
 
 	// Who an agent becomes, in turn (UAgentStandIn). Soft paths: each folder is cooked by name
 	// in DefaultGame.ini (Echo's is already cooked by APresence).
-	auto Shape = [this](const TCHAR* Name, std::initializer_list<const TCHAR*> Paths)
+	auto Shape = [this](const TCHAR* Name, std::initializer_list<const TCHAR*> Paths,
+		std::initializer_list<const TCHAR*> Hidden = {})
 	{
 		FAgentShape& S = AgentShapes.AddDefaulted_GetRef();
 		S.Name = Name;
@@ -71,12 +73,18 @@ URefactorComponent::URefactorComponent()
 		{
 			S.Meshes.Add(TSoftObjectPtr<USkeletalMesh>(FSoftObjectPath(Path)));
 		}
+		for (const TCHAR* Slot : Hidden)
+		{
+			S.HiddenSlots.Add(FName(Slot));
+		}
 	};
 	Shape(TEXT("Manny"), { TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple") });
 	Shape(TEXT("Echo"), { TEXT("/Game/EchoContent/Characters/Echo/Meshes/Echo.Echo"),
 		TEXT("/Game/EchoContent/Characters/Echo/Meshes/Echo_Hair.Echo_Hair") });
 	Shape(TEXT("Aurora"), { TEXT("/Game/ParagonAurora/Characters/Heroes/Aurora/Meshes/Aurora.Aurora") });
-	Shape(TEXT("Shinbi"), { TEXT("/Game/ParagonShinbi/Characters/Heroes/Shinbi/Meshes/Shinbi.Shinbi") });
+	// Without his arm cloth, which would only hang stiff (FAgentShape::HiddenSlots).
+	Shape(TEXT("Shinbi"), { TEXT("/Game/ParagonShinbi/Characters/Heroes/Shinbi/Meshes/Shinbi.Shinbi") },
+		{ TEXT("M11_APEX02") });
 	Shape(TEXT("Yin"), { TEXT("/Game/ParagonYin/Characters/Heroes/Yin/Meshes/Yin.Yin") });
 }
 
@@ -155,7 +163,7 @@ UAgentStandIn::UAgentStandIn()
 }
 
 void UAgentStandIn::PutOn(USkeletalMeshComponent* Body, TArrayView<USkeletalMesh* const> Meshes, int32 Index,
-	const FString& Name)
+	const FString& Name, TArrayView<const FName> HiddenSlots)
 {
 	AActor* Her = GetOwner();
 	if (!Her || !Body || Meshes.Num() == 0 || !Meshes[0])
@@ -221,6 +229,24 @@ void UAgentStandIn::PutOn(USkeletalMeshComponent* Body, TArrayView<USkeletalMesh
 		if (!First)
 		{
 			First = Part;
+
+			// His slots left undrawn (FAgentShape::HiddenSlots), in every LOD.
+			const TArray<FSkeletalMaterial>& Slots = Mesh->GetMaterials();
+			for (const FName Slot : HiddenSlots)
+			{
+				const int32 SlotIndex = Slots.IndexOfByPredicate(
+					[Slot](const FSkeletalMaterial& M) { return M.MaterialSlotName == Slot; });
+				if (SlotIndex == INDEX_NONE)
+				{
+					UE_LOG(LogSibeliusGame, Warning, TEXT("[WildRefactor] %s has no material slot %s to hide."),
+						*Name, *Slot.ToString());
+					continue;
+				}
+				for (int32 LOD = 0; LOD < Mesh->GetLODNum(); ++LOD)
+				{
+					Part->ShowMaterialSection(SlotIndex, INDEX_NONE, /*bShow=*/false, LOD);
+				}
+			}
 		}
 	}
 
@@ -229,6 +255,21 @@ void UAgentStandIn::PutOn(USkeletalMeshComponent* Body, TArrayView<USkeletalMesh
 		BuildRetarget();
 		AddTickPrerequisiteComponent(Body);
 		SetComponentTickEnabled(true);
+
+		// His reach (see Reach): his rest height, upright on her feet, seen only by the
+		// visibility channel E, F and R trace on - nobody walks into it.
+		const float HalfHeight = float(Posed->GetSkinnedAsset()->GetBounds().BoxExtent.Z);
+		Reach = NewObject<UCapsuleComponent>(Her,
+			MakeUniqueObjectName(Her, UCapsuleComponent::StaticClass(), TEXT("AgentStandInReach")));
+		Reach->InitCapsuleSize(45.f, FMath::Max(HalfHeight, 45.f));
+		Reach->SetupAttachment(Body);
+		Reach->SetRelativeLocation(FVector(0.f, 0.f, HalfHeight));
+		Reach->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		Reach->SetCollisionResponseToAllChannels(ECR_Ignore);
+		Reach->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		Reach->SetCanEverAffectNavigation(false);
+		Reach->SetHiddenInGame(true);
+		Reach->RegisterComponent();
 	}
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s wears %s (%s, %d mesh(es)): %d of her meshes hidden, following %s."),
@@ -301,6 +342,12 @@ void UAgentStandIn::BuildRetarget()
 	{
 		HipScale = float(RestGlobal[HisPelvis].GetLocation().Z / SrcRest[HerPelvis].GetLocation().Z);
 	}
+	HipsBone = HisPelvis;
+	ChestBone = Tgt.FindBoneIndex(bThreeSpine ? TEXT("spine_03") : TEXT("spine_05"));
+	if (ChestBone == INDEX_NONE)
+	{
+		ChestBone = HisPelvis;
+	}
 	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] retarget: %d of %d bones turn with hers (%d lined up at rest, %s spine), hips x%.2f."),
 		Mapped, Num, Aligned, bThreeSpine ? TEXT("three-bone") : TEXT("five-bone"), HipScale);
 }
@@ -348,6 +395,30 @@ void UAgentStandIn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		Posed->BoneSpaceTransforms[Bone] = Parent == INDEX_NONE ? Global[Bone] : Global[Bone].GetRelativeTransform(Global[Parent]);
 	}
 	Posed->RefreshBoneTransforms();
+
+	// His reach goes where his hips have danced to (Posed and Reach share Body's space).
+	if (Reach && Global.IsValidIndex(HipsBone))
+	{
+		const FVector Hips = Global[HipsBone].GetLocation();
+		Reach->SetRelativeLocation(FVector(Hips.X, Hips.Y, Reach->GetUnscaledCapsuleHalfHeight()));
+	}
+}
+
+bool UAgentStandIn::AimPointOf(const AActor* Her, FVector& OutPoint)
+{
+	const UAgentStandIn* Worn = Her ? Her->FindComponentByClass<UAgentStandIn>() : nullptr;
+	if (!Worn || Worn->Parts.Num() == 0 || !Worn->Parts[0])
+	{
+		return false;
+	}
+	if (Worn->Posed && Worn->Global.IsValidIndex(Worn->ChestBone))
+	{
+		OutPoint = Worn->Posed->GetComponentTransform().TransformPosition(Worn->Global[Worn->ChestBone].GetLocation());
+		return true;
+	}
+	// A follower stands in her own bones, so her own aim point is his (and bounds, his or
+	// hers, stay where she started - see UDancerAgentComponent::GetAimPoint).
+	return false;
 }
 
 void UAgentStandIn::TakeOff()
@@ -362,6 +433,11 @@ void UAgentStandIn::TakeOff()
 	}
 	Parts.Reset();
 	Posed = nullptr;
+	if (Reach)
+	{
+		Reach->DestroyComponent();
+		Reach = nullptr;
+	}
 	for (UPrimitiveComponent* Drawn : Hidden)
 	{
 		if (Drawn)
@@ -486,7 +562,70 @@ void URefactorComponent::TriggerRefactor()
 		return;
 	}
 
+	// An agent next, before the Refusers and the scenery, so a dancer is never gold.
+	if (TryAgentStandIn())
+	{
+		return;
+	}
 	TryWildRefactor();
+}
+
+bool URefactorComponent::TryAgentStandIn()
+{
+	if (CurrentTarget && !KeepsLabelsWhenWild(CurrentTarget->GetOwner()))
+	{
+		return false;   // the authored refactorable under the crosshair is what R means
+	}
+	UDancerAgentComponent* Agent = FindAgentInAim();
+	return Agent && CycleStandIn(Agent);
+}
+
+UDancerAgentComponent* URefactorComponent::FindAgentInAim() const
+{
+	APawn* Pawn = Cast<APawn>(GetOwner());
+	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+	UWorld* World = GetWorld();
+	if (!PC || !PC->PlayerCameraManager || !World)
+	{
+		return nullptr;
+	}
+
+	// The interactor's focus: the dancer whose prompt is on screen, as F and E find her.
+	if (const UInteractorComponent* Interactor = Pawn->FindComponentByClass<UInteractorComponent>())
+	{
+		if (UDancerAgentComponent* Agent = UDancerAgentComponent::FindFor(Interactor->GetFocusedActor()))
+		{
+			return Agent;
+		}
+	}
+
+	// Then the Refusers' generous pawn sweep, and the thin ray's first hit - never a dancer
+	// BEHIND what he is aiming at (looking past a chair to her would make the chair untouchable).
+	const FVector Aim = PC->PlayerCameraManager->GetCameraRotation().Vector();
+	const FVector CamLoc = PC->PlayerCameraManager->GetCameraLocation();
+	const FVector Start = PC->GetViewTarget() == Pawn ? SibeliusAim::RayStart(Pawn, CamLoc, Aim) : CamLoc;
+	const FVector End = Start + Aim * TraceDistance;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(Pawn);
+
+	TArray<FHitResult> PawnHits;
+	if (World->SweepMultiByChannel(PawnHits, Start, End, FQuat::Identity, ECC_Pawn,
+			FCollisionShape::MakeSphere(45.f), Params))
+	{
+		for (const FHitResult& Hit : PawnHits)
+		{
+			if (UDancerAgentComponent* Agent = UDancerAgentComponent::FindFor(Hit.GetActor()))
+			{
+				return Agent;
+			}
+		}
+	}
+	FHitResult Hit;
+	if (World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	{
+		return UDancerAgentComponent::FindFor(Hit.GetActor());
+	}
+	return nullptr;
 }
 
 namespace
@@ -621,16 +760,7 @@ bool URefactorComponent::TryWildRefactor()
 		return false;   // (an empty hoard is PickTreasure's null, which every path checks)
 	}
 
-	// AN AGENT FIRST, found the way F finds her: the interactor's focus here, then the sweep
-	// and the ray below. Before the Refusers and the scenery, so a dancer is never gold.
-	if (const UInteractorComponent* Interactor = Pawn->FindComponentByClass<UInteractorComponent>())
-	{
-		if (CycleStandIn(UDancerAgentComponent::FindFor(Interactor->GetFocusedActor())))
-		{
-			return true;
-		}
-	}
-
+	// (An agent he is aiming at was TryAgentStandIn's, before this was called.)
 	const FVector Aim = PC->PlayerCameraManager->GetCameraRotation().Vector();
 	// Level with his eyes while the view is him (first or third person); a table's or a
 	// close-up's own camera keeps the old ray from that camera, as it always has.
@@ -652,10 +782,6 @@ bool URefactorComponent::TryWildRefactor()
 		{
 			// Slapped-flat treasure answers the sweep even when the thin ray misses.
 			if (RestoreWildDraft(PawnHit.GetActor()))
-			{
-				return true;
-			}
-			if (CycleStandIn(UDancerAgentComponent::FindFor(PawnHit.GetActor())))
 			{
 				return true;
 			}
@@ -720,6 +846,8 @@ bool URefactorComponent::TryWildRefactor()
 		{
 			return true;
 		}
+		// A dancer behind one of the office's invisible interaction boxes, which the ray has
+		// just looked past (TryAgentStandIn takes only the ray's first hit).
 		if (CycleStandIn(UDancerAgentComponent::FindFor(HitTarget)))
 		{
 			return true;
@@ -961,7 +1089,7 @@ bool URefactorComponent::CycleStandIn(UDancerAgentComponent* Agent)
 		Worn = NewObject<UAgentStandIn>(Her);
 		Worn->RegisterComponent();
 	}
-	Worn->PutOn(Body, Meshes, Next, AgentShapes[Next].Name);
+	Worn->PutOn(Body, Meshes, Next, AgentShapes[Next].Name, AgentShapes[Next].HiddenSlots);
 	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s refactored into %s (%d of %d), %d sauce."),
 		*Name, *AgentShapes[Next].Name, Next + 1, AgentShapes.Num(), TreasureSauceCost);
 	return true;

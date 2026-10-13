@@ -21,6 +21,7 @@
 #include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
 #include "NpcChatSaveGame.h"                // FNpcChatTurn — what she remembers
 #include "VirtualHome.h"                    // her own home's welcome line
+#include "RefactorComponent.h"              // R's stand-in: aim at the shape she wears
 #include "Blueprint/UserWidget.h"           // CreateWidget
 #include "Engine/GameInstance.h"            // GetSubsystem<UNpcChatSubsystem>
 #include "Framework/Application/SlateApplication.h" // hand the keyboard back on close
@@ -1026,10 +1027,24 @@ void UDancerAgentComponent::LockTalkInput(bool bLock)
 
 FVector UDancerAgentComponent::GetAimPoint() const
 {
+	// In another shape (R), the shape is what he aims at, not the body hidden under it.
+	FVector Shape;
+	if (UAgentStandIn::AimPointOf(GetOwner(), Shape))
+	{
+		return Shape;
+	}
 	if (const USkeletalMeshComponent* Mesh = FindDanceMesh())
 	{
-		// Bounds are recomputed from the current pose, so this is her actual body,
-		// not the actor's stationary origin.
+		/* HER CHEST, FROM HER BONES - NOT HER BOUNDS. The bounds were believed to follow the
+		   pose, and do not: her body has no physics bodies (it blocks nothing), so Unreal
+		   draws them from the mesh at rest where she started. A travelling dance left the aim
+		   point behind, and F went to Isla instead (Walt, 2026-10-13: "now i can't change
+		   Kaia's dance"). The bones are this frame's. */
+		const int32 Chest = Mesh->GetBoneIndex(TEXT("spine_03"));
+		if (Chest != INDEX_NONE)
+		{
+			return Mesh->GetBoneTransform(Chest).GetLocation();
+		}
 		return Mesh->Bounds.Origin;
 	}
 
@@ -1058,14 +1073,12 @@ FText UDancerAgentComponent::GetPrompt() const
 	   Refuser alarm — that is a commitment, and the player is entitled to know before
 	   they press it rather than after. The old floating shrine asked nobody and fired on
 	   contact, which is how Walt met one on a staircase. */
-	/* AND R, wherever he can Refactor (Walt, 2026-10-13: "wherever there is "E" talk to <name>
-	   "F" change her dance, there will now be "R" refactor <name>"): her next shape, Manny to
-	   Yin and then herself (URefactorComponent::CycleStandIn). The same two tests R itself
-	   passes - lent by her home, or earned - without the toast a refusal brings. */
-	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
-	const bool bCanRefactor = AVirtualHome::LendsPower(this, EPowerVerb::Refactor)
-		|| (Progression && Progression->IsUnlocked(EPowerVerb::Refactor));
-	const FString Refactor = bCanRefactor ? FString::Printf(TEXT("     [R] refactor %s"), Who) : FString();
+	/* AND R, always (Walt, 2026-10-13: "wherever there is "E" talk to <name> "F" change her
+	   dance, there will now be "R" refactor <name>" - and, after a new game showed none in the
+	   office, "Yes, from the start"): her next shape, Manny to Yin and then herself. It needs
+	   no earned Refactor (ASibeliusGameCharacter::OnRefactorPressed asks for it before the
+	   power gate), so the prompt does not wait for one either. */
+	const FString Refactor = FString::Printf(TEXT("     [R] refactor %s"), Who);
 
 	if (HasPowerToGive())
 	{

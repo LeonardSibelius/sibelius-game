@@ -33,6 +33,7 @@ class USkeletalMesh;
 class USkeletalMeshComponent;
 class USkinnedMeshComponent;
 class UPoseableMeshComponent;
+class UCapsuleComponent;
 class UDancerAgentComponent;
 class UInstancedStaticMeshComponent;
 class UPrimitiveComponent;
@@ -86,6 +87,13 @@ struct FAgentShape
 
 	UPROPERTY(EditAnywhere, Category = "Refactor|Agents")
 	TArray<TSoftObjectPtr<USkeletalMesh>> Meshes;
+
+	/** Material slots of the body left undrawn. A Paragon hero's cloth (his "APEX" slots,
+	 *  Unreal 4's cloth simulation) swings only on a simulated skeletal mesh; posed from code
+	 *  it hangs stiff at rest - Walt, 2026-10-13: "i wish i could get rid of those stiff
+	 *  purple things hanging off of Shinbi's elbows". */
+	UPROPERTY(EditAnywhere, Category = "Refactor|Agents")
+	TArray<FName> HiddenSlots;
 };
 
 /* R ON AN AGENT (Walt, 2026-10-13: "i don't suppose that the agents can be refactored into
@@ -119,12 +127,23 @@ public:
 
 	// Hides everything drawn under Body (her body, face, clothes, grooms) and puts Meshes
 	// there. Index is the shape's place in URefactorComponent::AgentShapes.
-	void PutOn(USkeletalMeshComponent* Body, TArrayView<USkeletalMesh* const> Meshes, int32 Index, const FString& Name);
+	void PutOn(USkeletalMeshComponent* Body, TArrayView<USkeletalMesh* const> Meshes, int32 Index, const FString& Name,
+		TArrayView<const FName> HiddenSlots = {});
 	// Back to herself: the stand-in goes, the hidden meshes come back.
 	void TakeOff();
 
 	int32 GetShapeIndex() const { return ShapeIndex; }
 	const FString& GetShapeName() const { return ShapeName; }
+
+	/** Where the body he can see on Her is, while she wears a shape: false if she wears none.
+	 *  A Paragon hero keeps his own height, a head taller than the hidden body she is still
+	 *  found by, and his hips travel further than hers, so aiming at him missed her and F
+	 *  opened the next agent's dance menu (Walt, 2026-10-13: "refactored to Shinbi and "F"
+	 *  does not work" - it was Isla's). His chest, from this frame's pose: a posed mesh's
+	 *  bounds are its rest shape at her feet and never follow the dance. False for a follower
+	 *  (Manny, Echo), who stands in her own bones, so her own aim point is his.
+	 *  UDancerAgentComponent::GetAimPoint aims here. */
+	static bool AimPointOf(const AActor* Her, FVector& OutPoint);
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 		FActorComponentTickFunction* ThisTickFunction) override;
@@ -136,6 +155,10 @@ private:
 	UPROPERTY() TObjectPtr<USkeletalMeshComponent> Leader;
 	UPROPERTY() TArray<TObjectPtr<USkinnedMeshComponent>> Parts;
 	UPROPERTY() TObjectPtr<UPoseableMeshComponent> Posed;   // the retargeted body, if any
+	// ...and a capsule his height that only the interaction trace sees: a posed mesh has no
+	// collision, and her own capsule stops at her height, so the ray at his head went past
+	// her to whoever stood behind.
+	UPROPERTY() TObjectPtr<UCapsuleComponent> Reach;
 	UPROPERTY() TArray<TObjectPtr<UPrimitiveComponent>> Hidden;
 
 	// A hidden leader stops posing unless told to keep going; put back as it was.
@@ -154,6 +177,8 @@ private:
 	TArray<FTransform> RestGlobal;
 	TArray<FTransform> Global;   // this frame's, component space
 	float HipScale = 1.f;
+	int32 HipsBone = INDEX_NONE;    // his pelvis: Reach stands over it
+	int32 ChestBone = INDEX_NONE;   // his top spine bone: what F and E aim at
 };
 
 UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))
@@ -167,6 +192,13 @@ public:
 	// Bind to IA_Refactor (Started). Toggles the currently targeted refactorable.
 	UFUNCTION(BlueprintCallable, Category = "Refactor")
 	void TriggerRefactor();
+
+	/** R on an AI agent only: her next shape (CycleStandIn), if she is what he is aiming at
+	 *  and no authored refactorable is under the crosshair. The character calls it BEFORE the
+	 *  power gate - an agent is fair game from the first minute (Walt, 2026-10-13: "Yes, from
+	 *  the start"), while everything else R does waits for Refactor to be his. True if it was
+	 *  an agent (paid for or not). */
+	bool TryAgentStandIn();
 
 	// The refactorable under the crosshair this frame, or null. HUD can read this
 	// to show a "[R] Refactor" prompt.
@@ -232,9 +264,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Refactor|Wild", meta = (ClampMin = "0"))
 	int32 TreasureSauceCost = 10;
 
-	/** When he cannot afford it; {0} becomes the cost, {1} what he has. */
+	/** When he cannot afford it; {0} becomes the cost, {1} what he has. The hint is where sauce
+	 *  is (Walt, 2026-10-13: "can a hint be added ... "(find the Temple)"?"), now that R on an
+	 *  agent works from the first minute, when he has none. */
 	UPROPERTY(EditAnywhere, Category = "Refactor|Wild")
-	FString TooPoorLine = TEXT("REFACTOR NEEDS {0} SAUCE — YOU HAVE {1}");
+	FString TooPoorLine = TEXT("REFACTOR NEEDS {0} SAUCE — YOU HAVE {1} (FIND THE TEMPLE)");
 
 	// Props whose bounding box exceeds this (largest side, cm) are refused —
 	// keeps walls, floors, and whole buildings from turning to gold.
@@ -262,6 +296,10 @@ private:
 	// The wild path: prop → hidden + treasure spawned in its place, treasure →
 	// original restored, Refuser → treasure until restored. True if anything changed.
 	bool TryWildRefactor();
+	// The agent he is aiming at, found the way F finds her: the interactor's focus, then the
+	// pawn sweep, then the first thing the thin ray meets. Null if none.
+	UDancerAgentComponent* FindAgentInAim() const;
+
 	// R on an agent: her next shape, or herself after the last. True if Agent was one (even
 	// when he could not pay - the press was for her, and nothing behind her should turn to gold).
 	bool CycleStandIn(UDancerAgentComponent* Agent);

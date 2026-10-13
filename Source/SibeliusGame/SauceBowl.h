@@ -2,7 +2,7 @@
 // earn sauce in the AI temple than the one-time blend bounty).
 //
 // The ritual: [E] fills the bowl from the ladle (it glows green), [C] — the
-// Compile key, deliberately — claims the sauce (+SaucePerBowl, default 40).
+// Compile key, deliberately — claims the sauce (+SaucePerBowl, default 100).
 // Then the ladle drips for RechargeSeconds before the bowl can be filled
 // again: a renewable faucet with a drip rate, not an infinite money hose
 // (Walt designed slot machines; he knows exactly why this knob exists).
@@ -46,12 +46,16 @@ public:
 	bool TryStartPour();   // Interact and the smoke test share this
 	void FinishPourForTest() { OnPourComplete(); }
 
+	// 100 since 2026-10-13 (was 40): R on an agent is 10 sauce a shape, five shapes to a turn,
+	// and Walt: "i just wish the temple would give more sauce because i run out quick with
+	// all the Refactoring of agents". A bowl is two full turns of one agent.
 	UPROPERTY(EditAnywhere, Category = "SauceBowl", meta = (ClampMin = "0"))
-	int32 SaucePerBowl = 40;
+	int32 SaucePerBowl = 100;
 
-	// The drip rate: seconds after a claim before the bowl can fill again.
+	// The drip rate: seconds after a claim before the bowl can fill again. 30 since 2026-10-13
+	// (was 90; Walt: "take the 90 seconds down to 30"), with the bowl at 100.
 	UPROPERTY(EditAnywhere, Category = "SauceBowl", meta = (ClampMin = "0.0"))
-	float RechargeSeconds = 90.f;
+	float RechargeSeconds = 30.f;
 
 	// Walt's ritual grammar: E starts a short POUR (the stream falls for this
 	// many seconds), then the pour stops and the sauce appears — full pot.

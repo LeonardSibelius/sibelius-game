@@ -183,6 +183,11 @@ protected:
 	    this (the components stay ungated so smoke tests drive them directly). */
 	bool CheckPowerUnlocked(EPowerVerb Verb) const;
 
+	/** The same answer with no banner and no thought for the camera: lent here, or earned.
+	    For a use that does not need the power but should count as using it when it is his
+	    (R on an agent - OnRefactorPressed). */
+	bool HasPowerQuietly(EPowerVerb Verb) const;
+
 	/** True while the avatar is worn — the camera sits three metres behind him, where
 	    every camera-traced power aims at his own shoulder blades. See
 	    BattleFormComponent.h for why battle form is a mode and not a migration. */

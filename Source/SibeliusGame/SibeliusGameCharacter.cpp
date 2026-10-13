@@ -938,11 +938,40 @@ void ASibeliusGameCharacter::OnCodeVisionCompleted()
 
 void ASibeliusGameCharacter::OnRefactorPressed()
 {
-	if (RefactorComp && CheckPowerUnlocked(EPowerVerb::Refactor))
+	if (!RefactorComp)
+	{
+		return;
+	}
+
+	/* AN AGENT IS FAIR GAME FROM THE FIRST MINUTE (Walt, 2026-10-13, after a new game showed no
+	   [R] on the office agents: "Yes, from the start"). Her next shape needs no earned power, so
+	   it is asked for before the gate; everything else R does still waits for it below. Only a
+	   use the gate would have allowed counts as using the power: before Refactor is his, Mrs.
+	   Hall and the finale rite hear nothing. */
+	if (!AreCameraPowersSuspended() && RefactorComp->TryAgentStandIn())
+	{
+		if (HasPowerQuietly(EPowerVerb::Refactor))
+		{
+			OnPowerVerbUsed.Broadcast(EPowerVerb::Refactor);
+		}
+		return;
+	}
+
+	if (CheckPowerUnlocked(EPowerVerb::Refactor))
 	{
 		RefactorComp->TriggerRefactor();
 		OnPowerVerbUsed.Broadcast(EPowerVerb::Refactor);
 	}
+}
+
+bool ASibeliusGameCharacter::HasPowerQuietly(EPowerVerb Verb) const
+{
+	if (AVirtualHome::LendsPower(this, Verb))
+	{
+		return true;
+	}
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	return !Progression || Progression->IsUnlocked(Verb);   // fails open, as the gate does
 }
 
 void ASibeliusGameCharacter::OnBuildPressed()

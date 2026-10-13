@@ -5,6 +5,7 @@
 #include "Interactable.h"
 #include "DancerAgentComponent.h"
 #include "DancerAgentSubsystem.h"
+#include "Components/SkeletalMeshComponent.h"   // a dancer's posed bounds
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "SibeliusAim.h"           // rays start level with his eyes, even in third person
@@ -23,6 +24,81 @@ namespace WebSlotInteraction
 {
 const FName TVTag(TEXT("CelestialFortuneWebTV"));
 bool IsTV(const AActor* Actor) { return Actor && Actor->ActorHasTag(TVTag); }
+}
+
+namespace InteractorDetail
+{
+	// Where a dancer's body is this frame, as a vertical capsule: her aim point's spot on the
+	// floor plan (her chest, or the shape she wears - GetAimPoint), from her feet to the top
+	// of her head. From her bones, never her bounds, which stay where she started.
+	struct FBodyCapsule { FVector Bottom, Top; };
+	bool BodyCapsule(const UDancerAgentComponent& Agent, FBodyCapsule& Out)
+	{
+		const USkeletalMeshComponent* Body = Agent.FindDanceMesh();
+		if (!Body)
+		{
+			return false;
+		}
+		auto Bone = [Body](const TCHAR* Name, FVector& At)
+		{
+			const int32 Index = Body->GetBoneIndex(Name);
+			if (Index != INDEX_NONE)
+			{
+				At = Body->GetBoneTransform(Index).GetLocation();
+			}
+			return Index != INDEX_NONE;
+		};
+		FVector Head, FootL, FootR, Chest;
+		if (!Bone(TEXT("head"), Head) || !Bone(TEXT("foot_l"), FootL) || !Bone(TEXT("foot_r"), FootR))
+		{
+			return false;
+		}
+		const FVector Middle = Agent.GetAimPoint();
+		// A shape she wears may stand taller than she does (a Paragon hero): his chest says so.
+		const double Rise = Bone(TEXT("spine_03"), Chest) ? FMath::Max(0.0, Middle.Z - Chest.Z) : 0.0;
+		Out.Bottom = FVector(Middle.X, Middle.Y, FMath::Min(FootL.Z, FootR.Z));
+		Out.Top = FVector(Middle.X, Middle.Y, Head.Z + 20.0 + Rise);
+		return true;
+	}
+
+	// The nearest dancer other than Hit whose body the ray passes through within MaxDist of
+	// Start, or null (see "A DANCER IN FRONT" in UpdateFocus). Hidden ones are not there, as
+	// in the aim assist.
+	AActor* DancerOnRay(UWorld* World, const FVector& Start, const FVector& Forward, float MaxDist, const AActor* Hit)
+	{
+		UDancerAgentSubsystem* Sub = World ? World->GetSubsystem<UDancerAgentSubsystem>() : nullptr;
+		if (!Sub || MaxDist <= 0.f)
+		{
+			return nullptr;
+		}
+		constexpr double BodyRadius = 40.0;   // shoulders and a dancing arm
+		const FVector End = Start + Forward * MaxDist;
+		AActor* Best = nullptr;
+		double BestAlong = MaxDist;
+		for (const TWeakObjectPtr<UDancerAgentComponent>& Weak : Sub->GetDancers())
+		{
+			const UDancerAgentComponent* Agent = Weak.Get();
+			AActor* Owner = Agent ? Agent->GetOwner() : nullptr;
+			FBodyCapsule Capsule;
+			if (!Owner || Owner == Hit || Owner->IsHidden() || !BodyCapsule(*Agent, Capsule))
+			{
+				continue;
+			}
+			FVector OnRay, OnBody;
+			FMath::SegmentDistToSegmentSafe(Start, End, Capsule.Bottom, Capsule.Top, OnRay, OnBody);
+			if (FVector::Dist(OnRay, OnBody) > BodyRadius)
+			{
+				continue;
+			}
+			const double Along = FVector::DotProduct(OnRay - Start, Forward);
+			if (Along > 0.0 && Along < BestAlong)
+			{
+				Best = Owner;
+				BestAlong = Along;
+			}
+		}
+		return Best;
+	}
 }
 
 UInteractorComponent::UInteractorComponent()
@@ -109,6 +185,7 @@ void UInteractorComponent::UpdateFocus()
 	};
 
 	AActor* Target = nullptr;
+	float TargetDist = 0.f;
 	FText Prompt;
 	float FurnitureDist = -1.f;
 	constexpr float OnSurfaceSlack = 50.f;   // cm past the table/shelf we just hit
@@ -124,12 +201,27 @@ void UInteractorComponent::UpdateFocus()
 			if (FurnitureDist < 0.f || Hit.Distance <= FurnitureDist + OnSurfaceSlack)
 			{
 				Target = HitActor;
+				TargetDist = Hit.Distance;
 			}
 			break;
 		}
 		if (FurnitureDist < 0.f)
 		{
 			FurnitureDist = Hit.Distance;
+		}
+	}
+
+	/* A DANCER IN FRONT OF WHAT THE RAY HIT. A dancer's body has no collision, only a capsule
+	   where she started, and a travelling dance carries her off it - so the ray went through
+	   Kaia's belly dance to Isla's capsule 2.8 m behind her, and F opened Isla's menu (Walt,
+	   2026-10-13: "now i can't change Kaia's dance"). Her bones do follow the dance: if the ray
+	   passes through her body before what it hit - another agent, or her own portal behind
+	   her - she is who he is aiming at. */
+	if (Target)
+	{
+		if (AActor* Nearer = InteractorDetail::DancerOnRay(World, Start, Forward, TargetDist, Target))
+		{
+			Target = Nearer;
 		}
 	}
 

@@ -56,6 +56,7 @@ walk into it and the power is yours, forever. In order:
     fade, or move aside. On an AI agent it makes her someone else, still
     dancing her dance: Manny, then Echo, Aurora, Shinbi and Yin, and after
     Yin herself again. Each new shape costs 10 sauce; turning back is free.
+    That works from the start, before Refactor is yours.
 
   COMPILE (C) — ask Elise in the bedroom. Then stand in the opening where
     the attic ladder was: a ghost ladder appears, and C builds it if you
