@@ -31,7 +31,7 @@ TArray<FControlRow> BuildRows(const UObject* WorldContext)
 		{ TEXT("F"), TEXT("fight a Refuser / change an AI Agent's dance"), true },
 
 		{ TEXT("V (hold)"), TEXT("Code Vision"), Owned(EPowerVerb::CodeVision) },
-		{ TEXT("R"), TEXT("Refactor what you're looking at"), Owned(EPowerVerb::Refactor) },
+		{ TEXT("R"), TEXT("Refactor what you're looking at / an AI Agent into someone else"), Owned(EPowerVerb::Refactor) },
 		{ TEXT("C"), TEXT("Compile — a build site, the sauce pot, the spaceport pre-flight"), Owned(EPowerVerb::Compile) },
 		{ TEXT("6 / 7 / 8"), TEXT("Test-Drive: branch / merge / discard"), Owned(EPowerVerb::TestDrive) },
 		{ TEXT("0"), TEXT("Deploy (persist your edits)"), Owned(EPowerVerb::Deploy) },

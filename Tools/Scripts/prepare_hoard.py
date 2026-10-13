@@ -17,12 +17,10 @@ import unreal
 
 TAG = "###HOARD###"
 FOLDER = "/Game/AncientTreasures/Meshes"
-# Exactly the names URefactorComponent's constructor uses (Walt chose the chalices, gold bar
-# and chests, and dropped the grey SM_Coin_02a, the bangles and the coin heaps, 2026-10-03).
-HOARD = ("SM_Gems_01a", "SM_Gems_01b", "SM_Gems_01c", "SM_Gems_01d",
-         "SM_Coin_01a",
-         "SM_Chalice_01a", "SM_Chalice_02b", "SM_GoldBar_01a", "SM_OrnateChest_02d", "SM_Chest_02c",
-         "SM_ChestCoins_01a")
+# Exactly the Dekogon names URefactorComponent's constructor uses: the two chalices, all Walt
+# kept of the pack 2026-10-13. Its gems and coin went that day for GemShader's gems, which
+# ship with convex collision and need nothing from here, and then the gold bar and chests.
+HOARD = ("SM_Chalice_01a", "SM_Chalice_02b")
 
 sms = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
 done, kept = [], []

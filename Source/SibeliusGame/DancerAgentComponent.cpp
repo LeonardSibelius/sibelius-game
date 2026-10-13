@@ -570,6 +570,25 @@ bool UDancerAgentComponent::IsKnownDance(const UAnimSequence* Anim)
 	return false;
 }
 
+UDancerAgentComponent* UDancerAgentComponent::FindFor(AActor* Actor)
+{
+	for (int32 Hops = 0; Actor && Hops < 4; ++Hops)
+	{
+		if (UDancerAgentComponent* Agent = Actor->FindComponentByClass<UDancerAgentComponent>())
+		{
+			return Agent;
+		}
+
+		AActor* Next = Actor->GetOwner();
+		if (!Next)
+		{
+			Next = Actor->GetAttachParentActor();
+		}
+		Actor = Next;
+	}
+	return nullptr;
+}
+
 USkeletalMeshComponent* UDancerAgentComponent::FindDanceMesh() const
 {
 	const AActor* Owner = GetOwner();
@@ -1039,15 +1058,24 @@ FText UDancerAgentComponent::GetPrompt() const
 	   Refuser alarm — that is a commitment, and the player is entitled to know before
 	   they press it rather than after. The old floating shrine asked nobody and fired on
 	   contact, which is how Walt met one on a staircase. */
+	/* AND R, wherever he can Refactor (Walt, 2026-10-13: "wherever there is "E" talk to <name>
+	   "F" change her dance, there will now be "R" refactor <name>"): her next shape, Manny to
+	   Yin and then herself (URefactorComponent::CycleStandIn). The same two tests R itself
+	   passes - lent by her home, or earned - without the toast a refusal brings. */
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	const bool bCanRefactor = AVirtualHome::LendsPower(this, EPowerVerb::Refactor)
+		|| (Progression && Progression->IsUnlocked(EPowerVerb::Refactor));
+	const FString Refactor = bCanRefactor ? FString::Printf(TEXT("     [R] refactor %s"), Who) : FString();
+
 	if (HasPowerToGive())
 	{
 		return FText::FromString(FString::Printf(
-			TEXT("[E] ask %s for %s     [F] choose her dance"),
-			Who, *PowerVerbDisplayName(PowerVerb)));
+			TEXT("[E] ask %s for %s     [F] choose her dance%s"),
+			Who, *PowerVerbDisplayName(PowerVerb), *Refactor));
 	}
 
 	return FText::FromString(FString::Printf(
-		TEXT("[E] talk to %s     [F] choose her dance"), Who));
+		TEXT("[E] talk to %s     [F] choose her dance%s"), Who, *Refactor));
 }
 
 void UDancerAgentComponent::Greet()

@@ -27,7 +27,13 @@
 
 class URefactorableComponent;
 class UStaticMesh;
+class UMaterialInterface;
 class UStaticMeshComponent;
+class USkeletalMesh;
+class USkeletalMeshComponent;
+class USkinnedMeshComponent;
+class UPoseableMeshComponent;
+class UDancerAgentComponent;
 class UInstancedStaticMeshComponent;
 class UPrimitiveComponent;
 
@@ -67,6 +73,89 @@ public:
 	UPROPERTY() FTransform HiddenInstanceTransform;
 };
 
+/* One shape R can give an agent (UAgentStandIn): its meshes, the body first (Echo's hair is
+   a second one). Soft, so a hero is loaded the first time R picks him rather than with every
+   level - and so his folder has to be named in DefaultGame.ini to be cooked at all. */
+USTRUCT()
+struct FAgentShape
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Refactor|Agents")
+	FString Name;
+
+	UPROPERTY(EditAnywhere, Category = "Refactor|Agents")
+	TArray<TSoftObjectPtr<USkeletalMesh>> Meshes;
+};
+
+/* R ON AN AGENT (Walt, 2026-10-13: "i don't suppose that the agents can be refactored into
+   other human characters and still have their dance animations?" - "try it with Manny
+   first" - then "this can cycle through Manny, Echo, Aurora, Shinbi and Yin"). Her MetaHuman
+   is hidden, not changed, and the shape's meshes are attached to her body and dance whatever
+   she dances - the F menu included. Two ways, picked by the shape's skeleton:
+
+   FOLLOWING (Manny, Echo): a Leader Pose follower takes her body's bones by NAME, every frame.
+   Their skeletons are hers by name and their rest poses match hers within 2 degrees
+   (measured: Manny lacks only nine IK and helper bones; Echo's scarf and face bones, which
+   she lacks, ride their parents at rest).
+
+   RETARGETED (Aurora, Shinbi, Yin): a Paragon hero has three spine bones to her five, longer
+   legs and lower forearms, and followed by name his chest would sink to her waist. So a
+   posable mesh is driven from code: each of his bones turns as hers turns (his spine_02 and
+   spine_03 as her spine_03 and spine_05), from a rest pose with his arms, legs and fingers
+   first lined up with hers, while he keeps his own bone lengths; his hips travel as hers do,
+   scaled by the height of his. His own extra bones (weapons, whips, face) ride their parents.
+
+   Lives on HER actor; R moves her on to the next shape and after the last takes it off and
+   puts every hidden mesh back. Her chat, her voice and her powers are untouched: she is still
+   herself, in another shape. */
+UCLASS()
+class SIBELIUSGAME_API UAgentStandIn : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	UAgentStandIn();
+
+	// Hides everything drawn under Body (her body, face, clothes, grooms) and puts Meshes
+	// there. Index is the shape's place in URefactorComponent::AgentShapes.
+	void PutOn(USkeletalMeshComponent* Body, TArrayView<USkeletalMesh* const> Meshes, int32 Index, const FString& Name);
+	// Back to herself: the stand-in goes, the hidden meshes come back.
+	void TakeOff();
+
+	int32 GetShapeIndex() const { return ShapeIndex; }
+	const FString& GetShapeName() const { return ShapeName; }
+
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+		FActorComponentTickFunction* ThisTickFunction) override;
+
+private:
+	// The retarget's fixed part, worked out once from the two rest poses (see the class note).
+	void BuildRetarget();
+
+	UPROPERTY() TObjectPtr<USkeletalMeshComponent> Leader;
+	UPROPERTY() TArray<TObjectPtr<USkinnedMeshComponent>> Parts;
+	UPROPERTY() TObjectPtr<UPoseableMeshComponent> Posed;   // the retargeted body, if any
+	UPROPERTY() TArray<TObjectPtr<UPrimitiveComponent>> Hidden;
+
+	// A hidden leader stops posing unless told to keep going; put back as it was.
+	uint8 SavedTickOption = 0;
+	int32 ShapeIndex = INDEX_NONE;
+	FString ShapeName;
+
+	// Per bone of Posed's skeleton: her bone it turns with (INDEX_NONE: rides its parent at
+	// rest), the rotation from hers to his, whether it is placed by her hips' travel, and
+	// his rest pose; plus where her bone stood at rest.
+	TArray<int32> SourceBone;
+	TArray<FQuat> RotationOffset;
+	TArray<bool> bFromHips;
+	TArray<FVector> SourceRestLocation;
+	TArray<FTransform> RestLocal;
+	TArray<FTransform> RestGlobal;
+	TArray<FTransform> Global;   // this frame's, component space
+	float HipScale = 1.f;
+};
+
 UCLASS(ClassGroup = (Sibelius), meta = (BlueprintSpawnableComponent))
 class SIBELIUSGAME_API URefactorComponent : public UActorComponent
 {
@@ -101,31 +190,35 @@ protected:
 
 	// --- Wild refactor (APPEAL-R) --------------------------------------------
 
-	/* THE HOARD: Dekogon's "Treasures VOL.1 - Ancient Treasures" (Fab, in Walt's library;
-	   Content/AncientTreasures, gitignored like every bought pack). Named one by one and
-	   hard-referenced from the constructor, so they cook via the CDO with no
-	   DirectoriesToAlwaysCook - and only these, not the whole pack's pots and swords.
-	   Three piles drawn a third each, so the one coin is not outvoted by six gold pieces.
-	   The pack may not be shown to an AI (its licence): pick by name, Walt judges the look.
-	   He chose the gold pieces and dropped the grey coin, SM_Coin_02a, then the bangles and
-	   the eighteen coin heaps, which "look weird" (2026-10-03). Its meshes ship with no
-	   simple collision; Tools/Scripts/prepare_hoard.py gives each a box, and BeginPlay drops
-	   any that still has none.
+	/* THE HOARD, named one by one and hard-referenced from the constructor, so it cooks via
+	   the CDO with no DirectoriesToAlwaysCook - and only these, not whole packs. Bought
+	   packs, gitignored like every one: pick by name, Walt judges the look. Two piles drawn
+	   half each: half the treasure is gems, half chalices.
 
-	   THE COIN AND GEMS ARE FLAT - a coin is 0.6 cm thick, the gems lie on their sides.
-	   Fitted to a rock by its longest side, a coin was a disc in the grass and Walt saw "the
-	   object vanishes and there is no treasure". So gems and the coin STAND UP, longest side
-	   vertical and broad face to him; the gold pieces stay as made. */
+	   THE GEMS ARE GEMSHADER'S (Walt added the pack 2026-10-13: "I want to use these for
+	   Refactor instead of the ugly blurry coins and gems"). Three cuts, each 2 m across and
+	   about 1.2 m tall, point down and table up like a real diamond, so they stand as made -
+	   Dekogon's lay flat and had to be stood on edge, and its coin with them, both gone now.
+	   Each gem gets one of GemColors. They ship with convex collision, so they need no
+	   prepare_hoard.py; BeginPlay still drops any mesh without simple collision. */
 	UPROPERTY(EditAnywhere, Category = "Refactor|Wild")
 	TArray<TObjectPtr<UStaticMesh>> Gems;
 
-	// Stood on edge like a wheel: the gold coin.
+	// One of these on every gem: GemShader's blue, green, mixed, pink, red and white.
 	UPROPERTY(EditAnywhere, Category = "Refactor|Wild")
-	TArray<TObjectPtr<UStaticMesh>> OnEdge;
+	TArray<TObjectPtr<UMaterialInterface>> GemColors;
 
-	// As made, front to him: chalices, the gold bar, the chests, the chest of coins.
+	// As made, front to him: the two chalices from Dekogon's "Treasures VOL.1 - Ancient
+	// Treasures" (Content/AncientTreasures, "Allows usage with AI: No"), all Walt kept of it
+	// 2026-10-13 ("keep the dekogon chalices, but drop the gold bar and chests"). Its meshes
+	// ship with no simple collision; Tools/Scripts/prepare_hoard.py gives each a box.
 	UPROPERTY(EditAnywhere, Category = "Refactor|Wild")
-	TArray<TObjectPtr<UStaticMesh>> GoldPieces;
+	TArray<TObjectPtr<UStaticMesh>> Chalices;
+
+	// Who an agent becomes under R, in turn (see UAgentStandIn): Manny, Echo, Aurora, Shinbi
+	// and Yin, then herself again.
+	UPROPERTY(EditAnywhere, Category = "Refactor|Agents")
+	TArray<FAgentShape> AgentShapes;
 
 	// The treasure's footprint stops this far short of him (cm). Fitted to a fourteen-metre
 	// tree he was standing INSIDE the treasure, and from inside a mesh there is nothing to see.
@@ -169,11 +262,16 @@ private:
 	// The wild path: prop → hidden + treasure spawned in its place, treasure →
 	// original restored, Refuser → treasure until restored. True if anything changed.
 	bool TryWildRefactor();
-	UStaticMesh* PickTreasure(bool& bOutUpright) const;
+	// R on an agent: her next shape, or herself after the last. True if Agent was one (even
+	// when he could not pay - the press was for her, and nothing behind her should turn to gold).
+	bool CycleStandIn(UDancerAgentComponent* Agent);
+
+	// A treasure mesh, and for a gem its colour (null: the mesh's own material).
+	UStaticMesh* PickTreasure(UMaterialInterface*& OutColor) const;
 
 	// Treasure the size of MatchSize, standing on the ground under Space (what it replaces,
-	// which the ground search looks past), facing him and clear of him (see Gems).
-	AActor* SpawnTreasureActor(UStaticMesh* TreasureMesh, bool bUpright, const FBox& Space, float MatchSize,
+	// which the ground search looks past), facing him and clear of him.
+	AActor* SpawnTreasureActor(UStaticMesh* TreasureMesh, UMaterialInterface* Color, const FBox& Space, float MatchSize,
 		const AActor* Replaced, const UPrimitiveComponent* ReplacedField);
 
 	// The floor under the middle of Box, leaving out the thing being replaced: what the

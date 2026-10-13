@@ -247,6 +247,9 @@ Content/UnrealClaude/
 #     local (Fab -> Add to Project). Keep the Epic character out of the repo.
 Content/ParagonShinbi/
 Content/ParagonGideon/
+# Aurora and Yin (Walt, 2026-10-13): with Shinbi and Echo, who R turns an agent into.
+Content/ParagonAurora/
+Content/ParagonYin/
 
 # --- Vehicle packs: Helicopter + Vehicles/boats (Walt's aircraft/watercraft, SIB) ---
 #     Fab-pack structure (Audio/Blueprint/Meshes/Textures/VFX). Referenced by
@@ -418,3 +421,7 @@ Content/Mixamo/
 # URefactorComponent names its gems, coin and gold pieces; Tools/Scripts/prepare_hoard.py gave
 # them collision boxes, so the local copy is changed from the download - back it up to E:.
 Content/AncientTreasures/
+
+# --- GemShader (added by Walt 2026-10-13) - Refactor's gems from then on, replacing Dekogon's ----
+# --- "ugly blurry coins and gems". A bought pack like the rest: never in the public repo. -------
+Content/GemShader/

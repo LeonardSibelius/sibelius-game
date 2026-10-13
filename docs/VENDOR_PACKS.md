@@ -44,7 +44,7 @@ unless noted. Sizes are what was on disk on 2 Aug 2026.
 | `HouseFurniture` | 3.8 GB | no (level dressing) |
 | `ParagonGideon` | 2.8 GB | **yes — `SlapComponent.cpp`, `RefuserController.cpp`** |
 | `UltimateGothicCathedralChurch` | 2.6 GB | no (level dressing) |
-| `ParagonGreystone` | 2.2 GB | no |
+| `ParagonGreystone` | 2.2 GB | soft paths only (`BattleFormComponent.cpp`, `SlapComponent.cpp`), so his hero folder is in `DirectoriesToAlwaysCook` — minus his Novaborn, Tough and WhiteTiger skins, in `DirectoriesToNeverCook` (226 MB nobody sees; Dragonlord stays for his eyes) |
 | `Vehicles` | 1.5 GB | no |
 | `EchoContent` | 1.3 GB | **yes — `Presence.cpp`** |
 | `StainedGlass3D` | 1.1 GB | yes — `CarouselMachine.cpp` |
@@ -65,8 +65,12 @@ unless noted. Sizes are what was on disk on 2 Aug 2026.
 | `ModularSciFiEnv_1` | 168 MB | no |
 | `XenoMocap` | 48 MB | no — free pack, UE4 skeleton, unused |
 | `Audio` | 5 MB | yes — `GenerateComponent.cpp` (`/Game/Audio/MrsHall/`) |
+| `AncientTreasures` | 914 MB | **yes — `RefactorComponent.cpp`**, its two chalices only (Dekogon, "Allows usage with AI: No"). Re-run `Tools/Scripts/prepare_hoard.py` after a re-download: the meshes ship with no simple collision |
+| `GemShader` | 15 MB | **yes — `RefactorComponent.cpp`**, the gems and their six colours (added 2026-10-13) |
 | `EasyBiomes` | large (Nanite foliage) | **NO — parked. Paid kit. Do not delete. Do not cook. Do not use.** See `docs/FORESTS_DO_NOT_USE.md` |
-| `ParagonShinbi` | (Fab, free) | **NO — forest watchers for the parked Many Worlds deck. Do not delete. Do not use.** |
+| `ParagonShinbi` | 918 MB (Fab, free) | **yes — `RefactorComponent.cpp`**, a soft path: one of the shapes R gives an agent (Walt put her to use 2026-10-13; she was parked for the Many Worlds deck). Her `Meshes` folder is in `DirectoriesToAlwaysCook` |
+| `ParagonAurora` | 2.8 GB (Fab, free) | **yes — `RefactorComponent.cpp`**, a soft path: an agent's shape under R (2026-10-13). `Meshes` folder in `DirectoriesToAlwaysCook` |
+| `ParagonYin` | 1.3 GB (Fab, free) | **yes — `RefactorComponent.cpp`**, a soft path: an agent's shape under R (2026-10-13). `Meshes` folder in `DirectoriesToAlwaysCook` |
 
 Also ignored and NOT re-downloadable — these are rebuilt, not fetched:
 

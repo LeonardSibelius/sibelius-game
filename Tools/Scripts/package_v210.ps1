@@ -100,6 +100,16 @@ $checks = [ordered]@{
   "the bowling alley"   = "$cooked\Bowling\L_Bowling.umap"
   "the chess park"      = "$cooked\Maps\L_Chess.umap"
   "Greystone mesh"      = "$cooked\ParagonGreystone\Characters\Heroes\Greystone\Meshes\Greystone.uasset"
+  # His own look borrows its eyes from the Dragonlord skin, the one skin still cooked
+  # (DirectoriesToNeverCook in DefaultGame.ini, 2026-10-13).
+  # Who R turns an agent into (DirectoriesToAlwaysCook; Echo via APresence), 2026-10-13.
+  "stand-in Manny"      = "$cooked\Characters\Mannequins\Meshes\SKM_Manny_Simple.uasset"
+  "stand-in Echo"       = "$cooked\EchoContent\Characters\Echo\Meshes\Echo.uasset"
+  "stand-in Echo's hair" = "$cooked\EchoContent\Characters\Echo\Meshes\Echo_Hair.uasset"
+  "stand-in Aurora"     = "$cooked\ParagonAurora\Characters\Heroes\Aurora\Meshes\Aurora.uasset"
+  "stand-in Shinbi"     = "$cooked\ParagonShinbi\Characters\Heroes\Shinbi\Meshes\Shinbi.uasset"
+  "stand-in Yin"        = "$cooked\ParagonYin\Characters\Heroes\Yin\Meshes\Yin.uasset"
+  "Greystone's eyes"    ="$cooked\ParagonGreystone\Characters\Heroes\Greystone\Skins\Dragonlord\Materials\M_Greystone_Dragonlord_EyeRefractive_Inst.uasset"
   "Mrs. Hall's lines"   = "$cooked\Data\MrsHallStory.uasset"
   "Kaia's power face"   = "$cooked\Audio\Dancers\dancer_power_kaia_face.uasset"
 
@@ -152,9 +162,15 @@ $checks = [ordered]@{
   "the rustle"          = "$cooked\AlienPhysicsWorld\Sounds\Foliage\Rustling\SC_Foliage_Rustle.uasset"
 }
 # --- 2.1.0: THE TREASURE - every piece URefactorComponent names -----------
-foreach ($name in "SM_Gems_01a","SM_Gems_01b","SM_Gems_01c","SM_Gems_01d","SM_Coin_01a",
-                  "SM_Chalice_01a","SM_Chalice_02b","SM_GoldBar_01a","SM_OrnateChest_02d",
-                  "SM_Chest_02c","SM_ChestCoins_01a") {
+# Since 2026-10-13 the gems are GemShader's, each in one of six colours, and all that is left
+# of Dekogon's pack is its two chalices.
+foreach ($name in "SM_Gem_01","SM_Gem_02","SM_Gem_03") {
+  $checks["gem $name"] = "$cooked\GemShader\Meshes\$name.uasset"
+}
+foreach ($name in "MI_Gem_Blue","MI_Gem_Green","MI_Gem_Mixed","MI_Gem_Pink","MI_Gem_Red","MI_Gem_White") {
+  $checks["gem colour $name"] = "$cooked\GemShader\Materials\$name.uasset"
+}
+foreach ($name in "SM_Chalice_01a","SM_Chalice_02b") {
   $checks["treasure $name"] = "$cooked\AncientTreasures\Meshes\$name.uasset"
 }
 $missing = 0
@@ -165,6 +181,12 @@ foreach ($k in $checks.Keys) {
 if ($missing -gt 0) {
   Write-Output "COOK IS INCOMPLETE - $missing required asset(s) absent. Do NOT push."
   exit 1
+}
+# And what must NOT ship: three of Greystone's skins, 226 MB nobody sees (DefaultGame.ini).
+foreach ($skin in "Novaborn","Tough","WhiteTiger") {
+  $dir = "$cooked\ParagonGreystone\Characters\Heroes\Greystone\Skins\$skin"
+  if (Test-Path $dir) { Write-Output "NOTE    Greystone's $skin skin was cooked anyway - check DirectoriesToNeverCook" }
+  else { Write-Output "OK      Greystone's $skin skin left out" }
 }
 
 # ---- what did Kaia's planet cost? -------------------------------------------

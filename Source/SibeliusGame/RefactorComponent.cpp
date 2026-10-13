@@ -10,6 +10,8 @@
 #include "SibeliusGame.h"
 #include "SibeliusHUD.h"            // "REFACTOR NEEDS 10 SAUCE"
 #include "ProgressionSubsystem.h"   // the wallet treasure is paid from
+#include "DancerAgentComponent.h"   // R on an agent: her stand-in
+#include "InteractorComponent.h"    // ...found by the same focus E and F use
 #include "Components/InstancedStaticMeshComponent.h"
 
 #include "GameFramework/Pawn.h"
@@ -18,8 +20,11 @@
 #include "Camera/PlayerCameraManager.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/PoseableMeshComponent.h"   // a Paragon hero, posed from her
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
+#include "Engine/SkeletalMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "Engine/World.h"
 #include "CollisionQueryParams.h"
@@ -30,32 +35,351 @@ URefactorComponent::URefactorComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// The hoard, hard-referenced so it cooks via the CDO (the Death_Back lesson) - see the
-	// header. A lone coin stood on its edge and fitted to a couch is a gold wheel taller
-	// than he is, which is the "big gold coin" Walt asked for. Not SM_Coin_02a: "the gray
-	// one - don't use it"; and no bangles or coin heaps, which "look weird" (Walt,
-	// 2026-10-03, who chose the gold pieces).
-	const TCHAR* GemNames[] = { TEXT("SM_Gems_01a"), TEXT("SM_Gems_01b"), TEXT("SM_Gems_01c"), TEXT("SM_Gems_01d") };
-	const TCHAR* OnEdgeNames[] = { TEXT("SM_Coin_01a") };
-	const TCHAR* GoldPieceNames[] = {
-		TEXT("SM_Chalice_01a"), TEXT("SM_Chalice_02b"), TEXT("SM_GoldBar_01a"),
-		TEXT("SM_OrnateChest_02d"), TEXT("SM_Chest_02c"), TEXT("SM_ChestCoins_01a"),
+	// header. GemShader's gems in its six colours, never its plain MI_Gem (the blue again);
+	// Dekogon's two chalices - all that is left of it (Walt, 2026-10-13: "keep the dekogon
+	// chalices, but drop the gold bar and chests"; its gems and coin went the same day).
+	const TCHAR* GemNames[] = { TEXT("SM_Gem_01"), TEXT("SM_Gem_02"), TEXT("SM_Gem_03") };
+	const TCHAR* GemColorNames[] = {
+		TEXT("MI_Gem_Blue"), TEXT("MI_Gem_Green"), TEXT("MI_Gem_Mixed"),
+		TEXT("MI_Gem_Pink"), TEXT("MI_Gem_Red"), TEXT("MI_Gem_White"),
 	};
-	auto Hoard = [](TArray<TObjectPtr<UStaticMesh>>& Into, TArrayView<const TCHAR* const> Names)
+	const TCHAR* ChaliceNames[] = { TEXT("SM_Chalice_01a"), TEXT("SM_Chalice_02b") };
+	auto Hoard = []<typename TAsset>(TArray<TObjectPtr<TAsset>>& Into, const TCHAR* Folder,
+		TArrayView<const TCHAR* const> Names)
 	{
 		for (const TCHAR* Name : Names)
 		{
-			ConstructorHelpers::FObjectFinder<UStaticMesh> Finder(
-				*FString::Printf(TEXT("/Game/AncientTreasures/Meshes/%s.%s"), Name, Name));
+			ConstructorHelpers::FObjectFinder<TAsset> Finder(
+				*FString::Printf(TEXT("%s/%s.%s"), Folder, Name, Name));
 			if (Finder.Succeeded())
 			{
 				Into.Add(Finder.Object);
 			}
 		}
 	};
-	Hoard(Gems, GemNames);
-	Hoard(OnEdge, OnEdgeNames);
-	Hoard(GoldPieces, GoldPieceNames);
+	Hoard(Gems, TEXT("/Game/GemShader/Meshes"), GemNames);
+	Hoard(GemColors, TEXT("/Game/GemShader/Materials"), GemColorNames);
+	Hoard(Chalices, TEXT("/Game/AncientTreasures/Meshes"), ChaliceNames);
+
+	// Who an agent becomes, in turn (UAgentStandIn). Soft paths: each folder is cooked by name
+	// in DefaultGame.ini (Echo's is already cooked by APresence).
+	auto Shape = [this](const TCHAR* Name, std::initializer_list<const TCHAR*> Paths)
+	{
+		FAgentShape& S = AgentShapes.AddDefaulted_GetRef();
+		S.Name = Name;
+		for (const TCHAR* Path : Paths)
+		{
+			S.Meshes.Add(TSoftObjectPtr<USkeletalMesh>(FSoftObjectPath(Path)));
+		}
+	};
+	Shape(TEXT("Manny"), { TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple") });
+	Shape(TEXT("Echo"), { TEXT("/Game/EchoContent/Characters/Echo/Meshes/Echo.Echo"),
+		TEXT("/Game/EchoContent/Characters/Echo/Meshes/Echo_Hair.Echo_Hair") });
+	Shape(TEXT("Aurora"), { TEXT("/Game/ParagonAurora/Characters/Heroes/Aurora/Meshes/Aurora.Aurora") });
+	Shape(TEXT("Shinbi"), { TEXT("/Game/ParagonShinbi/Characters/Heroes/Shinbi/Meshes/Shinbi.Shinbi") });
+	Shape(TEXT("Yin"), { TEXT("/Game/ParagonYin/Characters/Heroes/Yin/Meshes/Yin.Yin") });
 }
+
+// --- UAgentStandIn -----------------------------------------------------------
+
+namespace AgentStandInDetail
+{
+	// Her five spine bones against a Paragon hero's three: his chest turns as hers does.
+	FName SourceBoneFor(FName Target, bool bThreeSpine)
+	{
+		if (bThreeSpine)
+		{
+			if (Target == FName(TEXT("spine_02"))) { return FName(TEXT("spine_03")); }
+			if (Target == FName(TEXT("spine_03"))) { return FName(TEXT("spine_05")); }
+		}
+		return Target;
+	}
+
+	// The bone that gives a limb segment its direction at rest ("upperarm_l" -> "lowerarm_l"),
+	// or None. Only arms, legs and fingers are lined up; hips, spine and head keep his rest.
+	FName AlignChild(FName Bone)
+	{
+		static const TMap<FString, FString> Next = []
+		{
+			TMap<FString, FString> M;
+			M.Add(TEXT("clavicle"), TEXT("upperarm"));
+			M.Add(TEXT("upperarm"), TEXT("lowerarm"));
+			M.Add(TEXT("lowerarm"), TEXT("hand"));
+			M.Add(TEXT("hand"), TEXT("middle_01"));
+			M.Add(TEXT("thigh"), TEXT("calf"));
+			M.Add(TEXT("calf"), TEXT("foot"));
+			M.Add(TEXT("foot"), TEXT("ball"));
+			for (const TCHAR* Finger : { TEXT("thumb"), TEXT("index"), TEXT("middle"), TEXT("ring"), TEXT("pinky") })
+			{
+				M.Add(FString::Printf(TEXT("%s_01"), Finger), FString::Printf(TEXT("%s_02"), Finger));
+				M.Add(FString::Printf(TEXT("%s_02"), Finger), FString::Printf(TEXT("%s_03"), Finger));
+			}
+			return M;
+		}();
+		const FString Name = Bone.ToString();
+		if (Name.Len() < 3 || (!Name.EndsWith(TEXT("_l")) && !Name.EndsWith(TEXT("_r"))))
+		{
+			return NAME_None;
+		}
+		const FString* Child = Next.Find(Name.LeftChop(2));
+		return Child ? FName(*(*Child + Name.Right(2))) : NAME_None;
+	}
+
+	// A skeleton's rest pose in component space, parents before children as stored.
+	TArray<FTransform> RestPose(const FReferenceSkeleton& Ref)
+	{
+		const TArray<FTransform>& Local = Ref.GetRefBonePose();
+		TArray<FTransform> CS;
+		CS.SetNum(Local.Num());
+		for (int32 Bone = 0; Bone < Local.Num(); ++Bone)
+		{
+			const int32 Parent = Ref.GetParentIndex(Bone);
+			CS[Bone] = Parent == INDEX_NONE ? Local[Bone] : Local[Bone] * CS[Parent];
+		}
+		return CS;
+	}
+
+	// Followed by name, or retargeted: a skeleton without her upper spine cannot follow.
+	bool NeedsRetarget(const USkeletalMesh* Body)
+	{
+		return Body && Body->GetRefSkeleton().FindBoneIndex(TEXT("spine_05")) == INDEX_NONE;
+	}
+}
+
+UAgentStandIn::UAgentStandIn()
+{
+	// Ticks only while retargeting, after her animation has posed her for the frame.
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
+}
+
+void UAgentStandIn::PutOn(USkeletalMeshComponent* Body, TArrayView<USkeletalMesh* const> Meshes, int32 Index,
+	const FString& Name)
+{
+	AActor* Her = GetOwner();
+	if (!Her || !Body || Meshes.Num() == 0 || !Meshes[0])
+	{
+		return;
+	}
+	Leader = Body;
+	ShapeIndex = Index;
+	ShapeName = Name;
+
+	// Everything she is drawn with hangs under Body: the face and the grooms on it, the
+	// torso, legs and feet. Hidden, not changed; collision is left alone, so R still finds
+	// her to move her on.
+	TArray<USceneComponent*> Under;
+	Body->GetChildrenComponents(/*bIncludeAllDescendants=*/true, Under);
+	Under.Add(Body);
+	for (USceneComponent* Each : Under)
+	{
+		UPrimitiveComponent* Drawn = Cast<UPrimitiveComponent>(Each);
+		if (Drawn && Drawn->IsVisible())
+		{
+			Drawn->SetVisibility(false);
+			Hidden.Add(Drawn);
+		}
+	}
+
+	// A hidden body would stop posing, and the stand-in would freeze mid-step.
+	SavedTickOption = static_cast<uint8>(Body->VisibilityBasedAnimTickOption);
+	Body->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+
+	// Not named "Body" or "Face": UDancerAgentComponent finds her meshes by those names.
+	const bool bRetarget = AgentStandInDetail::NeedsRetarget(Meshes[0]);
+	USkinnedMeshComponent* First = nullptr;
+	for (USkeletalMesh* Mesh : Meshes)
+	{
+		if (!Mesh)
+		{
+			continue;
+		}
+		const FName PartName = MakeUniqueObjectName(Her, USkinnedMeshComponent::StaticClass(), TEXT("AgentStandIn"));
+		USkinnedMeshComponent* Part = nullptr;
+		if (bRetarget && !First)
+		{
+			Posed = NewObject<UPoseableMeshComponent>(Her, PartName);
+			Part = Posed;
+		}
+		else
+		{
+			Part = NewObject<USkeletalMeshComponent>(Her, PartName);
+		}
+		Part->SetSkinnedAssetAndUpdate(Mesh);
+		Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Part->SetCanEverAffectNavigation(false);
+		Part->SetupAttachment(Body);
+		Part->RegisterComponent();
+		if (Part != Posed)
+		{
+			// Following her, or (Echo's hair; a hero's extra parts) the retargeted body.
+			Part->bUseBoundsFromLeaderPoseComponent = true;   // culled where she is, not at its rest pose
+			Part->SetLeaderPoseComponent(bRetarget && First ? First : Body);
+		}
+		Parts.Add(Part);
+		if (!First)
+		{
+			First = Part;
+		}
+	}
+
+	if (Posed)
+	{
+		BuildRetarget();
+		AddTickPrerequisiteComponent(Body);
+		SetComponentTickEnabled(true);
+	}
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s wears %s (%s, %d mesh(es)): %d of her meshes hidden, following %s."),
+		*Her->GetName(), *Name, Posed ? TEXT("retargeted") : TEXT("followed by name"), Parts.Num(), Hidden.Num(),
+		*Body->GetName());
+}
+
+void UAgentStandIn::BuildRetarget()
+{
+	const FReferenceSkeleton& Src = Leader->GetSkinnedAsset()->GetRefSkeleton();
+	const FReferenceSkeleton& Tgt = Posed->GetSkinnedAsset()->GetRefSkeleton();
+	const TArray<FTransform> SrcRest = AgentStandInDetail::RestPose(Src);
+	RestGlobal = AgentStandInDetail::RestPose(Tgt);
+	RestLocal = Tgt.GetRefBonePose();
+
+	const int32 Num = Tgt.GetNum();
+	const bool bThreeSpine = Tgt.FindBoneIndex(TEXT("spine_04")) == INDEX_NONE;
+	SourceBone.Init(INDEX_NONE, Num);
+	RotationOffset.Init(FQuat::Identity, Num);
+	bFromHips.Init(false, Num);
+	SourceRestLocation.Init(FVector::ZeroVector, Num);
+	Global = RestGlobal;
+
+	TArray<FQuat> Align;   // his rest turned to hers, per bone; a bone not lined up takes its parent's
+	Align.Init(FQuat::Identity, Num);
+	int32 Mapped = 0, Aligned = 0;
+	for (int32 Bone = 0; Bone < Num; ++Bone)
+	{
+		const int32 Parent = Tgt.GetParentIndex(Bone);
+		if (Parent != INDEX_NONE)
+		{
+			Align[Bone] = Align[Parent];
+		}
+		const FName Name = Tgt.GetBoneName(Bone);
+		const int32 Hers = Src.FindBoneIndex(AgentStandInDetail::SourceBoneFor(Name, bThreeSpine));
+		if (Hers == INDEX_NONE)
+		{
+			continue;   // his own: rides its parent at rest
+		}
+		SourceBone[Bone] = Hers;
+		SourceRestLocation[Bone] = SrcRest[Hers].GetLocation();
+		bFromHips[Bone] = Parent == INDEX_NONE || Tgt.GetParentIndex(Parent) == INDEX_NONE;   // root, pelvis
+		++Mapped;
+
+		// THE SAME REST POSE FIRST: his limb segment turned to point where hers does.
+		const FName Child = AgentStandInDetail::AlignChild(Name);
+		const int32 HisChild = Child.IsNone() ? INDEX_NONE : Tgt.FindBoneIndex(Child);
+		const int32 HerChild = Child.IsNone() ? INDEX_NONE : Src.FindBoneIndex(Child);
+		if (HisChild != INDEX_NONE && HerChild != INDEX_NONE)
+		{
+			const FVector HisDir = (RestGlobal[HisChild].GetLocation() - RestGlobal[Bone].GetLocation()).GetSafeNormal();
+			const FVector HerDir = (SrcRest[HerChild].GetLocation() - SrcRest[Hers].GetLocation()).GetSafeNormal();
+			if (!HisDir.IsNearlyZero() && !HerDir.IsNearlyZero())
+			{
+				Align[Bone] = FQuat::FindBetweenNormals(HisDir, HerDir);
+				++Aligned;
+			}
+		}
+
+		// Then hers turning from her rest turns his from that lined-up rest, in component space:
+		// his = her now * (her rest)^-1 * align * his rest.
+		RotationOffset[Bone] = SrcRest[Hers].GetRotation().Inverse() * Align[Bone] * RestGlobal[Bone].GetRotation();
+	}
+
+	// His hips travel as far as hers, scaled by how much higher his stand.
+	const int32 HisPelvis = Tgt.FindBoneIndex(TEXT("pelvis"));
+	const int32 HerPelvis = Src.FindBoneIndex(TEXT("pelvis"));
+	HipScale = 1.f;
+	if (HisPelvis != INDEX_NONE && HerPelvis != INDEX_NONE && SrcRest[HerPelvis].GetLocation().Z > 1.0)
+	{
+		HipScale = float(RestGlobal[HisPelvis].GetLocation().Z / SrcRest[HerPelvis].GetLocation().Z);
+	}
+	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] retarget: %d of %d bones turn with hers (%d lined up at rest, %s spine), hips x%.2f."),
+		Mapped, Num, Aligned, bThreeSpine ? TEXT("three-bone") : TEXT("five-bone"), HipScale);
+}
+
+void UAgentStandIn::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	if (!Leader || !Posed || !Posed->GetSkinnedAsset() || Posed->BoneSpaceTransforms.Num() != SourceBone.Num())
+	{
+		return;
+	}
+	const TArray<FTransform>& Now = Leader->GetComponentSpaceTransforms();
+	if (Now.Num() == 0)
+	{
+		return;
+	}
+	const FReferenceSkeleton& Tgt = Posed->GetSkinnedAsset()->GetRefSkeleton();
+	const int32 Num = SourceBone.Num();
+	for (int32 Bone = 0; Bone < Num; ++Bone)
+	{
+		const int32 Parent = Tgt.GetParentIndex(Bone);
+		const int32 Hers = SourceBone[Bone];
+		if (Hers == INDEX_NONE || !Now.IsValidIndex(Hers))
+		{
+			Global[Bone] = Parent == INDEX_NONE ? RestLocal[Bone] : RestLocal[Bone] * Global[Parent];
+			continue;
+		}
+		FTransform& G = Global[Bone];
+		G.SetRotation((Now[Hers].GetRotation() * RotationOffset[Bone]).GetNormalized());
+		G.SetScale3D(RestGlobal[Bone].GetScale3D());
+		if (bFromHips[Bone])
+		{
+			G.SetLocation(RestGlobal[Bone].GetLocation() + (Now[Hers].GetLocation() - SourceRestLocation[Bone]) * HipScale);
+		}
+		else
+		{
+			// His own bone length, along wherever his parent now points.
+			G.SetLocation(Parent == INDEX_NONE ? RestLocal[Bone].GetLocation()
+				: Global[Parent].TransformPosition(RestLocal[Bone].GetLocation()));
+		}
+	}
+	for (int32 Bone = 0; Bone < Num; ++Bone)
+	{
+		const int32 Parent = Tgt.GetParentIndex(Bone);
+		Posed->BoneSpaceTransforms[Bone] = Parent == INDEX_NONE ? Global[Bone] : Global[Bone].GetRelativeTransform(Global[Parent]);
+	}
+	Posed->RefreshBoneTransforms();
+}
+
+void UAgentStandIn::TakeOff()
+{
+	SetComponentTickEnabled(false);
+	for (USkinnedMeshComponent* Part : Parts)
+	{
+		if (Part)
+		{
+			Part->DestroyComponent();
+		}
+	}
+	Parts.Reset();
+	Posed = nullptr;
+	for (UPrimitiveComponent* Drawn : Hidden)
+	{
+		if (Drawn)
+		{
+			Drawn->SetVisibility(true);
+		}
+	}
+	Hidden.Reset();
+	if (Leader)
+	{
+		RemoveTickPrerequisiteComponent(Leader);
+		Leader->VisibilityBasedAnimTickOption = static_cast<EVisibilityBasedAnimTickOption>(SavedTickOption);
+	}
+	ShapeIndex = INDEX_NONE;
+	ShapeName.Reset();
+}
+
+// --- URefactorComponent ------------------------------------------------------
 
 void URefactorComponent::BeginPlay()
 {
@@ -64,7 +388,7 @@ void URefactorComponent::BeginPlay()
 	// A treasure with no simple collision is one R can never hit again, so the original it
 	// hides is gone for good. Leave such meshes out, loudly (Tools/Scripts/prepare_hoard.py).
 	int32 Bodiless = 0;
-	for (TArray<TObjectPtr<UStaticMesh>>* Pile : { &Gems, &OnEdge, &GoldPieces })
+	for (TArray<TObjectPtr<UStaticMesh>>* Pile : { &Gems, &Chalices })
 	{
 		Bodiless += Pile->RemoveAll([](const TObjectPtr<UStaticMesh>& Mesh)
 		{
@@ -78,8 +402,8 @@ void URefactorComponent::BeginPlay()
 			Bodiless);
 	}
 
-	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] Hoard: %d gems + %d on edge + %d gold pieces, %d sauce each."),
-		Gems.Num(), OnEdge.Num(), GoldPieces.Num(), TreasureSauceCost);
+	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] Hoard: %d gems in %d colours + %d chalices, %d sauce each."),
+		Gems.Num(), GemColors.Num(), Chalices.Num(), TreasureSauceCost);
 }
 
 void URefactorComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -292,9 +616,19 @@ bool URefactorComponent::TryWildRefactor()
 	APawn* Pawn = Cast<APawn>(GetOwner());
 	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
 	UWorld* World = GetWorld();
-	if (!PC || !PC->PlayerCameraManager || !World || (Gems.Num() + OnEdge.Num() + GoldPieces.Num() == 0))
+	if (!PC || !PC->PlayerCameraManager || !World)
 	{
-		return false;
+		return false;   // (an empty hoard is PickTreasure's null, which every path checks)
+	}
+
+	// AN AGENT FIRST, found the way F finds her: the interactor's focus here, then the sweep
+	// and the ray below. Before the Refusers and the scenery, so a dancer is never gold.
+	if (const UInteractorComponent* Interactor = Pawn->FindComponentByClass<UInteractorComponent>())
+	{
+		if (CycleStandIn(UDancerAgentComponent::FindFor(Interactor->GetFocusedActor())))
+		{
+			return true;
+		}
 	}
 
 	const FVector Aim = PC->PlayerCameraManager->GetCameraRotation().Vector();
@@ -321,11 +655,15 @@ bool URefactorComponent::TryWildRefactor()
 			{
 				return true;
 			}
+			if (CycleStandIn(UDancerAgentComponent::FindFor(PawnHit.GetActor())))
+			{
+				return true;
+			}
 			ACharacter* Victim = Cast<ACharacter>(PawnHit.GetActor());
 			if (Victim && Cast<ARefuserController>(Victim->GetController()))
 			{
-				bool bUpright = false;
-				UStaticMesh* Treasure = PickTreasure(bUpright);
+				UMaterialInterface* Color = nullptr;
+				UStaticMesh* Treasure = PickTreasure(Color);
 				if (!Treasure || !PayForTreasure())
 				{
 					return false;   // he keeps working, and keeps his mind
@@ -335,7 +673,7 @@ bool URefactorComponent::TryWildRefactor()
 					VC->StopMovement();
 					VC->UnPossess();
 				}
-				AActor* Spawned = SpawnTreasureActor(Treasure, bUpright, Victim->GetComponentsBoundingBox(), RefuserTreasureSize,
+				AActor* Spawned = SpawnTreasureActor(Treasure, Color, Victim->GetComponentsBoundingBox(), RefuserTreasureSize,
 					Victim, nullptr);
 				if (!Spawned)
 				{
@@ -379,6 +717,10 @@ bool URefactorComponent::TryWildRefactor()
 
 		// --- R on treasure: destroy it and un-hide the first draft. ---
 		if (RestoreWildDraft(HitTarget))
+		{
+			return true;
+		}
+		if (CycleStandIn(UDancerAgentComponent::FindFor(HitTarget)))
 		{
 			return true;
 		}
@@ -468,13 +810,13 @@ bool URefactorComponent::TryWildRefactor()
 	// actor pivots are unreliable (a belly-pivot animal spawned at a
 	// floor-pivot chair ended up underground — invisible AND untraceable,
 	// which read as "the chair disappeared completely").
-	bool bUpright = false;
-	UStaticMesh* Treasure = PickTreasure(bUpright);
+	UMaterialInterface* Color = nullptr;
+	UStaticMesh* Treasure = PickTreasure(Color);
 	if (!Treasure || !PayForTreasure())
 	{
 		return false;
 	}
-	AActor* Spawned = SpawnTreasureActor(Treasure, bUpright, Target->GetComponentsBoundingBox(), LargestSide, Target, nullptr);
+	AActor* Spawned = SpawnTreasureActor(Treasure, Color, Target->GetComponentsBoundingBox(), LargestSide, Target, nullptr);
 	if (!Spawned)
 	{
 		return false;
@@ -518,13 +860,13 @@ bool URefactorComponent::TransmuteInstance(UInstancedStaticMeshComponent* Field,
 	// Same placement rule as a prop: on the ground under the plant's own footprint, level.
 	// Not at the plant's tilt - foliage leans with the slope, and a treasure copying it
 	// went half into the hillside.
-	bool bUpright = false;
-	UStaticMesh* Treasure = PickTreasure(bUpright);
+	UMaterialInterface* Color = nullptr;
+	UStaticMesh* Treasure = PickTreasure(Color);
 	if (!Treasure || !PayForTreasure())
 	{
 		return false;
 	}
-	AActor* Spawned = SpawnTreasureActor(Treasure, bUpright, Box, LargestSide, nullptr, Field);
+	AActor* Spawned = SpawnTreasureActor(Treasure, Color, Box, LargestSide, nullptr, Field);
 	if (!Spawned)
 	{
 		return false;
@@ -548,12 +890,90 @@ bool URefactorComponent::TransmuteInstance(UInstancedStaticMeshComponent* Field,
 	return true;
 }
 
-UStaticMesh* URefactorComponent::PickTreasure(bool& bOutUpright) const
+bool URefactorComponent::CycleStandIn(UDancerAgentComponent* Agent)
 {
-	// A pile first, a third each, then one of that pile: the one coin would otherwise be
-	// outvoted by six gold pieces. Gems and the coin stand; the gold pieces stay as made.
-	const TArray<TObjectPtr<UStaticMesh>>* Piles[] = { &Gems, &OnEdge, &GoldPieces };
-	TArray<int32, TInlineAllocator<3>> Stocked;
+	AActor* Her = Agent ? Agent->GetOwner() : nullptr;
+	USkeletalMeshComponent* Body = Agent ? Agent->FindDanceMesh() : nullptr;
+	if (!Her || !Body || AgentShapes.Num() == 0)
+	{
+		return false;   // nobody to turn her into: R behaves as it did before agents
+	}
+	const FString Name = Agent->AgentName.IsEmpty() ? Her->GetName() : Agent->AgentName;
+	UAgentStandIn* Worn = Her->FindComponentByClass<UAgentStandIn>();
+
+	// The next shape that loads. A hero is loaded the first time he is picked (a moment's
+	// pause, once); one whose pack is missing is passed over, loudly.
+	TArray<USkeletalMesh*, TInlineAllocator<2>> Meshes;
+	int32 Next = Worn ? Worn->GetShapeIndex() + 1 : 0;
+	for (; Next < AgentShapes.Num(); ++Next)
+	{
+		Meshes.Reset();
+		for (const TSoftObjectPtr<USkeletalMesh>& Soft : AgentShapes[Next].Meshes)
+		{
+			if (USkeletalMesh* Mesh = Soft.LoadSynchronous())
+			{
+				Meshes.Add(Mesh);
+			}
+		}
+		if (Meshes.Num() > 0 && Meshes.Num() == AgentShapes[Next].Meshes.Num())
+		{
+			break;
+		}
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[WildRefactor] %s did not load - passed over."), *AgentShapes[Next].Name);
+	}
+
+	// After the last: herself again, free, like every refactor undone.
+	auto BackToHerself = [Worn, &Name]()
+	{
+		const FString Was = Worn->GetShapeName();
+		Worn->TakeOff();
+		Worn->DestroyComponent();
+		UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s is herself again (was %s)."), *Name, *Was);
+	};
+	if (Next >= AgentShapes.Num())
+	{
+		if (Worn)
+		{
+			BackToHerself();
+			return true;
+		}
+		return false;
+	}
+
+	// AND WHEN HE CANNOT PAY FOR THE NEXT ONE, herself too: undoing is free, and a Manny he
+	// could not afford to move on from would be a Manny for ever.
+	const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
+	if (Worn && Progression && TreasureSauceCost > 0 && Progression->GetSauce() < TreasureSauceCost)
+	{
+		BackToHerself();
+		return true;
+	}
+	if (!PayForTreasure())
+	{
+		return true;    // the toast says why; the press was for her all the same
+	}
+	if (Worn)
+	{
+		Worn->TakeOff();
+	}
+	else
+	{
+		Worn = NewObject<UAgentStandIn>(Her);
+		Worn->RegisterComponent();
+	}
+	Worn->PutOn(Body, Meshes, Next, AgentShapes[Next].Name);
+	UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s refactored into %s (%d of %d), %d sauce."),
+		*Name, *AgentShapes[Next].Name, Next + 1, AgentShapes.Num(), TreasureSauceCost);
+	return true;
+}
+
+UStaticMesh* URefactorComponent::PickTreasure(UMaterialInterface*& OutColor) const
+{
+	// A pile first, half each, then one of that pile, so the treasure is half gems and
+	// half chalices whatever each pile holds. A gem gets a colour; a chalice stays as made.
+	OutColor = nullptr;
+	const TArray<TObjectPtr<UStaticMesh>>* Piles[] = { &Gems, &Chalices };
+	TArray<int32, TInlineAllocator<2>> Stocked;
 	for (int32 Each = 0; Each < int32(UE_ARRAY_COUNT(Piles)); ++Each)
 	{
 		if (Piles[Each]->Num() > 0)
@@ -567,7 +987,10 @@ UStaticMesh* URefactorComponent::PickTreasure(bool& bOutUpright) const
 	}
 	const int32 Kind = Stocked[FMath::RandRange(0, Stocked.Num() - 1)];
 	const TArray<TObjectPtr<UStaticMesh>>& Pile = *Piles[Kind];
-	bOutUpright = Piles[Kind] == &Gems || Piles[Kind] == &OnEdge;
+	if (Piles[Kind] == &Gems && GemColors.Num() > 0)
+	{
+		OutColor = GemColors[FMath::RandRange(0, GemColors.Num() - 1)].Get();
+	}
 	return Pile[FMath::RandRange(0, Pile.Num() - 1)].Get();
 }
 
@@ -629,7 +1052,7 @@ bool URefactorComponent::PayForTreasure() const
 	return true;
 }
 
-AActor* URefactorComponent::SpawnTreasureActor(UStaticMesh* TreasureMesh, bool bUpright, const FBox& Space, float MatchSize,
+AActor* URefactorComponent::SpawnTreasureActor(UStaticMesh* TreasureMesh, UMaterialInterface* Color, const FBox& Space, float MatchSize,
 	const AActor* Replaced, const UPrimitiveComponent* ReplacedField)
 {
 	UWorld* World = GetWorld();
@@ -639,20 +1062,7 @@ AActor* URefactorComponent::SpawnTreasureActor(UStaticMesh* TreasureMesh, bool b
 	}
 	FVector Ground = GroundBelow(Space, Replaced, ReplacedField);
 	const FBoxSphereBounds Bounds = TreasureMesh->GetBounds();
-	const FVector Extent = Bounds.BoxExtent;
-
-	// STAND IT UP: its longest side vertical, by a quarter turn about whichever axis
-	// brings it there (see the header: every treasure in the pack lies flat).
-	FQuat Stand = FQuat::Identity;
-	if (bUpright && Extent.Y >= Extent.X && Extent.Y > Extent.Z)
-	{
-		Stand = FQuat(FVector::XAxisVector, UE_HALF_PI);   // Y up
-	}
-	else if (bUpright && Extent.X > Extent.Y && Extent.X > Extent.Z)
-	{
-		Stand = FQuat(FVector::YAxisVector, UE_HALF_PI);   // X up
-	}
-	const FVector Stood = Stand.RotateVector(Extent).GetAbs();
+	const FVector Extent = Bounds.BoxExtent;   // every treasure stands as made (see Gems)
 
 	const AActor* Me = GetOwner();
 	auto FlatToMe = [Me](const FVector& From)
@@ -665,13 +1075,13 @@ AActor* URefactorComponent::SpawnTreasureActor(UStaticMesh* TreasureMesh, bool b
 	float Distance = ToMe.Size();
 
 	// Uniform-scale the treasure so it roughly fills the space of what it replaced (a
-	// desk-tall gem, a Gideon-sized wheel of gold). The ceiling is high because the hoard
-	// is hand-sized: a gem a few centimetres across has to reach a coral tree's ten metres
-	// on Kaia's planet. But never AROUND him: its footprint stops PlayerClearance short of
-	// him - shrinking down to half size, then stepping back away from him for the rest.
-	const float Fit = FMath::Max(MatchSize, MinTreasureSize) / FMath::Max(Stood.GetMax() * 2.f, 1.f);
+	// desk-wide gem, a Gideon-sized chalice). The ceiling is high because the chalices are
+	// hand-sized: one a few centimetres across has to reach a coral tree's ten metres on
+	// Kaia's planet. But never AROUND him: its footprint stops PlayerClearance short
+	// of him - shrinking down to half size, then stepping back away from him for the rest.
+	const float Fit = FMath::Max(MatchSize, MinTreasureSize) / FMath::Max(Extent.GetMax() * 2.f, 1.f);
 	float Scale = Fit;
-	const float Reach = FVector2D(Stood.X, Stood.Y).Size();   // footprint radius at scale 1
+	const float Reach = FVector2D(Extent.X, Extent.Y).Size();   // footprint radius at scale 1
 	if (Me && Reach > UE_KINDA_SMALL_NUMBER)
 	{
 		Scale = FMath::Clamp((Distance - PlayerClearance) / Reach, Fit * 0.5f, Fit);
@@ -688,15 +1098,16 @@ AActor* URefactorComponent::SpawnTreasureActor(UStaticMesh* TreasureMesh, bool b
 	}
 	Scale = FMath::Clamp(Scale, 0.05f, 400.f);
 
-	// BROAD FACE TO HIM: turn it so its thin side points at where he stands - a coin he
-	// sees edge-on is a gold line.
-	const float Yaw = FMath::Atan2(ToMe.Y, ToMe.X) + (Stood.Y < Stood.X ? UE_HALF_PI : 0.f);
-	const FQuat Rotation = FQuat(FVector::ZAxisVector, Yaw) * Stand;
+	// BROAD FACE TO HIM: turn it so its thin side points at where he stands (a chalice's
+	// handles go to the sides, not at him).
+	const float Yaw = FMath::Atan2(ToMe.Y, ToMe.X) + (Extent.Y < Extent.X ? UE_HALF_PI : 0.f);
+	const FQuat Rotation(FVector::ZAxisVector, Yaw);
 
 	// Its bounds, not its pivot, go where they should: centred over Ground, bottom on it.
-	// Actor pivots are unreliable (belly-pivot animals sank underground and were lost).
+	// Actor pivots are unreliable (belly-pivot animals sank underground and were lost; the
+	// gems' pivots are at the girdle, well above their point).
 	const FVector Offset = Rotation.RotateVector(Bounds.Origin) * Scale;   // pivot to bounds centre
-	const FVector Location(Ground.X - Offset.X, Ground.Y - Offset.Y, Ground.Z + Stood.Z * Scale - Offset.Z);
+	const FVector Location(Ground.X - Offset.X, Ground.Y - Offset.Y, Ground.Z + Extent.Z * Scale - Offset.Z);
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -706,6 +1117,10 @@ AActor* URefactorComponent::SpawnTreasureActor(UStaticMesh* TreasureMesh, bool b
 		UStaticMeshComponent* Comp = Actor->GetStaticMeshComponent();
 		Actor->SetMobility(EComponentMobility::Movable);
 		Comp->SetStaticMesh(TreasureMesh);
+		if (Color)
+		{
+			Comp->SetMaterial(0, Color);
+		}
 		Actor->SetActorScale3D(FVector(Scale));
 
 		// Every treasure must block the R-trace (ECC_Visibility), or it can never
@@ -715,9 +1130,9 @@ AActor* URefactorComponent::SpawnTreasureActor(UStaticMesh* TreasureMesh, bool b
 		Comp->SetCollisionResponseToAllChannels(ECR_Block);
 		Comp->SetCanEverAffectNavigation(false);
 
-		UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s %s, %.0f cm tall and %.0f across, %.0f cm from him."),
-			*TreasureMesh->GetName(), bUpright ? TEXT("standing") : TEXT("lying"),
-			Stood.Z * 2.f * Scale, FMath::Max(Stood.X, Stood.Y) * 2.f * Scale, Distance);
+		UE_LOG(LogSibeliusGame, Display, TEXT("[WildRefactor] %s%s%s, %.0f cm tall and %.0f across, %.0f cm from him."),
+			*TreasureMesh->GetName(), Color ? TEXT(" in ") : TEXT(""), Color ? *Color->GetName() : TEXT(""),
+			Extent.Z * 2.f * Scale, FMath::Max(Extent.X, Extent.Y) * 2.f * Scale, Distance);
 	}
 	return Actor;
 }

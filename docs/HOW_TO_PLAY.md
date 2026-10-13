@@ -53,7 +53,9 @@ walk into it and the power is yours, forever. In order:
     living-room laptop, the machine's answer to every test.
 
   REFACTOR (R) — reshape what you're looking at. Tagged objects shrink,
-    fade, or move aside.
+    fade, or move aside. On an AI agent it makes her someone else, still
+    dancing her dance: Manny, then Echo, Aurora, Shinbi and Yin, and after
+    Yin herself again. Each new shape costs 10 sauce; turning back is free.
 
   COMPILE (C) — ask Elise in the bedroom. Then stand in the opening where
     the attic ladder was: a ghost ladder appears, and C builds it if you

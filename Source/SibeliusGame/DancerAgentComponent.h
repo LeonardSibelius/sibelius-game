@@ -78,6 +78,24 @@ public:
 	UDancerAgentComponent();
 
 	/**
+	 * The dancer agent for whatever a trace hit, or null.
+	 *
+	 * A MetaHuman is not one tidy actor: the capsule, the body mesh and the grooms can
+	 * belong to attached or child actors, so a sweep may report a hit on something whose
+	 * OWNER is the dancer rather than the dancer herself. UDancerAgentSubsystem attaches
+	 * the component to the actor that carries the dancing mesh, so this walks up the owner
+	 * and attachment chain before giving up. F (the dance menu) and R (her stand-in) both
+	 * find her this way.
+	 *
+	 * Depth-limited because Owner/AttachParent chains can, in principle, cycle.
+	 */
+	static UDancerAgentComponent* FindFor(AActor* Actor);
+
+	/** The skeletal mesh actually playing the dance (a MetaHuman's "Body"). Public for
+	 *  R's stand-in (URefactorComponent), which follows it bone for bone. */
+	USkeletalMeshComponent* FindDanceMesh() const;
+
+	/**
 	 * Her name in the greeting. Left blank, it is derived from the actor's name at
 	 * BeginPlay — "BP_Dancer_Kaia_C_2" becomes "Kaia".
 	 */
@@ -692,9 +710,6 @@ private:
 	TObjectPtr<class APowerGrant> PowerGrant;
 
 	EPowerVerb PowerVerb = EPowerVerb::Refactor;
-
-	/** The skeletal mesh actually playing the dance (a MetaHuman's "Body"). */
-	USkeletalMeshComponent* FindDanceMesh() const;
 
 	/** MetaHuman Face mesh (Leader Pose follower). Morphs live here, not on Body. */
 	USkeletalMeshComponent* FindFaceMesh() const;

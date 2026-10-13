@@ -48,34 +48,10 @@ USlapComponent::USlapComponent()
 
 namespace
 {
-	/**
-	 * The dancer agent for whatever a trace hit, or null.
-	 *
-	 * A MetaHuman is not one tidy actor: the capsule, the body mesh and the grooms can
-	 * belong to attached or child actors, so a sweep may report a hit on something whose
-	 * OWNER is the dancer rather than the dancer herself. UDancerAgentSubsystem attaches
-	 * the component to the actor that carries the dancing mesh, so we walk up the owner
-	 * and attachment chain before giving up.
-	 *
-	 * Depth-limited because Owner/AttachParent chains can, in principle, cycle.
-	 */
+	// The dancer agent for whatever a trace hit (see UDancerAgentComponent::FindFor).
 	UDancerAgentComponent* FindDancerAgent(AActor* Actor)
 	{
-		for (int32 Hops = 0; Actor && Hops < 4; ++Hops)
-		{
-			if (UDancerAgentComponent* Agent = Actor->FindComponentByClass<UDancerAgentComponent>())
-			{
-				return Agent;
-			}
-
-			AActor* Next = Actor->GetOwner();
-			if (!Next)
-			{
-				Next = Actor->GetAttachParentActor();
-			}
-			Actor = Next;
-		}
-		return nullptr;
+		return UDancerAgentComponent::FindFor(Actor);
 	}
 
 	/* ONE OF ETHERION'S LIVE PLANTS (Kaia's home), hit by the swing: shoved, and making its
