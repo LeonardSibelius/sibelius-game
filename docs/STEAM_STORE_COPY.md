@@ -1,6 +1,6 @@
 # STEAM_STORE_COPY — paste-ready, field by field
 
-> **FOR 2.2.2, USE `STEAM_RELEASE_2.2.2.md` (2026-10-11, moved to 2.2.0, 2.2.1 and then 2.2.2
+> **FOR 2.2.2, USE `STEAM_RELEASE_2.2.3.md` (2026-10-11, moved to 2.2.0, 2.2.1 and then 2.2.2
 > on 2026-10-13).** It has the store text rewritten for everything since 2.1.0 (the agents who talk
 > back and their worlds, the dance menu, the Grand Prix, the chess coach, Go, the laptop,
 > Freakbook, R on the agents), the Live-Generated
