@@ -38,6 +38,35 @@ double ASibeliusHUD::MemoirVisibleUntil = 0.0;
 // scales both the glyph size and the line spacing. Bump to taste.
 static constexpr float OverlayTextScale = 2.0f;
 
+// Named, not anonymous: the unity-build rule (see PinballTable.cpp).
+namespace SibeliusHUDDetail
+{
+	/* THE LIVING ROOM, for the one line that names it (Walt, 2026-10-15: "in a lot of places i
+	   go, this note about Poker stays on the screen. Please let this note only appear when in
+	   the living room"). The office beats run in every level but the city's, so "Poker is at
+	   the glass behind you" was showing over the basketball court in the chess park.
+
+	   The room is L_Office_v02's ground floor, living room and kitchen in one, measured by
+	   tracing from its middle to its walls (2026-10-15): the side-game doors' wall at x -2446,
+	   the windows at -1637, the south glass (and the poker cabinet) at y 9044, the bookshelves
+	   at 10013. The floor is at z 61-68 and the floor above at 308, so the box stops short of
+	   it. The hall, the bath and the stairs through the north openings are outside. */
+	const FBox LivingRoom(FVector(-2460.0, 9030.0, -50.0), FVector(-1625.0, 10025.0, 290.0));
+
+	/* AT HOME: the office level, L_Office_v02. Walt again, the same day, of "The AI agents can
+	   give you powers. Find one and press [E].": "yes keep that one home too". */
+	bool IsAtHome(const APawn* Pawn)
+	{
+		const ASibeliusGameCharacter* Leonard = Cast<ASibeliusGameCharacter>(Pawn);
+		return Leonard && !Leonard->IsAwayFromOffice();
+	}
+
+	bool IsInLivingRoom(const APawn* Pawn)
+	{
+		return IsAtHome(Pawn) && LivingRoom.IsInsideOrOn(Pawn->GetActorLocation());
+	}
+}
+
 void ASibeliusHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -934,8 +963,10 @@ FString ASibeliusHUD::ComputeObjective() const
 	}
 
 	// 3) Poker through the glass. A living-room table book must not steal this
-	// line — they pick that up for E + sauce, then still go play.
-	if (!Progression->HasClaimedGrant(TEXT("Tutorial.Poker")) && Keys == 0)
+	// line — they pick that up for E + sauce, then still go play. Only in the living room:
+	// anywhere else the line does not apply, and the next beat speaks.
+	if (!Progression->HasClaimedGrant(TEXT("Tutorial.Poker")) && Keys == 0
+		&& SibeliusHUDDetail::IsInLivingRoom(Pawn))
 	{
 		return TEXT("Poker is at the glass behind you — [E] to play.");
 	}
@@ -965,7 +996,8 @@ FString ASibeliusHUD::ComputeObjective() const
 		}
 	}
 
-	if (Keys == 0 && !Progression->IsUnlocked(EPowerVerb::Compile))
+	// At home only (IsAtHome): away - the chess park, the courts - it nags over a side game.
+	if (Keys == 0 && !Progression->IsUnlocked(EPowerVerb::Compile) && SibeliusHUDDetail::IsAtHome(Pawn))
 	{
 		return TEXT("The AI agents can give you powers. Find one and press [E].");
 	}
@@ -1002,7 +1034,12 @@ FString ASibeliusHUD::ComputeObjective() const
 		return FString();
 	}
 
-	// 7) Key in hand, powers remain: the wider house opens.
+	// 7) Key in hand, powers remain: the wider house opens. At home only, like (4): the
+	// hatch is in the house (Walt, 2026-10-15: "yes keep that one home too").
+	if (!SibeliusHUDDetail::IsAtHome(Pawn))
+	{
+		return FString();
+	}
 	return FString::Printf(
 		TEXT("Your key opens the attic hatch [E]. Powers earned: %d of %d — seek the granting places"),
 		Powers, PowerCount);

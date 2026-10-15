@@ -28,6 +28,12 @@ bool IsTV(const AActor* Actor) { return Actor && Actor->ActorHasTag(TVTag); }
 
 namespace InteractorDetail
 {
+	/* A PART OF AN INTERACTIVE ACTOR THAT IS ONLY A SURFACE. The basketball court's floor
+	   blocks Visibility so Manny's foot IK can stand on it (BasketballCourt.cpp, Solid), and
+	   it belongs to the court, which answers E. A hit on a component with this tag counts as
+	   furniture, like a tabletop: it stops the ray, and offers nothing. */
+	const FName NotInteractiveTag(TEXT("NotInteractive"));
+
 	// Where a dancer's body is this frame, as a vertical capsule: her aim point's spot on the
 	// floor plan (her chest, or the shape she wears - GetAimPoint), from her feet to the top
 	// of her head. From her bones, never her bounds, which stay where she started.
@@ -196,7 +202,9 @@ void UInteractorComponent::UpdateFocus()
 		{
 			continue;
 		}
-		if (IsInteractTarget(HitActor))
+		const UPrimitiveComponent* HitComp = Hit.GetComponent();
+		const bool bJustSurface = HitComp && HitComp->ComponentHasTag(InteractorDetail::NotInteractiveTag);
+		if (!bJustSurface && IsInteractTarget(HitActor))
 		{
 			if (FurnitureDist < 0.f || Hit.Distance <= FurnitureDist + OnSurfaceSlack)
 			{

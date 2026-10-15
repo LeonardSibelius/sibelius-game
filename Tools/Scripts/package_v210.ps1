@@ -146,6 +146,20 @@ $checks = [ordered]@{
   # placed table's SurfaceMaterial, and the grain only by the material.
   "the Go board's wood"   = "$cooked\Go\M_GoSurface.uasset"
   "the Go board's grain"  = "$cooked\Go\T_GoWood.uasset"
+  # --- THE THREE-POINT CONTEST (2026-10-15): ABasketballCourt in L_Chess, reached by the living
+  # room's BASKETBALL door. The balls' leather only by the court's constructor; the door's sign
+  # only by the placed door.
+  "the basketballs' leather" = "$cooked\Basketball\T_Basketball.uasset"
+  "the BASKETBALL sign"      = "$cooked\Basketball\T_Sign_Basketball.uasset"
+  # Leonard is Manny on the court (Walt, 2026-10-15), animated by the template's own AnimBlueprint,
+  # which only the court's constructor names.
+  "Manny's court animation"  = "$cooked\Characters\Mannequins\Anims\Unarmed\ABP_Unarmed.uasset"
+  # The shooters' bodies (2026-10-15): Mixamo's Throw, Dribble, Cheering and Disappointed, on the
+  # agents' skeleton and on Manny's (import_mixamo_basketball.py), named by the court's constructor.
+  "the agents' throw"        = "$cooked\Mixamo\Basketball\Anim_Throw_MH.uasset"
+  "the agents' cheer"        = "$cooked\Mixamo\Basketball\Anim_Cheering_MH.uasset"
+  "Manny's throw"            = "$cooked\Mixamo\Basketball\Anim_Throw_Manny.uasset"
+  "Manny's shrug"            = "$cooked\Mixamo\Basketball\Anim_Disappointed_Manny.uasset"
   # --- FREAKBOOK ON THE LAPTOP (2026-10-12): its pictures, loaded by name by UFreakbookWidget and
   # cooked only by the /Game/Freakbook DirectoriesToAlwaysCook line. A profile picture and a post.
   "Freakbook's faces"     = "$cooked\Freakbook\T_FB_dee_avatar.uasset"
