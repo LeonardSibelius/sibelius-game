@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.2.5 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.2.6 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -15,10 +15,13 @@ light that opens only for all six powers, onto the AI city - grow a universe fro
 under Celestial Fortune's own sun. **And to 2.2.5 on 2026-10-16** (Walt: "the new slot machine
 looks so nice that i want to package it right now"): the slot reels - the power trials and the
 cathedral's cabinet - wear the web game's own symbols, Mars, Saturn, the Rocket, the Sun and the
-rest. No new chat. 2.2.5 is the build that goes to Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261016-v2.2.5\` is the copy the upload script sends.
+rest. **And to 2.2.6 that evening** (Walt: "build the custom cabinet in blender"): the
+cathedral's machine is a real cabinet now - midnight and brass, the lit Celestial Fortune
+marquee, Walt's name on the maker's plate - and a second one stands in the office hall, where
+a 3x win pays 10 sauce. No new chat. 2.2.6 is the build that goes to Steam's `default` branch,
+and `E:\builds\sibelius-shipping-chat-20261016-v2.2.6\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.2.5**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.2.6**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -43,7 +46,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.2.5 from the stick
+### 3. Upload 2.2.6 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -51,7 +54,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.2.5 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city, the new reels"**. If it
+The banner should read **"v2.2.6 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city, the slot cabinets"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -310,7 +313,7 @@ Guardrails:
 
 ### §4. System requirements
 
-The 2.2.5 package measures **8.6 GB** (9,273,099,526 bytes; 2.2.4 was 9,272,810,742; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.2.6 package measures **8.6 GB** (9,274,191,090 bytes; 2.2.5 was 9,273,099,526; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **10 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
