@@ -48,7 +48,7 @@ public:
 	USlotTechPanelWidget(const FObjectInitializer& ObjectInitializer);
 
 	/** Point the panel at the machine it edits. Call before adding to the viewport. */
-	void Setup(USlotGameModel* InModel);
+	void Setup(USlotGameModel* InModel, bool bInBanksMeters = true);
 
 	/** Fires when the player closes the panel (Esc). The cabinet restores input mode. */
 	UPROPERTY(BlueprintAssignable)
@@ -139,6 +139,10 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<USlotGameModel> Model;
+
+	// False on an arcade machine (the office's): its play is not the cathedral's toll, so a
+	// par edit discards the session meters instead of banking them, and LIFETIME is this visit.
+	bool bBanksMeters = true;
 
 	UPROPERTY()
 	TObjectPtr<UTextBlock> TitleText;

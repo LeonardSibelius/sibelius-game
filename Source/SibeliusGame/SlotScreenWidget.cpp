@@ -421,6 +421,13 @@ void USlotScreenWidget::SetTrial(int64 StartCredits, int64 TargetCredits)
 	bTrialWon = false;
 }
 
+void USlotScreenWidget::SetArcade(int32 SauceForABigWin, int32 BigWinTimesBet)
+{
+	bArcade = true;
+	ArcadeSauce = FMath::Max(0, SauceForABigWin);
+	ArcadeBigWinTimes = FMath::Max(1, BigWinTimesBet);
+}
+
 void USlotScreenWidget::TrySpin()
 {
 	if (!bModelReady || bRevealing) { return; }                       // SC7 latch
@@ -688,6 +695,17 @@ void USlotScreenWidget::FinishReveal()
 		ShowBanner(FString::Printf(TEXT("✦  %d FREE SPINS — ALL WINS ×%d  ✦"), USlotGameModel::FREE_SPINS_AWARD, USlotGameModel::FREE_SPIN_MULTIPLIER));
 		PlayPcm(FanfarePcm, 0.5f);
 	}
+	// THE ARCADE PRIZE: real sauce for a big win - the model decided the win, the game the prize.
+	else if (bArcade && ArcadeSauce > 0
+		&& PendingResult.TotalWin >= static_cast<double>(ArcadeBigWinTimes) * TOTAL_BET)
+	{
+		if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+		{
+			Prog->GrantSauce(ArcadeSauce);
+			ShowBanner(FString::Printf(TEXT("BIG WIN  -  +%d SAUCE"), ArcadeSauce));
+			PlayPcm(FanfarePcm, 0.5f);
+		}
+	}
 	UpdateHud();
 
 	// SHRINE TRIAL: target reached — the machine yields exactly once.
@@ -795,7 +813,15 @@ void USlotScreenWidget::UpdateHud()
 			? FString::Printf(TEXT("REACH %lld CREDITS TO CLAIM THE POWER        SPACE - spin        Esc - retreat"), TrialTarget)
 			: FString(TEXT("SPACE - spin        T - service panel        Esc - leave"));
 		
-		if (TrialTarget <= 0)
+		if (bArcade)
+		{
+			if (ArcadeSauce > 0)
+			{
+				Hint += FString::Printf(TEXT("\nA WIN OF %d TIMES THE BET (%d) OR MORE PAYS %d SAUCE"),
+					ArcadeBigWinTimes, ArcadeBigWinTimes * TOTAL_BET, ArcadeSauce);
+			}
+		}
+		else if (TrialTarget <= 0)
 		{
 			if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
 			{

@@ -6,6 +6,7 @@
 #include "Engine/Engine.h"                   // GetSmallFont
 #include "EngineUtils.h"                      // TActorIterator
 #include "SlotCabinet.h"                      // the machine hint finds the nearest cabinet
+#include "InteractorComponent.h"              // ...and an arcade machine only when he looks at it
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 
@@ -1174,6 +1175,14 @@ void ASibeliusHUD::DrawMachineHint()
 	const FVector Here = PlayerPawn->GetActorLocation();
 	const float RangeSq = MachineHintRange * MachineHintRange;
 
+	/* AN ARCADE MACHINE NEEDS THE RETICLE ON IT (2026-10-16). Range alone was right for the
+	   cathedral, where the machine stands alone in the apse. The office's machine stands in
+	   the hall by Kaia's door, and range put PLAY THE MACHINE under Kaia's own prompts while
+	   E would talk to her (Walt's screenshot). So a machine that is not the cathedral's
+	   shows the hint only when it is what E would act on. */
+	const UInteractorComponent* Interactor = PlayerPawn->FindComponentByClass<UInteractorComponent>();
+	const AActor* Focused = Interactor ? Interactor->GetFocusedActor() : nullptr;
+
 	const ASlotCabinet* Nearest = nullptr;
 	float BestSq = RangeSq;
 	for (TActorIterator<ASlotCabinet> It(World); It; ++It)
@@ -1182,6 +1191,10 @@ void ASibeliusHUD::DrawMachineHint()
 		if (!Cab || Cab->IsScreenOpen())
 		{
 			continue;   // already playing — the screen has its own controls line
+		}
+		if (!Cab->bIsTheCathedralMachine && Focused != Cab)
+		{
+			continue;
 		}
 		const float DSq = FVector::DistSquared(Here, Cab->GetActorLocation());
 		if (DSq < BestSq)

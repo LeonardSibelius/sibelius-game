@@ -79,6 +79,10 @@ public:
 	// OnTrialWon exactly once. 0 target = normal free play.
 	void SetTrial(int64 StartCredits, int64 TargetCredits);
 
+	// AN ARCADE MACHINE (the office's, not the cathedral's): no toll readout, and a spin
+	// paying at least BigWinTimesBet x the bet pays SauceForABigWin real sauce.
+	void SetArcade(int32 SauceForABigWin, int32 BigWinTimesBet);
+
 	// Fired on Esc — the cabinet restores input mode (SC1's one close path).
 	FOnSlotScreenClosed OnClosed;
 
@@ -173,6 +177,9 @@ private:
 
 	int64 Credits = START_CREDITS;
 	int64 TrialTarget = 0;                // 0 = leisure mode (the cathedral coda)
+	bool bArcade = false;                 // SetArcade: not the cathedral's machine
+	int32 ArcadeSauce = 0;                // sauce for a big win
+	int32 ArcadeBigWinTimes = 10;         // a big win pays this many bets or more
 	bool bTrialWon = false;               // fire OnTrialWon exactly once
 	bool bRevealing = false;              // SC7 latch
 	bool bModelReady = false;

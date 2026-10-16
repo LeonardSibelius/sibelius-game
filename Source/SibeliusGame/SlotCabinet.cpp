@@ -15,6 +15,8 @@
 #include "SlotGameModel.h"
 #include "SlotScreenWidget.h"
 #include "SlotTechPanelWidget.h"
+#include "Engine/StaticMesh.h"
+#include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSlotCabinet, Log, All);
 
@@ -28,6 +30,14 @@ ASlotCabinet::ASlotCabinet()
 	CabinetMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CabinetMesh"));
 	CabinetMesh->SetupAttachment(SceneRoot);
 	CabinetMesh->SetCollisionProfileName(TEXT("BlockAll"));   // SC9: focus trace must land
+
+	// The Celestial Fortune cabinet (build_cabinet_blender.py), so a new machine is one.
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cabinet(
+		TEXT("/Game/SlotFactory/Cabinet/SM_CelestialCabinet.SM_CelestialCabinet"));
+	if (Cabinet.Succeeded())
+	{
+		CabinetMesh->SetStaticMesh(Cabinet.Object);
+	}
 }
 
 void ASlotCabinet::Interact_Implementation(AActor* Interactor)
@@ -54,7 +64,10 @@ FText ASlotCabinet::GetInteractionPrompt_Implementation() const
 
 void ASlotCabinet::OpenScreen(APlayerController* PC)
 {
-	SayTheCathedralLine();
+	if (bIsTheCathedralMachine)
+	{
+		SayTheCathedralLine();
+	}
 	ScreenPC = PC;
 
 	// SC1: UIOnly + focus so keys go to the screen, never to WASD.
@@ -77,6 +90,10 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 		}
 		Screen->OnClosed.BindUObject(this, &ASlotCabinet::CloseScreen);
 		Screen->OnTechPanelRequested.BindUObject(this, &ASlotCabinet::OpenTechPanel);
+		if (!bIsTheCathedralMachine)
+		{
+			Screen->SetArcade(SauceForABigWin, BigWinTimesBet);
+		}
 	}
 	if (!bSeeded)
 	{
@@ -102,8 +119,8 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 	bScreenOpen = true;
 
 	// SIB-43 / CL2: the moment the machine is played, the clue chain advances —
-	// recorded on the GameInstance so it survives the trip home.
-	if (UGameInstance* GI = GetGameInstance())
+	// recorded on the GameInstance so it survives the trip home. The cathedral's only.
+	if (UGameInstance* GI = bIsTheCathedralMachine ? GetGameInstance() : nullptr)
 	{
 		if (USibeliusProgressSubsystem* Progress = GI->GetSubsystem<USibeliusProgressSubsystem>())
 		{
@@ -129,7 +146,7 @@ void ASlotCabinet::OpenTechPanel()
 		return;
 	}
 
-	TechPanel->Setup(Screen->GetModel());
+	TechPanel->Setup(Screen->GetModel(), /*bBanksMeters=*/bIsTheCathedralMachine);
 	TechPanel->OnClosed.AddDynamic(this, &ASlotCabinet::CloseTechPanel);
 
 	// Layered ABOVE the screen (60), so the machine stays visible behind the report —
@@ -188,7 +205,11 @@ void ASlotCabinet::CloseScreen()
 	{
 		if (USlotGameModel* M = Screen->GetModel())
 		{
-			if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+			if (!bIsTheCathedralMachine)
+			{
+				M->TakePendingMeters();   // an arcade machine's play is never the toll
+			}
+			else if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
 			{
 				/* THE TOLL IS PAID ON THE WAY OUT, and that is the right beat rather
 				   than a convenient one. The meters only bank on close, so mid-session

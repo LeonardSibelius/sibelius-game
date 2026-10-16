@@ -66,9 +66,10 @@ USlotTechPanelWidget::USlotTechPanelWidget(const FObjectInitializer& ObjectIniti
 	}
 }
 
-void USlotTechPanelWidget::Setup(USlotGameModel* InModel)
+void USlotTechPanelWidget::Setup(USlotGameModel* InModel, bool bInBanksMeters)
 {
 	Model = InModel;
+	bBanksMeters = bInBanksMeters;
 
 	// FACTORY IS ALWAYS THE SHIPPED SHEET, never the model's current one. If it took the
 	// model's sheet, opening the panel on an already-edited machine would enshrine that
@@ -393,7 +394,11 @@ void USlotTechPanelWidget::Refresh()
 		// gated on the maths actually moving — the same test SetParSheet uses.
 		if (!Model->GetParSheet().EqualsMath(Sheet))
 		{
-			if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
+			if (!bBanksMeters)
+			{
+				Model->TakePendingMeters();
+			}
+			else if (UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
 			{
 				Prog->CommitSlotMeters(Model->TakePendingMeters());
 			}
@@ -431,7 +436,7 @@ FString USlotTechPanelWidget::ComposeMetersText(const FSlotParSheetReport& Par) 
 	bool bEditedPar = false;
 	if (const UProgressionSubsystem* Prog = UProgressionSubsystem::Get(this))
 	{
-		Lifetime   = Prog->GetStateForRead().SlotLifetimeMeters;
+		Lifetime   = bBanksMeters ? Prog->GetStateForRead().SlotLifetimeMeters : FSlotMeters();
 		bEditedPar = Prog->GetStateForRead().HasEditedParSheet();
 	}
 	if (Model)
