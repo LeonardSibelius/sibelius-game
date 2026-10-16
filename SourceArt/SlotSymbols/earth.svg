@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Earth">
+  <title>Earth — the blue planet</title>
+  <desc>A sunlit Earth with Africa, Europe and Asia, turquoise seas, white cloud systems and a luminous blue atmosphere.</desc>
+  <defs>
+    <radialGradient id="earth-halo"><stop offset=".68" stop-color="#10a4f4" stop-opacity="0"/><stop offset=".78" stop-color="#35c9ff" stop-opacity=".32"/><stop offset=".88" stop-color="#0b70d9" stop-opacity=".13"/><stop offset="1" stop-color="#005bde" stop-opacity="0"/></radialGradient>
+    <radialGradient id="earth-ocean" cx=".31" cy=".24" r=".82"><stop stop-color="#40c2e5"/><stop offset=".27" stop-color="#168fc9"/><stop offset=".56" stop-color="#075ca5"/><stop offset=".8" stop-color="#04386e"/><stop offset="1" stop-color="#020d25"/></radialGradient>
+    <linearGradient id="earth-land" x1=".1" y1="0" x2=".85" y2="1"><stop stop-color="#a6cba2"/><stop offset=".3" stop-color="#789977"/><stop offset=".58" stop-color="#b6aa70"/><stop offset=".76" stop-color="#498576"/><stop offset="1" stop-color="#254d48"/></linearGradient>
+    <linearGradient id="earth-sahara" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dcc992"/><stop offset=".55" stop-color="#c5ac78"/><stop offset="1" stop-color="#8d9c70"/></linearGradient>
+    <radialGradient id="earth-shade" cx=".28" cy=".26" r=".85"><stop offset=".25" stop-color="#02102d" stop-opacity="0"/><stop offset=".58" stop-color="#02102d" stop-opacity=".05"/><stop offset=".78" stop-color="#01091d" stop-opacity=".38"/><stop offset="1" stop-color="#000511" stop-opacity=".96"/></radialGradient>
+    <radialGradient id="earth-limb"><stop offset=".83" stop-color="#44c3ff" stop-opacity="0"/><stop offset=".96" stop-color="#46c8ff" stop-opacity=".15"/><stop offset="1" stop-color="#adebff" stop-opacity=".7"/></radialGradient>
+    <linearGradient id="earth-rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e4ffff"/><stop offset=".4" stop-color="#68d6ff"/><stop offset=".8" stop-color="#2582bb" stop-opacity=".4"/><stop offset="1" stop-color="#16364e" stop-opacity="0"/></linearGradient>
+    <radialGradient id="earth-sheen" cx=".28" cy=".26" r=".5"><stop stop-color="#c3f5ff" stop-opacity=".28"/><stop offset="1" stop-color="#c3f5ff" stop-opacity="0"/></radialGradient>
+    <clipPath id="earth-disc"><circle cx="100" cy="98" r="78"/></clipPath>
+    <filter id="earth-soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.2"/></filter>
+    <filter id="earth-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.8"/></filter>
+    <filter id="earth-cloud-soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation=".35"/></filter>
+    <path id="earth-africa" d="M78 73 84 70 93 71 97 74 106 73 111 77 120 79 124 86 129 90 134 90 129 96 123 102 122 111 119 118 118 127 114 137 107 147 102 149 98 144 95 135 91 131 90 121 86 115 86 108 81 103 74 102 69 99 65 94 66 86 70 78Z"/>
+    <path id="earth-eurasia" d="M70 36 80 31 88 32 93 37 100 34 110 31 121 33 128 37 141 39 154 47 164 57 174 72 183 86 183 112 173 116 165 108 164 97 158 93 155 83 148 86 147 95 144 99 139 93 135 82 129 80 126 76 117 74 112 70 108 69 105 65 100 67 94 64 91 66 87 63 85 59 82 59 84 65 82 68 78 66 76 60 71 61 69 66 62 65 63 59 68 57 68 53 73 50 71 46 76 43 75 37Z"/>
+    <g id="earth-clouds" fill="none" stroke-linecap="round">
+      <path d="M28 68C42 51 57 50 69 53M32 65C43 55 55 55 64 57M45 47C58 37 78 35 91 39" stroke-width="2.7"/>
+      <path d="M99 34C117 29 142 35 155 48M104 38C120 35 135 39 148 44" stroke-width="2.3"/>
+      <path d="M137 54C156 57 158 66 148 68C139 70 131 65 135 61C139 57 149 61 148 64M128 51C149 49 168 64 160 76" stroke-width="1.9"/>
+      <path d="M35 101C47 88 60 91 57 99C54 106 43 107 43 101C43 97 49 97 51 99M31 112C42 112 59 106 62 96" stroke-width="2.2"/>
+      <path d="M72 111C84 108 95 114 111 109M76 115C91 113 99 118 114 114M90 118 106 117" stroke-width="2"/>
+      <path d="M130 119C145 111 159 117 153 125C148 131 137 128 141 124C144 121 149 123 148 126M126 128C132 138 156 140 164 126" stroke-width="2.1"/>
+      <path d="M47 142C63 153 82 155 91 151M43 136C53 143 66 146 72 145M115 153C137 154 151 146 164 137" stroke-width="2.5"/>
+      <path d="M65 160C86 170 109 170 126 165M78 164C92 168 105 168 115 166" stroke-width="3.2"/>
+    </g>
+  </defs>
+  <ellipse cx="104" cy="182" rx="48" ry="4" fill="#000917" opacity=".25" filter="url(#earth-glow)"/>
+  <circle cx="100" cy="98" r="96" fill="url(#earth-halo)"/>
+  <circle cx="100" cy="98" r="79" fill="none" stroke="#26bfff" stroke-width="2.8" opacity=".55" filter="url(#earth-glow)"/>
+  <circle cx="100" cy="98" r="78" fill="url(#earth-ocean)"/>
+  <g clip-path="url(#earth-disc)">
+    <!-- Hand-drawn geographic silhouettes; no external map or texture dependency. -->
+    <g fill="none" stroke="#57d7d5" stroke-width="2.1" opacity=".48" filter="url(#earth-soft)"><use href="#earth-africa"/><use href="#earth-eurasia"/></g>
+    <g fill="url(#earth-land)" stroke="#b1c4a0" stroke-opacity=".35" stroke-width=".45" stroke-linejoin="round"><use href="#earth-africa"/><use href="#earth-eurasia"/>
+      <path d="M111 79 117 76 123 80 130 82 134 88 128 93 122 91 117 86Z"/>
+      <path d="M125 123 127 121 128 127 125 134 122 136 122 131Z"/>
+      <path d="M61 53 63 49 64 44 67 47 67 52 65 56 62 56Z M57 51 59 49 61 51 60 55 57 55Z"/>
+      <path d="M160 130 168 126 175 130 182 143 177 154 165 158 157 151 153 141Z"/>
+      <path d="M151 105 154 109 155 114 153 113Z M155 116 165 119 171 123 169 125 160 122Z"/>
+    </g>
+    <path d="M73 79 84 75 96 78 106 76 116 81 120 87 117 98 108 104 95 101 85 97 74 98 69 94 70 85Z" fill="url(#earth-sahara)"/>
+    <path d="M83 104C94 100 110 107 120 104L117 120 109 129 99 126 93 117 90 110Z" fill="#337c68" opacity=".85"/>
+    <path d="M104 130 112 124 117 125 111 139 105 147 101 143Z" fill="#abaf7d" opacity=".55"/>
+    <path d="M111 80 116 87 120 94 116 101" fill="none" stroke="#567d73" stroke-width=".9"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="M76 81 84 79 88 80M80 87 95 85 105 89M89 92 98 94 108 93M100 82 110 83" stroke="#f2d59c" stroke-width=".7" opacity=".45"/>
+      <path d="M94 45 103 42 114 44M116 54 125 51 137 54M129 66 139 68 149 64M110 120 108 130 104 138" stroke="#d2d0a3" stroke-width="1" opacity=".5"/>
+      <path d="M121 73 129 70 139 74 145 72" stroke="#f2ecce" stroke-width="1.8" opacity=".83"/>
+    </g>
+    <path d="M51 24C76 13 117 13 143 27L129 30 116 27 105 30 97 27 87 30 79 28 69 33 59 30Z" fill="#e5f6f2" opacity=".92"/>
+    <path d="M64 169C87 166 111 172 131 168L145 179 53 179Z" fill="#d3e6e9" opacity=".8"/>
+    <use href="#earth-clouds" stroke="#042d59" opacity=".22" transform="translate(1 1.5)" filter="url(#earth-soft)"/>
+    <use href="#earth-clouds" stroke="#fff" opacity=".85" filter="url(#earth-cloud-soft)"/>
+    <g fill="#f3ffff" opacity=".7"><ellipse cx="72" cy="43" rx="4" ry="1" transform="rotate(-15 72 43)"/><ellipse cx="84" cy="48" rx="3.4" ry="1"/><ellipse cx="91" cy="51" rx="2" ry=".7"/><ellipse cx="67" cy="117" rx="4" ry="1.2"/><ellipse cx="118" cy="59" rx="4" ry=".9"/><ellipse cx="135" cy="101" rx="3" ry="1"/></g>
+    <circle cx="100" cy="98" r="78" fill="url(#earth-sheen)"/>
+    <circle cx="100" cy="98" r="78" fill="url(#earth-shade)"/>
+    <circle cx="100" cy="98" r="78" fill="url(#earth-limb)"/>
+  </g>
+  <circle cx="100" cy="98" r="78" fill="none" stroke="url(#earth-rim)" stroke-width=".9"/>
+  <path d="M33 62A78 78 0 0 1 108 20" fill="none" stroke="#d1faff" stroke-width="1.2" opacity=".75"/>
+</svg>

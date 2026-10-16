@@ -17,8 +17,8 @@ enum class ESlotSymbol : uint8
 	Galaxy  UMETA(DisplayName = "Galaxy"),
 	Saturn  UMETA(DisplayName = "Saturn"),
 	Mars    UMETA(DisplayName = "Mars"),
-	Crown   UMETA(DisplayName = "Crown"),
-	Seven   UMETA(DisplayName = "Lucky 7"),
+	Crown   UMETA(DisplayName = "Rocket"),   // drawn as Celestial Fortune's rocket (2026-10-16)
+	Seven   UMETA(DisplayName = "Sun"),      // drawn as its sun: the jackpot symbol
 	Wild    UMETA(DisplayName = "Wild"),
 	Earth   UMETA(DisplayName = "Earth (Bonus)"),
 	None    UMETA(Hidden)

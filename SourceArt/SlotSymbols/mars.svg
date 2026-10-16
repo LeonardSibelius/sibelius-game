@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Mars">
+ <title>Mars — through the telescope</title>
+ <desc>A softly shaded rust-colored Mars, with ochre deserts, dark irregular surface markings, fine dust texture and a small ivory polar cap. Telescope-inspired original illustration.</desc>
+ <defs>
+  <clipPath id="mars-disc"><circle cx="100" cy="98" r="78"/></clipPath>
+  <radialGradient id="mars-body" cx=".38" cy=".32" r=".78"><stop stop-color="#e98767"/><stop offset=".28" stop-color="#d7654d"/><stop offset=".62" stop-color="#bc4638"/><stop offset=".84" stop-color="#962f28"/><stop offset="1" stop-color="#632521"/></radialGradient>
+  <radialGradient id="mars-dust"><stop stop-color="#ed956f" stop-opacity=".35"/><stop offset=".6" stop-color="#df7054" stop-opacity=".18"/><stop offset="1" stop-color="#df7054" stop-opacity="0"/></radialGradient>
+  <radialGradient id="mars-basin"><stop stop-color="#d9bea2" stop-opacity=".7"/><stop offset=".65" stop-color="#dbb28a" stop-opacity=".32"/><stop offset="1" stop-color="#cf9a75" stop-opacity="0"/></radialGradient>
+  <linearGradient id="mars-cap" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#ffffff"/><stop offset=".6" stop-color="#f2f4ef"/><stop offset="1" stop-color="#cfdcde"/></linearGradient>
+  <radialGradient id="mars-shade" cx=".32" cy=".36" r=".81"><stop offset=".25" stop-color="#160f13" stop-opacity="0"/><stop offset=".6" stop-color="#160f13" stop-opacity=".03"/><stop offset=".8" stop-color="#160f13" stop-opacity=".2"/><stop offset=".94" stop-color="#0d1016" stop-opacity=".55"/><stop offset="1" stop-color="#080c12" stop-opacity=".78"/></radialGradient>
+  <radialGradient id="mars-limb"><stop offset=".92" stop-color="#cfbfab" stop-opacity="0"/><stop offset=".986" stop-color="#e0ccba" stop-opacity=".17"/><stop offset="1" stop-color="#ead6c1" stop-opacity=".2"/></radialGradient>
+  <filter id="mars-markings" x="-15%" y="-15%" width="130%" height="130%"><feTurbulence type="fractalNoise" baseFrequency=".095" numOctaves="4" seed="17" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation="1.1"/></filter>
+  <filter id="mars-soft" x="-15%" y="-15%" width="130%" height="130%"><feGaussianBlur stdDeviation="1.1"/></filter>
+  <filter id="mars-cap-edge" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".2" numOctaves="2" seed="8" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5"/><feGaussianBlur stdDeviation=".3"/></filter>
+  <filter id="mars-grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".58" numOctaves="3" seed="91"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="2.5" intercept="-.75"/><feFuncG type="linear" slope="2.5" intercept="-.75"/><feFuncB type="linear" slope="2.5" intercept="-.75"/></feComponentTransfer></filter>
+  <filter id="mars-mottling" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".085" numOctaves="4" seed="32"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope="3" intercept="-1"/><feFuncG type="linear" slope="3" intercept="-1"/><feFuncB type="linear" slope="3" intercept="-1"/></feComponentTransfer></filter>
+ </defs>
+ <circle cx="100" cy="98" r="78" fill="url(#mars-body)"/>
+ <g clip-path="url(#mars-disc)">
+  <!-- Soft albedo regions, not sharp continent outlines or oversized crater icons. -->
+  <g fill="#57564d" filter="url(#mars-markings)">
+   <path opacity=".6" d="M109 57C115 62 113 71 119 75C125 80 132 77 137 82L139 91 151 99 146 106 136 105 129 113 121 119 112 118 107 111 109 102 102 94 100 87 105 80 105 69Z"/>
+   <path opacity=".47" d="M29 104C44 99 54 102 59 99L68 101 73 108 86 110 92 116 105 115 112 124 100 130 87 127 80 132 73 126 63 126 54 119 42 120 31 114Z"/>
+   <path opacity=".43" d="M129 128C135 121 145 117 154 119L165 113 177 117 183 128 166 138 159 147 146 146 141 136Z"/>
+   <path opacity=".25" d="M51 49C65 43 79 46 85 48L86 54 77 60 67 57 61 62 49 59 43 55Z"/>
+   <path opacity=".25" d="M83 143C92 135 102 139 108 145L120 146 124 154 112 162 101 156 91 158 80 151Z"/>
+  </g>
+  <ellipse cx="70" cy="81" rx="36" ry="29" fill="url(#mars-dust)" transform="rotate(-20 70 81)"/>
+  <ellipse cx="127" cy="129" rx="16" ry="21" fill="url(#mars-basin)" transform="rotate(20 127 129)"/>
+  <ellipse cx="144" cy="57" rx="24" ry="17" fill="url(#mars-dust)"/>
+  <path d="M33 91C50 84 62 87 77 83S96 78 105 80" fill="none" stroke="#e6ba91" stroke-width="4" opacity=".22" filter="url(#mars-soft)"/>
+  <rect x="22" y="20" width="156" height="156" filter="url(#mars-mottling)" opacity=".28" style="mix-blend-mode:soft-light"/>
+  <rect x="22" y="20" width="156" height="156" filter="url(#mars-grain)" opacity=".16" style="mix-blend-mode:soft-light"/>
+  <g transform="rotate(-14 100 98)">
+   <ellipse cx="100" cy="28" rx="28" ry="11" fill="#ecf0ec" opacity=".36" filter="url(#mars-soft)"/>
+   <path d="M70 20Q99 11 131 21L127 28 122 31 117 33 112 33 108 36 102 35 97 38 92 36 87 37 82 34 77 33 73 28Z" fill="url(#mars-cap)" filter="url(#mars-cap-edge)"/>
+   <path d="M81 27Q99 33 119 27" fill="none" stroke="#ffffff" stroke-width="1.5" opacity=".7" filter="url(#mars-soft)"/>
+  </g>
+  <path d="M25 81C29 60 44 43 60 37" fill="none" stroke="#d8d7cc" stroke-width="4" opacity=".16" filter="url(#mars-soft)"/>
+  <circle cx="100" cy="98" r="78" fill="url(#mars-shade)"/>
+  <circle cx="100" cy="98" r="78" fill="url(#mars-limb)"/>
+ </g>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Wild">
+  <defs>
+    <linearGradient id="wild-gold" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#e9d4ff"/>
+      <stop offset="0.45" stop-color="#b06bff"/>
+      <stop offset="1" stop-color="#4a1a88"/>
+    </linearGradient>
+    <radialGradient id="wild-core" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.4" stop-color="#ffe9b8"/>
+      <stop offset="1" stop-color="#b06bff"/>
+    </radialGradient>
+    <radialGradient id="wild-atmos" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#c9a6ff" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#c9a6ff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="wild-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#wild-atmos)"/>
+  <g filter="url(#wild-soft)" opacity="0.8">
+    <path fill="#b06bff" d="M50 8 L58 42 L94 50 L58 58 L50 92 L42 58 L6 50 L42 42 Z"/>
+  </g>
+  <path fill="url(#wild-gold)" d="M50 14 L56 43 L86 50 L56 57 L50 86 L44 57 L14 50 L44 43 Z"/>
+  <circle cx="50" cy="50" r="12" fill="url(#wild-core)"/>
+  <circle cx="48" cy="47" r="3" fill="#fff"/>
+</svg>

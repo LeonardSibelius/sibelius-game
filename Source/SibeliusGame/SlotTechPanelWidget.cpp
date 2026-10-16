@@ -38,8 +38,8 @@ namespace
 		case ESlotSymbol::Galaxy: return TEXT("Galaxy");
 		case ESlotSymbol::Saturn: return TEXT("Saturn");
 		case ESlotSymbol::Mars:   return TEXT("Mars");
-		case ESlotSymbol::Crown:  return TEXT("Crown");
-		case ESlotSymbol::Seven:  return TEXT("Lucky 7");
+		case ESlotSymbol::Crown:  return TEXT("Rocket");
+		case ESlotSymbol::Seven:  return TEXT("Sun");
 		case ESlotSymbol::Wild:   return TEXT("WILD");
 		case ESlotSymbol::Earth:  return TEXT("Earth");
 		default:                  return TEXT("?");
@@ -657,7 +657,7 @@ FString USlotTechPanelWidget::ComposeReportText(const FSlotParSheetReport& Rep, 
 		Marker(EKnob::Pays), PaysMultiplier);
 	S += FString::Printf(TEXT("%s  WILDS           %d of %d stops\n"),
 		Marker(EKnob::Wilds), WildCount, Sheet.NumStops());
-	S += FString::Printf(TEXT("%s  JACKPOT         %.0f          Lucky 7, five of a kind\n"),
+	S += FString::Printf(TEXT("%s  JACKPOT         %.0f          the Sun, five of a kind\n"),
 		Marker(EKnob::Jackpot), JackpotPay);
 	S += FString::Printf(TEXT("%s  BONUS           %d of %d stops    Earth — the free-spin round\n"),
 		Marker(EKnob::Bonus), BonusCount, Sheet.NumStops());
@@ -837,7 +837,7 @@ FString USlotTechPanelWidget::ComposeHelpText() const
 		TEXT("               it and almost nothing else does.\n")
 		TEXT("     WILDS     how many WILD symbols sit on the reel strip. A Wild stands in\n")
 		TEXT("               for any symbol. One stop in forty is worth more than you think.\n")
-		TEXT("     JACKPOT   what five Lucky 7s pay. Barely touches RTP; transforms feel.\n")
+		TEXT("     JACKPOT   what five Suns pay. Barely touches RTP; transforms feel.\n")
 		TEXT("     BONUS     how many EARTH symbols are on the strip. Earth never pays on\n")
 		TEXT("               a line — three anywhere start the free spins. This dial sets\n")
 		TEXT("               the machine's RHYTHM: how often the good part arrives.\n")

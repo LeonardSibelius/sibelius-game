@@ -1,7 +1,11 @@
-# import_symbol_sprites.py — import the 9 Celestial Fortune vector sprites
-# (June 11, 2026 set — Cowork-drawn SVG -> 512px PNG, fully ours, committable)
-# from the celestial-fortune web repo into /Game/SlotFactory/SymbolSprites as
-# T_sym_<id>, UI texture group. Idempotent (replace_existing).
+# import_symbol_sprites.py — import the 9 Celestial Fortune symbol sprites into
+# /Game/SlotFactory/SymbolSprites as T_sym_<id>, UI texture group. Idempotent
+# (replace_existing).
+#
+# Since 2026-10-16 they are the web game's own symbols (celestial-fortune-web, original
+# SVG), rendered to 512px PNG by make_slot_symbols.mjs into SourceArt/SlotSymbols: the
+# Crown's sprite is its rocket, the Seven's its sun, the scatter's its Earth. (The June 11
+# set came from the older celestial-fortune repo's src/factory.)
 #
 # RUN NATIVELY (editor Cmd box, never the bridge):
 #   py "C:/Users/wpark/projects/sibelius-game/Tools/Scripts/import_symbol_sprites.py"
@@ -12,7 +16,7 @@
 import os
 import unreal
 
-SRC_DIR = "C:/Users/wpark/projects/celestial-fortune/src/factory"
+SRC_DIR = "C:/Users/wpark/projects/sibelius-game/SourceArt/SlotSymbols"
 DEST = "/Game/SlotFactory/SymbolSprites"
 IDS = ["star", "moon", "galaxy", "saturn", "mars", "crown", "seven", "wild", "scatter"]
 TAG = "###SPRITES###"
@@ -23,7 +27,7 @@ def main():
     eal = unreal.EditorAssetLibrary
     ok = 0
     for sid in IDS:
-        src = "%s/%s.png" % (SRC_DIR, sid)
+        src = "%s/T_sym_%s.png" % (SRC_DIR, sid)
         if not os.path.exists(src):
             unreal.log_error("%s MISSING source file: %s" % (TAG, src))
             continue

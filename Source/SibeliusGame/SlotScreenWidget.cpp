@@ -58,8 +58,8 @@ namespace
 		case ESlotSymbol::Galaxy: return TEXT("Galaxy");
 		case ESlotSymbol::Saturn: return TEXT("Saturn");
 		case ESlotSymbol::Mars:   return TEXT("Mars");
-		case ESlotSymbol::Crown:  return TEXT("Crown");
-		case ESlotSymbol::Seven:  return TEXT("Lucky 7");
+		case ESlotSymbol::Crown:  return TEXT("Rocket");
+		case ESlotSymbol::Seven:  return TEXT("Sun");
 		case ESlotSymbol::Wild:   return TEXT("Wild");
 		case ESlotSymbol::Earth:  return TEXT("Earth");
 		default:                  return TEXT("?");

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Rocket">
+<title>Rocket — orbital launch vehicle</title>
+<desc>A slender white two-stage orbital rocket with a payload fairing, black interstage, grid fins, clustered engine bells and a bright kerosene plume. Original illustration. No markings or logos.</desc>
+<defs>
+ <linearGradient id="rocket-cyl" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6d747c"/><stop offset=".18" stop-color="#d8dde3"/><stop offset=".42" stop-color="#f7f8fa"/><stop offset=".58" stop-color="#eef1f4"/><stop offset=".82" stop-color="#a8b0b8"/><stop offset="1" stop-color="#4a5158"/></linearGradient>
+ <linearGradient id="rocket-fairing" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#7a8088"/><stop offset=".2" stop-color="#e4e7eb"/><stop offset=".45" stop-color="#ffffff"/><stop offset=".7" stop-color="#c5cad0"/><stop offset="1" stop-color="#545b62"/></linearGradient>
+ <linearGradient id="rocket-black" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#0c0d10"/><stop offset=".35" stop-color="#2a2e34"/><stop offset=".55" stop-color="#3d434c"/><stop offset="1" stop-color="#090a0c"/></linearGradient>
+ <linearGradient id="rocket-ti" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8eaee"/><stop offset=".45" stop-color="#9aa1aa"/><stop offset="1" stop-color="#4e555c"/></linearGradient>
+ <linearGradient id="rocket-nozzle" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9aa0a6"/><stop offset=".35" stop-color="#3a3f46"/><stop offset=".7" stop-color="#1a1d22"/><stop offset="1" stop-color="#0a0b0d"/></linearGradient>
+ <radialGradient id="rocket-plume" cx=".5" cy=".12" r=".85"><stop stop-color="#fff8e8"/><stop offset=".18" stop-color="#ffe08a"/><stop offset=".45" stop-color="#ff9a32"/><stop offset=".72" stop-color="#ff5a12"/><stop offset="1" stop-color="#ff5a12" stop-opacity="0"/></radialGradient>
+ <radialGradient id="rocket-core" cx=".5" cy=".08" r=".55"><stop stop-color="#ffffff"/><stop offset=".35" stop-color="#fff3c4"/><stop offset=".7" stop-color="#ffc056" stop-opacity=".7"/><stop offset="1" stop-color="#ffc056" stop-opacity="0"/></radialGradient>
+ <filter id="rocket-soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.4"/></filter>
+ <filter id="rocket-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4"/></filter>
+ <clipPath id="rocket-stack"><path d="M90 52H110V148H90Z"/></clipPath>
+ <g id="rocket-gridfin">
+  <rect x="-8" y="-8" width="16" height="16" rx="1.2" fill="url(#rocket-ti)" stroke="#3a4048" stroke-width=".7"/>
+  <path fill="none" stroke="#5c646e" stroke-width=".55" d="M-8-2.7H8M-8 2.7H8M-2.7-8V8M2.7-8V8"/>
+  <path fill="none" stroke="#2e343c" stroke-width=".35" d="M-8 0H8M0-8V8"/>
+ </g>
+</defs>
+<ellipse cx="100" cy="188" rx="22" ry="4" fill="#000" opacity=".22" filter="url(#rocket-soft)"/>
+<g filter="url(#rocket-glow)" opacity=".85">
+ <ellipse cx="100" cy="172" rx="16" ry="22" fill="#ff6a18"/>
+ <ellipse cx="92" cy="168" rx="7" ry="16" fill="#ff8a28"/>
+ <ellipse cx="108" cy="168" rx="7" ry="16" fill="#ff8a28"/>
+</g>
+<ellipse cx="100" cy="170" rx="11" ry="20" fill="url(#rocket-plume)"/>
+<ellipse cx="100" cy="166" rx="5.5" ry="14" fill="url(#rocket-core)"/>
+<ellipse cx="93" cy="164" rx="3.2" ry="10" fill="url(#rocket-core)" opacity=".75"/>
+<ellipse cx="107" cy="164" rx="3.2" ry="10" fill="url(#rocket-core)" opacity=".75"/>
+<!-- landing legs, folded against the first stage then kicking out at the base -->
+<g fill="url(#rocket-ti)" stroke="#3a4048" stroke-width=".6">
+ <path d="M90 128L72 158L78 159L92 132Z"/>
+ <path d="M110 128L128 158L122 159L108 132Z"/>
+</g>
+<g fill="#2c3238">
+ <ellipse cx="74" cy="159" rx="5" ry="1.6"/>
+ <ellipse cx="126" cy="159" rx="5" ry="1.6"/>
+</g>
+<!-- octaweb + engine bells -->
+<rect x="88" y="146" width="24" height="8" rx="1" fill="url(#rocket-black)"/>
+<g fill="url(#rocket-nozzle)">
+ <ellipse cx="100" cy="156" rx="4.2" ry="5"/>
+ <ellipse cx="91.5" cy="155.5" rx="3.2" ry="4.2"/>
+ <ellipse cx="108.5" cy="155.5" rx="3.2" ry="4.2"/>
+ <ellipse cx="95.5" cy="157.2" rx="2.6" ry="3.4"/>
+ <ellipse cx="104.5" cy="157.2" rx="2.6" ry="3.4"/>
+</g>
+<g fill="none" stroke="#1a1d22" stroke-width=".5" opacity=".7">
+ <ellipse cx="100" cy="156" rx="3.2" ry="2.2"/>
+ <ellipse cx="91.5" cy="155.5" rx="2.3" ry="1.6"/>
+ <ellipse cx="108.5" cy="155.5" rx="2.3" ry="1.6"/>
+</g>
+<!-- first stage -->
+<rect x="89" y="80" width="22" height="68" fill="url(#rocket-cyl)"/>
+<g clip-path="url(#rocket-stack)">
+ <rect x="108" y="80" width="3.2" height="66" fill="#1c2026" opacity=".92"/>
+ <path fill="none" stroke="#c5ccd3" stroke-width=".35" opacity=".5" d="M93 84V144M97 84V144M103 84V144"/>
+</g>
+<rect x="89" y="118" width="22" height="5" fill="#dfe3e8" opacity=".35"/>
+<!-- interstage -->
+<rect x="88.5" y="72" width="23" height="9" fill="url(#rocket-black)"/>
+<rect x="90" y="74.5" width="20" height="1.2" fill="#4a515a" opacity=".5"/>
+<!-- second stage -->
+<rect x="90" y="50" width="20" height="23" fill="url(#rocket-cyl)"/>
+<rect x="108" y="52" width="2.2" height="20" fill="#1c2026" opacity=".75"/>
+<!-- payload fairing -->
+<path fill="url(#rocket-fairing)" d="M100 16C110 22 112 34 112 50L88 50C88 34 90 22 100 16Z"/>
+<path fill="none" stroke="#9aa3ac" stroke-width=".45" d="M100 18V50"/>
+<path fill="none" stroke="#ffffff" stroke-width=".7" opacity=".45" d="M94 26C96 20 98 19 100 19"/>
+<!-- grid fins -->
+<use href="#rocket-gridfin" transform="translate(80 90) rotate(-12)"/>
+<use href="#rocket-gridfin" transform="translate(120 90) rotate(12)"/>
+<!-- limb shade -->
+<rect x="89" y="80" width="22" height="68" fill="none" stroke="#8b939c" stroke-width=".4" opacity=".35"/>
+<rect x="90" y="50" width="20" height="23" fill="none" stroke="#8b939c" stroke-width=".35" opacity=".3"/>
+</svg>
