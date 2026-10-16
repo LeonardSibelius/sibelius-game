@@ -169,6 +169,10 @@ $checks = [ordered]@{
   "the sun's disc"           = "$cooked\Genesis\T_SunDisc.uasset"
   "a prominence"             = "$cooked\Genesis\T_SunLoopNE.uasset"
   "the run between racks"    = "$cooked\Mixamo\Basketball\Anim_RunInPlace_MH.uasset"
+  # --- THE CATHEDRAL CABINET (2026-10-16): the Blender-built Celestial Fortune machine on the
+  # apse ASlotCabinet, cooked because L_Cathedral references it. Its mesh and its lit marquee.
+  "the cabinet"              = "$cooked\SlotFactory\Cabinet\SM_CelestialCabinet.uasset"
+  "the cabinet's marquee"    = "$cooked\SlotFactory\Cabinet\M_CabMarqueeLit.uasset"
   # --- FREAKBOOK ON THE LAPTOP (2026-10-12): its pictures, loaded by name by UFreakbookWidget and
   # cooked only by the /Game/Freakbook DirectoriesToAlwaysCook line. A profile picture and a post.
   "Freakbook's faces"     = "$cooked\Freakbook\T_FB_dee_avatar.uasset"
