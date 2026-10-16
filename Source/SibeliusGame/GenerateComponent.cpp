@@ -11,6 +11,7 @@
 #include "BuildSite.h"
 #include "Spaceport.h"               // the one catalog entry with a prerequisite
 #include "ProteinMachine.h"          // IsEnhanced - that prerequisite
+#include "HintVolume.h"              // the lawn: where a spaceport may be built
 #include "Branchable.h"              // GetBranchId - the id a record is keyed on
 #include "ProgressionSubsystem.h"    // where generated objects are remembered
 #include "SibeliusGame.h"            // LogSibeliusGame
@@ -247,6 +248,52 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 					TEXT("[Generate] '%s' refused: not enhanced yet (Protein Machines)."),
 					*R.EntryId.ToString());
 				return EGenerateOutcome::RefusedUnsafe;
+			}
+
+			/* ON THE LAWN, NOT WHEREVER HE HAPPENS TO BE (Walt, 2026-10-15: "if you "G" a
+			   spaceport from Jacob's deli, the spaceport covers the whole city and there is no
+			   way to get to uFoods").
+
+			   A launch complex lands SpawnAhead (45 m) in front of him, which was designed and
+			   tried from the lawn: standing on the grass, facing the field. From the deli the
+			   same 45 m is across the street, on top of the block uFoods is in, and the city
+			   cannot be finished. The lawn is already in the level - the AHintVolume whose
+			   hint ends when a spaceport stands, sized by Walt to cover the grass - so the
+			   rule is asked of it: off that ground, no spaceport, and the banner says where.
+			   Refused before SpawnEntry, so the budget is not charged. A level with no such
+			   volume keeps the old behaviour. */
+			if (SiteClass && SiteClass->IsChildOf(ASpaceport::StaticClass()))
+			{
+				const APawn* Pawn = Cast<APawn>(GetOwner());
+				const AHintVolume* Lawn = nullptr;
+				for (TActorIterator<AHintVolume> It(GetWorld()); It; ++It)
+				{
+					if (It->SatisfiedWhenPresent && It->SatisfiedWhenPresent->IsChildOf(ASpaceport::StaticClass()))
+					{
+						Lawn = *It;
+						break;
+					}
+				}
+				if (Pawn && Lawn && FVector::Dist2D(Pawn->GetActorLocation(), Lawn->GetActorLocation()) > Lawn->Radius)
+				{
+					const FString Refusal =
+						TEXT("A SPACEPORT NEEDS OPEN GROUND — STAND ON THE EMPTY LAWN ACROSS THE STREET FROM JACOB'S");
+					const APlayerController* PC = Cast<APlayerController>(Pawn->GetController());
+					if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
+					{
+						HUD->ShowBanner(Refusal, 4.0f);
+					}
+					else
+					{
+						Toast(Refusal, FColor::Orange);
+					}
+					UE_LOG(LogTemp, Display,
+						TEXT("[Generate] '%s' refused: %.0f m from the lawn (radius %.0f m)."),
+						*R.EntryId.ToString(),
+						FVector::Dist2D(Pawn->GetActorLocation(), Lawn->GetActorLocation()) / 100.0,
+						Lawn->Radius / 100.0);
+					return EGenerateOutcome::RefusedUnsafe;
+				}
 			}
 
 			if (SpawnEntry(*E))
