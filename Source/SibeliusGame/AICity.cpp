@@ -3,6 +3,7 @@
 #include "AICity.h"
 
 #include "SibeliusHUD.h"
+#include "UniverseForge.h"
 
 #include "Components/DirectionalLightComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -51,8 +52,10 @@ namespace AICityDetail
 		{ 150.0, 260.0, 120.0, FLinearColor(1.0f, 0.45f, 0.6f),   EGalaxy::Elliptical, 0 },
 		{ 180.0, 360.0, 170.0, FLinearColor(0.4f, 1.0f, 0.75f),   EGalaxy::Spiral,     4 },
 		{ 210.0, 470.0, 140.0, FLinearColor(0.7f, 0.5f, 1.0f),    EGalaxy::Ring,       0 },
-		{ 250.0, 290.0, 150.0, FLinearColor(1.0f, 0.35f, 0.25f),  EGalaxy::Spiral,     2 },
-		{ 290.0, 400.0, 125.0, FLinearColor(0.9f, 0.9f, 1.0f),    EGalaxy::Elliptical, 0 },
+		// 225 and 315, not 250 and 290: the forge's console is at 270, and its camera looks out
+		// over the rail there - those two floated in front of the forge's glass (2026-10-15).
+		{ 225.0, 290.0, 150.0, FLinearColor(1.0f, 0.35f, 0.25f),  EGalaxy::Spiral,     2 },
+		{ 315.0, 400.0, 125.0, FLinearColor(0.9f, 0.9f, 1.0f),    EGalaxy::Elliptical, 0 },
 	};
 	constexpr double UniverseRing = 1150.0;          // from the middle of the gallery
 
@@ -60,6 +63,25 @@ namespace AICityDetail
 	{
 		return FTransform(Turn, At, Size / ShapeSize);
 	}
+
+	/* THE SUN OF CELESTIAL FORTUNE (Walt, 2026-10-15: "could the sun here be made to look like
+	   my sun in https://leonardsibelius.com/celestial-fortune/ ?"). The slot's own sun - its
+	   SVG rendered to T_Sun (make_sun_texture.mjs) - alive in M_GenesisSunDisc (a slow turn, a
+	   shimmer, a breath), on a flat disc facing the gallery: the gallery is 260 m off and 30 m
+	   across, so the star is only ever seen from this side. Until the material is made, the
+	   sphere and its glass corona stand in. */
+	UMaterialInterface* SunDiscMaterial()
+	{
+		// The layered one first (Walt: "let's do the medium please" - each loop rising and
+		// falling on its own, the spots drifting, the flare bursting), then the one-picture one.
+		if (UMaterialInterface* Live = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Genesis/M_GenesisSunLive.M_GenesisSunLive"), nullptr, LOAD_NoWarn | LOAD_Quiet))
+		{
+			return Live;
+		}
+		return LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Genesis/M_GenesisSunDisc.M_GenesisSunDisc"), nullptr, LOAD_NoWarn | LOAD_Quiet);
+	}
+	// In the SVG the disc is 67 of a 200-unit square: the rest is corona and prominences.
+	constexpr double SunSquarePerRadius = 200.0 / 67.0;
 }
 
 AAICity::AAICity()
@@ -205,7 +227,28 @@ void AAICity::Build()
 
 	// --- the star -------------------------------------------------------------------------
 	Star->SetRelativeScale3D(FVector(2.0 * StarRadius / ShapeSize));
-	Corona->SetRelativeScale3D(FVector(2.24 * StarRadius / ShapeSize));
+	UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
+	if (SunDiscMaterial() && Plane)
+	{
+		// Celestial Fortune's sun: the Corona part becomes the disc, facing the gallery (-X),
+		// its picture upright (U to the viewer's right, +Y; V down), the sphere hidden.
+		Star->SetVisibility(false);
+		Corona->SetStaticMesh(Plane);
+		const double Width = StarRadius * SunSquarePerRadius;
+		// Lifted clear of the horizon: with its middle at the gallery floor's height, the floor
+		// hid its lower half and two of its loops (the first render, 2026-10-15). From his eyes
+		// the floor's edge dips about six degrees; 0.75 of a radius up clears it with the loops.
+		Corona->SetRelativeLocationAndRotation(FVector(0.0, 0.0, StarRadius * 0.75),
+			FMatrix(FVector(0.0, 1.0, 0.0), FVector(0.0, 0.0, -1.0), FVector(-1.0, 0.0, 0.0), FVector::ZeroVector).ToQuat());
+		Corona->SetRelativeScale3D(FVector(Width / ShapeSize, Width / ShapeSize, 1.0));
+	}
+	else
+	{
+		Star->SetVisibility(true);
+		Corona->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")));
+		Corona->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
+		Corona->SetRelativeScale3D(FVector(2.24 * StarRadius / ShapeSize));
+	}
 
 	// --- the shells: blocks between avenues, towers growing inward toward the light ---------
 	for (int32 S = 0; S < ShellCount; ++S)
@@ -445,7 +488,14 @@ void AAICity::Paint()
 	{
 		Wear(Star, Glow(StarColour, StarGlow));
 	}
-	Wear(Corona, Glass(CoronaColour, 3.0f, 0.8f, 0.0f));
+	if (UMaterialInterface* SunDisc = SunDiscMaterial())
+	{
+		Wear(Corona, UMaterialInstanceDynamic::Create(SunDisc, this));
+	}
+	else
+	{
+		Wear(Corona, Glass(CoronaColour, 3.0f, 0.8f, 0.0f));
+	}
 	UMaterialInstanceDynamic* HullPaint = Surface(Hull, 0.35f);
 	for (int32 S = 0; S < ShellCount; ++S)
 	{
@@ -509,14 +559,15 @@ void AAICity::Tick(float DeltaSeconds)
 	}
 
 	/* WHERE HE IS AND WHAT IS HERE, just above "[O] Back to Office" (Walt, 2026-10-15: "can
-	   you please put some instructions on the screen above [O] Back to Office?"). Growing a
-	   universe of his own is the next step to be built, so the lines promise it and no more. */
-	if (const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	   you please put some instructions on the screen above [O] Back to Office?"). While he is
+	   at the forge's console it shows its own controls there instead. */
+	const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (PC && !AUniverseForge::IsAnyInUse(this))
 	{
 		if (ASibeliusHUD* Hud = Cast<ASibeliusHUD>(PC->GetHUD()))
 		{
 			Hud->ShowAwayHint(TEXT("A city that is also a mind, wrapped round a star - built by the AIs to amuse themselves\n")
-				TEXT("Walk the gallery: the glass spheres hold universes the AIs have grown.  Soon you will grow one of your own."));
+				TEXT("The small glass spheres hold universes the AIs have grown.  Grow your own: [E] at the console by the great sphere."));
 		}
 	}
 

@@ -864,27 +864,6 @@ void ABasketballCourt::Tick(float DeltaSeconds)
 	}
 	UpdateHandBall();
 
-	// The controls, just above "[O] Back to Office" (Walt, 2026-10-15: "can a bit of
-	// instructions be placed above the [O] return to office describing the controls").
-	if (ASibeliusHUD* Hud = GetHud())
-	{
-		const FString Throw = TEXT("hold [Left Mouse] or [Space] - the meter fills as you wind up - and let go at the mark\n")
-			TEXT("too early falls short, too late goes long");
-		switch (State)
-		{
-		case EHoopState::PlayerRound:
-			Hud->ShowAwayHint(FString(TEXT("YOUR TURN: ")) + Throw);
-			break;
-		case EHoopState::Results:
-			Hud->ShowAwayHint(TEXT("[R] play again     [Esc] or [E] leave the court"));
-			break;
-		default:
-			Hud->ShowAwayHint(FString(TEXT("[Space] skip this shooter     [Enter] straight to your turn     [Esc] leave\n"))
-				+ TEXT("Your turn: ") + Throw);
-			break;
-		}
-	}
-
 	// The camera eases to where the shooter is, and follows her (or him) to the next rack.
 	if ((State == EHoopState::AgentRound || State == EHoopState::PlayerRound) && Contest.GetRack() != CameraRack)
 	{
@@ -1754,6 +1733,13 @@ void ABasketballCourt::RefreshPanel()
 	{
 		return;
 	}
+	/* THE SCREEN IS THE CONTEST'S while it runs - a lease renewed every frame, as the chess,
+	   pool and bowling tables do. Without it the HUD never drew this panel at all: no meter,
+	   no racks, no score (found 2026-10-15, when the forge's panel was missing the same way;
+	   Walt had asked "how do you adjust Leonard's throw?" - the meter was never on screen).
+	   It also clears the crosshair and the office's lines, and the controls below take the
+	   place of the ones that were above [O]. */
+	Hud->HoldCinematic(0.25f);
 	const FString Name = UTF8_TO_TCHAR(Order[Current].Name.c_str());
 	const int32 Left = FMath::CeilToInt32(Contest.GetTimeLeft());
 	const FString Clock = FString::Printf(TEXT("0:%02d"), FMath::Clamp(Left, 0, 60));
@@ -1763,7 +1749,10 @@ void ABasketballCourt::RefreshPanel()
 	{
 	case EHoopState::AgentRound:
 		Status = FString::Printf(TEXT("THREE-POINT CONTEST     %s shooting     %s     %d points"), *Name, *Clock, RevealedScore());
-		Controls = TEXT("[Space] skip her round   [Enter] skip to your turn   [ESC] walk away");
+		// The controls, at the foot of the screen (Walt, 2026-10-15: "can a bit of instructions
+		// be placed above the [O] return to office describing the controls").
+		Controls = TEXT("[Space] skip her round   [Enter] skip to your turn   [ESC] walk away\n")
+			TEXT("Your turn: hold [Space] or the left mouse button to wind up, and let go on the ++");
 		break;
 	case EHoopState::PlayerRound:
 	{
@@ -1781,7 +1770,8 @@ void ABasketballCourt::RefreshPanel()
 			: Contest.GetBall() == 0 && Contest.GetBallsTaken() > 0 ? FString(TEXT("Walking to the next rack..."))
 			: FString(TEXT("Picking up the next ball..."));
 		Status += FString::Printf(TEXT("\n%s   [%s]   %s"), *Ready, *Bar, *LastShotNote);
-		Controls = TEXT("Hold [Space] or the left mouse button and let go on the ++ (the sweet spot)   [ESC] walk away");
+		Controls = TEXT("Hold [Space] or the left mouse button - the meter fills as you wind up - and let go on the ++\n")
+			TEXT("too early falls short, too late goes long     [ESC] walk away");
 		break;
 	}
 	case EHoopState::Between:

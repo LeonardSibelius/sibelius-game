@@ -160,6 +160,15 @@ $checks = [ordered]@{
   "the agents' cheer"        = "$cooked\Mixamo\Basketball\Anim_Cheering_MH.uasset"
   "Manny's throw"            = "$cooked\Mixamo\Basketball\Anim_Throw_Manny.uasset"
   "Manny's shrug"            = "$cooked\Mixamo\Basketball\Anim_Disappointed_Manny.uasset"
+  # --- THE AI CITY (2026-10-15): through the seed upstairs, L_Genesis - its star wears
+  # Celestial Fortune's sun in layers, loaded by path (AAICity::Paint) and cooked only by the
+  # /Game/Genesis DirectoriesToAlwaysCook line.
+  "the AI city"              = "$cooked\Maps\L_Genesis.umap"
+  "the AI city's glow"       = "$cooked\Genesis\M_GenesisGlow.uasset"
+  "the live sun"             = "$cooked\Genesis\M_GenesisSunLive.uasset"
+  "the sun's disc"           = "$cooked\Genesis\T_SunDisc.uasset"
+  "a prominence"             = "$cooked\Genesis\T_SunLoopNE.uasset"
+  "the run between racks"    = "$cooked\Mixamo\Basketball\Anim_RunInPlace_MH.uasset"
   # --- FREAKBOOK ON THE LAPTOP (2026-10-12): its pictures, loaded by name by UFreakbookWidget and
   # cooked only by the /Game/Freakbook DirectoriesToAlwaysCook line. A profile picture and a post.
   "Freakbook's faces"     = "$cooked\Freakbook\T_FB_dee_avatar.uasset"

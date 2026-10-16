@@ -44,6 +44,21 @@ def main():
     for old in [a for a in actors if a.get_actor_label() == START_LABEL]:
         eas.destroy_actor(old)
     distance = city.get_editor_property("gallery_distance")
+
+    # THE FORGE (2026-10-15, "go ahead with growing a universe"): its great glass sphere
+    # floats past the rail on the gallery's -Y side, its console (ConsoleOffset, +Y of the
+    # sphere) standing on the gallery floor near the rail.
+    forge_class = unreal.load_class(None, "/Script/SibeliusGame.UniverseForge")
+    if forge_class:
+        forges = [a for a in actors if a.get_class().get_name() == "UniverseForge"]
+        at = unreal.Vector(-distance, -2600.0, 300.0)
+        forge = forges[0] if forges else eas.spawn_actor_from_class(forge_class, at, unreal.Rotator(0, 0, 0))
+        forge.set_actor_location(at, False, False)
+        forge.set_actor_rotation(unreal.Rotator(0, 0, 0), False)
+        forge.set_actor_label("UniverseForge")
+        say("UniverseForge at %s (%s)." % (at, "moved" if forges else "new"))
+    else:
+        say("UniverseForge class not built yet - no forge placed.")
     start = unreal.Vector(-distance - BACK, 0.0, 100.0)
     ps = eas.spawn_actor_from_class(unreal.PlayerStart, start, unreal.Rotator(0.0, 0.0, 0.0))
     ps.set_editor_property("player_start_tag", ARRIVAL)
