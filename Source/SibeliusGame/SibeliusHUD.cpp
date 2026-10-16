@@ -1085,6 +1085,7 @@ void ASibeliusHUD::DrawWorldName()
 	FString Name;
 	if      (Map.Contains(TEXT("Cathedral")))    { Name = TEXT("THE CATHEDRAL"); }
 	else if (Map.Contains(TEXT("AI_Temple")))    { Name = TEXT("THE AI TEMPLE"); }
+	else if (Map.Contains(TEXT("Genesis")))      { Name = TEXT("THE AI CITY"); }   // through the seed upstairs
 	else                                          { return; }
 
 	const float Scale = OverlayTextScale * 0.9f;
