@@ -67,6 +67,120 @@ namespace AICityDetail
 		return FTransform(Turn, At, Size / ShapeSize);
 	}
 
+	/* THE CITY THINKING (Walt, 2026-10-17: "what are all those cubes with little lines on them
+	   that are surrounding the sun? could they be made to look more meaningful?"). The blocks
+	   read as crates; the avenues between them now carry wiring, and thought runs down it.
+
+	   Each avenue - every AvenueRows-th row of latitude, and the Meridians meridians - gets a bus
+	   of three parallel traces just inside the street level, each a chain of short cube segments.
+	   A segment's custom data is its distance along its line, its line's speed and its weight;
+	   M_GenesisThought turns those into comets of light running the whole length of every line,
+	   with no per-frame work here. Half the lines number their distances backward, so the comets
+	   run both ways and cross at every junction. */
+	constexpr double TraceSegment = 1000.0;      // 10 m: short enough that a comet glides
+	constexpr double TraceWidth = 120.0;
+	constexpr double TraceDepth = 40.0;
+	constexpr double TraceLift = 35.0;           // just inside the street, toward the star
+	constexpr double BusOffsets[] = { -700.0, 0.0, 700.0 };
+	constexpr double TraceSpan = 80.0;           // degrees of latitude either side of the equator
+
+	void LayTraces(UInstancedStaticMeshComponent* Traces, int32 Shell, double Radius, int32 Rows,
+		int32 AvenueRows, int32 Meridians)
+	{
+		Traces->ClearInstances();
+		Traces->SetNumCustomDataFloats(3);
+		FRandomStream Rng(2000 + Shell);
+		TArray<FTransform> Segments;
+		TArray<float> Data;
+		const double R = Radius - TraceLift;
+
+		auto Frame = [](double Lat, double Lon, FVector& Dir, FVector& East, FVector& North)
+		{
+			Dir = FVector(FMath::Cos(Lat) * FMath::Cos(Lon), FMath::Cos(Lat) * FMath::Sin(Lon), FMath::Sin(Lat));
+			East = FVector(-FMath::Sin(Lon), FMath::Cos(Lon), 0.0);
+			North = FVector::CrossProduct(Dir, East);
+		};
+		// One line of the bus: its own head start, speed and direction, and a side line dimmer
+		// than the middle one.
+		auto Line = [&Rng](double Offset, double Weight, double& Start, double& Sign, float& Speed, float& Bright)
+		{
+			Start = Rng.FRandRange(0.0f, 30000.0f);
+			Sign = Rng.FRand() < 0.5f ? 1.0 : -1.0;
+			Speed = Rng.FRandRange(0.6f, 1.4f);
+			Bright = static_cast<float>(Weight * (Offset == 0.0 ? 1.0 : 0.7));
+		};
+		auto Add = [&Segments, &Data](const FTransform& Where, double Distance, float Speed, float Bright)
+		{
+			Segments.Add(Where);
+			Data.Add(static_cast<float>(Distance));
+			Data.Add(Speed);
+			Data.Add(Bright);
+		};
+
+		// The avenues of latitude: rings round the shell, in the empty rows the blocks leave.
+		for (int32 Row = 0; Row < Rows; ++Row)
+		{
+			const double Lat = -0.5 * PI + (Row + 0.5) * PI / Rows;
+			if (Row % AvenueRows != 0 || FMath::Abs(Lat) > FMath::DegreesToRadians(TraceSpan))
+			{
+				continue;
+			}
+			for (const double Offset : BusOffsets)
+			{
+				const double LineLat = Lat + Offset / R;
+				const double Round = 2.0 * PI * R * FMath::Cos(LineLat);
+				const int32 Count = FMath::Max(8, FMath::RoundToInt(Round / TraceSegment));
+				const double Step = Round / Count;
+				double Start, Sign;
+				float Speed, Bright;
+				Line(Offset, 1.0, Start, Sign, Speed, Bright);
+				for (int32 K = 0; K < Count; ++K)
+				{
+					const double Lon = 2.0 * PI * (K + 0.5) / Count;
+					FVector Dir, East, North;
+					Frame(LineLat, Lon, Dir, East, North);
+					const FQuat Turn = FMatrix(East, North, Dir, FVector::ZeroVector).ToQuat();
+					Add(Bar(Turn, Dir * R, FVector(Step * 0.88, TraceWidth, TraceDepth)),
+						Start + Sign * Step * (K + 0.5), Speed, Bright);
+				}
+			}
+		}
+
+		// The meridian avenues, pole to pole within the span, where the blocks leave them (the
+		// same longitudes Build skips: Frac(Lon / 2pi * Meridians + 0.37 * Shell) < 0.12).
+		const double Span = FMath::DegreesToRadians(TraceSpan);
+		const int32 Count = FMath::Max(8, FMath::RoundToInt(2.0 * Span * R / TraceSegment));
+		const double Step = 2.0 * Span / Count;
+		for (int32 M = 0; M < Meridians; ++M)
+		{
+			const double Lon = 2.0 * PI * (M - 0.37 * Shell + 0.06) / Meridians;
+			for (const double Offset : BusOffsets)
+			{
+				double Start, Sign;
+				float Speed, Bright;
+				Line(Offset, 0.85, Start, Sign, Speed, Bright);
+				for (int32 K = 0; K < Count; ++K)
+				{
+					const double Lat = -Span + Step * (K + 0.5);
+					FVector Dir, East, North;
+					Frame(Lat, Lon, Dir, East, North);
+					// Across the meridian is east-west, which narrows toward the poles.
+					const FVector At = (Dir * R + East * Offset).GetSafeNormal() * R;
+					const FQuat Turn = FMatrix(East, North, Dir, FVector::ZeroVector).ToQuat();
+					Add(Bar(Turn, At, FVector(TraceWidth, Step * R * 0.88, TraceDepth)),
+						Start + Sign * Step * R * (K + 0.5), Speed, Bright);
+				}
+			}
+		}
+
+		Traces->AddInstances(Segments, false);
+		for (int32 I = 0; I < Segments.Num(); ++I)
+		{
+			Traces->SetCustomData(I, TArrayView<const float>(&Data[I * 3], 3), false);
+		}
+		Traces->MarkRenderStateDirty();
+	}
+
 	/* THE SUN OF CELESTIAL FORTUNE (Walt, 2026-10-15: "could the sun here be made to look like
 	   my sun in https://leonardsibelius.com/celestial-fortune/ ?"). The slot's own sun - its
 	   SVG rendered to T_Sun (make_sun_texture.mjs) - alive in M_GenesisSunDisc (a slow turn, a
@@ -140,6 +254,7 @@ AAICity::AAICity()
 	{
 		ShellBlocks.Add(MakeMany(FString::Printf(TEXT("ShellBlocks_%d"), S), Cube, false));
 		ShellLights.Add(MakeMany(FString::Printf(TEXT("ShellLights_%d"), S), Cube, false));
+		ShellTraces.Add(MakeMany(FString::Printf(TEXT("ShellTraces_%d"), S), Cube, false));
 	}
 	Rings = MakeMany(TEXT("Rings"), Cube, false);
 	RingLights = MakeMany(TEXT("RingLights"), Cube, false);
@@ -352,6 +467,10 @@ void AAICity::Build()
 		}
 		Blocks->AddInstances(BlockList, false);
 		Lights->AddInstances(LightList, false);
+		if (UInstancedStaticMeshComponent* Traces = ShellTraces.IsValidIndex(S) ? ShellTraces[S].Get() : nullptr)
+		{
+			LayTraces(Traces, S, R, Rows, AvenueRows, Meridians);
+		}
 	}
 
 	// --- the transit rings ------------------------------------------------------------------
@@ -538,6 +657,27 @@ void AAICity::Paint()
 		ResponseLights.Add(Response);
 		Wear(ShellLights.IsValidIndex(S) ? ShellLights[S].Get() : nullptr, Response);
 	}
+	// The traces think in M_GenesisThought (make_genesis_assets.py), loaded by path and cooked by
+	// DefaultGame.ini's /Game/Genesis line; until it is made they are plain lit lines.
+	ThoughtLights.Reset();
+	UMaterialInterface* Thought = LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/Genesis/M_GenesisThought.M_GenesisThought"), nullptr, LOAD_NoWarn | LOAD_Quiet);
+	for (int32 S = 0; S < ShellCount; ++S)
+	{
+		UMaterialInstanceDynamic* M = Thought ? UMaterialInstanceDynamic::Create(Thought, this) : Glow(CityLight[S], CityGlow * 0.3f);
+		if (Thought && M)
+		{
+			M->SetVectorParameterValue(TEXT("Color"), CityLight[S]);
+			// Dim wiring, bright comets: at the material's own balance (base 0.15, comets x1) the
+			// lines read as steady rails in the first render and the thought was lost in them.
+			M->SetVectorParameterValue(TEXT("PulseColor"), FMath::Lerp(CityLight[S], FLinearColor::White, 0.55f) * 4.0f);
+			M->SetScalarParameterValue(TEXT("Intensity"), CityGlow);
+			M->SetScalarParameterValue(TEXT("Base"), 0.05f);
+			M->SetScalarParameterValue(TEXT("Spacing"), 6500.0f);
+		}
+		ThoughtLights.Add(M);
+		Wear(ShellTraces.IsValidIndex(S) ? ShellTraces[S].Get() : nullptr, M);
+	}
 	Wear(Rings, Surface(RingHull, 0.25f));
 	Wear(RingLights, Glow(RingLight, CityGlow * 1.5f));
 	Wear(SkyStars, Glow(FLinearColor(0.85f, 0.9f, 1.0f), 40.0f));
@@ -596,10 +736,22 @@ void AAICity::Tick(float DeltaSeconds)
 			const float Wave = FMath::Square(FMath::Sin(PI * Local));
 			ResponseLights[S]->SetScalarParameterValue(TEXT("Intensity"), CityGlow * (1.0f + Wave * 0.65f));
 			ResponseLights[S]->SetVectorParameterValue(TEXT("Color"), FMath::Lerp(CityLight[S], FLinearColor(0.5f, 1.0f, 0.8f), Wave * 0.6f));
+			// ...and its thought surges: every comet on the shell brighter while the breath passes.
+			if (ThoughtLights.IsValidIndex(S) && ThoughtLights[S])
+			{
+				ThoughtLights[S]->SetScalarParameterValue(TEXT("Surge"), Wave);
+			}
 		}
 		if (ResponseAge >= Duration)
 		{
 			ResponseAge = -1.0f;
+			for (UMaterialInstanceDynamic* M : ThoughtLights)
+			{
+				if (M)
+				{
+					M->SetScalarParameterValue(TEXT("Surge"), 0.0f);
+				}
+			}
 			// Recorded only now, at the end: a first contact cut short still counts as unseen.
 			if (bFirstResponse)
 			{
@@ -611,7 +763,7 @@ void AAICity::Tick(float DeltaSeconds)
 		}
 	}
 
-	// Each shell turns on its own axis; the blocks and their lights together.
+	// Each shell turns on its own axis; the blocks, their lights and their wiring together.
 	for (int32 S = 0; S < ShellCount; ++S)
 	{
 		const float Spin = ShellSpin.IsValidIndex(S) ? ShellSpin[S] : 0.0f;
@@ -623,6 +775,10 @@ void AAICity::Tick(float DeltaSeconds)
 		if (ShellLights.IsValidIndex(S) && ShellLights[S])
 		{
 			ShellLights[S]->SetRelativeRotation(Turn);
+		}
+		if (ShellTraces.IsValidIndex(S) && ShellTraces[S])
+		{
+			ShellTraces[S]->SetRelativeRotation(Turn);
 		}
 	}
 

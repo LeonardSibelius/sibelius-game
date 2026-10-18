@@ -34,6 +34,12 @@
 #                                 and flickering, the disc shimmering, the spots drifting
 #                                 across, the flare bursting. Worn by the star (AAICity::Paint
 #                                 loads it by path; cooked by DefaultGame.ini's /Game/Genesis).
+#   /Game/Genesis/M_GenesisThought  unlit: the city thinking (2026-10-17). Worn by the traces
+#                                 along the shells' avenues (AAICity::LayTraces); each segment
+#                                 carries its distance along its line, its speed and its weight
+#                                 as per-instance custom data, and the material runs comets of
+#                                 light down every line from them - no per-frame work in C++.
+#                                 Surge (the city answering a universe) brightens it all.
 
 import os
 import unreal
@@ -523,6 +529,90 @@ def build_sun_live():
     finish(path, mat)
 
 
+def build_thought():
+    """THE CITY THINKING (Walt, 2026-10-17: "what are all those cubes with little lines on them
+    that are surrounding the sun? could they be made to look more meaningful?"). The shells' blocks
+    read as crates; this lights the avenues between them as wiring, with thought running down it.
+
+    Each trace segment is an instance of a cube, and carries three floats of custom data (set by
+    AAICity::LayTraces): 0 its distance along its line in cm, 1 its line's speed (a factor near
+    1), 2 its line's weight (how bright). Comets travel toward increasing distance:
+
+        p     = frac((distance - time * Speed * speed) / Spacing)
+        pulse = p ^ 8                  bright at the head (p near 1), a fading tail behind it
+        glow  = (Color * Base + PulseColor * pulse * (1 + 3 Surge)) * weight * Intensity
+              + Color * Surge * 0.3 * Intensity
+
+    A line that should run the other way simply numbers its distances backward."""
+    path, mat = fresh_material("M_GenesisThought")
+    mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    # Cooked materials only work on instanced meshes if they say so; the editor's automatic
+    # setting does not reach a packaged build unless it was saved.
+    mat.set_editor_property("used_with_instanced_static_meshes", True)
+
+    x = [-1800]
+
+    def node(cls):
+        x[0] += 120
+        return mel.create_material_expression(mat, cls, x[0], -200 + (x[0] % 480))
+
+    def link(a, b, pin):
+        mel.connect_material_expressions(a[0], a[1], b, pin)
+
+    def op(cls, a, b):
+        n = node(cls)
+        link(a, n, "A")
+        if isinstance(b, (int, float)):
+            n.set_editor_property("const_b", float(b))
+        else:
+            link(b, n, "B")
+        return (n, "")
+
+    def custom(index):
+        n = node(unreal.MaterialExpressionPerInstanceCustomData)
+        n.set_editor_property("data_index", index)
+        return (n, "")
+
+    def scalar(name, value):
+        n = node(unreal.MaterialExpressionScalarParameter)
+        n.set_editor_property("parameter_name", name)
+        n.set_editor_property("default_value", value)
+        return (n, "")
+
+    def vector(name, value):
+        n = node(unreal.MaterialExpressionVectorParameter)
+        n.set_editor_property("parameter_name", name)
+        n.set_editor_property("default_value", value)
+        return (n, "")
+
+    distance, speed, weight = custom(0), custom(1), custom(2)
+    time = (node(unreal.MaterialExpressionTime), "")
+    travelled = op(unreal.MaterialExpressionMultiply, op(unreal.MaterialExpressionMultiply, time,
+                                                         scalar("Speed", 5200.0)), speed)
+    along = op(unreal.MaterialExpressionDivide, op(unreal.MaterialExpressionSubtract, distance, travelled),
+               scalar("Spacing", 9000.0))
+    frac = node(unreal.MaterialExpressionFrac)
+    link(along, frac, "")
+    pulse = node(unreal.MaterialExpressionPower)
+    link((frac, ""), pulse, "Base")
+    pulse.set_editor_property("const_exponent", 8.0)
+
+    color = vector("Color", unreal.LinearColor(0.25, 0.85, 1.0, 1.0))
+    surge = scalar("Surge", 0.0)
+    intensity = scalar("Intensity", 12.0)
+    boost = op(unreal.MaterialExpressionAdd, op(unreal.MaterialExpressionMultiply, surge, 3.0), 1.0)
+    comet = op(unreal.MaterialExpressionMultiply,
+               op(unreal.MaterialExpressionMultiply, vector("PulseColor", unreal.LinearColor(0.7, 0.95, 1.0, 1.0)),
+                  (pulse, "")), boost)
+    line = op(unreal.MaterialExpressionAdd, op(unreal.MaterialExpressionMultiply, color, scalar("Base", 0.15)), comet)
+    lit = op(unreal.MaterialExpressionMultiply, op(unreal.MaterialExpressionMultiply, line, weight), intensity)
+    answer = op(unreal.MaterialExpressionMultiply, op(unreal.MaterialExpressionMultiply, color, surge),
+                op(unreal.MaterialExpressionMultiply, intensity, 0.3))
+    total = op(unreal.MaterialExpressionAdd, lit, answer)
+    mel.connect_material_property(total[0], "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    finish(path, mat)
+
+
 def make_level():
     if eal.does_asset_exist(LEVEL):
         say("level %s already exists - left as it is" % LEVEL)
@@ -540,7 +630,7 @@ try:
     # but this script must not run then.
     if unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor():
         raise RuntimeError("REFUSING: stop Play first - the editor's asset functions do not work during PIE.")
-    for build in (build_glow, build_glass, build_star, build_sun_disc, build_sun_live):
+    for build in (build_glow, build_glass, build_star, build_sun_disc, build_sun_live, build_thought):
         try:
             build()
         except Exists as there:

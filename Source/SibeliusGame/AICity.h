@@ -84,6 +84,10 @@ public:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "AI City")
 	TArray<TObjectPtr<UInstancedStaticMeshComponent>> ShellLights;
 
+	// The wiring along each shell's avenues, with thought running down it (LayTraces).
+	UPROPERTY(VisibleAnywhere, Transient, Category = "AI City")
+	TArray<TObjectPtr<UInstancedStaticMeshComponent>> ShellTraces;
+
 	UPROPERTY(VisibleAnywhere, Category = "AI City")
 	TObjectPtr<UInstancedStaticMeshComponent> Rings;
 
@@ -170,6 +174,9 @@ private:
 	bool bFirstResponse = false;
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UMaterialInstanceDynamic>> ResponseLights;
+	// Each shell's wiring, so the answer can surge through it.
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UMaterialInstanceDynamic>> ThoughtLights;
 	TArray<FVector> UniverseHome;     // each bubble's resting place, for its bob
 	TArray<FVector> UniverseAxis;     // each galaxy's spin axis
 	TArray<float> UniverseRate;       // and how fast
