@@ -89,6 +89,15 @@ namespace AICityDetail
 	{
 		Traces->ClearInstances();
 		Traces->SetNumCustomDataFloats(3);
+		/* FLAT STRIPS, NOT CUBES. From inside the shell only a trace's face toward the star is
+		   ever seen, and as cubes the 42,889 segments cost 1.2 ms of a 10 ms frame (profilegpu
+		   from the gallery, 2026-10-17: 10.2 ms shown, 9.0 hidden) - five faces of every one
+		   drawn for nothing. The engine's plane, loaded as the corona's is, turned to face in. */
+		if (UStaticMesh* Strip = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")))
+		{
+			Traces->SetStaticMesh(Strip);
+		}
+		const FQuat Inward(FVector(1.0, 0.0, 0.0), PI);   // the plane faces +Z; the star is -Dir
 		FRandomStream Rng(2000 + Shell);
 		TArray<FTransform> Segments;
 		TArray<float> Data;
@@ -140,7 +149,7 @@ namespace AICityDetail
 					FVector Dir, East, North;
 					Frame(LineLat, Lon, Dir, East, North);
 					const FQuat Turn = FMatrix(East, North, Dir, FVector::ZeroVector).ToQuat();
-					Add(Bar(Turn, Dir * R, FVector(Step * 0.88, TraceWidth, TraceDepth)),
+					Add(Bar(Turn * Inward, Dir * R, FVector(Step * 0.88, TraceWidth, TraceDepth)),
 						Start + Sign * Step * (K + 0.5), Speed, Bright);
 				}
 			}
@@ -167,7 +176,7 @@ namespace AICityDetail
 					// Across the meridian is east-west, which narrows toward the poles.
 					const FVector At = (Dir * R + East * Offset).GetSafeNormal() * R;
 					const FQuat Turn = FMatrix(East, North, Dir, FVector::ZeroVector).ToQuat();
-					Add(Bar(Turn, At, FVector(TraceWidth, Step * R * 0.88, TraceDepth)),
+					Add(Bar(Turn * Inward, At, FVector(TraceWidth, Step * R * 0.88, TraceDepth)),
 						Start + Sign * Step * R * (K + 0.5), Speed, Bright);
 				}
 			}
@@ -784,14 +793,16 @@ void AAICity::Tick(float DeltaSeconds)
 
 	/* WHERE HE IS AND WHAT IS HERE, just above "[O] Back to Office" (Walt, 2026-10-15: "can
 	   you please put some instructions on the screen above [O] Back to Office?"). While he is
-	   at the forge's console it shows its own controls there instead. */
+	   at the forge's console it shows its own controls there instead. The third line (2026-10-17)
+	   tells him the empty plinths are his: nothing else says a universe can be kept. */
 	const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 	if (PC && !AUniverseForge::IsAnyInUse(this))
 	{
 		if (ASibeliusHUD* Hud = Cast<ASibeliusHUD>(PC->GetHUD()))
 		{
 			Hud->ShowAwayHint(TEXT("A city that is also a mind, wrapped round a star - built by the AIs to amuse themselves\n")
-				TEXT("The small glass spheres hold universes the AIs have grown.  Grow your own: [E] at the console by the great sphere."));
+				TEXT("The small glass spheres hold universes the AIs have grown.  Grow your own: [E] at the console by the great sphere.\n")
+				TEXT("Keep one with [K] when it ends - the three plinths facing the sun are your gallery."));
 		}
 	}
 
