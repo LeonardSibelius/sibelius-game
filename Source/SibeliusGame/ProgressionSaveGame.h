@@ -24,7 +24,9 @@ class SIBELIUSGAME_API UProgressionSaveGame : public USaveGame
 public:
 	// Bump whenever the persisted shape changes, and migrate on load.
 	// v1: FProgressionState (mask + sauce + claimed grants).
-	static constexpr int32 CurrentSaveVersion = 1;
+	// v2: personal universe snapshots, seen stages, and completed first contact.
+	// v1 migrates through additive field defaults; existing progress is preserved.
+	static constexpr int32 CurrentSaveVersion = 2;
 
 	// Stamped on write; a freshly constructed (unwritten) object reads 0, which
 	// is how a garbage/blank load is told apart from a real save.

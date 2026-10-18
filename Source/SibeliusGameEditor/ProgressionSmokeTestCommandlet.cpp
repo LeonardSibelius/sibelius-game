@@ -150,6 +150,13 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		Written->State.Unlock(EPowerVerb::Refactor);
 		Written->State.Unlock(EPowerVerb::Generate);
 		Written->State.AddSauce(123);
+		const FUniverseHistory Universe = GrowUniverse({ 0.5, 0.5, 0.75 }, 18446744073709551610ull);
+		const FUniverseRecord Kept = FUniverseRecord::Capture(Universe, FGuid::NewGuid());
+		R.Check(Kept.IsValid(), TEXT("universe: valid snapshot with full-width seed"));
+		Written->State.UniverseGallery.SetNum(3);
+		Written->State.UniverseGallery[1] = Kept;
+		Written->State.bUniverseContactComplete = true;
+		Written->State.UniverseSeenStages = 0x7f;
 
 		/* Capture what was actually written rather than asserting a literal.
 		   This check read `== 123` and went RED the moment a fresh state started with a
@@ -190,6 +197,21 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(Loaded != nullptr, TEXT("load from sandbox slot"));
 		if (Loaded)
 		{
+			R.Check(Loaded->State.UniverseGallery.Num() == 3, TEXT("universe: three gallery slots survive save/load"));
+			if (Loaded->State.UniverseGallery.Num() == 3)
+			{
+				const FUniverseRecord& Saved = Loaded->State.UniverseGallery[1];
+				const auto Restored = Saved.Restore();
+				R.Check(Saved.IsValid() && Saved.Id == Kept.Id && Saved.Seed == Kept.Seed,
+					TEXT("universe: identity and uint64 seed survive serialization"));
+				R.Check(Restored.Chronicle == Universe.Chronicle && Restored.Ending == Universe.Ending
+					&& Restored.Dials.Time == Universe.Dials.Time && Restored.Galaxies == Universe.Galaxies,
+					TEXT("universe: snapshot restores original outcome without regenerating"));
+				R.Check(!Loaded->State.UniverseGallery[0].IsValid() && !Loaded->State.UniverseGallery[2].IsValid(),
+					TEXT("universe: empty slots remain empty"));
+			}
+			R.Check(Loaded->State.bUniverseContactComplete && Loaded->State.UniverseSeenStages == 0x7f,
+				TEXT("universe: contact completion and seen stages survive restart"));
 			R.Check(AProteinMachine::HasMeal(Loaded->State), TEXT("protein: meal survives save/load"));
 			R.Check(Loaded->State.HasClaimed(AProteinMachine::EnhancementGrant), TEXT("protein: enhancement survives save/load"));
 			R.Check(!Loaded->State.Claim(AProteinMachine::EnhancementGrant), TEXT("protein: repeated enhancement is idempotent"));
@@ -216,6 +238,27 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		}
 
 		R.Check(FSibeliusSaveIO::Delete(SandboxSlot), TEXT("sandbox slot cleanup"));
+	}
+	{
+		// A v1 save's new fields take their empty defaults; existing earned progress remains.
+		auto* Legacy = NewObject<UProgressionSaveGame>(GetTransientPackage());
+		Legacy->SaveVersion = 1;
+		Legacy->State.Unlock(EPowerVerb::Generate);
+		R.Check(FSibeliusSaveIO::Commit(Legacy, SandboxSlot), TEXT("universe: write legacy-version sandbox"));
+		const auto* LegacyLoaded = Cast<UProgressionSaveGame>(FSibeliusSaveIO::Load(SandboxSlot));
+		R.Check(LegacyLoaded && LegacyLoaded->State.UniverseGallery.IsEmpty() && !LegacyLoaded->State.bUniverseContactComplete
+			&& LegacyLoaded->State.UniverseSeenStages == 0 && LegacyLoaded->State.IsUnlocked(EPowerVerb::Generate),
+			TEXT("universe: legacy-version empty defaults preserve powers"));
+		R.Check(FSibeliusSaveIO::Delete(SandboxSlot), TEXT("legacy sandbox cleanup"));
+		for (const FUniverseDials Recipe : { FUniverseDials{0.05, 0.5, 0.8}, FUniverseDials{0.97, 0.5, 0.8},
+			FUniverseDials{0.5, 0.97, 0.8}, FUniverseDials{0.5, 0.03, 0.8}, FUniverseDials{0.5, 0.5, 0.05} })
+		{
+			const auto H = GrowUniverse(Recipe, 7);
+			const auto Record = FUniverseRecord::Capture(H, FGuid::NewGuid());
+			R.Check(Record.IsValid() && Record.Restore().Chronicle == H.Chronicle, TEXT("universe: early-ending snapshot retained"));
+		}
+		FUniverseRecord Invalid;
+		R.Check(!Invalid.IsValid(), TEXT("universe: blank snapshot rejected"));
 	}
 
 	UE_LOG(LogProgressionSmoke, Display, TEXT("=== Progression smoke test: %d failure(s) ==="), R.Failures);

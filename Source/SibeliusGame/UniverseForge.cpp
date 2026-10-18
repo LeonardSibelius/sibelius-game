@@ -4,6 +4,9 @@
 
 #include "SibeliusGame.h"
 #include "SibeliusHUD.h"
+#include "AICity.h"
+#include "UniverseExhibit.h"
+#include "ProgressionSubsystem.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
@@ -89,6 +92,10 @@ AUniverseForge::AUniverseForge()
 {
 	using namespace UniverseForgeDetail;
 	PrimaryActorTick.bCanEverTick = true;
+
+	// The first universe starts with time at 0.75, not 0.5: at 0.5 the machines' edge is a coin
+	// toss with the seed, and a first try should reach them. The edges are still there to find.
+	Dials.Time = 0.75;
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
@@ -758,9 +765,20 @@ void AUniverseForge::AimCamera(bool bInstant)
 
 void AUniverseForge::BeginGrowing()
 {
-	// A fresh seed each time: two universes from the same dials are never quite the same.
-	const uint64 Seed = static_cast<uint64>(FDateTime::UtcNow().GetTicks()) ^ (NextSeed++ * 0x9E3779B97F4A7C15ull);
+	// A fresh seed each time - two universes from the same dials are never quite the same -
+	// unless R asked for this one again, so one dial can be changed and the two compared.
+	const uint64 Seed = bRetrySeed ? History.Seed : static_cast<uint64>(FDateTime::UtcNow().GetTicks()) ^ (NextSeed++ * 0x9E3779B97F4A7C15ull);
 	History = GrowUniverse(Dials, Seed);
+	RunId = FGuid::NewGuid();             // a new identity per run: keeping it twice is caught by this
+	bRetrySeed = false;
+	bInspecting = false;
+	bContactSent = false;
+	bChoosingSlot = false;
+	PendingReplaceSlot = INDEX_NONE;
+	GalleryMessage.Empty();
+	// The stages he had already watched when this run began: F may skip only those.
+	const UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this);
+	SeenBeforeRun = Progress ? Progress->GetStateForRead().UniverseSeenStages : 0;
 	Layout();
 	Clock = 0.0f;
 	bHurry = false;
@@ -813,6 +831,10 @@ void AUniverseForge::Tick(float DeltaSeconds)
 			}
 		}
 		Pose();
+		if (bPlaying && !bFrozen && !bInspecting)
+		{
+			CheckMilestones();
+		}
 	}
 	else
 	{
@@ -875,6 +897,11 @@ FText AUniverseForge::GetInteractionPrompt_Implementation() const
 
 void AUniverseForge::StartPlaying(APlayerController* PC)
 {
+	// A fresh visit to the console: no half-made keep or inspection carries over from the last.
+	bInspecting = false;
+	bChoosingSlot = false;
+	PendingReplaceSlot = INDEX_NONE;
+	GalleryMessage.Empty();
 	PlayingPC = PC;
 	bPlaying = true;
 	bFrozen = false;
@@ -947,6 +974,16 @@ void AUniverseForge::BindKeys()
 		InputComponent->BindKey(Key, IE_Released, this, &AUniverseForge::OnSpaceReleased);
 	}
 	InputComponent->BindKey(EKeys::R, IE_Pressed, this, &AUniverseForge::OnAgain);
+	// N a new seed; F skip a stage already watched; K keep it; 1-3 the gallery slot to keep it in.
+	// F, NOT Tab, which this first used: Slate takes Tab for focus and Play-in-Editor eats it
+	// before a raw BindKey sees it - the game menu learned that the hard way ("i press tab and
+	// nothing happens", SibeliusGameCharacter.cpp).
+	InputComponent->BindKey(EKeys::N, IE_Pressed, this, &AUniverseForge::OnNewUniverse);
+	InputComponent->BindKey(EKeys::F, IE_Pressed, this, &AUniverseForge::OnSkip);
+	InputComponent->BindKey(EKeys::K, IE_Pressed, this, &AUniverseForge::OnKeep);
+	InputComponent->BindKey(EKeys::One, IE_Pressed, this, &AUniverseForge::OnSlotOne);
+	InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &AUniverseForge::OnSlotTwo);
+	InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &AUniverseForge::OnSlotThree);
 	for (const FKey& Key : { EKeys::Escape, EKeys::E, EKeys::Gamepad_FaceButton_Right })
 	{
 		InputComponent->BindKey(Key, IE_Pressed, this, &AUniverseForge::OnLeave);
@@ -993,6 +1030,11 @@ void AUniverseForge::OnRight()
 
 void AUniverseForge::OnSpacePressed()
 {
+	// Space means nothing while he chooses a slot or looks at a kept universe.
+	if (bInspecting || bChoosingSlot)
+	{
+		return;
+	}
 	switch (State)
 	{
 	case EForgeState::Dials:
@@ -1002,7 +1044,7 @@ void AUniverseForge::OnSpacePressed()
 		bHurry = true;
 		break;
 	case EForgeState::Ended:
-		OnAgain();
+		OnNewUniverse();
 		break;
 	default:
 		break;
@@ -1016,8 +1058,9 @@ void AUniverseForge::OnSpaceReleased()
 
 void AUniverseForge::OnAgain()
 {
-	if (State == EForgeState::Ended)
+	if (State == EForgeState::Ended && !bInspecting && !bChoosingSlot)
 	{
+		bRetrySeed = true;   // R keeps the seed; N, or Space, draws a new one
 		// The same dials, ready to turn: a near miss is one press away from another try.
 		State = EForgeState::Dials;
 	}
@@ -1025,7 +1068,172 @@ void AUniverseForge::OnAgain()
 
 void AUniverseForge::OnLeave()
 {
+	// Esc while choosing a slot cancels the keep, not the visit: the universe stays on screen.
+	if (bChoosingSlot)
+	{
+		bChoosingSlot = false;
+		PendingReplaceSlot = INDEX_NONE;
+		GalleryMessage = TEXT("Gallery unchanged.");
+		return;
+	}
 	StopPlaying();
+}
+
+void AUniverseForge::OnNewUniverse()
+{
+	// N (or Space at the end): back to the dials with a fresh seed coming. Not while he is
+	// choosing a slot or looking at a kept universe - those have their own way out.
+	if ((State == EForgeState::Ended || State == EForgeState::Dials) && !bInspecting && !bChoosingSlot)
+	{
+		bRetrySeed = false;
+		State = EForgeState::Dials;
+		GalleryMessage.Empty();
+	}
+}
+
+float AUniverseForge::StageEnd(int32 Stage) const
+{
+	// The clock time at which the given stage finishes playing, at normal speed.
+	float End = 0.0f;
+	for (int32 S = 0; S <= Stage; ++S)
+	{
+		End += StageSeconds.IsValidIndex(S) ? FMath::Max(StageSeconds[S], 0.5f) : 10.0f;
+	}
+	return End;
+}
+
+void AUniverseForge::CheckMilestones()
+{
+	// Remember every stage he has now watched to its end - F may skip those next time.
+	if (UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this))
+	{
+		int32 Seen = 0;
+		for (int32 S = 0; S <= static_cast<int32>(History.LastStage); ++S)
+		{
+			if (Clock >= StageEnd(S))
+			{
+				Seen |= 1 << S;
+			}
+		}
+		Progress->RememberUniverseStages(Seen);
+	}
+
+	/* FIRST CONTACT. A universe that grew machines signals, and the city answers. It waits until
+	   the machines are on the screen - two seconds into their stage - never the moment
+	   GrowUniverse decided the ending, which is before the bang has even played. Once per run. */
+	if (!bContactSent && History.Ending == EUniverseEnding::LookedBack && Clock >= StageEnd(5) + 2.0f)
+	{
+		bContactSent = true;
+		for (TActorIterator<AAICity> It(GetWorld()); It; ++It)
+		{
+			It->AnswerUniverse();
+		}
+	}
+}
+
+void AUniverseForge::OnSkip()
+{
+	// F jumps to the end of the stage playing now - but only a stage he has watched before (as of
+	// this run's start), so nothing new is ever skipped unseen. Milestones still fire on the way.
+	if (State != EForgeState::Growing || bInspecting)
+	{
+		return;
+	}
+	for (int32 S = 0; S <= static_cast<int32>(History.LastStage); ++S)
+	{
+		if (Clock < StageEnd(S))
+		{
+			if ((SeenBeforeRun & (1 << S)) != 0)
+			{
+				Clock = StageEnd(S);
+				Pose();
+				CheckMilestones();
+			}
+			return;
+		}
+	}
+}
+
+void AUniverseForge::OnKeep()
+{
+	// K at the end opens the slot chooser - unless this very run is already in the gallery.
+	if (State != EForgeState::Ended || bInspecting)
+	{
+		return;
+	}
+	const UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this);
+	if (!Progress)
+	{
+		GalleryMessage = TEXT("Gallery unavailable. Your universe is still here.");
+		return;
+	}
+	for (int32 Slot = 0; Slot < UProgressionSubsystem::UniverseSlots; ++Slot)
+	{
+		const FUniverseRecord* Kept = Progress->UniverseInSlot(Slot);
+		if (Kept && Kept->Id == RunId)
+		{
+			GalleryMessage = TEXT("This universe is already in your gallery.");
+			return;
+		}
+	}
+	bChoosingSlot = true;
+	PendingReplaceSlot = INDEX_NONE;
+}
+
+void AUniverseForge::OnSlotOne() { SelectSlot(0); }
+void AUniverseForge::OnSlotTwo() { SelectSlot(1); }
+void AUniverseForge::OnSlotThree() { SelectSlot(2); }
+
+void AUniverseForge::SelectSlot(int32 Slot)
+{
+	if (!bChoosingSlot || State != EForgeState::Ended || bInspecting)
+	{
+		return;
+	}
+	UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this);
+	if (!Progress)
+	{
+		return;
+	}
+	// An occupied slot takes a second press of the same number: nothing he kept is ever lost to
+	// one stray key.
+	if (Progress->UniverseInSlot(Slot) && PendingReplaceSlot != Slot)
+	{
+		PendingReplaceSlot = Slot;
+		return;
+	}
+	// KeepUniverse saves at once, and puts the gallery back as it was if the save fails.
+	if (!Progress->KeepUniverse(Slot, FUniverseRecord::Capture(History, RunId)))
+	{
+		GalleryMessage = TEXT("Could not save. Your existing gallery is unchanged. Try again.");
+		return;
+	}
+	bChoosingSlot = false;
+	PendingReplaceSlot = INDEX_NONE;
+	GalleryMessage = FString::Printf(TEXT("%s is now in your gallery. Step back to see it."), UTF8_TO_TCHAR(History.Name.c_str()));
+	for (TActorIterator<AUniverseExhibit> It(GetWorld()); It; ++It)
+	{
+		It->Refresh();
+	}
+}
+
+void AUniverseForge::InspectSaved(APlayerController* PC, const FUniverseRecord& Record)
+{
+	/* E at an exhibit: the forge shows a kept universe as it ended - the record restored, not the
+	   simulation run again - with only a way back. bInspecting keeps K, R, N and the slot keys
+	   from turning a look into a new run or a replacement. */
+	if (!PC || !Record.IsValid() || bPlaying)
+	{
+		return;
+	}
+	StartPlaying(PC);
+	bInspecting = true;
+	History = Record.Restore();
+	Layout();
+	Clock = StageEnd(static_cast<int32>(History.LastStage)) + EndingSeconds;
+	State = EForgeState::Ended;
+	Pose();
+	GalleryMessage = FString::Printf(TEXT("YOUR GALLERY - gravity %.2f / light %.2f / time %.2f"), Record.Gravity, Record.Light, Record.Time);
 }
 
 ASibeliusHUD* AUniverseForge::GetHud() const
@@ -1061,6 +1269,7 @@ void AUniverseForge::RefreshPanel()
 	{
 	case EForgeState::Dials:
 		Status = FString(TEXT("GROW A UNIVERSE\n\n")) + DialLine(0) + TEXT("\n") + DialLine(1) + TEXT("\n") + DialLine(2);
+		Status += bRetrySeed ? TEXT("\n\nSAME SEED - change a dial to compare the result. [N] for a new seed.") : TEXT("\n\nNEW UNIVERSE - a fresh seed when you begin.");
 		Controls = TEXT("[W] [S] choose a dial     [A] [D] turn it     [Space] begin     [Esc] step back");
 		break;
 	case EForgeState::Growing:
@@ -1085,7 +1294,7 @@ void AUniverseForge::RefreshPanel()
 		{
 			Status += TEXT("\n") + FString(UTF8_TO_TCHAR(History.Chronicle[S].c_str()));
 		}
-		Controls = TEXT("hold [Space] to hurry     [Esc] step back");
+		Controls = TEXT("hold [Space] to hurry     [F] skip a stage you have seen     [Esc] step back");
 		break;
 	}
 	case EForgeState::Ended:
@@ -1095,11 +1304,56 @@ void AUniverseForge::RefreshPanel()
 		{
 			Status += TEXT("\n") + FString(UTF8_TO_TCHAR(Line.c_str()));
 		}
-		Controls = TEXT("[R] or [Space] grow another     [Esc] step back");
+		// What to turn next, from the edge it fell over (UniverseSim's thresholds) - a fact, not a
+		// guess. Not when looking at a kept one: that is finished.
+		if (!bInspecting)
+		{
+			const TCHAR* Advice = TEXT("Your universe grew machines. Try a different gravity or light to change its character.");
+			switch (History.Ending)
+			{
+			case EUniverseEnding::ColdFog: Advice = TEXT("Try more GRAVITY so matter can gather."); break;
+			case EUniverseEnding::Crunch: Advice = TEXT("Try less GRAVITY so the stars do not collapse together."); break;
+			case EUniverseEnding::Burn: Advice = TEXT("Try less LIGHT so stars can last long enough for life."); break;
+			case EUniverseEnding::Dim: Advice = TEXT("Try more LIGHT to warm the world."); break;
+			case EUniverseEnding::TooYoung: Advice = TEXT("Try more TIME so life can develop further."); break;
+			default: break;
+			}
+			Status += FString(TEXT("\n\n")) + Advice;
+		}
+		Status += TEXT("\n\n") + GalleryMessage;
+		Controls = bInspecting ? TEXT("[Esc] or [E] return to your gallery") : TEXT("[K] keep     [R] retry this seed     [N] or [Space] new universe     [Esc] step back");
+		if (bChoosingSlot)
+		{
+			Status = TEXT("KEEP IN YOUR GALLERY\n");
+			const UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this);
+			for (int32 Slot = 0; Slot < UProgressionSubsystem::UniverseSlots; ++Slot)
+			{
+				const FUniverseRecord* Kept = Progress ? Progress->UniverseInSlot(Slot) : nullptr;
+				Status += FString::Printf(TEXT("\n[%d] %s"), Slot + 1, Kept ? *Kept->Name : TEXT("Empty"));
+			}
+			if (PendingReplaceSlot != INDEX_NONE)
+			{
+				Status += FString::Printf(TEXT("\n\nReplace slot %d? Press [%d] again to confirm."), PendingReplaceSlot + 1, PendingReplaceSlot + 1);
+			}
+			Status += TEXT("\n\n") + GalleryMessage;
+			Controls = TEXT("[1] [2] [3] choose a slot     [Esc] cancel without replacing");
+		}
 		break;
 	}
 	default:
 		return;
+	}
+	// While the city answers, the panel says so: the light alone is easy to miss from the console.
+	if (!bInspecting && bContactSent && !bChoosingSlot)
+	{
+		for (TActorIterator<AAICity> It(GetWorld()); It; ++It)
+		{
+			if (It->IsAnswering())
+			{
+				Status += TEXT("\n\nA signal leaves your universe. The city answers, shell by shell.\nThey have noticed you.");
+				break;
+			}
+		}
 	}
 	// The screen is the forge's while he is at it: a lease renewed every frame, as the chess
 	// and pool tables do - without it the HUD never draws the panel at all.

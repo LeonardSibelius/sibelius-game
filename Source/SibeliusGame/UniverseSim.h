@@ -76,6 +76,11 @@ struct FUniverseHistory
 
 // Its whole history, from the dials (clamped to 0..1) and a seed. The same pair always grows
 // the same universe.
+// Exported from the game module for the editor's smoke tests; the standalone test build
+// (Tools/Tests) has no SIBELIUSGAME_API and compiles it plain.
+#if defined(SIBELIUSGAME_API)
+SIBELIUSGAME_API
+#endif
 FUniverseHistory GrowUniverse(const FUniverseDials& Dials, uint64_t Seed);
 
 // A universe's name: two or three syllables, from the seed alone.

@@ -4,6 +4,8 @@
 
 #include "SibeliusHUD.h"
 #include "UniverseForge.h"
+#include "UniverseExhibit.h"
+#include "ProgressionSubsystem.h"
 
 #include "Components/DirectionalLightComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -12,6 +14,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -183,6 +186,35 @@ void AAICity::BeginPlay()
 	Build();
 	Paint();
 	Light();
+
+	// His three gallery slots (AUniverseExhibit), spawned here rather than saved in L_Genesis so
+	// the map needs no resave: a row across the gallery, 5 m toward the star from its centre.
+	for (int32 Slot = 0; Slot < UProgressionSubsystem::UniverseSlots; ++Slot)
+	{
+		const FVector Local = GalleryCentre() + FVector(500.0f, (Slot - 1) * 550.0f, 0.0f);
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		if (AUniverseExhibit* Exhibit = GetWorld()->SpawnActor<AUniverseExhibit>(GetActorTransform().TransformPosition(Local), GetActorRotation(), Params))
+		{
+			Exhibit->SetSlot(Slot);
+		}
+	}
+}
+
+void AAICity::AnswerUniverse()
+{
+	/* A universe he grew has made machines, and they signal: the city answers, a slow breath
+	   of light through each shell in turn (Tick). The first time ever it is long - 12 seconds -
+	   and is recorded only once it has played to the end, so leaving halfway means the next
+	   universe to get there is answered in full; after that, a short 5-second reply. */
+	if (IsAnswering())
+	{
+		return;
+	}
+	const UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this);
+	bFirstResponse = !Progress || !Progress->GetStateForRead().bUniverseContactComplete;
+	ResponseAge = 0.0f;
 }
 
 UMaterialInstanceDynamic* AAICity::Glow(const FLinearColor& Color, float Intensity)
@@ -497,10 +529,14 @@ void AAICity::Paint()
 		Wear(Corona, Glass(CoronaColour, 3.0f, 0.8f, 0.0f));
 	}
 	UMaterialInstanceDynamic* HullPaint = Surface(Hull, 0.35f);
+	ResponseLights.Reset();
 	for (int32 S = 0; S < ShellCount; ++S)
 	{
 		Wear(ShellBlocks.IsValidIndex(S) ? ShellBlocks[S].Get() : nullptr, HullPaint);
-		Wear(ShellLights.IsValidIndex(S) ? ShellLights[S].Get() : nullptr, Glow(CityLight[S], CityGlow));
+		// Kept, so the city's answer can breathe each shell's lights (AnswerUniverse).
+		UMaterialInstanceDynamic* Response = Glow(CityLight[S], CityGlow);
+		ResponseLights.Add(Response);
+		Wear(ShellLights.IsValidIndex(S) ? ShellLights[S].Get() : nullptr, Response);
 	}
 	Wear(Rings, Surface(RingHull, 0.25f));
 	Wear(RingLights, Glow(RingLight, CityGlow * 1.5f));
@@ -542,6 +578,38 @@ void AAICity::Tick(float DeltaSeconds)
 	using namespace AICityDetail;
 	Super::Tick(DeltaSeconds);
 	Age += DeltaSeconds;
+	if (IsAnswering())
+	{
+		ResponseAge += DeltaSeconds;
+		const float Duration = bFirstResponse ? 12.0f : 5.0f;
+		const float Stagger = bFirstResponse ? 2.0f : 0.7f;     // each shell starts this much after the last
+		const float Breath = bFirstResponse ? 6.0f : 2.5f;      // and takes this long to swell and fade
+		for (int32 S = 0; S < ResponseLights.Num(); ++S)
+		{
+			if (!ResponseLights[S])
+			{
+				continue;
+			}
+			const float Local = FMath::Clamp((ResponseAge - S * Stagger) / Breath, 0.0f, 1.0f);
+			// One slow breath per shell - brighter, toward sea-green, and back. No flashing, no
+			// camera move.
+			const float Wave = FMath::Square(FMath::Sin(PI * Local));
+			ResponseLights[S]->SetScalarParameterValue(TEXT("Intensity"), CityGlow * (1.0f + Wave * 0.65f));
+			ResponseLights[S]->SetVectorParameterValue(TEXT("Color"), FMath::Lerp(CityLight[S], FLinearColor(0.5f, 1.0f, 0.8f), Wave * 0.6f));
+		}
+		if (ResponseAge >= Duration)
+		{
+			ResponseAge = -1.0f;
+			// Recorded only now, at the end: a first contact cut short still counts as unseen.
+			if (bFirstResponse)
+			{
+				if (UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this))
+				{
+					Progress->CompleteUniverseContact();
+				}
+			}
+		}
+	}
 
 	// Each shell turns on its own axis; the blocks and their lights together.
 	for (int32 S = 0; S < ShellCount; ++S)

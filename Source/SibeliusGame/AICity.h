@@ -42,6 +42,10 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	/** A universe at the forge has grown machines: the city answers it (see the .cpp). */
+	void AnswerUniverse();
+	bool IsAnswering() const { return ResponseAge >= 0.0f; }
+
 	static constexpr int32 ShellCount = 3;
 	static constexpr int32 UniverseCount = 7;
 
@@ -160,6 +164,12 @@ private:
 	UMaterialInstanceDynamic* Surface(const FLinearColor& Color, float Roughness);
 
 	float Age = 0.0f;
+	// The city's answer: seconds into it, or -1 when quiet; whether it is the long first one;
+	// and each shell's lights, to breathe.
+	float ResponseAge = -1.0f;
+	bool bFirstResponse = false;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UMaterialInstanceDynamic>> ResponseLights;
 	TArray<FVector> UniverseHome;     // each bubble's resting place, for its bob
 	TArray<FVector> UniverseAxis;     // each galaxy's spin axis
 	TArray<float> UniverseRate;       // and how fast

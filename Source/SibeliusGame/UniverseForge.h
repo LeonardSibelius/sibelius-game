@@ -26,6 +26,7 @@
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
 #include "UniverseSim.h"
+#include "UniverseRecord.h"
 #include "UniverseForge.generated.h"
 
 class ASibeliusHUD;
@@ -66,6 +67,9 @@ public:
 	/** Whether anyone is at a forge in this world - the AI city keeps its own lines off the
 	    screen while one is in use. */
 	static bool IsAnyInUse(const UObject* WorldContext);
+
+	/** E at a gallery exhibit: step up and watch a kept universe as it ended (AUniverseExhibit). */
+	void InspectSaved(APlayerController* PC, const FUniverseRecord& Record);
 
 	static constexpr int32 MatterCount = 1800;
 	static constexpr int32 MachineCount = 160;
@@ -166,6 +170,7 @@ protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 private:
+	friend class UUniverseCitySmokeTestCommandlet;   // drives the real handlers, editor-only
 	void Paint();
 	void Layout();                    // this history's grains, clusters and galaxies
 	void BeginGrowing();
@@ -185,12 +190,30 @@ private:
 	void OnSpacePressed();
 	void OnSpaceReleased();
 	void OnAgain();
+	void OnNewUniverse();
+	void OnSkip();
+	void OnKeep();
+	void OnSlotOne();
+	void OnSlotTwo();
+	void OnSlotThree();
+	void SelectSlot(int32 Slot);
+	void CheckMilestones();
+	float StageEnd(int32 Stage) const;
 	void OnLeave();
 	ASibeliusHUD* GetHud() const;
 	void Turn(int32 Index, float By);
 
 	EForgeState State = EForgeState::Idle;
 	FUniverseDials Dials;
+	// --- the gallery and first contact (2026-10-17) ---
+	FGuid RunId;                            // this run's identity, so it is kept at most once
+	bool bRetrySeed = false;                // R: grow the same seed again
+	bool bInspecting = false;               // showing a kept universe; only the way out works
+	bool bContactSent = false;              // this run has signalled the city
+	bool bChoosingSlot = false;             // K pressed: 1-3 choose, Esc cancels
+	int32 PendingReplaceSlot = INDEX_NONE;  // an occupied slot pressed once, awaiting the second
+	int32 SeenBeforeRun = 0;                // stages watched before this run, a bit each: F's list
+	FString GalleryMessage;                 // the panel's line about the gallery
 	int32 DialIndex = 0;
 	FUniverseHistory History;
 	uint64 NextSeed = 1;

@@ -12,6 +12,7 @@
 
 #include "CoreMinimal.h"
 #include "SlotTypes.h"   // FSlotMeters — the lifetime hard meters live in the save
+#include "UniverseRecord.h"
 #include "ProgressionTypes.generated.h"
 
 // The six earnable power verbs, one per chapter. Code Vision is the starter
@@ -128,6 +129,16 @@ USTRUCT(BlueprintType)
 struct SIBELIUSGAME_API FProgressionState
 {
 	GENERATED_BODY()
+
+	// THE AI CITY'S GALLERY (save v2, 2026-10-17). Added fields with empty defaults, so a v1 save
+	// loads with an empty gallery, no first contact and nothing seen - and every power, sauce and
+	// grant it held, untouched.
+	UPROPERTY(SaveGame)
+	TArray<FUniverseRecord> UniverseGallery;
+	UPROPERTY(SaveGame)
+	bool bUniverseContactComplete = false;
+	UPROPERTY(SaveGame)
+	int32 UniverseSeenStages = 0;
 
 	// Bit per EPowerVerb. A fresh state has Code Vision only.
 	UPROPERTY(SaveGame)
