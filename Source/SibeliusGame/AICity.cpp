@@ -28,16 +28,14 @@ namespace AICityDetail
 	constexpr double ShapeSize = 100.0;              // the engine's basic shapes are a metre across
 	constexpr double GoldenAngle = 2.39996322972865332;
 
-	// The city's three shells, inner to outer: their radius, their avenues, their light.
+	// The city's three shells, inner to outer: their radius and their light.
 	constexpr double ShellRadius[AAICity::ShellCount] = { 34000.0, 46000.0, 60000.0 };
-	constexpr double BlockPitch = 2600.0;            // one block and its share of the street
 	const FVector ShellAxis[AAICity::ShellCount] = {
 		FVector(0.0, 0.0, 1.0), FVector(0.3, 0.0, 1.0).GetSafeNormal(), FVector(0.0, -0.4, 1.0).GetSafeNormal() };
 
 	// LINEAR colours, which is what a material multiplies.
 	const FLinearColor StarColour(1.0f, 0.86f, 0.62f);
 	const FLinearColor CoronaColour(1.0f, 0.58f, 0.24f);
-	const FLinearColor Hull(0.025f, 0.028f, 0.035f);
 	const FLinearColor RingHull(0.04f, 0.045f, 0.055f);
 	const FLinearColor FloorDark(0.012f, 0.014f, 0.02f);
 	const FLinearColor CityLight[AAICity::ShellCount] = {
@@ -67,127 +65,175 @@ namespace AICityDetail
 		return FTransform(Turn, At, Size / ShapeSize);
 	}
 
-	/* THE CITY THINKING (Walt, 2026-10-17: "what are all those cubes with little lines on them
-	   that are surrounding the sun? could they be made to look more meaningful?"). The blocks
-	   read as crates; the avenues between them now carry wiring, and thought runs down it.
+	/* THE CITY AS A MIND (Walt, 2026-10-18: "you really have to use your imagination to regard
+	   those cubes and lines as some kind of worlds or cities ... is there an art idea you have
+	   that could be easily generated and look more attractive?" - and of the answer, "glowing
+	   geodesic lattice. i like it"). A Matrioshka brain: each shell a web round the star, struts
+	   between nodes, open, so the shells behind it and the star itself show through - the crates
+	   were walls. Thought runs down every strut (M_GenesisStrut) and every node is a neuron
+	   twinkling on its own (M_GenesisNode); neither costs C++ anything per frame.
 
-	   Each avenue - every AvenueRows-th row of latitude, and the Meridians meridians - gets a bus
-	   of three parallel traces just inside the street level, each a chain of short cube segments.
-	   A segment's custom data is its distance along its line, its line's speed and its weight;
-	   M_GenesisThought turns those into comets of light running the whole length of every line,
-	   with no per-frame work here. Half the lines number their distances backward, so the comets
-	   run both ways and cross at every junction. */
-	constexpr double TraceSegment = 1000.0;      // 10 m: short enough that a comet glides
-	constexpr double TraceWidth = 120.0;
-	constexpr double TraceDepth = 40.0;
-	constexpr double TraceLift = 35.0;           // just inside the street, toward the star
-	constexpr double BusOffsets[] = { -700.0, 0.0, 700.0 };
-	constexpr double TraceSpan = 80.0;           // degrees of latitude either side of the equator
+	   Each shell is a geodesic sphere - an icosahedron, its triangles split LatticeLevel times
+	   and pushed out to the sphere - turned at random so no two shells line up. One connection in
+	   seven is left out, so it reads as a web that grew rather than a mesh that was drawn; one
+	   node in twenty is a hub, bigger and brighter. Cells are 47, 64 and 83 m across, inner to outer:
+	   the outer shell at the inner ones' 45 m (a level finer) read as a tangle in the first render. */
+	constexpr int32 LatticeLevel[AAICity::ShellCount] = { 3, 3, 3 };   // 1,920 struts each
+	constexpr double StrutThick = 0.0028;    // of the shell's radius: 95 cm inner, 1.7 m outer
+	constexpr double NodeSize = 0.0095;      // of the shell's radius: a 3 to 6 m neuron
+	constexpr float MissingStrut = 0.14f;
+	constexpr float HubShare = 0.05f;
 
-	void LayTraces(UInstancedStaticMeshComponent* Traces, int32 Shell, double Radius, int32 Rows,
-		int32 AvenueRows, int32 Meridians)
+	// A geodesic sphere of unit radius: its vertices, and each edge once.
+	void Geodesic(int32 Level, TArray<FVector>& Verts, TArray<FIntPoint>& Edges)
 	{
-		Traces->ClearInstances();
-		Traces->SetNumCustomDataFloats(3);
-		/* FLAT STRIPS, NOT CUBES. From inside the shell only a trace's face toward the star is
-		   ever seen, and as cubes the 42,889 segments cost 1.2 ms of a 10 ms frame (profilegpu
-		   from the gallery, 2026-10-17: 10.2 ms shown, 9.0 hidden) - five faces of every one
-		   drawn for nothing. The engine's plane, loaded as the corona's is, turned to face in. */
-		if (UStaticMesh* Strip = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")))
+		const double T = (1.0 + FMath::Sqrt(5.0)) * 0.5;
+		Verts = {
+			FVector(-1.0, T, 0.0), FVector(1.0, T, 0.0), FVector(-1.0, -T, 0.0), FVector(1.0, -T, 0.0),
+			FVector(0.0, -1.0, T), FVector(0.0, 1.0, T), FVector(0.0, -1.0, -T), FVector(0.0, 1.0, -T),
+			FVector(T, 0.0, -1.0), FVector(T, 0.0, 1.0), FVector(-T, 0.0, -1.0), FVector(-T, 0.0, 1.0) };
+		for (FVector& V : Verts)
 		{
-			Traces->SetStaticMesh(Strip);
+			V.Normalize();
 		}
-		const FQuat Inward(FVector(1.0, 0.0, 0.0), PI);   // the plane faces +Z; the star is -Dir
-		FRandomStream Rng(2000 + Shell);
-		TArray<FTransform> Segments;
-		TArray<float> Data;
-		const double R = Radius - TraceLift;
+		TArray<FIntVector> Faces = {
+			FIntVector(0, 11, 5), FIntVector(0, 5, 1), FIntVector(0, 1, 7), FIntVector(0, 7, 10), FIntVector(0, 10, 11),
+			FIntVector(1, 5, 9), FIntVector(5, 11, 4), FIntVector(11, 10, 2), FIntVector(10, 7, 6), FIntVector(7, 1, 8),
+			FIntVector(3, 9, 4), FIntVector(3, 4, 2), FIntVector(3, 2, 6), FIntVector(3, 6, 8), FIntVector(3, 8, 9),
+			FIntVector(4, 9, 5), FIntVector(2, 4, 11), FIntVector(6, 2, 10), FIntVector(8, 6, 7), FIntVector(9, 8, 1) };
+		auto Key = [](int32 A, int32 B)
+		{
+			return A < B ? (static_cast<uint64>(A) << 32) | static_cast<uint32>(B)
+				: (static_cast<uint64>(B) << 32) | static_cast<uint32>(A);
+		};
+		for (int32 L = 0; L < Level; ++L)
+		{
+			// Split every triangle in four, sharing each edge's midpoint with its neighbour.
+			TMap<uint64, int32> Middles;
+			auto Middle = [&](int32 A, int32 B)
+			{
+				if (const int32* Found = Middles.Find(Key(A, B)))
+				{
+					return *Found;
+				}
+				const int32 Made = Verts.Add(((Verts[A] + Verts[B]) * 0.5).GetSafeNormal());
+				Middles.Add(Key(A, B), Made);
+				return Made;
+			};
+			TArray<FIntVector> Split;
+			Split.Reserve(Faces.Num() * 4);
+			for (const FIntVector& F : Faces)
+			{
+				const int32 AB = Middle(F.X, F.Y);
+				const int32 BC = Middle(F.Y, F.Z);
+				const int32 CA = Middle(F.Z, F.X);
+				Split.Add(FIntVector(F.X, AB, CA));
+				Split.Add(FIntVector(F.Y, BC, AB));
+				Split.Add(FIntVector(F.Z, CA, BC));
+				Split.Add(FIntVector(AB, BC, CA));
+			}
+			Faces = MoveTemp(Split);
+		}
+		TSet<uint64> Seen;
+		Edges.Reset();
+		for (const FIntVector& F : Faces)
+		{
+			const FIntPoint Sides[3] = { FIntPoint(F.X, F.Y), FIntPoint(F.Y, F.Z), FIntPoint(F.Z, F.X) };
+			for (const FIntPoint& E : Sides)
+			{
+				bool bAlready = false;
+				Seen.Add(Key(E.X, E.Y), &bAlready);
+				if (!bAlready)
+				{
+					Edges.Add(E);
+				}
+			}
+		}
+	}
 
-		auto Frame = [](double Lat, double Lon, FVector& Dir, FVector& East, FVector& North)
+	void LayLattice(UInstancedStaticMeshComponent* Struts, UInstancedStaticMeshComponent* Nodes, int32 Shell, double Radius)
+	{
+		// The Blender-made rod and ball (build_genesis_meshes_blender.py), a metre each like the
+		// engine's shapes; the engine's cube and sphere stand in until they are imported.
+		if (UStaticMesh* Rod = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Genesis/SM_GenesisStrut.SM_GenesisStrut"), nullptr, LOAD_NoWarn | LOAD_Quiet))
 		{
-			Dir = FVector(FMath::Cos(Lat) * FMath::Cos(Lon), FMath::Cos(Lat) * FMath::Sin(Lon), FMath::Sin(Lat));
-			East = FVector(-FMath::Sin(Lon), FMath::Cos(Lon), 0.0);
-			North = FVector::CrossProduct(Dir, East);
-		};
-		// One line of the bus: its own head start, speed and direction, and a side line dimmer
-		// than the middle one.
-		auto Line = [&Rng](double Offset, double Weight, double& Start, double& Sign, float& Speed, float& Bright)
+			Struts->SetStaticMesh(Rod);
+		}
+		if (UStaticMesh* Ball = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Genesis/SM_GenesisNode.SM_GenesisNode"), nullptr, LOAD_NoWarn | LOAD_Quiet))
 		{
-			Start = Rng.FRandRange(0.0f, 30000.0f);
-			Sign = Rng.FRand() < 0.5f ? 1.0 : -1.0;
-			Speed = Rng.FRandRange(0.6f, 1.4f);
-			Bright = static_cast<float>(Weight * (Offset == 0.0 ? 1.0 : 0.7));
-		};
-		auto Add = [&Segments, &Data](const FTransform& Where, double Distance, float Speed, float Bright)
-		{
-			Segments.Add(Where);
-			Data.Add(static_cast<float>(Distance));
-			Data.Add(Speed);
-			Data.Add(Bright);
-		};
+			Nodes->SetStaticMesh(Ball);
+		}
+		Struts->ClearInstances();
+		Nodes->ClearInstances();
+		Struts->SetNumCustomDataFloats(4);
+		Nodes->SetNumCustomDataFloats(1);
 
-		// The avenues of latitude: rings round the shell, in the empty rows the blocks leave.
-		for (int32 Row = 0; Row < Rows; ++Row)
+		TArray<FVector> Verts;
+		TArray<FIntPoint> Edges;
+		Geodesic(LatticeLevel[Shell], Verts, Edges);
+		FRandomStream Rng(3000 + Shell);
+		FVector Axis(Rng.FRandRange(-1.0f, 1.0f), Rng.FRandRange(-1.0f, 1.0f), Rng.FRandRange(-1.0f, 1.0f));
+		Axis = Axis.IsNearlyZero() ? FVector::UpVector : Axis.GetSafeNormal();
+		const FQuat Twist(Axis, Rng.FRandRange(0.0f, PI));
+		for (FVector& V : Verts)
 		{
-			const double Lat = -0.5 * PI + (Row + 0.5) * PI / Rows;
-			if (Row % AvenueRows != 0 || FMath::Abs(Lat) > FMath::DegreesToRadians(TraceSpan))
+			V = Twist.RotateVector(V) * Radius;
+		}
+
+		// The struts. Custom data: 0 the distance at the rod's start, 1 what its length adds
+		// (negative when it runs backward, so comets cross both ways), 2 speed, 3 brightness.
+		const double Thick = Radius * StrutThick;
+		TArray<FTransform> StrutList;
+		TArray<float> StrutData;
+		TArray<int32> Links;
+		Links.Init(0, Verts.Num());
+		for (const FIntPoint& E : Edges)
+		{
+			if (Rng.FRand() < MissingStrut)
 			{
 				continue;
 			}
-			for (const double Offset : BusOffsets)
-			{
-				const double LineLat = Lat + Offset / R;
-				const double Round = 2.0 * PI * R * FMath::Cos(LineLat);
-				const int32 Count = FMath::Max(8, FMath::RoundToInt(Round / TraceSegment));
-				const double Step = Round / Count;
-				double Start, Sign;
-				float Speed, Bright;
-				Line(Offset, 1.0, Start, Sign, Speed, Bright);
-				for (int32 K = 0; K < Count; ++K)
-				{
-					const double Lon = 2.0 * PI * (K + 0.5) / Count;
-					FVector Dir, East, North;
-					Frame(LineLat, Lon, Dir, East, North);
-					const FQuat Turn = FMatrix(East, North, Dir, FVector::ZeroVector).ToQuat();
-					Add(Bar(Turn * Inward, Dir * R, FVector(Step * 0.88, TraceWidth, TraceDepth)),
-						Start + Sign * Step * (K + 0.5), Speed, Bright);
-				}
-			}
+			const FVector& A = Verts[E.X];
+			const FVector& B = Verts[E.Y];
+			const FVector Along = B - A;
+			const double Length = Along.Size();
+			StrutList.Add(FTransform(FRotationMatrix::MakeFromX(Along).ToQuat(), (A + B) * 0.5, FVector(Length, Thick, Thick) / ShapeSize));
+			const double Start = Rng.FRandRange(0.0f, 20000.0f);
+			const bool bBackward = Rng.FRand() < 0.5f;
+			StrutData.Add(static_cast<float>(bBackward ? Start + Length : Start));
+			StrutData.Add(static_cast<float>(bBackward ? -Length : Length));
+			StrutData.Add(Rng.FRandRange(0.6f, 1.4f));
+			StrutData.Add(Rng.FRandRange(0.6f, 1.0f));
+			++Links[E.X];
+			++Links[E.Y];
 		}
 
-		// The meridian avenues, pole to pole within the span, where the blocks leave them (the
-		// same longitudes Build skips: Frac(Lon / 2pi * Meridians + 0.37 * Shell) < 0.12).
-		const double Span = FMath::DegreesToRadians(TraceSpan);
-		const int32 Count = FMath::Max(8, FMath::RoundToInt(2.0 * Span * R / TraceSegment));
-		const double Step = 2.0 * Span / Count;
-		for (int32 M = 0; M < Meridians; ++M)
+		// The nodes, wherever a strut still arrives. Custom data 0: brightness - a hub's is high.
+		TArray<FTransform> NodeList;
+		TArray<float> NodeData;
+		for (int32 V = 0; V < Verts.Num(); ++V)
 		{
-			const double Lon = 2.0 * PI * (M - 0.37 * Shell + 0.06) / Meridians;
-			for (const double Offset : BusOffsets)
+			if (Links[V] == 0)
 			{
-				double Start, Sign;
-				float Speed, Bright;
-				Line(Offset, 0.85, Start, Sign, Speed, Bright);
-				for (int32 K = 0; K < Count; ++K)
-				{
-					const double Lat = -Span + Step * (K + 0.5);
-					FVector Dir, East, North;
-					Frame(Lat, Lon, Dir, East, North);
-					// Across the meridian is east-west, which narrows toward the poles.
-					const FVector At = (Dir * R + East * Offset).GetSafeNormal() * R;
-					const FQuat Turn = FMatrix(East, North, Dir, FVector::ZeroVector).ToQuat();
-					Add(Bar(Turn * Inward, At, FVector(TraceWidth, Step * R * 0.88, TraceDepth)),
-						Start + Sign * Step * R * (K + 0.5), Speed, Bright);
-				}
+				continue;
 			}
+			const bool bHub = Rng.FRand() < HubShare;
+			NodeList.Add(FTransform(FQuat::Identity, Verts[V], FVector(Radius * NodeSize * (bHub ? 2.4 : 1.0) / ShapeSize)));
+			NodeData.Add(bHub ? 1.8f : Rng.FRandRange(0.5f, 1.0f));
 		}
 
-		Traces->AddInstances(Segments, false);
-		for (int32 I = 0; I < Segments.Num(); ++I)
+		Struts->AddInstances(StrutList, false);
+		for (int32 I = 0; I < StrutList.Num(); ++I)
 		{
-			Traces->SetCustomData(I, TArrayView<const float>(&Data[I * 3], 3), false);
+			Struts->SetCustomData(I, TArrayView<const float>(&StrutData[I * 4], 4), false);
 		}
-		Traces->MarkRenderStateDirty();
+		Nodes->AddInstances(NodeList, false);
+		for (int32 I = 0; I < NodeList.Num(); ++I)
+		{
+			Nodes->SetCustomData(I, TArrayView<const float>(&NodeData[I], 1), false);
+		}
+		Struts->MarkRenderStateDirty();
+		Nodes->MarkRenderStateDirty();
 	}
 
 	/* THE SUN OF CELESTIAL FORTUNE (Walt, 2026-10-15: "could the sun here be made to look like
@@ -198,8 +244,14 @@ namespace AICityDetail
 	   sphere and its glass corona stand in. */
 	UMaterialInterface* SunDiscMaterial()
 	{
-		// The layered one first (Walt: "let's do the medium please" - each loop rising and
-		// falling on its own, the spots drifting, the flare bursting), then the one-picture one.
+		// The soft-edged layered one first (2026-10-18: the plain one's glow was cut off in straight
+		// lines at its square, plain against the lattice), then the layered one (Walt: "let's do
+		// the medium please" - each loop rising and falling on its own, the spots drifting, the
+		// flare bursting), then the one-picture one.
+		if (UMaterialInterface* Soft = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Genesis/M_GenesisSunSoft.M_GenesisSunSoft"), nullptr, LOAD_NoWarn | LOAD_Quiet))
+		{
+			return Soft;
+		}
 		if (UMaterialInterface* Live = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Genesis/M_GenesisSunLive.M_GenesisSunLive"), nullptr, LOAD_NoWarn | LOAD_Quiet))
 		{
 			return Live;
@@ -261,9 +313,8 @@ AAICity::AAICity()
 	Corona = MakeMesh(TEXT("Corona"), Sphere, false);
 	for (int32 S = 0; S < ShellCount; ++S)
 	{
-		ShellBlocks.Add(MakeMany(FString::Printf(TEXT("ShellBlocks_%d"), S), Cube, false));
-		ShellLights.Add(MakeMany(FString::Printf(TEXT("ShellLights_%d"), S), Cube, false));
-		ShellTraces.Add(MakeMany(FString::Printf(TEXT("ShellTraces_%d"), S), Cube, false));
+		ShellStruts.Add(MakeMany(FString::Printf(TEXT("ShellStruts_%d"), S), Cube, false));
+		ShellNodes.Add(MakeMany(FString::Printf(TEXT("ShellNodes_%d"), S), Sphere, false));
 	}
 	Rings = MakeMany(TEXT("Rings"), Cube, false);
 	RingLights = MakeMany(TEXT("RingLights"), Cube, false);
@@ -406,79 +457,14 @@ void AAICity::Build()
 		Corona->SetRelativeScale3D(FVector(2.24 * StarRadius / ShapeSize));
 	}
 
-	// --- the shells: blocks between avenues, towers growing inward toward the light ---------
+	// --- the shells: a lattice each, a web round the star (LayLattice) ----------------------
 	for (int32 S = 0; S < ShellCount; ++S)
 	{
-		UInstancedStaticMeshComponent* Blocks = ShellBlocks.IsValidIndex(S) ? ShellBlocks[S].Get() : nullptr;
-		UInstancedStaticMeshComponent* Lights = ShellLights.IsValidIndex(S) ? ShellLights[S].Get() : nullptr;
-		if (!Blocks || !Lights)
+		UInstancedStaticMeshComponent* Struts = ShellStruts.IsValidIndex(S) ? ShellStruts[S].Get() : nullptr;
+		UInstancedStaticMeshComponent* Nodes = ShellNodes.IsValidIndex(S) ? ShellNodes[S].Get() : nullptr;
+		if (Struts && Nodes)
 		{
-			continue;
-		}
-		Blocks->ClearInstances();
-		Lights->ClearInstances();
-		FRandomStream Rng(1000 + S);
-		const double R = ShellRadius[S];
-		TArray<FTransform> BlockList;
-		TArray<FTransform> LightList;
-		/* A STREET GRID ON A SPHERE (the first render, 2026-10-15, scattered blocks evenly and
-		   turned each at random, and it read as tumbling confetti, not a city). Rows of
-		   latitude, each cut into as many lots as fit round it; every block squared to its
-		   own east and north; narrow alleys between lots, a wide avenue every AvenueRows rows
-		   and along Meridians meridians; a lot in ten left empty, a park. Nothing within
-		   ten degrees of a pole, where the rows would crowd. */
-		const int32 Rows = FMath::RoundToInt(PI * R / BlockPitch);
-		const int32 AvenueRows = 6 + S;
-		const int32 Meridians = 18 + 6 * S;
-		for (int32 Row = 0; Row < Rows; ++Row)
-		{
-			const double Lat = -0.5 * PI + (Row + 0.5) * PI / Rows;
-			if (FMath::Abs(Lat) > FMath::DegreesToRadians(80.0) || Row % AvenueRows == 0)
-			{
-				continue;
-			}
-			const double Round = 2.0 * PI * R * FMath::Cos(Lat);
-			const int32 Lots = FMath::Max(1, FMath::RoundToInt(Round / BlockPitch));
-			const double Along = Round / Lots;          // this row's spacing, east-west
-			const double Across = PI * R / Rows;        // and north-south
-			for (int32 Lot = 0; Lot < Lots; ++Lot)
-			{
-				const double Lon = 2.0 * PI * (Lot + 0.5) / Lots;
-				const float Park = Rng.FRand();
-				const float TallRoll = Rng.FRand();
-				const int32 Count = Rng.RandRange(0, 3);
-				// The meridian avenues: the same longitudes on every row, so they line up.
-				const double M = FMath::Frac(Lon / (2.0 * PI) * Meridians + 0.37 * S);
-				if (M < 0.12 || Park < 0.1f)
-				{
-					continue;
-				}
-				const FVector Dir(FMath::Cos(Lat) * FMath::Cos(Lon), FMath::Cos(Lat) * FMath::Sin(Lon), FMath::Sin(Lat));
-				const FVector East(-FMath::Sin(Lon), FMath::Cos(Lon), 0.0);
-				const FVector North = FVector::CrossProduct(Dir, East);
-				const FQuat Turn = FMatrix(East, North, Dir, FVector::ZeroVector).ToQuat();
-				const double Height = 150.0 + FMath::Pow(static_cast<double>(TallRoll), 3.0) * 3500.0;
-				const double Wide = Along * 0.86;
-				const double Deep = Across * 0.86;
-				BlockList.Add(Bar(Turn, Dir * (R - Height * 0.5), FVector(Wide, Deep, Height)));
-
-				// Its lights: up to three bars on the face toward the star, square to the grid.
-				for (int32 L = 0; L < Count; ++L)
-				{
-					const double Ox = Rng.FRandRange(-0.35f, 0.35f) * Wide;
-					const double Oy = Rng.FRandRange(-0.35f, 0.35f) * Deep;
-					const bool bAcross = Rng.FRand() < 0.5f;
-					const double Long = Rng.FRandRange(300.0f, 900.0f);
-					const FQuat LightTurn = bAcross ? Turn * FQuat(FVector::UpVector, PI * 0.5) : Turn;
-					LightList.Add(Bar(LightTurn, Dir * (R - Height - 30.0) + East * Ox + North * Oy, FVector(Long, 60.0, 40.0)));
-				}
-			}
-		}
-		Blocks->AddInstances(BlockList, false);
-		Lights->AddInstances(LightList, false);
-		if (UInstancedStaticMeshComponent* Traces = ShellTraces.IsValidIndex(S) ? ShellTraces[S].Get() : nullptr)
-		{
-			LayTraces(Traces, S, R, Rows, AvenueRows, Meridians);
+			LayLattice(Struts, Nodes, S, ShellRadius[S]);
 		}
 	}
 
@@ -656,36 +642,41 @@ void AAICity::Paint()
 	{
 		Wear(Corona, Glass(CoronaColour, 3.0f, 0.8f, 0.0f));
 	}
-	UMaterialInstanceDynamic* HullPaint = Surface(Hull, 0.35f);
+	// The lattice: its struts' and nodes' materials (make_genesis_assets.py), loaded by path and
+	// cooked by DefaultGame.ini's /Game/Genesis line; plain glow until they are made.
 	ResponseLights.Reset();
-	for (int32 S = 0; S < ShellCount; ++S)
-	{
-		Wear(ShellBlocks.IsValidIndex(S) ? ShellBlocks[S].Get() : nullptr, HullPaint);
-		// Kept, so the city's answer can breathe each shell's lights (AnswerUniverse).
-		UMaterialInstanceDynamic* Response = Glow(CityLight[S], CityGlow);
-		ResponseLights.Add(Response);
-		Wear(ShellLights.IsValidIndex(S) ? ShellLights[S].Get() : nullptr, Response);
-	}
-	// The traces think in M_GenesisThought (make_genesis_assets.py), loaded by path and cooked by
-	// DefaultGame.ini's /Game/Genesis line; until it is made they are plain lit lines.
 	ThoughtLights.Reset();
-	UMaterialInterface* Thought = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Game/Genesis/M_GenesisThought.M_GenesisThought"), nullptr, LOAD_NoWarn | LOAD_Quiet);
+	UMaterialInterface* NodeSkin = LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/Genesis/M_GenesisNode.M_GenesisNode"), nullptr, LOAD_NoWarn | LOAD_Quiet);
+	UMaterialInterface* StrutSkin = LoadObject<UMaterialInterface>(nullptr,
+		TEXT("/Game/Genesis/M_GenesisStrut.M_GenesisStrut"), nullptr, LOAD_NoWarn | LOAD_Quiet);
 	for (int32 S = 0; S < ShellCount; ++S)
 	{
-		UMaterialInstanceDynamic* M = Thought ? UMaterialInstanceDynamic::Create(Thought, this) : Glow(CityLight[S], CityGlow * 0.3f);
-		if (Thought && M)
+		// The nodes: what the city's answer breathes (Tick) - their Color and Intensity.
+		UMaterialInstanceDynamic* Node = NodeSkin ? UMaterialInstanceDynamic::Create(NodeSkin, this) : Glow(CityLight[S], CityGlow);
+		if (NodeSkin && Node)
 		{
-			M->SetVectorParameterValue(TEXT("Color"), CityLight[S]);
-			// Dim wiring, bright comets: at the material's own balance (base 0.15, comets x1) the
-			// lines read as steady rails in the first render and the thought was lost in them.
-			M->SetVectorParameterValue(TEXT("PulseColor"), FMath::Lerp(CityLight[S], FLinearColor::White, 0.55f) * 4.0f);
-			M->SetScalarParameterValue(TEXT("Intensity"), CityGlow);
-			M->SetScalarParameterValue(TEXT("Base"), 0.05f);
-			M->SetScalarParameterValue(TEXT("Spacing"), 6500.0f);
+			Node->SetVectorParameterValue(TEXT("Color"), CityLight[S]);
+			Node->SetScalarParameterValue(TEXT("Intensity"), CityGlow);
 		}
-		ThoughtLights.Add(M);
-		Wear(ShellTraces.IsValidIndex(S) ? ShellTraces[S].Get() : nullptr, M);
+		ResponseLights.Add(Node);
+		Wear(ShellNodes.IsValidIndex(S) ? ShellNodes[S].Get() : nullptr, Node);
+
+		// The struts: dim rods, bright comets (the wiring's lesson - at an even balance the
+		// thought is lost in the rods), and what the answer surges.
+		UMaterialInstanceDynamic* Strut = StrutSkin ? UMaterialInstanceDynamic::Create(StrutSkin, this) : Glow(CityLight[S], CityGlow * 0.3f);
+		if (StrutSkin && Strut)
+		{
+			Strut->SetVectorParameterValue(TEXT("Color"), CityLight[S]);
+			Strut->SetVectorParameterValue(TEXT("PulseColor"), FMath::Lerp(CityLight[S], FLinearColor::White, 0.55f) * 4.0f);
+			// Half the city's glow, comets and all (Walt, 2026-10-18: "to give a more cosmic distance
+			// sense, please dim the rods even more, by half"): halving Base alone darkened the
+			// frame by a tenth - what reads as a rod is mostly the comets riding it.
+			Strut->SetScalarParameterValue(TEXT("Intensity"), CityGlow * 0.5f);
+			Strut->SetScalarParameterValue(TEXT("Base"), 0.03f);   // 0.15 washed every rod to white
+		}
+		ThoughtLights.Add(Strut);
+		Wear(ShellStruts.IsValidIndex(S) ? ShellStruts[S].Get() : nullptr, Strut);
 	}
 	Wear(Rings, Surface(RingHull, 0.25f));
 	Wear(RingLights, Glow(RingLight, CityGlow * 1.5f));
@@ -772,22 +763,18 @@ void AAICity::Tick(float DeltaSeconds)
 		}
 	}
 
-	// Each shell turns on its own axis; the blocks, their lights and their wiring together.
+	// Each shell turns on its own axis, its struts and nodes together.
 	for (int32 S = 0; S < ShellCount; ++S)
 	{
 		const float Spin = ShellSpin.IsValidIndex(S) ? ShellSpin[S] : 0.0f;
 		const FQuat Turn(ShellAxis[S], FMath::DegreesToRadians(Age * Spin));
-		if (ShellBlocks.IsValidIndex(S) && ShellBlocks[S])
+		if (ShellStruts.IsValidIndex(S) && ShellStruts[S])
 		{
-			ShellBlocks[S]->SetRelativeRotation(Turn);
+			ShellStruts[S]->SetRelativeRotation(Turn);
 		}
-		if (ShellLights.IsValidIndex(S) && ShellLights[S])
+		if (ShellNodes.IsValidIndex(S) && ShellNodes[S])
 		{
-			ShellLights[S]->SetRelativeRotation(Turn);
-		}
-		if (ShellTraces.IsValidIndex(S) && ShellTraces[S])
-		{
-			ShellTraces[S]->SetRelativeRotation(Turn);
+			ShellNodes[S]->SetRelativeRotation(Turn);
 		}
 	}
 

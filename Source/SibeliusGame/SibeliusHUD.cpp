@@ -1093,8 +1093,25 @@ void ASibeliusHUD::DrawWorldName()
 	float W = 0.0f, H = 0.0f;
 	GetTextSize(Name, W, H, nullptr, Scale);
 	// Under the objective banner, readable at 4K desk distance (Walt QA).
-	const float X = (Canvas->ClipX - W) * 0.5f;
 	const float Y = 20.0f + H * 2.6f;
+
+	/* THE AI CITY IS A TITLE, NOT A NAMEPLATE (Walt, 2026-10-18: "let's make "THE AI CITY" much
+	   bigger for a title"). The engine's large font - crisp at size, where the medium one blurs -
+	   in Celestial Fortune's gold, on a darker plate, since it sits over the sun. Same top line
+	   as the other worlds' names. */
+	if (Map.Contains(TEXT("Genesis")))
+	{
+		UFont* Big = GEngine ? GEngine->GetLargeFont() : nullptr;
+		const float TitleScale = OverlayTextScale * 2.4f;   // 1.5 was twice the nameplate; Walt asked for much bigger
+		float TW = 0.0f, TH = 0.0f;
+		GetTextSize(Name, TW, TH, Big, TitleScale);
+		const float TX = (Canvas->ClipX - TW) * 0.5f;
+		DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.65f), TX - 36.0f, Y - 12.0f, TW + 72.0f, TH + 24.0f);
+		DrawText(Name, FLinearColor(1.0f, 0.82f, 0.3f, 0.97f), TX, Y, Big, TitleScale);
+		return;
+	}
+
+	const float X = (Canvas->ClipX - W) * 0.5f;
 	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.4f), X - 10.0f, Y - 4.0f, W + 20.0f, H + 8.0f);
 	DrawText(Name, FLinearColor(0.9f, 0.85f, 0.7f, 0.95f), X, Y, nullptr, Scale);
 }

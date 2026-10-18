@@ -93,6 +93,35 @@ AUniverseExhibit::AUniverseExhibit()
 void AUniverseExhibit::SetSlot(int32 InSlot)
 {
 	Slot = InSlot;
+
+	/* A DARK PLATE BEHIND THE LABEL (Walt, 2026-10-18: "the "Your Universe" signs need a
+	   background so i can read them easier" - white letters over the bright floor and the sun).
+	   Made here, once, at run time - a component owned by the actor like any other - and sized
+	   to its text in Refresh, so a long name gets a wide plate. The label is centred on it. */
+	bool bHasPlate = false;
+	for (UActorComponent* Part : GetComponents())
+	{
+		bHasPlate |= Part && Part->GetFName() == TEXT("LabelPlate");
+	}
+	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	if (!bHasPlate && Cube)
+	{
+		UStaticMeshComponent* Plate = NewObject<UStaticMeshComponent>(this, TEXT("LabelPlate"));
+		Plate->SetupAttachment(RootComponent);
+		Plate->SetStaticMesh(Cube);
+		Plate->SetRelativeLocation(FVector(-77.0f, 0.0f, 75.0f));   // just behind the letters at -80
+		Plate->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Plate->SetCastShadow(false);
+		if (GlowMaterial)
+		{
+			UMaterialInstanceDynamic* Dark = UMaterialInstanceDynamic::Create(GlowMaterial, this);
+			Dark->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.004f, 0.006f, 0.012f));
+			Dark->SetScalarParameterValue(TEXT("Intensity"), 1.0f);
+			Plate->SetMaterial(0, Dark);
+		}
+		Plate->RegisterComponent();
+	}
+	Label->SetVerticalAlignment(EVRTA_TextCenter);
 	Refresh();
 }
 
@@ -105,6 +134,15 @@ void AUniverseExhibit::Refresh()
 
 	Label->SetText(FText::FromString(FString::Printf(TEXT("YOUR UNIVERSE %d\n%s"), Slot + 1,
 		Record ? *Record->Name : TEXT("Empty"))));
+	// The plate (SetSlot) fits the text, with a margin; the text lies in the label's Y-Z plane.
+	for (UActorComponent* Part : GetComponents())
+	{
+		if (UStaticMeshComponent* Plate = Part && Part->GetFName() == TEXT("LabelPlate") ? Cast<UStaticMeshComponent>(Part) : nullptr)
+		{
+			const FVector Text = Label->GetTextLocalSize();
+			Plate->SetRelativeScale3D(FVector(0.02f, (Text.Y + 36.0f) / 100.0f, (Text.Z + 18.0f) / 100.0f));
+		}
+	}
 
 	// Its colour is its star's, from red at a cool star to blue at a hot one; an empty slot is a
 	// dim teal, so the three read as places waiting to be filled.

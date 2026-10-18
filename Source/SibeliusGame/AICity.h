@@ -5,9 +5,9 @@
 // and can build anything and this is what the AI have built to amuse themselves. Not a place
 // for transhumans ... but an AI city." Seed 1 of three he was offered: a universe in a seed.
 //
-// A STAR, AND A CITY THAT IS ALSO A MIND WRAPPED ROUND IT: three shells of blocks with avenues
-// between them, their towers growing inward toward the light, each shell turning slowly on its
-// own axis; three transit rings; a far sky of stars. Leonard stands on a glass gallery inside
+// A STAR, AND A CITY THAT IS ALSO A MIND WRAPPED ROUND IT: three shells, each a glowing geodesic
+// lattice - struts with thought running down them, twinkling nodes where they meet (since
+// 2026-10-18; at first they were blocks along avenues) - each turning slowly on its own axis; three transit rings; a far sky of stars. Leonard stands on a glass gallery inside
 // the innermost shell, the star filling a third of his view. Round the gallery float the
 // universes the AIs have grown - glass bubbles, a galaxy turning in each. (Growing his own is
 // the next step: the model, the three dials, the six powers.)
@@ -78,15 +78,13 @@ public:
 	// THE INSTANCE LISTS ARE TRANSIENT, as the court's parts are: the constructor makes the
 	// components and Build fills them, at construction and again at play.
 
+	// Each shell's lattice (LayLattice): its struts, thought running down them, and the nodes
+	// where they meet.
 	UPROPERTY(VisibleAnywhere, Transient, Category = "AI City")
-	TArray<TObjectPtr<UInstancedStaticMeshComponent>> ShellBlocks;
+	TArray<TObjectPtr<UInstancedStaticMeshComponent>> ShellStruts;
 
 	UPROPERTY(VisibleAnywhere, Transient, Category = "AI City")
-	TArray<TObjectPtr<UInstancedStaticMeshComponent>> ShellLights;
-
-	// The wiring along each shell's avenues, with thought running down it (LayTraces).
-	UPROPERTY(VisibleAnywhere, Transient, Category = "AI City")
-	TArray<TObjectPtr<UInstancedStaticMeshComponent>> ShellTraces;
+	TArray<TObjectPtr<UInstancedStaticMeshComponent>> ShellNodes;
 
 	UPROPERTY(VisibleAnywhere, Category = "AI City")
 	TObjectPtr<UInstancedStaticMeshComponent> Rings;
@@ -169,12 +167,12 @@ private:
 
 	float Age = 0.0f;
 	// The city's answer: seconds into it, or -1 when quiet; whether it is the long first one;
-	// and each shell's lights, to breathe.
+	// and each shell's nodes, to breathe.
 	float ResponseAge = -1.0f;
 	bool bFirstResponse = false;
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UMaterialInstanceDynamic>> ResponseLights;
-	// Each shell's wiring, so the answer can surge through it.
+	// Each shell's struts, so the answer can surge through them.
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UMaterialInstanceDynamic>> ThoughtLights;
 	TArray<FVector> UniverseHome;     // each bubble's resting place, for its bob

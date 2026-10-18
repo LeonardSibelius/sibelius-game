@@ -169,6 +169,12 @@ $checks = [ordered]@{
   "the sun's disc"           = "$cooked\Genesis\T_SunDisc.uasset"
   "a prominence"             = "$cooked\Genesis\T_SunLoopNE.uasset"
   "the city's thought"        = "$cooked\Genesis\M_GenesisThought.uasset"
+  # The lattice (2026-10-18): its rod and ball, their materials, and the soft-edged sun -
+  # all loaded by path (AAICity::LayLattice, Paint, SunDiscMaterial), cooked by /Game/Genesis.
+  "the lattice's struts"     = "$cooked\Genesis\SM_GenesisStrut.uasset"
+  "the lattice's thought"    = "$cooked\Genesis\M_GenesisStrut.uasset"
+  "the lattice's nodes"      = "$cooked\Genesis\M_GenesisNode.uasset"
+  "the soft sun"             = "$cooked\Genesis\M_GenesisSunSoft.uasset"
   "the run between racks"    = "$cooked\Mixamo\Basketball\Anim_RunInPlace_MH.uasset"
   # --- THE CATHEDRAL CABINET (2026-10-16): the Blender-built Celestial Fortune machine on the
   # apse ASlotCabinet, cooked because L_Cathedral references it. Its mesh and its lit marquee.

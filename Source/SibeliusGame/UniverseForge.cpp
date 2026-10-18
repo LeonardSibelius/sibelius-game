@@ -198,6 +198,20 @@ void AUniverseForge::OnConstruction(const FTransform& Transform)
 	AimCamera(true);
 }
 
+/* The backdrop (BeginPlay) shows only while someone is at the console: from the gallery, idle,
+   the black disc read as a hole cut in the city's lattice behind the glass (Walt, 2026-10-18:
+   "the lattice doesn't fit around the edge of that universe building globe thing"). */
+static void ShowForgeBackdrop(AActor* Forge, bool bShow)
+{
+	for (UActorComponent* Part : Forge->GetComponents())
+	{
+		if (USceneComponent* Scene = Part && Part->GetFName() == TEXT("Backdrop") ? Cast<USceneComponent>(Part) : nullptr)
+		{
+			Scene->SetVisibility(bShow);
+		}
+	}
+}
+
 void AUniverseForge::BeginPlay()
 {
 	Super::BeginPlay();
@@ -205,7 +219,7 @@ void AUniverseForge::BeginPlay()
 	/* A BLACK BACKDROP behind the glass, seen from the console: without it the city's lit
 	   blocks and its transit ring showed through and fought every stage (the first renders,
 	   2026-10-15). A disc a little wider than the sphere, just past it, unlit black. Made at
-	   play, so the editor shows the glass as it is. */
+	   play, so the editor shows the glass as it is - and hidden until someone steps up. */
 	UStaticMesh* Disc = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	UStaticMeshComponent* Backdrop = Disc ? NewObject<UStaticMeshComponent>(this, TEXT("Backdrop")) : nullptr;
 	if (Backdrop)
@@ -225,6 +239,7 @@ void AUniverseForge::BeginPlay()
 			Black->SetScalarParameterValue(TEXT("Intensity"), 0.0f);
 			Backdrop->SetMaterial(0, Black);
 		}
+		Backdrop->SetVisibility(false);
 		Backdrop->RegisterComponent();
 		AddInstanceComponent(Backdrop);
 	}
@@ -911,6 +926,7 @@ void AUniverseForge::StartPlaying(APlayerController* PC)
 	PC->SetInputMode(FInputModeGameOnly());
 	EnableInput(PC);
 	BindKeys();
+	ShowForgeBackdrop(this, true);
 	AimCamera(false);
 	PC->SetViewTargetWithBlend(this, 0.8f, VTBlend_Cubic);
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Forge] stepped up to the console (%s)."), *GetActorNameOrLabel());
@@ -922,6 +938,7 @@ void AUniverseForge::StopPlaying()
 	{
 		return;
 	}
+	ShowForgeBackdrop(this, false);
 	bPlaying = false;
 	bHurry = false;
 	State = EForgeState::Idle;

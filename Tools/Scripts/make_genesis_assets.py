@@ -40,6 +40,15 @@
 #                                 as per-instance custom data, and the material runs comets of
 #                                 light down every line from them - no per-frame work in C++.
 #                                 Surge (the city answering a universe) brightens it all.
+#                                 (Retired 2026-10-18 when the lattice replaced the blocks.)
+#   /Game/Genesis/M_GenesisStrut, M_GenesisNode, SM_GenesisStrut, SM_GenesisNode
+#                                 the lattice (2026-10-18): the shells as a Matrioshka brain, a
+#                                 web of struts with thought running down them between twinkling
+#                                 nodes (AAICity::LayLattice; meshes from
+#                                 build_genesis_meshes_blender.py).
+#   /Game/Genesis/M_GenesisSunSoft  M_GenesisSunLive with a soft round edge (2026-10-18): its glow
+#                                 had been cut off in straight lines at the picture's square.
+#                                 The star wears it first (AAICity's SunDiscMaterial).
 
 import os
 import unreal
@@ -342,7 +351,7 @@ def import_sun_layer(name, max_size):
     return tex
 
 
-def build_sun_live():
+def build_sun_live(material_name="M_GenesisSunLive", soft=False):
     # THE SUN, EACH PART MOVING ON ITS OWN (Walt, 2026-10-15: "let's do the medium please").
     # make_sun_texture.mjs's layers stacked back, back to front, each with its own motion:
     #   the corona     breathes - a little larger and brighter, and back (CoronaBreathe)
@@ -367,7 +376,7 @@ def build_sun_live():
     for name, _, _, _, _ in loops:
         layers[name] = import_sun_layer(name, 1024)
 
-    path, mat = fresh_material("M_GenesisSunLive")
+    path, mat = fresh_material(material_name)   # not "name": the loops loop over a name
     mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
     mat.set_editor_property("blend_mode", unreal.BlendMode.BLEND_TRANSLUCENT)
 
@@ -525,8 +534,24 @@ def build_sun_live():
     covered.set_editor_property("const_b", 0.0005)
     colour = mul(div(stack["P"], (covered, "")), power)
     mel.connect_material_property(colour[0], colour[1], unreal.MaterialProperty.MP_EMISSIVE_COLOR)
-    mel.connect_material_property(stack["A"][0], stack["A"][1], unreal.MaterialProperty.MP_OPACITY)
+    opacity = stack["A"]
+    if soft:
+        # A SOFT EDGE (Walt, 2026-10-18: "yes fix the sun's edge"). The layers' own motions -
+        # the corona breathing larger, the loops rising - carry glow past the picture's square,
+        # and the square cut it off in straight lines, which the city's bright lattice behind it
+        # made plain. So everything fades to nothing in a circle just inside the square: whole
+        # at 0.45 of the width from the middle, gone at 0.5. The disc (0.335) is untouched.
+        dist = node(unreal.MaterialExpressionDistance)
+        link(uv, dist, "A")
+        link(vec2(0.5, 0.5), dist, "B")
+        edge = one(unreal.MaterialExpressionSaturate, add(mul((dist, ""), -20.0), 10.0))
+        opacity = mul(opacity, edge)
+    mel.connect_material_property(opacity[0], opacity[1], unreal.MaterialProperty.MP_OPACITY)
     finish(path, mat)
+
+
+def build_sun_soft():
+    build_sun_live(material_name="M_GenesisSunSoft", soft=True)
 
 
 def build_thought():
@@ -613,6 +638,152 @@ def build_thought():
     finish(path, mat)
 
 
+class Graph:
+    """Small helpers for building a material's nodes in a row (the lattice's two materials)."""
+
+    def __init__(self, mat):
+        self.mat = mat
+        self.x = -1800
+
+    def node(self, cls):
+        self.x += 120
+        return mel.create_material_expression(self.mat, cls, self.x, -200 + (self.x % 480))
+
+    def link(self, a, b, pin):
+        mel.connect_material_expressions(a[0], a[1], b, pin)
+
+    def op(self, cls, a, b):
+        n = self.node(cls)
+        self.link(a, n, "A")
+        if isinstance(b, (int, float)):
+            n.set_editor_property("const_b", float(b))
+        else:
+            self.link(b, n, "B")
+        return (n, "")
+
+    def mul(self, a, b):
+        return self.op(unreal.MaterialExpressionMultiply, a, b)
+
+    def add(self, a, b):
+        return self.op(unreal.MaterialExpressionAdd, a, b)
+
+    def custom(self, index):
+        n = self.node(unreal.MaterialExpressionPerInstanceCustomData)
+        n.set_editor_property("data_index", index)
+        return (n, "")
+
+    def scalar(self, name, value):
+        n = self.node(unreal.MaterialExpressionScalarParameter)
+        n.set_editor_property("parameter_name", name)
+        n.set_editor_property("default_value", value)
+        return (n, "")
+
+    def vector(self, name, value):
+        n = self.node(unreal.MaterialExpressionVectorParameter)
+        n.set_editor_property("parameter_name", name)
+        n.set_editor_property("default_value", value)
+        return (n, "")
+
+
+def build_strut():
+    """THE LATTICE'S STRUTS (Walt, 2026-10-18: "glowing geodesic lattice. i like it"). The
+    shells are a Matrioshka brain now - struts between nodes - and thought runs down every strut.
+    Like M_GenesisThought, but along the strut's own length (SM_GenesisStrut's U runs 0 to 1 along
+    it), so one instance carries a whole comet: custom data 0 the distance at U = 0, 1 the
+    distance it adds by U = 1 (negative for a strut that runs the other way), 2 speed, 3 weight.
+    The rods glow a little of themselves (Base) - they are the city's structure now, not only
+    its wiring."""
+    path, mat = fresh_material("M_GenesisStrut")
+    mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    mat.set_editor_property("used_with_instanced_static_meshes", True)
+    g = Graph(mat)
+    uv = (g.node(unreal.MaterialExpressionTextureCoordinate), "")
+    u = g.node(unreal.MaterialExpressionComponentMask)
+    for c in "rgba":
+        u.set_editor_property(c, c == "r")
+    g.link(uv, u, "")
+    distance = g.add(g.custom(0), g.mul((u, ""), g.custom(1)))
+    travelled = g.mul(g.mul((g.node(unreal.MaterialExpressionTime), ""), g.scalar("Speed", 5200.0)), g.custom(2))
+    along = g.op(unreal.MaterialExpressionDivide, g.op(unreal.MaterialExpressionSubtract, distance, travelled),
+                 g.scalar("Spacing", 6500.0))
+    frac = g.node(unreal.MaterialExpressionFrac)
+    g.link(along, frac, "")
+    pulse = g.node(unreal.MaterialExpressionPower)
+    g.link((frac, ""), pulse, "Base")
+    pulse.set_editor_property("const_exponent", 8.0)
+    color = g.vector("Color", unreal.LinearColor(0.25, 0.85, 1.0, 1.0))
+    surge = g.scalar("Surge", 0.0)
+    intensity = g.scalar("Intensity", 12.0)
+    comet = g.mul(g.mul(g.vector("PulseColor", unreal.LinearColor(2.8, 3.8, 4.0, 1.0)), (pulse, "")),
+                  g.add(g.mul(surge, 3.0), 1.0))
+    line = g.add(g.mul(color, g.scalar("Base", 0.2)), comet)
+    lit = g.mul(g.mul(line, g.custom(3)), intensity)
+    total = g.add(lit, g.mul(g.mul(color, surge), g.mul(intensity, 0.3)))
+    mel.connect_material_property(total[0], "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    finish(path, mat)
+
+
+def build_node():
+    """THE LATTICE'S NODES: where struts meet, each a neuron, twinkling on its own clock (the
+    engine's per-instance random number gives each its own rate and phase - no work in C++).
+    Custom data 0 is its weight: hubs burn brighter. Color and Intensity are the ones the city's
+    answer breathes (AAICity::Tick), Surge brightens them further."""
+    path, mat = fresh_material("M_GenesisNode")
+    mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
+    mat.set_editor_property("used_with_instanced_static_meshes", True)
+    g = Graph(mat)
+    rand = (g.node(unreal.MaterialExpressionPerInstanceRandom), "")
+    rate = g.mul(g.scalar("Rate", 0.35), g.add(rand, 0.5))
+    phase = g.add(g.mul((g.node(unreal.MaterialExpressionTime), ""), rate), rand)
+    sine = g.node(unreal.MaterialExpressionSine)          # period 1: one twinkle per unit of phase
+    g.link(phase, sine, "")
+    twinkle = g.add(g.mul((sine, ""), 0.4), 0.6)
+    color = g.vector("Color", unreal.LinearColor(0.5, 0.9, 1.0, 1.0))
+    lit = g.mul(g.mul(g.mul(color, twinkle), g.custom(0)), g.scalar("Intensity", 12.0))
+    total = g.mul(lit, g.add(g.mul(g.scalar("Surge", 0.0), 1.5), 1.0))
+    mel.connect_material_property(total[0], "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
+    finish(path, mat)
+
+
+def import_genesis_mesh(name):
+    path = "%s/%s" % (FOLDER, name)
+    if eal.does_asset_exist(path):
+        raise Exists(path)
+    ui = unreal.FbxImportUI()
+    ui.set_editor_property("import_mesh", True)
+    ui.set_editor_property("import_as_skeletal", False)
+    ui.set_editor_property("mesh_type_to_import", unreal.FBXImportType.FBXIT_STATIC_MESH)
+    ui.set_editor_property("import_materials", False)
+    ui.set_editor_property("import_textures", False)
+    smd = ui.get_editor_property("static_mesh_import_data")
+    smd.set_editor_property("combine_meshes", True)
+    smd.set_editor_property("auto_generate_collision", False)
+    smd.set_editor_property("generate_lightmap_u_vs", False)   # unlit, never lightmapped
+    task = unreal.AssetImportTask()
+    task.set_editor_property("filename", os.path.join(unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_dir()),
+                                                      "SourceArt", "Genesis", name + ".fbx"))
+    task.set_editor_property("destination_path", FOLDER)
+    task.set_editor_property("destination_name", name)
+    task.set_editor_property("automated", True)
+    task.set_editor_property("save", True)
+    task.set_editor_property("options", ui)
+    tools.import_asset_tasks([task])
+    mesh = unreal.load_asset(path)
+    if not mesh:
+        raise RuntimeError("%s did not import" % name)
+    box = mesh.get_bounding_box()
+    say("mesh %s imported: %.0f x %.0f x %.0f cm" % (path, box.max.x - box.min.x, box.max.y - box.min.y,
+                                                     box.max.z - box.min.z))
+
+
+def import_strut():
+    import_genesis_mesh("SM_GenesisStrut")
+
+
+def import_node():
+    import_genesis_mesh("SM_GenesisNode")
+
+
 def make_level():
     if eal.does_asset_exist(LEVEL):
         say("level %s already exists - left as it is" % LEVEL)
@@ -630,7 +801,8 @@ try:
     # but this script must not run then.
     if unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor():
         raise RuntimeError("REFUSING: stop Play first - the editor's asset functions do not work during PIE.")
-    for build in (build_glow, build_glass, build_star, build_sun_disc, build_sun_live, build_thought):
+    for build in (build_glow, build_glass, build_star, build_sun_disc, build_sun_live, build_thought,
+                  build_strut, build_node, import_strut, import_node, build_sun_soft):
         try:
             build()
         except Exists as there:
