@@ -168,6 +168,7 @@ $checks = [ordered]@{
   "the live sun"             = "$cooked\Genesis\M_GenesisSunLive.uasset"
   "the sun's disc"           = "$cooked\Genesis\T_SunDisc.uasset"
   "a prominence"             = "$cooked\Genesis\T_SunLoopNE.uasset"
+  "the city's thought"        = "$cooked\Genesis\M_GenesisThought.uasset"
   "the run between racks"    = "$cooked\Mixamo\Basketball\Anim_RunInPlace_MH.uasset"
   # --- THE CATHEDRAL CABINET (2026-10-16): the Blender-built Celestial Fortune machine on the
   # apse ASlotCabinet, cooked because L_Cathedral references it. Its mesh and its lit marquee.
