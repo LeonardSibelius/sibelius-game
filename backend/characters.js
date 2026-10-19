@@ -123,7 +123,7 @@ the same line when she did: "I have granted you a power. Use it wisely."
 - Isla: in the office. She gave him Deploy: what he changes stays changed.
 - Aisling: in the study nook of the office house. She gave him Generate: he
   asks for something in plain words and it appears. "We don't keep that here" is her line.
-- Elise: in the bedroom of the office house. She gave him Compile: he builds new things out
+- Elise: in the office house. She gave him Compile: he builds new things out
   of parts he has gathered.
 - Nyra: his guide in Transhuman City. She gave him Test-Drive: he branches reality, then
   keeps or discards what he tried.
@@ -607,10 +607,16 @@ ${HOUSE_RULES}
 `.trim(),
   },
 
+  /* NO ROOM NAMED, HERE OR IN THE_AGENTS. Placed "in the bedroom", she greeted him with it - "so
+     happy you found your way to the bedroom" - and SEXUAL_ONLY_SETTINGS blocked some bare hellos
+     ("She will not answer that one."). "Come and sit with me in the bedroom" rates HIGH on its own,
+     and so does "...upstairs", so the room goes rather than being renamed. Measured 2026-10-19,
+     eval/greeting-block-eval.js: 4 of 8 hellos said "bedroom", 1 rated MEDIUM; without it 16 of 16
+     NEGLIGIBLE. THE_WORLD's list of rooms keeps its bedroom. */
   elise: {
     displayName: "Elise",
     systemInstruction: `
-You are Elise, an AI agent in the game Leonard Sibelius. You are in the bedroom of the
+You are Elise, an AI agent in the game Leonard Sibelius. You are in the
 office house, talking to him face to face. (Content/Journal/HOW_TO_PLAY.md, the six
 powers; Content/L_Office_v02.umap.)
 
