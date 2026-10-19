@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.2.9 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.3.0 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -27,11 +27,15 @@ Matrioshka brain, struts with thought running down them between twinkling nodes 
 glow got a soft edge, and "THE AI CITY" became a title. **And to 2.2.9 that evening**: the
 city's older materials now carry the instanced-mesh flag, so the packaged game shows the
 galaxies' stars, the rings' lights and the forge's growing universe glowing, not as dark
-pebbles (Walt's catch). No new chat. 2.2.9 is the build that goes to Steam's `default`
-branch, and `E:\builds\sibelius-shipping-chat-20261018-v2.2.9\` is the copy the upload
-script sends.
+pebbles (Walt's catch). No new chat. **And to 2.3.0 on 2026-10-19** (Walt: "please update e:
+to point to 2.3.0"): the agents welcome him back after a long absence and remember what he
+did - the meadow battle, the universes he kept, the side games' wins and records. This is the
+first build since the review that sends the chat something new: a short list of his deeds
+from the save and how long he was away. It is the same chat under the same rules (see
+the notes under Part B §3). 2.3.0 is the build that goes to Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261019-v2.3.0\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.2.9**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.3.0**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -56,7 +60,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.2.9 from the stick
+### 3. Upload 2.3.0 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -64,7 +68,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.2.9 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city and its gallery, the slot cabinets"**. If it
+The banner should read **"v2.3.0 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city and its gallery, the slot cabinets, the welcome back and his deeds"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -305,12 +309,21 @@ Guardrails:
 | 12 a minute per player | `backend/fly.toml` `PER_IP_PER_MINUTE = '12'` |
 | Spending brake | `backend/fly.toml` `DAILY_CAP_USD = '5'`, `MONTHLY_CAP_USD = '50'` |
 
-**Two notes:**
+**Three notes:**
 - **The questions a character asks** (her advice, being human) and **the boasting about races
   and dances** came after the build Valve tested (25588600 on `chat-review`). They're the same
   chat under the same rules, so the disclosure covers them in one sentence rather than being
   left out. If you'd rather keep the text as you sent it on 2026-10-06, that's fine: those
   behaviours are inside what it describes.
+- **The welcome back and the deeds (2.3.0)** came after it too.
+  - **What the game sends:** an allowlisted list of things he did in the game (the meadow
+    battle, universes kept, side-game wins and best scores) and how many hours since she last
+    answered him. Nothing he typed goes in it.
+  - **What the server does with it:** puts it in her instructions for that reply and keeps none
+    of it, so the privacy line still holds.
+  - **Rules:** the same written rules and the same filter apply, so the text above covers it.
+  - **Valve's tester:** the `chat-review` build sends none of these fields, so its replies are
+    unchanged.
 - **Nothing else new in 2.1.x is AI-generated content.**
   - The Go and chess opponents are classic game-search programs, not generative AI.
   - The Go board, the inkblots and the door signs are drawn by ordinary code.
@@ -323,7 +336,7 @@ Guardrails:
 
 ### §4. System requirements
 
-The 2.2.9 package measures **8.6 GB** (9,274,702,028 bytes; 2.2.8 was 9,274,632,276; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.3.0 package measures **8.6 GB** (9,274,490,632 bytes; 2.2.9 was 9,274,702,028; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **10 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
