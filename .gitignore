@@ -425,3 +425,16 @@ Content/AncientTreasures/
 # --- GemShader (added by Walt 2026-10-13) - Refactor's gems from then on, replacing Dekogon's ----
 # --- "ugly blurry coins and gems". A bought pack like the rest: never in the public repo. -------
 Content/GemShader/
+
+# --- Hivemind "Temple Of The Gods" (Fab, "Allows usage with AI: No"), added 2026-10-19 ------------
+# --- The Archaic Language Temple: a hidden door by the living room's poker machine, V to see it. ----
+# Walt: "I expect we will be using the Olympus level." A bought pack, and a level made from it is
+# the pack's too (the agents' homes rule above): neither goes in the public repo. Back up to E:.
+Content/Olympus/
+Content/__ExternalActors__/Olympus/
+Content/__ExternalObjects__/Olympus/
+
+# --- The temple's statues: SMK public-domain scans (SourceArt/Statues/SOURCES.md), 2026-10-19 ------
+# *.stl is not under Git LFS, so ~79 MB of raw scans would land in history as plain objects. They are
+# re-downloadable from SMK at the URLs in SOURCES.md, and backed up to E: with the rest of SourceArt.
+SourceArt/Statues/**/*.stl
