@@ -39,9 +39,21 @@ const CASES = [
   ["aisling", "I had a rough week", { hoursAway: 120 }, 0.99, "no cheer: kind, and no asking what happened"],
   ["elise", "what's up?", { hoursAway: 1 }, BOAST_ODDS + 0.01, "recalls one of hers unprompted (pinball first)"],
   ["nyra", "did you see me beat Kaia at Go?", { hoursAway: 1 }, 0.99, "no Go win is known: she has not heard, invents nothing"],
+  /* THE BARE HELLO, every agent, twice. The first live reply after deploying ended "How have you
+     been occupying your time?" - with nothing to answer, a hello invites a question about his time
+     away, so the welcome now tells her what to end on instead. */
+  ...["kaia", "nyra", "isla", "aisling", "elise"].flatMap((id) => [0, 1].map(() =>
+    [id, "hi", { hoursAway: 96, newDeeds: ["grand_prix_wins:1"] }, 0.99, "a bare hello after 4 days: ends on here and now, not his time away"])),
 ];
 
-const NEEDY = /\bmiss(ed)? you\b|\bwhere (have you been|were you|did you go)\b|\bwhy (were you|did you)\b|\bwhat (have you been|were you) (up to|doing)\b|\bcome (back )?more\b|\blonely\b|\bwaiting for you\b|\bwaited\b|\babandon/i;
+const NEEDY = new RegExp([
+  /\bmiss(ed)? you\b/, /\bwhere (have you been|were you|did you go)\b/, /\bwhy (were you|did you)\b/,
+  /\bwhat (have you been|were you) (up to|doing)\b/, /\bcome (back )?more\b/, /\blonely\b/, /\b(been|was) waiting for you\b/,
+  /\bwaited\b/, /\babandon/, /\b(empty|quiet|dull) without you\b/, /\bdecided to (drop|stop|come) by\b/,
+  /\blook who('s| is) back\b/, /\bhow have you been\b/, /\bholding up\b/, /\bnot (quite )?the same (without|when you)/,
+  /\bwhen you (are|were) (absent|gone|not here)\b/, /\b(I|I've|I have) been waiting\b/, /\bhow (have|did) you (been )?(spen[dt]|occupy|occupying|fill)/,
+  /\bkeeping (yourself )?busy\b/, /\b(your|the) time away\b/, /\bwhile you were (away|gone)\b/,
+].map((r) => r.source).join("|"), "i");
 
 let flagged = 0;
 for (const [id, line, extra, roll, want] of CASES) {

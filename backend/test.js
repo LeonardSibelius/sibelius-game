@@ -1011,21 +1011,22 @@ await new Promise((resolve) => app.server.close(resolve));
 
   // The welcome: glad, never needy, never about where he was.
   const back = welcomeLine("kaia", ctx({ deeds, hoursAway: 96 }));
-  check(/HE IS BACK - THIS REPLY ONLY\. You last talked with him 4 days ago/.test(back) && /glad to see him/.test(back)
-      && /do not say you missed him, waited for him or were lonely/.test(back)
-      && /do not ask\s+where he has been, why he was away or what he was doing/.test(back)
-      && /his life away from here is his own/.test(back) && /never hint that he should come more often/.test(back)
+  check(/HE HAS JUST WALKED IN - THIS REPLY ONLY\. Greet him gladly/.test(back)
+      && /if he only said hello, invite him to something you could do\s+right now/.test(back) && /picking one of your dances for\s+you to perform/.test(back)
+      && /Ask him nothing about himself, his day or his time, and never say you were waiting for him/.test(back)
+      && !/days ago|hours ago|away/.test(back)
       && /leave the cheer out/.test(back) && !/word has reached you/.test(back),
-    "memory: after days away she is glad he is back - never reproachful, needy or curious about where he was");
+    "memory: after days away she greets him and invites him to something - never told the gap, never asking about it");
   check(welcomeLine("kaia", ctx({ deeds, hoursAway: 2 })) === "" && welcomeLine("kaia", ctx({ deeds })) === "",
     "memory: no welcome after a short break, or when the game does not know when they last talked");
 
   // The news: what he did since she last answered him, if it is news.
   const news = welcomeLine("elise", ctx({ deeds, hoursAway: 2, newDeeds: ["chess_wins:3"] }));
-  check(/SINCE YOU LAST TALKED WITH HIM - THIS REPLY ONLY, word has reached you that he beat the ghost at chess in the Transhuman Chess Park 3 times/.test(news)
-      && /If it fits, you may\s+mention one/.test(news) && !/HE IS BACK/.test(news),
+  check(/NEWS - THIS REPLY ONLY\. Word has reached you that he beat the ghost at chess in the Transhuman Chess Park 3 times/.test(news)
+      && /If it fits, you may\s+mention one/.test(news) && /Ask him nothing about his day or his time/.test(news)
+      && !/WALKED IN/.test(news),
     "memory: something new since they last talked is news, even after a short break");
-  check(/Since then, word has reached you that he won the Grand Prix once/.test(welcomeLine("kaia", ctx({ deeds, hoursAway: 96, newDeeds: ["grand_prix_wins:1"] })))
+  check(/And word has reached you that he won the Grand Prix once/.test(welcomeLine("kaia", ctx({ deeds, hoursAway: 96, newDeeds: ["grand_prix_wins:1"] })))
       && welcomeLine("kaia", ctx({ deeds, hoursAway: 2, newDeeds: ["grand_prix_races:4", "three_point_contests:2"] })) === "",
     "memory: the news follows the welcome; racing again is not news, winning is");
   check((welcomeLine("elise", ctx({ hoursAway: 2, newDeeds: ["battle_won", "chess_wins:1", "go_wins:1", "pool_clears:1", "pinball_best:900"] }))

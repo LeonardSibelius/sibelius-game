@@ -130,19 +130,28 @@ export function welcomeLine(characterId, storyContext) {
   const parts = [];
   if (when) {
     parts.push(
-      `HE IS BACK - THIS REPLY ONLY. You last talked with him ${when}. Open your reply by greeting ` +
-        "him back in a sentence, in your own voice: glad to see him, warm and light. Never reproachful " +
-        "and never needy: do not say you missed him, waited for him or were lonely, do not ask where " +
-        "he has been, why he was away or what he was doing - his life away from here is his own - and " +
-        "never hint that he should come more often. Then answer what he said.",
+      /* A GREETING AND AN INVITATION - NOT THE GAP. The first live reply after deploying ended
+         "How have you been occupying your time?". With nothing to answer, a bare hello gets
+         small talk about him and his absence - "while I waited for you", "how have you been
+         holding up?" - and these agents do it with no welcome at all (3 of 20 bare hellos).
+         Forbidding it item by item made it worse (7 of 40); telling her the gap ("4 days ago")
+         invited it. What works is giving the hello somewhere to go: something to do together,
+         now (0 of 40, and it answers a real question first). The absence decides WHETHER she
+         greets him; she is never told how long it was. Measured 2026-10-19 on 3.1-flash-lite. */
+      "HE HAS JUST WALKED IN - THIS REPLY ONLY. Greet him gladly in one sentence, in your own voice. " +
+        "Then answer what he said; if he only said hello, invite him to something you could do " +
+        "right now - a race in the Grand Prix, a game downstairs, or picking one of your dances for " +
+        "you to perform - and stop there. " +
+        "Ask him nothing about himself, his day or his time, and never say you were waiting for him.",
     );
   }
   if (news.length) {
     parts.push(
-      `${when ? "Since then" : "SINCE YOU LAST TALKED WITH HIM - THIS REPLY ONLY"}, word has reached you that he ` +
+      `${when ? "And word has reached you" : "NEWS - THIS REPLY ONLY. Word has reached you"} that he ` +
         `${news.map((deed) => deed.text).join("; and that he ")}. ` +
         `${when ? "You may" : "If it fits, you may"} mention one of these, gladly, in a few words: not all ` +
-        "of them, and not as a report.",
+        "of them, and not as a report." +
+        (when ? "" : " Ask him nothing about his day or his time."),
     );
   }
   parts.push("If he is upset or talking about something serious, leave the cheer out and simply answer him kindly.");
