@@ -3,6 +3,7 @@
 #include "GoTable.h"
 
 #include "CodeVisionComponent.h"
+#include "ProgressionSubsystem.h"   // his wins, for the agents to remember (ChatDeeds.h)
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "TableSounds.h"
@@ -496,6 +497,14 @@ void AGoTable::AfterMove(int32 CapturedBefore)
 		UE_LOG(LogSibeliusGame, Display, TEXT("[Go] over: winner %s by %.1f (outcome %d)  %s"),
 			R.Winner == EGoColor::Black ? TEXT("Black") : R.Winner == EGoColor::White ? TEXT("White") : TEXT("nobody"),
 			R.Margin, static_cast<int32>(R.Outcome), UTF8_TO_TCHAR(Game.MoveListText().c_str()));
+		// A win is kept, so the agents can still remember it (ChatDeeds.h).
+		if (R.Winner == PlayerColor)
+		{
+			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+			{
+				Progression->BumpStat(SibeliusStats::GoWins);
+			}
+		}
 		return;
 	}
 	if (IsPlayersTurn())

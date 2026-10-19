@@ -16,6 +16,7 @@ import { DILEMMAS, dilemmaEvent, dilemmaLine, adviceFor, adviceLine, extractAdvi
 import { screenText } from "./distress.js";
 import { hasFeature, curiosityLine, screenContextFor } from "./curiosity.js";
 import { boastLine, BOAST_ODDS } from "./boasts.js";
+import { DEEDS, CLOSEST, MEMORY_ODDS, MAX_HOURS_AWAY, deedsFrom, awayPhrase, welcomeLine, memoryLine } from "./memory.js";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -944,6 +945,95 @@ await new Promise((resolve) => app.server.close(resolve));
   check(/Refactor - your own power/.test(boastLine("kaia", on, 0.99)) && /Generate - your own power/.test(boastLine("aisling", on, 0.99))
       && /not about results/.test(boastLine("nyra", on, 0.99)),
     "boasts: each wins her own way, and none invents his race results");
+  check(/you do not know how his races went unless he tells you/.test(boastLine("kaia", on, 0.99))
+      && /only from what you remember him doing/.test(boastLine("kaia", { ...on, facts: { deeds: ["grand_prix_wins:1"] } }, 0.99)),
+    "boasts: she knows his race results only in a build that sends his deeds (memory.js)");
+}
+
+/* --- memory (memory.js): what she remembers him doing, and a welcome when he comes back. New
+   builds only. Walt, 2026-10-19: "go ahead with 1 and 2". */
+{
+  const plain = { locationId: "L_Office_v02", features: ["human_questions"] };
+  const ctx = (facts, extra = {}) => ({ ...plain, facts, ...extra });
+  const deeds = ["battle_won", "universes_kept:2", "chess_wins:3", "pinball_best:48200", "bowling_best:187", "three_point_wins:1"];
+
+  // The game's ids are the server's (ChatDeeds.cpp): one sent that is not here would be dropped.
+  const here = dirname(fileURLToPath(import.meta.url));
+  const cpp = readFileSync(join(here, "..", "Source", "SibeliusGame", "ChatDeeds.cpp"), "utf8");
+  const sent = [...cpp.matchAll(/(?:Flag|Count)\([^;]*TEXT\("([a-z_]+)"\)\);/g)].map((m) => m[1]);
+  check(sent.length === Object.keys(DEEDS).length && sent.every((id) => Object.hasOwn(DEEDS, id)),
+    "memory: ChatDeeds.cpp sends exactly the deeds the server knows");
+  check(Object.values(CLOSEST).flat().every((id) => Object.hasOwn(DEEDS, id)) && Object.keys(CLOSEST).length === 5,
+    "memory: each of the five cares most about deeds that exist");
+
+  // The allowlist: unknown, malformed, out of range or repeated is dropped; never the request.
+  const read = deedsFrom(["battle_won", "nope", "chess_wins:0", "chess_wins:x", "bowling_best:301", "battle_won:2",
+    "universes_kept:4", 7, "chess_wins:3", "chess_wins:4", "pinball_best:-5"], "kaia");
+  check(read.map((d) => `${d.id}:${d.n}`).join() === "battle_won:null,chess_wins:3",
+    "memory: only allowlisted deeds with a number in range are read, each once");
+  check(deedsFrom("battle_won", "kaia").length === 0 && deedsFrom(Array(100).fill("battle_won"), "kaia").length === 1,
+    "memory: not a list is nothing; a long list is cut, not refused");
+
+  // Valve's build sends none of it, and gets nothing new.
+  check(knownCharacterIds().every((id) => memoryLine(id, plain, BOAST_ODDS) === "" && welcomeLine(id, plain) === "")
+      && memoryLine("mrs_hall", ctx({ deeds, hoursAway: 96 }), BOAST_ODDS) === "" && welcomeLine("mrs_hall", ctx({ hoursAway: 96 })) === "",
+    "memory: a build that sends no deeds - Valve's - gets nothing new, and no one outside the five does");
+
+  // The deeds: true, hers first, recalled as a friend, never recited or invented.
+  const elise = memoryLine("elise", ctx({ deeds }), 0.99);
+  check(/WHAT YOU REMEMBER HIM DOING/.test(elise) && /never\s+recite the list/.test(elise) && /Never invent a score, a win or an event/.test(elise)
+      && /- He scored 48,200 in his best game of pinball\./.test(elise) && /- He fought the Architects' army in the meadow, and won\./.test(elise)
+      && elise.indexOf("pinball") < elise.indexOf("Architects") && !/THIS REPLY/.test(elise),
+    "memory: every deed in her list, her own first, never recited or invented");
+  check(/beat you in the three-point contest once/.test(memoryLine("nyra", ctx({ deeds }), 0.99))
+      && /beat Nyra in the three-point contest once/.test(memoryLine("kaia", ctx({ deeds }), 0.99)),
+    "memory: Nyra hears that he beat her; the others hear he beat Nyra");
+
+  // Unprompted, on boasts.js's roll and never with a boast.
+  check(!/THIS REPLY/.test(memoryLine("elise", ctx({ deeds }), BOAST_ODDS - 0.01)) && /THIS REPLY/.test(memoryLine("elise", ctx({ deeds }), BOAST_ODDS))
+      && /THIS REPLY/.test(memoryLine("elise", ctx({ deeds }), BOAST_ODDS + MEMORY_ODDS - 0.001))
+      && !/THIS REPLY/.test(memoryLine("elise", ctx({ deeds }), BOAST_ODDS + MEMORY_ODDS)),
+    "memory: one reply in MEMORY_ODDS recalls a deed unprompted, never the same reply as a boast");
+  check([0, 0.3, 0.6, 0.99].every((f) => /THIS REPLY: after answering what he said, recall in a sentence that he (scored 48,200|bowled 187|beat the ghost at chess)/
+      .test(memoryLine("elise", ctx({ deeds }), BOAST_ODDS + f * MEMORY_ODDS))),
+    "memory: unprompted, she recalls one of her own");
+  check(!/THIS REPLY/.test(memoryLine("isla", ctx({ deeds }, { event: "dilemma_isla_versions" }), BOAST_ODDS))
+      && !/THIS REPLY/.test(memoryLine("isla", ctx({ deeds, hoursAway: 96 }), BOAST_ODDS)),
+    "memory: never unprompted while a story event or the welcome has the reply");
+
+  // How long, in words.
+  check(awayPhrase(7) === null && awayPhrase(8) === "some hours ago" && awayPhrase(30) === "about a day ago"
+      && awayPhrase(96) === "4 days ago" && awayPhrase(24 * 21) === "about 3 weeks ago" && awayPhrase(24 * 90) === "about 3 months ago"
+      && awayPhrase(24 * 400) === "more than a year ago",
+    "memory: the absence in words, and nothing under eight hours");
+  check([-1, 1.5, "48", null, undefined, MAX_HOURS_AWAY + 1].every((h) => awayPhrase(h) === null),
+    "memory: an absence that is not a whole number the game sends is none");
+
+  // The welcome: glad, never needy, never about where he was.
+  const back = welcomeLine("kaia", ctx({ deeds, hoursAway: 96 }));
+  check(/HE IS BACK - THIS REPLY ONLY\. You last talked with him 4 days ago/.test(back) && /glad to see him/.test(back)
+      && /do not say you missed him, waited for him or were lonely/.test(back)
+      && /do not ask\s+where he has been, why he was away or what he was doing/.test(back)
+      && /his life away from here is his own/.test(back) && /never hint that he should come more often/.test(back)
+      && /leave the cheer out/.test(back) && !/word has reached you/.test(back),
+    "memory: after days away she is glad he is back - never reproachful, needy or curious about where he was");
+  check(welcomeLine("kaia", ctx({ deeds, hoursAway: 2 })) === "" && welcomeLine("kaia", ctx({ deeds })) === "",
+    "memory: no welcome after a short break, or when the game does not know when they last talked");
+
+  // The news: what he did since she last answered him, if it is news.
+  const news = welcomeLine("elise", ctx({ deeds, hoursAway: 2, newDeeds: ["chess_wins:3"] }));
+  check(/SINCE YOU LAST TALKED WITH HIM - THIS REPLY ONLY, word has reached you that he beat the ghost at chess in the Transhuman Chess Park 3 times/.test(news)
+      && /If it fits, you may\s+mention one/.test(news) && !/HE IS BACK/.test(news),
+    "memory: something new since they last talked is news, even after a short break");
+  check(/Since then, word has reached you that he won the Grand Prix once/.test(welcomeLine("kaia", ctx({ deeds, hoursAway: 96, newDeeds: ["grand_prix_wins:1"] })))
+      && welcomeLine("kaia", ctx({ deeds, hoursAway: 2, newDeeds: ["grand_prix_races:4", "three_point_contests:2"] })) === "",
+    "memory: the news follows the welcome; racing again is not news, winning is");
+  check((welcomeLine("elise", ctx({ hoursAway: 2, newDeeds: ["battle_won", "chess_wins:1", "go_wins:1", "pool_clears:1", "pinball_best:900"] }))
+      .match(/and that he/g) ?? []).length === 2,
+    "memory: at most three pieces of news in one welcome");
+  check(welcomeLine("isla", ctx({ deeds, hoursAway: 96, newDeeds: ["battle_won"] }, { event: "dilemma_isla_versions" })) === ""
+      && welcomeLine("kaia", ctx({ deeds, hoursAway: 96 }, { event: "egg_pigeon_ledger" })) === "",
+    "memory: no welcome while a story event has the reply");
 }
 
 console.log(`=== ${failures} failure(s) ===`);

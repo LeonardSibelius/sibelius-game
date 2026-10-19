@@ -2,6 +2,7 @@
 
 #include "BowlingLane.h"
 
+#include "ProgressionSubsystem.h"   // his best game, for the agents to remember (ChatDeeds.h)
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "TableSounds.h"
@@ -633,6 +634,11 @@ void ABowlingLane::HandleEvents()
 			break;
 		case EBowlingEvent::GameOver:
 			BestScore = FMath::Max(BestScore, Event.Index);
+			// The session's best is the lane's; the lifetime best is kept for the agents (ChatDeeds.h).
+			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+			{
+				Progression->RaiseStat(SibeliusStats::BowlingBest, Event.Index);
+			}
 			TableSounds::Play(this, ETableSound::Chime1000, 0.7f);
 			UE_LOG(LogSibeliusGame, Display, TEXT("[Bowling] game over: %d (best %d)."), Event.Index, BestScore);
 			break;

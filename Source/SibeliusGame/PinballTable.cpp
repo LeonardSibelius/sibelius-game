@@ -2,6 +2,7 @@
 
 #include "PinballTable.h"
 
+#include "ProgressionSubsystem.h"   // his best game, for the agents to remember (ChatDeeds.h)
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 
@@ -529,6 +530,11 @@ void APinballTable::HandleEvents()
 			break;
 		case EPinballEvent::GameOver:
 			HighScore = FMath::Max(HighScore, Event.Points);
+			// The session's best is the table's; the lifetime best is kept for the agents (ChatDeeds.h).
+			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+			{
+				Progression->RaiseStat(SibeliusStats::PinballBest, Event.Points);
+			}
 			QueueSound(ETableSound::Chime1000, 0.8f, 0.6);
 			UE_LOG(LogSibeliusGame, Display, TEXT("[Pinball] game over: %d (high %d)."), Event.Points, HighScore);
 			break;

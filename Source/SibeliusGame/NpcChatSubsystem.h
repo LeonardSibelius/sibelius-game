@@ -69,6 +69,14 @@ struct FNpcStoryFacts
 	FString Objective;             // the HUD's gold objective line, or empty
 	TArray<FString> Destinations;  // where a [Go] button may take him now (OpenTravelDestinations)
 	TArray<FString> Advice;        // what he advised each agent, "isla_versions:keep" (ChatDilemmas)
+
+	/* WHAT SHE REMEMBERS HIM DOING (ChatDeeds.h). One-to-one chat only: the council is five at
+	   once and keeps no memory between sessions, so CurrentStoryFacts leaves these empty and
+	   SendOverHttp fills them for the one agent being spoken to. Empty and -1 send nothing,
+	   which is what the build on Valve's chat-review branch sends. */
+	TArray<FString> Deeds;         // everything he has done, "chess_wins:3"
+	TArray<FString> NewDeeds;      // the ones she has not heard of since she last answered him
+	int32 HoursAway = -1;          // since she last answered him; -1 unknown (never, or a pre-v2 save)
 };
 
 /**
@@ -198,6 +206,24 @@ public:
 
 	/** Append one line and drop the oldest past the bound. Marks the store dirty. */
 	void RecordTurn(FName ChatId, bool bFromPlayer, const FString& Text);
+
+	/** That agent's whole remembered record - turns, when she last answered, what she knew - or null. */
+	const FNpcChatHistory* FindHistory(FName ChatId) const { return Histories.Find(ChatId); }
+
+	/**
+	 * She has answered him: note when, and the deeds she now knows of (ChatDeeds.h). Marks the
+	 * store dirty. ONLY AN ANSWER COUNTS - a failure, a timeout or a cancel leaves her where
+	 * she was, so the next try still says welcome back and still has the news.
+	 */
+	void NoteAnswered(FName ChatId, const TArray<FString>& DeedsNow, const FDateTime& NowUtc);
+
+	/**
+	 * One agent's memory facts: every deed, the ones she has not heard of, and the hours since
+	 * she last answered him. A history she has never answered - or one saved before v2 - gets
+	 * the deeds alone: no absence to greet, and nothing is news. Pure and static, for the gate.
+	 */
+	static void FillMemoryFacts(FNpcStoryFacts& Facts, const FNpcChatHistory* History,
+		const TArray<FString>& DeedsNow, const FDateTime& NowUtc);
 
 	/** Write to disk if anything changed. Cheap and idempotent; safe to call on close. */
 	void SaveNow();
@@ -367,6 +393,10 @@ private:
 
 	/** Set when a reply arrives with his advice; taken by the panel the same way. */
 	FString LastAdvice;
+
+	/** The deeds the request in flight told her of, noted as known once she answers (NoteAnswered). */
+	TArray<FString> PendingDeeds;
+	bool bNoteOnAnswer = false;
 
 	FTimerHandle MockTimer;
 

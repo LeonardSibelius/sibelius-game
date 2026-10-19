@@ -19,6 +19,7 @@ import { factsLine, extractTravel } from "./facts.js";
 import { dilemmaLine, adviceLine, extractAdvice, screenContext } from "./dilemmas.js";
 import { curiosityLine, screenContextFor } from "./curiosity.js";
 import { boastLine } from "./boasts.js";
+import { memoryLine, welcomeLine } from "./memory.js";
 
 /**
  * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
@@ -251,19 +252,27 @@ export function createApp(options = {}) {
     // (characters.js, awayLine) - the conversation sent along may be from her home.
     // Her dilemma (dilemmas.js): what he advised her, once he has; while her question is open,
     // the instruction to listen and record it - the event slot, last, like an Easter egg's.
+    // What she remembers him doing (memory.js) sits with the other facts; the welcome back is
+    // about this reply only, so it goes just before the event slot. One roll for the boast and
+    // the unprompted memory, so a reply is never told to do both.
     const home = homeLine(body.characterId, body.storyContext?.locationId);
+    const roll = Math.random();
     const systemInstruction = [
       systemInstructionFor(character, body.characterId, config.chatStyle),
       locationLine(body.storyContext?.locationId),
       factsLine(body.storyContext?.facts, { objective: !home, leavingOnly: !!home }),
       adviceLine(body.characterId, body.storyContext?.facts),
+      // New builds only (memory.js): his deeds, which outlast the conversation she keeps.
+      memoryLine(body.characterId, body.storyContext, roll),
       // New builds only (curiosity.js): she may ask what being human is like, never about his life.
       curiosityLine(body.characterId, body.storyContext),
       // New builds only (boasts.js): the Grand Prix, her pride in her racing and dancing, and now
       // and then a boast unprompted.
-      boastLine(body.characterId, body.storyContext),
+      boastLine(body.characterId, body.storyContext, roll),
       home,
       awayLine(body.characterId, body.storyContext?.locationId),
+      // New builds only (memory.js): glad he is back, and what she has heard he did since.
+      welcomeLine(body.characterId, body.storyContext),
       eventLine(body.storyContext?.event, { where: "chat", characterId: body.characterId }),
       dilemmaLine(body.storyContext?.event, body.characterId),
     ].filter(Boolean).join("\n\n");

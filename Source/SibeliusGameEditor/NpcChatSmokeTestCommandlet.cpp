@@ -12,6 +12,7 @@
 #include "PowerGrant.h"
 #include "ChatEasterEggs.h"
 #include "ChatDilemmas.h"
+#include "ChatDeeds.h"
 #include "ProgressionTypes.h"   // FProgressionState, for the eggs on a throwaway state
 
 #include "Engine/Engine.h"
@@ -450,6 +451,14 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 		R.Check(!Bounded.ContainsByPredicate([](const FNpcChatTurn& T){ return T.Text == TEXT("first thing"); }),
 			TEXT("memory: the oldest turn really is gone"));
 
+		// What she knew of him, for the welcome back (ChatDeeds.h): noted when she answers, and saved.
+		const FDateTime LastAnswered(2026, 10, 15, 9, 30, 0);
+		const TArray<FString> KnownDeeds = { TEXT("battle_won"), TEXT("chess_wins:2") };
+		Chat->NoteAnswered(Nyra, KnownDeeds, LastAnswered);
+		R.Check(Chat->FindHistory(Nyra) && Chat->FindHistory(Nyra)->LastAnsweredUtc == LastAnswered
+				&& Chat->FindHistory(Nyra)->Turns.Num() == 1,
+			TEXT("memory: an answer notes when, and leaves the turns alone"));
+
 		// --- 9) The real serialization path, on a sandbox slot.
 		{
 			const FString Sandbox = TEXT("NpcChatSmokeSandbox");
@@ -472,6 +481,15 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 					TEXT("save: a second agent's history survives with it"));
 				R.Check(Chat->GetHistory(Nyra)[0].Text == TEXT("a different agent"),
 					TEXT("save: the text itself survives (nested struct in a map recurses)"));
+				const FNpcChatHistory* NyraBack = Chat->FindHistory(Nyra);
+				R.Check(NyraBack && NyraBack->LastAnsweredUtc == LastAnswered && NyraBack->DeedsKnown == KnownDeeds,
+					TEXT("save: when she last answered him, and what she knew, survive the round trip"));
+
+				/* v1, from before 2026-10-19, has neither: it is still read, with both unknown, so
+				   nobody's conversations are forgotten by the update. */
+				ReadBack->SaveVersion = 1;
+				R.Check(UNpcChatSaveGame::CurrentSaveVersion == 2 && Chat->ApplySaveObject(ReadBack),
+					TEXT("save: a v1 save is still read"));
 
 				/* A VERSION THIS BUILD CANNOT READ IS REFUSED WHOLE. Half a memory is
 				   worse than none: she would answer from a conversation she only
@@ -897,6 +915,56 @@ int32 UNpcChatSmokeTestCommandlet::Main(const FString& Params)
 			R.Check(!UNpcChatSubsystem::BuildRequestJson(TEXT("facts-request-3"), TEXT("kaia"), TEXT("hi"),
 					TEXT("L_Office_v02"), {}, FString(), &NoObjective).Contains(TEXT("\"objective\"")),
 				TEXT("facts: no objective on screen, no objective field"));
+
+			/* What she remembers (ChatDeeds.h, backend/memory.js): his deeds from the save, what is
+			   new to her, and how long since she last answered him. */
+			{
+				FProgressionState Done;
+				Done.Claim(TEXT("Battle.Won"));   // ABattleArrival::BattleWonGrant, as the save spells it
+				Done.BumpStat(SibeliusStats::ChessWins, 3);
+				Done.RaiseStat(SibeliusStats::PinballBest, 48200);
+				Done.BumpStat(SibeliusStats::GrandPrixRaces);
+				R.Check(ChatDeeds::FromState(Done) == TArray<FString>{ TEXT("battle_won"), TEXT("grand_prix_races:1"),
+						TEXT("chess_wins:3"), TEXT("pinball_best:48200") }
+						&& ChatDeeds::FromState(FProgressionState()).Num() == 0,
+					TEXT("deeds: read from the save in a fixed order, and nothing done is nothing sent"));
+
+				const TArray<FString> Now = { TEXT("battle_won"), TEXT("chess_wins:3") };
+				R.Check(ChatDeeds::NewSince(Now, { TEXT("battle_won"), TEXT("chess_wins:2") }) == TArray<FString>{ TEXT("chess_wins:3") }
+						&& ChatDeeds::NewSince(Now, Now).Num() == 0,
+					TEXT("deeds: a new deed, or a count that grew, is news; the rest is not"));
+
+				const FDateTime Then(2026, 10, 15, 9, 30, 0);
+				R.Check(ChatDeeds::HoursBetween(Then, Then + FTimespan::FromHours(96)) == 96
+						&& ChatDeeds::HoursBetween(Then, Then - FTimespan::FromHours(5)) == 0
+						&& ChatDeeds::HoursBetween(FDateTime(1, 1, 1), FDateTime(9999, 1, 1)) == ChatDeeds::MaxHoursAway,
+					TEXT("deeds: hours away are whole, never negative, and capped"));
+
+				FNpcStoryFacts Remembered = Facts;
+				UNpcChatSubsystem::FillMemoryFacts(Remembered, nullptr, Now, Then);
+				const bool bStranger = Remembered.Deeds == Now && Remembered.NewDeeds.Num() == 0 && Remembered.HoursAway == -1;
+				FNpcChatHistory Unanswered;   // a v1 history: turns, no answered time
+				UNpcChatSubsystem::FillMemoryFacts(Remembered, &Unanswered, Now, Then);
+				const bool bOldSave = Remembered.NewDeeds.Num() == 0 && Remembered.HoursAway == -1;
+				FNpcChatHistory Known;
+				Known.LastAnsweredUtc = Then;
+				Known.DeedsKnown = { TEXT("battle_won"), TEXT("chess_wins:2") };
+				UNpcChatSubsystem::FillMemoryFacts(Remembered, &Known, Now, Then + FTimespan::FromHours(96));
+				R.Check(bStranger && bOldSave && Remembered.HoursAway == 96 && Remembered.NewDeeds == TArray<FString>{ TEXT("chess_wins:3") },
+					TEXT("deeds: no absence or news without a time she answered him; with one, both"));
+
+				const FString MemoryBody = UNpcChatSubsystem::BuildRequestJson(TEXT("memory-request-1"), TEXT("elise"), TEXT("hi"),
+					TEXT("L_Office_v02"), {}, FString(), &Remembered);
+				R.Check(MemoryBody.Contains(TEXT("\"deeds\":[\"battle_won\",\"chess_wins:3\"]"))
+						&& MemoryBody.Contains(TEXT("\"newDeeds\":[\"chess_wins:3\"]")) && MemoryBody.Contains(TEXT("\"hoursAway\":96")),
+					TEXT("deeds: a chat request carries his deeds, the news and the hours away"));
+				const FString Plain = UNpcChatSubsystem::BuildRequestJson(TEXT("memory-request-2"), TEXT("elise"), TEXT("hi"),
+					TEXT("L_Office_v02"), {}, FString(), &Facts);
+				const FString Council = UNpcChatSubsystem::BuildCouncilRequestJson(TEXT("memory-request-3"), TEXT("hi"),
+					TEXT("L_Office_v02"), {}, FString(), &Facts);
+				R.Check(!Plain.Contains(TEXT("\"deeds\"")) && !Plain.Contains(TEXT("\"hoursAway\"")) && !Council.Contains(TEXT("\"deeds\"")),
+					TEXT("deeds: none to send, no fields - the facts Valve's build and the council send are unchanged"));
+			}
 		}
 
 		// The event rides in storyContext, and only when there is one.

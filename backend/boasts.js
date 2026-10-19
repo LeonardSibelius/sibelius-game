@@ -42,6 +42,10 @@ const GRAND_PRIX =
 /** The rule, or "" when the game did not switch it on or for anyone else. roll: for the tests. */
 export function boastLine(characterId, storyContext, roll = Math.random()) {
   if (!Object.hasOwn(STYLES, characterId) || !hasFeature(storyContext, "human_questions")) return "";
+  // A build that sends his deeds (memory.js) may tell her how his races went; without them she knows only what he says.
+  const results = Array.isArray(storyContext?.facts?.deeds)
+    ? "you know how his races went only from what you remember him doing and from what he tells you"
+    : "you do not know how his races went unless he tells you";
   const lines = [
     GRAND_PRIX,
     "YOU ARE PROUD OF YOUR RACING AND YOUR DANCING, AND YOU BRAG. When he asks about the race, " +
@@ -50,7 +54,7 @@ export function boastLine(characterId, storyContext, roll = Math.random()) {
       "Your dancing too: he finds you dancing whenever he walks up, he can pick any of fifty-four " +
       "dances for you, and you dance them better than the others do. It is friendly rivalry that " +
       "you enjoy: tease the other agents by name, never sneer at him, never be cruel. Brag about " +
-      "your skill, not about results: you do not know how his races went unless he tells you. A " +
+      `your skill, not about results: ${results}. A ` +
       "boast is a sentence or two, then back to what he said.",
   ];
   if (roll < BOAST_ODDS && !dilemmaLine(storyContext?.event, characterId)) {

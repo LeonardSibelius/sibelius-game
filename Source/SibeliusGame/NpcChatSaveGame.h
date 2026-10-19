@@ -52,6 +52,23 @@ struct FNpcChatHistory
 	 */
 	UPROPERTY(SaveGame)
 	TArray<FNpcChatTurn> Turns;
+
+	/**
+	 * When she last answered him, in UTC - so her next first reply can say "four days!"
+	 * (ChatDeeds.h, the welcome back). Zero means unknown: a history saved before v2, or one
+	 * she has never answered. Unknown sends no hoursAway and no news, so an old save is not
+	 * greeted as a long absence, nor told everything he ever did as though it just happened.
+	 */
+	UPROPERTY(SaveGame)
+	FDateTime LastAnsweredUtc;
+
+	/**
+	 * The deeds she knew of when she last answered him (ChatDeeds::FromState's strings).
+	 * Anything he has done since is news to her. Outlives Turns on purpose: the window of
+	 * conversation is eight exchanges, and what he did is not part of the conversation.
+	 */
+	UPROPERTY(SaveGame)
+	TArray<FString> DeedsKnown;
 };
 
 UCLASS()
@@ -62,7 +79,9 @@ class SIBELIUSGAME_API UNpcChatSaveGame : public USaveGame
 public:
 	// Bump whenever the persisted shape changes, and migrate on load.
 	// v1: per-character bounded turn lists.
-	static constexpr int32 CurrentSaveVersion = 1;
+	// v2 (2026-10-19): plus when she last answered him and the deeds she knew of. A v1 save
+	// reads as v2 with both unknown - no migration beyond the defaults.
+	static constexpr int32 CurrentSaveVersion = 2;
 
 	/**
 	 * Stamped on write. A freshly constructed object reads 0, which is how a blank or

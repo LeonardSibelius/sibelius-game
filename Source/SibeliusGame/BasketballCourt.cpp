@@ -799,6 +799,18 @@ void ABasketballCourt::ShowResults()
 			Progression->GrantSauce(PrizeGiven);
 		}
 	}
+	// Kept, so Nyra can still remember who won (ChatDeeds.h).
+	if (PlayerPlace >= 0)
+	{
+		if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+		{
+			Progression->BumpStat(SibeliusStats::ThreePointContests);
+			if (PlayerPlace == 0)
+			{
+				Progression->BumpStat(SibeliusStats::ThreePointWins);
+			}
+		}
+	}
 	AimCamera(false);
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Hoops] contest over: Leonard placed %d with %d, +%d sauce."),
 		PlayerPlace + 1, Scores.Last(), PrizeGiven);

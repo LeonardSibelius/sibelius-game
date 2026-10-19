@@ -2,6 +2,7 @@
 
 #include "BilliardsTable.h"
 
+#include "ProgressionSubsystem.h"   // tables cleared, for the agents to remember (ChatDeeds.h)
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "TableSounds.h"
@@ -707,6 +708,11 @@ void ABilliardsTable::HandleEvents()
 			break;
 		case EBilliardsEvent::TableCleared:
 			LastClearedStrokes = Event.Index;
+			// Kept, so the agents can still remember it (ChatDeeds.h).
+			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+			{
+				Progression->BumpStat(SibeliusStats::PoolTablesCleared);
+			}
 			if (BestStrokes == 0 || Event.Index < BestStrokes)
 			{
 				BestStrokes = Event.Index;

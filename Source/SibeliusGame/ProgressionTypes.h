@@ -73,6 +73,19 @@ namespace SibeliusStats
 	inline const FName CarouselWins(TEXT("CarouselWins"));
 	inline const FName CarouselBestRound(TEXT("CarouselBestRound"));   // max, not sum
 	inline const FName CarouselBestSpin(TEXT("CarouselBestSpin"));     // max, not sum
+
+	/* THE SIDE GAMES, FOR THE AGENTS TO REMEMBER (ChatDeeds.h, 2026-10-19). Until now each
+	   table kept its best score for the session only; these outlive it, so Elise can still
+	   say "your best at pinball" a month later. Written into saves - never rename. */
+	inline const FName GrandPrixRaces(TEXT("GrandPrixRaces"));         // finished, any place
+	inline const FName GrandPrixWins(TEXT("GrandPrixWins"));           // finished first
+	inline const FName ThreePointContests(TEXT("ThreePointContests"));
+	inline const FName ThreePointWins(TEXT("ThreePointWins"));         // placed first, over Nyra
+	inline const FName ChessWins(TEXT("ChessWins"));                   // beat the ghost
+	inline const FName GoWins(TEXT("GoWins"));                         // beat the ghost
+	inline const FName PinballBest(TEXT("PinballBest"));               // max, not sum
+	inline const FName BowlingBest(TEXT("BowlingBest"));               // max, not sum
+	inline const FName PoolTablesCleared(TEXT("PoolTablesCleared"));
 }
 
 // Parse a loose name ("refactor", "TestDrive", "test-drive") — for the exec

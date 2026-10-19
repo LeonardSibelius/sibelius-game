@@ -23,6 +23,7 @@
 #include "GameFramework/PlayerController.h"
 #include "SibeliusGameCharacter.h"  // the facts: where the travel keys can take him now
 #include "ChatDilemmas.h"           // the facts: what he advised each agent
+#include "ChatDeeds.h"              // the facts: what she remembers him doing, and how long he was away
 
 namespace
 {
@@ -492,6 +493,8 @@ void UNpcChatSubsystem::Cancel(int32 RequestId)
 	PendingCharacterId.Reset();
 	PendingMessage.Reset();
 	PendingEvent.Reset();
+	bNoteOnAnswer = false;   // she never answered: the welcome and the news wait for the next try
+	PendingDeeds.Reset();
 }
 
 void UNpcChatSubsystem::DeliverMockReply(int32 RequestId)
@@ -617,7 +620,52 @@ void UNpcChatSubsystem::WriteStoryFacts(const TSharedRef<FJsonObject>& Story, co
 		}
 		Out->SetArrayField(TEXT("advice"), Advice);
 	}
+	/* WHAT SHE REMEMBERS (ChatDeeds.h), only when there is something: the council's facts, and
+	   those of a save with nothing done yet, are exactly what they were. */
+	const auto Strings = [&Out](const TCHAR* Field, const TArray<FString>& Values)
+	{
+		if (Values.Num() > 0)
+		{
+			TArray<TSharedPtr<FJsonValue>> Array;
+			for (const FString& Value : Values)
+			{
+				Array.Add(MakeShared<FJsonValueString>(Value));
+			}
+			Out->SetArrayField(Field, Array);
+		}
+	};
+	Strings(TEXT("deeds"), Facts.Deeds);
+	Strings(TEXT("newDeeds"), Facts.NewDeeds);
+	if (Facts.HoursAway >= 0)
+	{
+		Out->SetNumberField(TEXT("hoursAway"), Facts.HoursAway);
+	}
 	Story->SetObjectField(TEXT("facts"), Out);
+}
+
+void UNpcChatSubsystem::FillMemoryFacts(FNpcStoryFacts& Facts, const FNpcChatHistory* History,
+	const TArray<FString>& DeedsNow, const FDateTime& NowUtc)
+{
+	Facts.Deeds = DeedsNow;
+	Facts.NewDeeds.Reset();
+	Facts.HoursAway = -1;
+	if (History && History->LastAnsweredUtc.GetTicks() > 0)
+	{
+		Facts.HoursAway = ChatDeeds::HoursBetween(History->LastAnsweredUtc, NowUtc);
+		Facts.NewDeeds = ChatDeeds::NewSince(DeedsNow, History->DeedsKnown);
+	}
+}
+
+void UNpcChatSubsystem::NoteAnswered(FName ChatId, const TArray<FString>& DeedsNow, const FDateTime& NowUtc)
+{
+	if (ChatId.IsNone())
+	{
+		return;
+	}
+	FNpcChatHistory& History = Histories.FindOrAdd(ChatId);
+	History.LastAnsweredUtc = NowUtc;
+	History.DeedsKnown = DeedsNow;
+	bDirty = true;   // written with the turns, when the panel closes (SaveNow)
 }
 
 FNpcStoryFacts UNpcChatSubsystem::CurrentStoryFacts() const
@@ -682,7 +730,21 @@ bool UNpcChatSubsystem::SendOverHttp(int32 RequestId, const FString& CharacterId
 	// request id: one is our bookkeeping, the other belongs to the contract.
 	PendingUuid = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
 
-	const FNpcStoryFacts Facts = CurrentStoryFacts();
+	FNpcStoryFacts Facts = CurrentStoryFacts();
+
+	/* WHAT SHE REMEMBERS (ChatDeeds.h): everything he has done, what is new to her, and how long
+	   since she last answered him. Kept for CompleteRequest, which notes it all as known only
+	   once she has actually answered. */
+	PendingDeeds.Reset();
+	bNoteOnAnswer = false;
+	const UGameInstance* GI = GetGameInstance();
+	if (const UProgressionSubsystem* Progression = GI ? GI->GetSubsystem<UProgressionSubsystem>() : nullptr)
+	{
+		PendingDeeds = ChatDeeds::FromState(Progression->GetStateForRead());
+		FillMemoryFacts(Facts, Histories.Find(FName(*CharacterId)), PendingDeeds, FDateTime::UtcNow());
+		bNoteOnAnswer = true;
+	}
+
 	const FString Body = BuildRequestJson(PendingUuid, CharacterId, Message,
 		CurrentLocationId(), RecentTurnsFor(CharacterId), PendingEvent, &Facts);
 
@@ -768,6 +830,14 @@ void UNpcChatSubsystem::CompleteRequest(int32 RequestId, const FString& Reply, E
 	}
 
 	FOnNpcChatReply Callback = PendingReply;
+
+	// She answered: from now on she knows what he has done, and when they last talked.
+	if (bNoteOnAnswer && Failure == ENpcChatFailure::None && !PendingCharacterId.IsEmpty())
+	{
+		NoteAnswered(FName(*PendingCharacterId), PendingDeeds, FDateTime::UtcNow());
+	}
+	bNoteOnAnswer = false;
+	PendingDeeds.Reset();
 
 	InFlightId = 0;
 	PendingReply.Unbind();

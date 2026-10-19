@@ -200,7 +200,7 @@ private:
 	bool bPlungerHeld = false;
 	float PlungerHeldSeconds = 0.0f;
 
-	int32 HighScore = 0;   // this session; a saved high score is a later job
+	int32 HighScore = 0;   // this session, on the backglass; the lifetime best is saved as SibeliusStats::PinballBest
 	TArray<float> BumperFlash;
 
 	// What the backglass last showed, so the text is only rebuilt when it changes.

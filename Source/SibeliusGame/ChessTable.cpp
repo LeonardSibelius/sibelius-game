@@ -3,6 +3,7 @@
 #include "ChessTable.h"
 
 #include "CodeVisionComponent.h"
+#include "ProgressionSubsystem.h"   // his wins, for the agents to remember (ChatDeeds.h)
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "TableSounds.h"
@@ -617,6 +618,14 @@ void AChessTable::AfterMove()
 	{
 		UE_LOG(LogSibeliusGame, Display, TEXT("[Chess] %s  %s"), *ChessTableDetail::OutcomeText(R, PlayerColor),
 			UTF8_TO_TCHAR(Game.MoveListText().c_str()));
+		// A win is kept, so the agents can still remember it (ChatDeeds.h). Winner means nothing in a draw.
+		if (!R.IsDraw() && R.Winner == PlayerColor)
+		{
+			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+			{
+				Progression->BumpStat(SibeliusStats::ChessWins);
+			}
+		}
 		return;
 	}
 	if (IsPlayersTurn())

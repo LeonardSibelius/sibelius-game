@@ -5,6 +5,7 @@
 #include "BranchSubsystem.h"
 #include "CathedralDoor.h"
 #include "CodeVisionComponent.h"
+#include "ProgressionSubsystem.h"   // his races, for the agents to remember (ChatDeeds.h)
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "TableSounds.h"
@@ -1183,6 +1184,15 @@ void AKartRace::HandleEvents()
 				Say(FString::Printf(TEXT("You finished %s!"), *Ordinal(FinishedPlace)), 6.0f);
 				UE_LOG(LogSibeliusGame, Display, TEXT("[Kart] he finished %s in %s (agents: %s)"), *Ordinal(FinishedPlace),
 					*ClockText(Race.Karts()[PlayerKart].FinishTime), PaceName(AgentPace));
+				// Kept, so the five he raced can still remember it (ChatDeeds.h).
+				if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+				{
+					Progression->BumpStat(SibeliusStats::GrandPrixRaces);
+					if (FinishedPlace == 1)
+					{
+						Progression->BumpStat(SibeliusStats::GrandPrixWins);
+					}
+				}
 			}
 			break;
 		case EKartEvent::RaceOver:
