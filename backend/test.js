@@ -985,6 +985,13 @@ await new Promise((resolve) => app.server.close(resolve));
       && /- He scored 48,200 in his best game of pinball\./.test(elise) && /- He fought the Architects' army in the meadow, and won\./.test(elise)
       && elise.indexOf("pinball") < elise.indexOf("Architects") && !/THIS REPLY/.test(elise),
     "memory: every deed in her list, her own first, never recited or invented");
+  // A number she was not given is one she missed - never scorned, never guessed (2026-10-20).
+  const pool = memoryLine("kaia", ctx({ deeds: ["pool_clears:1", "pinball_best:48200"] }), 0.99);
+  check(/HIS SCORES MATTER TO YOU/.test(pool) && /never guess one/.test(pool) && /do not keep track of his games/.test(pool)
+      && /- He cleared the pool table once\. \(nobody told you in how many strokes\.\)/.test(pool)
+      && /- He scored 48,200 in his best game of pinball\.$/m.test(pool)
+      && !/nobody told you/.test(welcomeLine("kaia", ctx({ hoursAway: 2, newDeeds: ["pool_clears:1"] }))),
+    "memory: a score she was not given she did not catch - said beside the deed, never in the welcome's news");
   check(/beat you in the three-point contest once/.test(memoryLine("nyra", ctx({ deeds }), 0.99))
       && /beat Nyra in the three-point contest once/.test(memoryLine("kaia", ctx({ deeds }), 0.99)),
     "memory: Nyra hears that he beat her; the others hear he beat Nyra");

@@ -42,7 +42,9 @@ const nyraOr = (characterId) => (characterId === "nyra" ? "you" : "Nyra");
 
 /* THE DEEDS. Each id is ChatDeeds::FromState's. `max` marks one that carries a count or a record,
    and is the top of its range. `news: false` is not worth a "word reached you": racing again is
-   not news, winning is. Lines follow "He ..." and are written for the agent reading them. */
+   not news, winning is. Lines follow "He ..." and are written for the agent reading them.
+   `untold` is the number a deed does not carry, said beside it in her list (memoryLine) - not in
+   the welcome's news - so asked for it she says she did not catch it instead of guessing. */
 export const DEEDS = {
   battle_won: { news: true, line: () => "fought the Architects' army in the meadow, and won" },
   named_himself: { news: true, line: () => 'told the five of you at the council table that his name is Leonard, not "Programmer"' },
@@ -52,15 +54,25 @@ export const DEEDS = {
     news: true,
     line: (n) => `kept ${n === 1 ? "a universe" : `${n} universes`} in the AI city's gallery, on the plinths that face its sun`,
   },
-  grand_prix_races: { max: 100_000, news: false, line: (n) => `raced the five of you in the Transhuman Grand Prix ${times(n)}` },
+  grand_prix_races: {
+    max: 100_000,
+    news: false,
+    line: (n) => `raced the five of you in the Transhuman Grand Prix ${times(n)}`,
+    untold: "nobody told you where he finished",
+  },
   grand_prix_wins: { max: 100_000, news: true, line: (n) => `won the Grand Prix ${times(n)}, ahead of all five of you` },
-  three_point_contests: { max: 100_000, news: false, line: (n, id) => `shot against ${nyraOr(id)} in the three-point contest ${times(n)}` },
+  three_point_contests: {
+    max: 100_000,
+    news: false,
+    line: (n, id) => `shot against ${nyraOr(id)} in the three-point contest ${times(n)}`,
+    untold: "nobody told you the scores",
+  },
   three_point_wins: { max: 100_000, news: true, line: (n, id) => `beat ${nyraOr(id)} in the three-point contest ${times(n)}` },
   chess_wins: { max: 100_000, news: true, line: (n) => `beat the ghost at chess in the Transhuman Chess Park ${times(n)}` },
   go_wins: { max: 100_000, news: true, line: (n) => `beat the ghost at Go ${times(n)}` },
   pinball_best: { max: 100_000_000, news: true, line: (n) => `scored ${n.toLocaleString("en-US")} in his best game of pinball` },
   bowling_best: { max: 300, news: true, line: (n) => `bowled ${n} in his best game` },
-  pool_clears: { max: 100_000, news: true, line: (n) => `cleared the pool table ${times(n)}` },
+  pool_clears: { max: 100_000, news: true, line: (n) => `cleared the pool table ${times(n)}`, untold: "nobody told you in how many strokes" },
 };
 
 /* WHAT EACH OF THEM CARES ABOUT MOST, from her seat at the council table (docs/THE_UNWRITTEN.md):
@@ -173,9 +185,26 @@ export function memoryLine(characterId, storyContext, roll = Math.random()) {
     "WHAT YOU REMEMBER HIM DOING. It is true - the game keeps it - and it lasts longer than any " +
       "conversation. Remember it the way a friend who was there does: bring one up when he asks how " +
       "he is doing, when he mentions it, or when it truly belongs in what you are saying, and never " +
-      "recite the list. Never invent a score, a win or an event that is not here; if he asks about " +
-      "one that is not, you have not heard about it.",
-    ...deeds.map((deed) => `- He ${deed.text}.`),
+      "recite the list. Never invent a score, a win or an event that is not here.",
+    /* A NUMBER SHE WAS NOT GIVEN IS ONE SHE MISSED, NOT ONE SHE SCORNS. Walt, 2026-10-20: "kaia
+       doesn't care if i clear the billiard table". The game keeps that he cleared it, not in how
+       many strokes; told only "you have not heard about it", she answered "I do not track the
+       numbers of your games... the merit is in the precision of the work itself rather than the
+       tally" - and ignored the 17 he had typed two turns before. Isla: "data rotting in a drawer".
+       6 of 23 replies like that (eval/missing-score-eval.js), 4 of 5 on his own conversation. */
+    /* ...AND ONE SHE NEVER GUESSES. Asked "how many strokes did it take me?", all five named one
+       (four to seven) under the old rule and the first draft of this one: the deed line now says
+       what she was not told, and this says the numbers here are all she has. */
+    "HIS SCORES MATTER TO YOU. The only numbers you know are the ones written below and the ones he " +
+      "has told you in this conversation; anything else - how many strokes, where he finished, what " +
+      "he scored - you did not catch. When he asks for one, look back through this conversation " +
+      "first: if he has told you a number for that game, it is the one he means, so give it back to " +
+      "him, gladly, and never ask him for it again. If he has not, never guess one: say warmly that " +
+      "you did not catch the count, and ask him what it was. Never say or suggest " +
+      "that you do not keep track of his games, that a score does not matter or matters less than " +
+      "something else, or that wanting to know it is odd. If he asks about a win or a game that is not " +
+      "here, you have not heard about it yet: say so, and ask him how it went.",
+    ...deeds.map((deed) => `- He ${deed.text}.${DEEDS[deed.id].untold ? ` (${DEEDS[deed.id].untold}.)` : ""}`),
   ];
 
   const unprompted = roll >= BOAST_ODDS && roll < BOAST_ODDS + MEMORY_ODDS;

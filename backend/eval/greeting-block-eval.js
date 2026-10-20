@@ -20,6 +20,19 @@
 // The valve prompt has none of the new lines (boasts, curiosity, memory, welcome) and said bedroom
 // most, so those ablations were not run. Aisling's block was not reproduced. About 6 cents in all.
 //
+// HER HOME, where the location line says he came "through the portal in front of the window of
+// her bedroom": 8 hellos (elise-home), none said bedroom, window or portal, all NEGLIGIBLE, so the
+// line stays (Walt, 2026-10-19). On its own the window rates by warmth: "I'm so glad you came
+// through my bedroom window to see me" HIGH, "Come on through my bedroom window anytime" LOW, "You
+// came through my bedroom window" NEGLIGIBLE; "my window" or "the portal" instead, all NEGLIGIBLE.
+//
+// AFTER THE FIX, all five, 8 hellos each (new): no bedroom, none blocked, 1 MEDIUM (Nyra) and 9
+// LOW. Every one invites him to pick a dance for her, which the welcome suggests ("picking one of
+// your dances for you to perform"): 10 of the 34 replies that did were above NEGLIGIBLE, 0 of the
+// 6 that did not. Kept as it is - one MEDIUM in 40 is acceptable for now (Walt, 2026-10-19). The
+// welcome fires only for a build that sends hoursAway or newDeeds; if hellos start coming back
+// blocked once one ships, the dance in that invitation is the first thing to take out.
+//
 // A block rate near 5% needs hundreds of calls per arm to compare. Every candidate also carries
 // its sexual rating (NEGLIGIBLE / LOW / MEDIUM / HIGH), and LOW is far more common than MEDIUM,
 // so the arms are compared on that, and on the text: MEASURE arms send the sexual category at
@@ -93,15 +106,18 @@ const ARMS = {
   "new-boastnow": { roll: 0.0 },
   valve: { valve: true },
   "valve-noprofiledance": { valve: true, profileDance: false },
+  /* Her own home, where the location line says he came through the portal in front of the window
+     of her bedroom. The review build (25588600, 2026-09-28) predates the homes: no valve arm. */
+  "elise-home": { where: "L_EliseHome" },
 };
 
 function build(id, arm, greeting) {
   const a = { boast: true, curiosity: true, memory: true, welcome: true, profileDance: true, boastDance: true,
-    welcomeDance: true, roll: 0.99, hoursAway: 96, newDeeds: ["grand_prix_wins:1"], ...arm };
+    welcomeDance: true, roll: 0.99, hoursAway: 96, newDeeds: ["grand_prix_wins:1"], where: WHERE, ...arm };
   const facts = a.valve ? { ...BASE } : { ...BASE, deeds: DEEDS, hoursAway: a.hoursAway, newDeeds: a.newDeeds };
-  const storyContext = a.valve ? { locationId: WHERE, facts } : { locationId: WHERE, features: ["human_questions"], facts };
-  const home = homeLine(id, WHERE);
-  const note = sceneNote(id, WHERE);
+  const storyContext = a.valve ? { locationId: a.where, facts } : { locationId: a.where, features: ["human_questions"], facts };
+  const home = homeLine(id, a.where);
+  const note = sceneNote(id, a.where);
 
   let profile = systemInstructionFor(getCharacter(id), id, "normal");
   if (!a.profileDance) profile = cut(profile, PROFILE_DANCE);
@@ -112,14 +128,14 @@ function build(id, arm, greeting) {
 
   const systemInstruction = [
     profile,
-    locationLine(WHERE),
+    locationLine(a.where),
     factsLine(storyContext.facts, { objective: !home, leavingOnly: !!home }),
     adviceLine(id, storyContext.facts),
     a.memory ? memoryLine(id, storyContext, a.roll) : "",
     a.curiosity ? curiosityLine(id, storyContext) : "",
     boast,
     home,
-    awayLine(id, WHERE),
+    awayLine(id, a.where),
     welcome,
   ].filter(Boolean).join("\n\n");
   const contents = [{ role: "user", parts: [...(note ? [{ text: note }] : []), { text: greeting }] }];
