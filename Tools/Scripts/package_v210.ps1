@@ -176,6 +176,15 @@ $checks = [ordered]@{
   "the lattice's nodes"      = "$cooked\Genesis\M_GenesisNode.uasset"
   "the soft sun"             = "$cooked\Genesis\M_GenesisSunSoft.uasset"
   "the run between racks"    = "$cooked\Mixamo\Basketball\Anim_RunInPlace_MH.uasset"
+  # --- THE ARCHAIC LANGUAGE TEMPLE (2026-10-19): the hidden door by the poker machine travels to
+  # it by name; its five statues load their scans by path (AArchaicStatue::OnConstruction), cooked
+  # by /Game/Statues. The door's sign rides /Game/Signs.
+  "the Archaic Language Temple" = "$cooked\Maps\L_Archaic_Temple.umap"
+  "FORTRAN's Discobolus"     = "$cooked\Statues\SM_Statue_FORTRAN_Discobolus.uasset"
+  "Python's Laocoon"         = "$cooked\Statues\SM_Statue_Python_Laocoon.uasset"
+  "the statues' marble"      = "$cooked\Statues\M_StatueMarble.uasset"
+  "the tablets' bronze"      = "$cooked\Statues\M_StatueTablet.uasset"
+  "the temple door's sign"   = "$cooked\Signs\T_Sign_ArchaicTemple.uasset"
   # --- THE CATHEDRAL CABINET (2026-10-16): the Blender-built Celestial Fortune machine on the
   # apse ASlotCabinet, cooked because L_Cathedral references it. Its mesh and its lit marquee.
   "the cabinet"              = "$cooked\SlotFactory\Cabinet\SM_CelestialCabinet.uasset"

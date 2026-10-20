@@ -20,7 +20,9 @@ Denmark, downloaded 2026-10-19 from SMK's open API (`api.smk.dk/api/v1/art/searc
 | Python | Laocoön | KAS385 | https://api.smk.dk/api/v1/download-3d/d504rr247_KAS385_small.stl | 400,100 | A man strangled by serpents |
 
 The `.stl` files are not in git: `*.stl` is not under Git LFS here, and they can always be fetched
-again from the URLs above. They are backed up to E: with the rest of SourceArt.
+again from the URLs above. They are backed up to E: with the rest of SourceArt. Nor are the FBX that
+`Tools/Scripts/build_statues_blender.py` makes from them - `import_statues.py` brought those into
+`Content/Statues`, which is committed.
 
 The same API lists a caryatid from the Erechtheion (KAS838) and 365 other public-domain casts, if
 the temple ever wants more.

@@ -12,13 +12,15 @@
 #
 # Imports and saves assets only. No level is opened, changed or saved.
 #
-# *** RUN FROM THE OPEN EDITOR, PIE stopped ***
+# *** RUN FROM THE OPEN EDITOR, PIE stopped *** Headless (-run=pythonscript) it crashes at the PIE check
+# (LevelEditorSubsystem does not exist there, 2026-10-19): headless, call marble() / bronze() alone.
 
 import unreal
 
 SRC = "C:/Users/wpark/projects/sibelius-game/SourceArt/Statues"
 FOLDER = "/Game/Statues"
 MARBLE = "M_StatueMarble"
+TABLET = "M_StatueTablet"
 TAG = "###STATUES###"
 
 STATUES = [   # folder, asset - the five old languages
@@ -72,8 +74,10 @@ def marble():
     noise.set_editor_property("output_max", 1.0)
     mel.connect_material_expressions(pos, "", noise, "Position")
 
-    warm = const3("#ece6db", -650, -220)     # old Pentelic marble
-    cool = const3("#d9d6cf", -650, -120)
+    # Toned down 2026-10-19 (tune_statue_marble.py, Walt: "the light is a bit bright against the
+    # statues"): near-white blew out under Olympus's sun. Real marble is nearer 0.5 albedo.
+    warm = const3("#c8c1b4", -650, -220)     # old Pentelic marble
+    cool = const3("#b4afa6", -650, -120)
     mix = mel.create_material_expression(mat, unreal.MaterialExpressionLinearInterpolate, -350, -160)
     mel.connect_material_expressions(warm, "", mix, "A")
     mel.connect_material_expressions(cool, "", mix, "B")
@@ -81,14 +85,60 @@ def marble():
     mel.connect_material_property(mix, "", unreal.MaterialProperty.MP_BASE_COLOR)
 
     rough = mel.create_material_expression(mat, unreal.MaterialExpressionLinearInterpolate, -350, 80)
-    mel.connect_material_expressions(scalar(0.32, -650, 140), "", rough, "A")
-    mel.connect_material_expressions(scalar(0.48, -650, 220), "", rough, "B")
+    mel.connect_material_expressions(scalar(0.45, -650, 140), "", rough, "A")
+    mel.connect_material_expressions(scalar(0.60, -650, 220), "", rough, "B")
     mel.connect_material_expressions(noise, "", rough, "Alpha")
     mel.connect_material_property(rough, "", unreal.MaterialProperty.MP_ROUGHNESS)
 
     mel.recompile_material(mat)
     eal.save_asset(path)
     say("%s made (procedural marble, no UVs needed)" % MARBLE)
+    return mat
+
+
+def bronze():
+    """M_StatueTablet: the tablets' weathered bronze. Walt, 2026-10-19, after the marble was toned
+    down: "the white name sign in front is still too bright" - a flat block facing Olympus's sun
+    glares however the marble is set, so the tablets became museum plaques: dark bronze, the
+    letters pale gold (AArchaicStatue). Made only when missing, like the marble."""
+    path = "%s/%s" % (FOLDER, TABLET)
+    if eal.does_asset_exist(path):
+        say("%s already there - left as it is" % TABLET)
+        return unreal.load_asset(path)
+    mat = tools.create_asset(TABLET, FOLDER, unreal.Material, unreal.MaterialFactoryNew())
+
+    def const3(hexcol, x, y):
+        rgb = srgb(hexcol)
+        c = mel.create_material_expression(mat, unreal.MaterialExpressionConstant3Vector, x, y)
+        c.set_editor_property("constant", unreal.LinearColor(rgb[0], rgb[1], rgb[2], 1.0))
+        return c
+
+    def scalar(v, x, y):
+        c = mel.create_material_expression(mat, unreal.MaterialExpressionConstant, x, y)
+        c.set_editor_property("r", v)
+        return c
+
+    # Patina: old bronze and its green, mixed by a broad noise on world position.
+    pos = mel.create_material_expression(mat, unreal.MaterialExpressionWorldPosition, -900, 0)
+    noise = mel.create_material_expression(mat, unreal.MaterialExpressionNoise, -650, 0)
+    noise.set_editor_property("scale", 0.03)
+    noise.set_editor_property("levels", 3)
+    noise.set_editor_property("output_min", 0.0)
+    noise.set_editor_property("output_max", 1.0)
+    mel.connect_material_expressions(pos, "", noise, "Position")
+    mix = mel.create_material_expression(mat, unreal.MaterialExpressionLinearInterpolate, -350, -160)
+    mel.connect_material_expressions(const3("#4a3522", -650, -220), "", mix, "A")   # old bronze
+    mel.connect_material_expressions(const3("#323d30", -650, -120), "", mix, "B")   # its patina
+    mel.connect_material_expressions(noise, "", mix, "Alpha")
+    mel.connect_material_property(mix, "", unreal.MaterialProperty.MP_BASE_COLOR)
+    # Weathered, not polished (tune_statue_tablet.py, 2026-10-19): at 0.7 / 0.55 the one tablet in
+    # the sun mirrored Olympus's white sky.
+    mel.connect_material_property(scalar(0.35, -350, 60), "", unreal.MaterialProperty.MP_METALLIC)
+    mel.connect_material_property(scalar(0.8, -350, 140), "", unreal.MaterialProperty.MP_ROUGHNESS)
+
+    mel.recompile_material(mat)
+    eal.save_asset(path)
+    say("%s made (weathered bronze for the tablets)" % TABLET)
     return mat
 
 
@@ -151,6 +201,7 @@ else:
     if not eal.does_directory_exist(FOLDER):
         eal.make_directory(FOLDER)
     mat = marble()
+    bronze()
     for folder, name in STATUES:
         import_statue(folder, name, mat)
     say("DONE")
