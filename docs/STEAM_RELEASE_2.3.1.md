@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.3.0 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.3.1 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -32,10 +32,13 @@ to point to 2.3.0"): the agents welcome him back after a long absence and rememb
 did - the meadow battle, the universes he kept, the side games' wins and records. This is the
 first build since the review that sends the chat something new: a short list of his deeds
 from the save and how long he was away. It is the same chat under the same rules (see
-the notes under Part B §3). 2.3.0 is the build that goes to Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261019-v2.3.0\` is the copy the upload script sends.
+the notes under Part B §3). **And to 2.3.1 that evening** (Walt: "please upload, copy, switch,
+update"): the Archaic Language Temple - a door by the poker corner seen only with V, into a
+Greek temple where five old programming languages stand as marble statues. No new chat. 2.3.1
+is the build that goes to Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261019-v2.3.1\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.3.0**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.3.1**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -60,7 +63,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.3.0 from the stick
+### 3. Upload 2.3.1 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -68,7 +71,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.3.0 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city and its gallery, the slot cabinets, the welcome back and his deeds"**. If it
+The banner should read **"v2.3.1 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city and its gallery, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -333,10 +336,14 @@ Guardrails:
     ordinary code, as the door signs are. Nothing on it is generated while you play.
   - 2.2.1: the characters R turns an agent into (Manny, Echo, Aurora, Shinbi, Yin) are Epic
     Games' own hand-made characters, and the gems are a bought shader pack.
+  - 2.3.1: the Archaic Language Temple's five statues are 3D scans of museum plaster casts
+    (SMK, the National Gallery of Denmark, public domain), and the temple is a bought pack
+    marked "Generated with AI: No". Its door sign and the statues' marble and bronze are
+    drawn by ordinary code.
 
 ### §4. System requirements
 
-The 2.3.0 package measures **8.6 GB** (9,274,490,632 bytes; 2.2.9 was 9,274,702,028; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.3.1 package measures **8.7 GB** (9,337,021,586 bytes; 2.3.0 was 9,274,490,632; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **10 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
