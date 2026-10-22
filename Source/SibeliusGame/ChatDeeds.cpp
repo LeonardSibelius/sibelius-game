@@ -5,7 +5,6 @@
 #include "ChatDeeds.h"
 
 #include "ProgressionTypes.h"
-#include "UniverseRecord.h"
 #include "ChatEasterEggs.h"   // NotProgrammer: he told the council his name
 #include "BattleArrival.h"    // BattleWonGrant: the meadow
 
@@ -32,15 +31,9 @@ namespace ChatDeeds
 		// The story's own milestones.
 		Flag(State.HasClaimed(ABattleArrival::BattleWonGrant), TEXT("battle_won"));
 		Flag(State.HasClaimed(ChatEasterEggs::NotProgrammer), TEXT("named_himself"));
-		Flag(State.bUniverseContactComplete, TEXT("city_answered"));
-
-		// The AI city's gallery: a slot that cannot be read is not a universe kept.
-		int32 Kept = 0;
-		for (const FUniverseRecord& Record : State.UniverseGallery)
-		{
-			Kept += Record.IsValid() ? 1 : 0;
-		}
-		Count(Kept, TEXT("universes_kept"));
+		// No "city_answered" or "universes_kept" since 2026-10-22: Walt dropped the universe game,
+		// so the agents are not told of a gallery that is no longer there. The server still knows
+		// both ids, for builds before it.
 
 		// The side games (SibeliusStats, kept since 2026-10-19).
 		Count(State.GetStat(SibeliusStats::GrandPrixRaces), TEXT("grand_prix_races"));

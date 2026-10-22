@@ -16,9 +16,9 @@
 import unreal
 
 TAG = "###ISMUSAGE###"
-# Everything AAICity, AUniverseForge and AUniverseExhibit wear on their instanced parts - the
-# shells, rings, sky, rail, gallery lines, the universes' stars, the forge's grains and machines,
-# the exhibits' stars - and the rest of /Game/Genesis's materials for good measure.
+# Everything AAICity wears on its instanced parts - the fallback lattice, the sky, the landing
+# pads' rails, lights and legs (and, until 2026-10-22, the universe forge's and exhibits') - and
+# the rest of /Game/Genesis's materials for good measure.
 MATERIALS = [
     "/Game/Genesis/M_GenesisGlow",
     "/Game/Genesis/M_GenesisGlass",

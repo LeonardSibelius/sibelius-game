@@ -146,6 +146,9 @@ struct SIBELIUSGAME_API FProgressionState
 	// THE AI CITY'S GALLERY (save v2, 2026-10-17). Added fields with empty defaults, so a v1 save
 	// loads with an empty gallery, no first contact and nothing seen - and every power, sauce and
 	// grant it held, untouched.
+	// LEGACY since 2026-10-22: Walt dropped the universe game ("i don't want to have that game") -
+	// the AI city is now the dome itself. Nothing writes these; they stay so 2.2.x-2.3.x saves
+	// still load as they are.
 	UPROPERTY(SaveGame)
 	TArray<FUniverseRecord> UniverseGallery;
 	UPROPERTY(SaveGame)

@@ -89,16 +89,6 @@ public:
 	// directly so the catalog logic stays headless-testable).
 	const FProgressionState& GetStateForRead() const { return State; }
 
-	// --- The AI city's gallery (2026-10-17): the universes he kept, three slots ---
-	static constexpr int32 UniverseSlots = 3;
-	/** The kept universe in a slot, or null for an empty or unreadable one. */
-	const FUniverseRecord* UniverseInSlot(int32 Slot) const;
-	// These three save at once and are all-or-nothing: if the write fails they put the state
-	// back as it was and say so, so the gallery on screen never claims what the disk does not hold.
-	bool KeepUniverse(int32 Slot, const FUniverseRecord& Record);
-	bool CompleteUniverseContact();          // the city's first full answer has played
-	void RememberUniverseStages(int32 Mask);   // stages watched to the end, a bit each (the forge's F)
-
 	// --- The technician's par sheet (docs/PAR_SHEET_PANEL.md step 4) ---
 	// Saves immediately: the player has just done real design work, and losing it to a
 	// crash or a quit would sting far more than the write costs.

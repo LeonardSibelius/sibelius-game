@@ -1,5 +1,8 @@
 // UniverseSim.h
 //
+// LEGACY (2026-10-22): the universe game was dropped (see UniverseRecord.h). Kept for the types a
+// saved FUniverseRecord is made of; nothing in the game runs it.
+//
 // THE UNIVERSE A PLAYER GROWS in the AI city (L_Genesis, AUniverseForge) - Seed 1 (Walt,
 // 2026-10-15: "go ahead with growing a universe"). Three dials, a seed, and a history: how far
 // the universe got and how it ended. Pure standard C++, no engine: tested standalone by

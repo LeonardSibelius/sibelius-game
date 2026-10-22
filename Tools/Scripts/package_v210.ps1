@@ -160,7 +160,7 @@ $checks = [ordered]@{
   "the agents' cheer"        = "$cooked\Mixamo\Basketball\Anim_Cheering_MH.uasset"
   "Manny's throw"            = "$cooked\Mixamo\Basketball\Anim_Throw_Manny.uasset"
   "Manny's shrug"            = "$cooked\Mixamo\Basketball\Anim_Disappointed_Manny.uasset"
-  # --- THE AI CITY (2026-10-15): through the seed upstairs, L_Genesis - its star wears
+  # --- THE AI CITY (2026-10-15): through the portal upstairs (the seed until 2026-10-22), L_Genesis - its star wears
   # Celestial Fortune's sun in layers, loaded by path (AAICity::Paint) and cooked only by the
   # /Game/Genesis DirectoriesToAlwaysCook line.
   "the AI city"              = "$cooked\Maps\L_Genesis.umap"
@@ -175,6 +175,13 @@ $checks = [ordered]@{
   "the lattice's thought"    = "$cooked\Genesis\M_GenesisStrut.uasset"
   "the lattice's nodes"      = "$cooked\Genesis\M_GenesisNode.uasset"
   "the soft sun"             = "$cooked\Genesis\M_GenesisSunSoft.uasset"
+  # The dome (2026-10-22): cglib's Megastructure: Dome 1, its layer blueprints loaded by PATH
+  # (AAICity::RaiseDome) and cooked by DefaultGame.ini's /Game/Megastructure_Dome_1/Blueprints
+  # line, which pulls their meshes and materials. Missing, the city falls back to the lattice.
+  "the dome"                 = "$cooked\Megastructure_Dome_1\Blueprints\BP_Dome1.uasset"
+  "the dome's buildings"     = "$cooked\Megastructure_Dome_1\Meshes\Dome1Buildings.uasset"
+  "the dome's inner panels"  = "$cooked\Megastructure_Dome_1\Blueprints\Dome1_Modules\BPC_InternalPanels.uasset"
+  "the dome's material"      = "$cooked\Megastructure_Dome_1\Materials\M_LayeredMaster.uasset"
   "the run between racks"    = "$cooked\Mixamo\Basketball\Anim_RunInPlace_MH.uasset"
   # --- THE ARCHAIC LANGUAGE TEMPLE (2026-10-19): the hidden door by the poker machine travels to
   # it by name; its five statues load their scans by path (AArchaicStatue::OnConstruction), cooked

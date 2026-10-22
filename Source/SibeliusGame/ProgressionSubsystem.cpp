@@ -269,63 +269,6 @@ void UProgressionSubsystem::ResetProgression()
 	UE_LOG(LogSibeliusGame, Display, TEXT("Progression: RESET to fresh state"));
 }
 
-const FUniverseRecord* UProgressionSubsystem::UniverseInSlot(int32 Slot) const
-{
-	return Slot >= 0 && Slot < UniverseSlots && State.UniverseGallery.IsValidIndex(Slot)
-		&& State.UniverseGallery[Slot].IsValid() ? &State.UniverseGallery[Slot] : nullptr;
-}
-
-bool UProgressionSubsystem::KeepUniverse(int32 Slot, const FUniverseRecord& Record)
-{
-	if (Slot < 0 || Slot >= UniverseSlots || !Record.IsValid())
-	{
-		return false;
-	}
-	// The same run kept again is already kept: say yes, and write nothing.
-	for (const FUniverseRecord& Existing : State.UniverseGallery)
-	{
-		if (Existing.IsValid() && Existing.Id == Record.Id)
-		{
-			return true;
-		}
-	}
-	const TArray<FUniverseRecord> Before = State.UniverseGallery;
-	State.UniverseGallery.SetNum(UniverseSlots);
-	State.UniverseGallery[Slot] = Record;
-	if (SaveNow())
-	{
-		return true;
-	}
-	State.UniverseGallery = Before;   // the write failed: as it was
-	return false;
-}
-
-bool UProgressionSubsystem::CompleteUniverseContact()
-{
-	if (State.bUniverseContactComplete)
-	{
-		return true;
-	}
-	State.bUniverseContactComplete = true;
-	if (SaveNow())
-	{
-		return true;
-	}
-	State.bUniverseContactComplete = false;
-	return false;
-}
-
-void UProgressionSubsystem::RememberUniverseStages(int32 Mask)
-{
-	const int32 Before = State.UniverseSeenStages;
-	State.UniverseSeenStages |= Mask & 0x7f;   // seven stages
-	// Written only when a new stage is added - a handful of times in a run, not every frame.
-	if (Before != State.UniverseSeenStages && !SaveNow())
-	{
-		State.UniverseSeenStages = Before;
-	}
-}
-
 bool UProgressionSubsystem::SaveNow()
 {
 	USaveSubsystem* Saves = GetGameInstance() ? GetGameInstance()->GetSubsystem<USaveSubsystem>() : nullptr;

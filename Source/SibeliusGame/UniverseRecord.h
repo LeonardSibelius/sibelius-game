@@ -1,5 +1,10 @@
 // UniverseRecord.h
 //
+// LEGACY (2026-10-22). Walt dropped the universe game - "i don't want to have that game" - and the
+// forge and the plinths are gone. This record and UniverseSim stay only because the progression
+// save holds FUniverseRecords (FProgressionState::UniverseGallery): 2.2.x-2.3.x saves must still
+// load. Nothing writes one now.
+//
 // THE AI CITY - a universe he kept (GPT-6 Astra, 2026-10-17; tidied the same day). What the
 // forge's K writes into the progression save, one per gallery slot (FProgressionState::
 // UniverseGallery), and what an AUniverseExhibit reads back.

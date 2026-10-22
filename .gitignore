@@ -436,6 +436,14 @@ Content/__ExternalObjects__/Olympus/
 Content/Maps/L_Archaic_Temple.umap
 Content/Maps/L_Archaic_Temple_BuiltData.uasset
 
+# --- cglib team "Megastructure: Dome 1" (Fab, $99.99, "Generated with AI: No"), added 2026-10-22 ----
+# Walt, after GPT-6 Astra's AI City read as "lines and dots": "I want to feel awestruck by the scene,
+# not underwhelmed." A geodesic hex shell thick with city detail, "can be used as a Dyson sphere" -
+# the AI City's lattice with mass. A bought pack: not in the public repo. Back up to E:.
+Content/Megastructure_Dome_1/
+Content/__ExternalActors__/Megastructure_Dome_1/
+Content/__ExternalObjects__/Megastructure_Dome_1/
+
 # --- The temple's statues: SMK public-domain scans (SourceArt/Statues/SOURCES.md), 2026-10-19 ------
 # *.stl is not under Git LFS, so ~79 MB of raw scans would land in history as plain objects. They are
 # re-downloadable from SMK at the URLs in SOURCES.md, and backed up to E: with the rest of SourceArt.

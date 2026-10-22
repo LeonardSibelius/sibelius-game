@@ -7,7 +7,7 @@
 // exchanges; a win from last month is long gone from it).
 //
 // DEEDS, NEVER CONFIDENCES. Everything here is something the game itself saw him do - a win, a
-// record, a universe kept. Nothing he typed is kept or summarised for it: on 2026-10-06 Walt
+// record, a battle won. Nothing he typed is kept or summarised for it: on 2026-10-06 Walt
 // ruled that the agents never ask about the player's own life, and called the alternative
 // "the companion-app trap". The world remembering what he did is the safe way to be known.
 //
@@ -28,7 +28,7 @@ struct FProgressionState;
 namespace ChatDeeds
 {
 	/**
-	 * Every deed he has done, as the request's facts.deeds: "battle_won", "universes_kept:2".
+	 * Every deed he has done, as the request's facts.deeds: "battle_won", "chess_wins:2".
 	 * Counts and records of zero are left out - a deed is something that happened. In a fixed
 	 * order, so the same save always sends the same list.
 	 */

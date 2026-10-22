@@ -1,12 +1,13 @@
-// AICity.cpp - see the header for what the AI city is and what it is not.
+// AICity.cpp - see the header for what the AI city is, and why it turns.
 
 #include "AICity.h"
 
 #include "SibeliusHUD.h"
-#include "UniverseForge.h"
-#include "UniverseExhibit.h"
-#include "ProgressionSubsystem.h"
 
+#include "Camera/CameraComponent.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/ChildActorComponent.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
@@ -15,7 +16,10 @@
 #include "Engine/CollisionProfile.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
@@ -26,9 +30,8 @@
 namespace AICityDetail
 {
 	constexpr double ShapeSize = 100.0;              // the engine's basic shapes are a metre across
-	constexpr double GoldenAngle = 2.39996322972865332;
 
-	// The city's three shells, inner to outer: their radius and their light.
+	// The fallback lattice's three shells, inner to outer: their radius and their light.
 	constexpr double ShellRadius[AAICity::ShellCount] = { 34000.0, 46000.0, 60000.0 };
 	const FVector ShellAxis[AAICity::ShellCount] = {
 		FVector(0.0, 0.0, 1.0), FVector(0.3, 0.0, 1.0).GetSafeNormal(), FVector(0.0, -0.4, 1.0).GetSafeNormal() };
@@ -36,51 +39,31 @@ namespace AICityDetail
 	// LINEAR colours, which is what a material multiplies.
 	const FLinearColor StarColour(1.0f, 0.86f, 0.62f);
 	const FLinearColor CoronaColour(1.0f, 0.58f, 0.24f);
-	const FLinearColor RingHull(0.04f, 0.045f, 0.055f);
-	const FLinearColor FloorDark(0.012f, 0.014f, 0.02f);
+	const FLinearColor PadDark(0.012f, 0.014f, 0.02f);
 	const FLinearColor CityLight[AAICity::ShellCount] = {
 		FLinearColor(0.25f, 0.85f, 1.0f), FLinearColor(1.0f, 0.72f, 0.35f), FLinearColor(0.7f, 0.5f, 1.0f) };
-	const FLinearColor RingLight(0.6f, 0.9f, 1.0f);
 	const FLinearColor Edge(0.3f, 0.85f, 1.0f);
-
-	// The gallery's universes: where each floats (degrees round the gallery from the star's
-	// direction, height over the floor), how big, what colour, what kind of galaxy is in it.
-	enum class EGalaxy : uint8 { Spiral, Elliptical, Ring };
-	struct FUniverse { double Angle; double Height; double Radius; FLinearColor Hue; EGalaxy Kind; int32 Arms; };
-	const FUniverse Universes[AAICity::UniverseCount] = {
-		{  70.0, 300.0, 130.0, FLinearColor(0.55f, 0.75f, 1.0f),  EGalaxy::Spiral,     2 },
-		{ 110.0, 420.0, 160.0, FLinearColor(1.0f, 0.75f, 0.35f),  EGalaxy::Spiral,     3 },
-		{ 150.0, 260.0, 120.0, FLinearColor(1.0f, 0.45f, 0.6f),   EGalaxy::Elliptical, 0 },
-		{ 180.0, 360.0, 170.0, FLinearColor(0.4f, 1.0f, 0.75f),   EGalaxy::Spiral,     4 },
-		{ 210.0, 470.0, 140.0, FLinearColor(0.7f, 0.5f, 1.0f),    EGalaxy::Ring,       0 },
-		// 225 and 315, not 250 and 290: the forge's console is at 270, and its camera looks out
-		// over the rail there - those two floated in front of the forge's glass (2026-10-15).
-		{ 225.0, 290.0, 150.0, FLinearColor(1.0f, 0.35f, 0.25f),  EGalaxy::Spiral,     2 },
-		{ 315.0, 400.0, 125.0, FLinearColor(0.9f, 0.9f, 1.0f),    EGalaxy::Elliptical, 0 },
-	};
-	constexpr double UniverseRing = 1150.0;          // from the middle of the gallery
 
 	FTransform Bar(const FQuat& Turn, const FVector& At, const FVector& Size)
 	{
 		return FTransform(Turn, At, Size / ShapeSize);
 	}
 
-	/* THE CITY AS A MIND (Walt, 2026-10-18: "you really have to use your imagination to regard
-	   those cubes and lines as some kind of worlds or cities ... is there an art idea you have
-	   that could be easily generated and look more attractive?" - and of the answer, "glowing
-	   geodesic lattice. i like it"). A Matrioshka brain: each shell a web round the star, struts
-	   between nodes, open, so the shells behind it and the star itself show through - the crates
-	   were walls. Thought runs down every strut (M_GenesisStrut) and every node is a neuron
-	   twinkling on its own (M_GenesisNode); neither costs C++ anything per frame.
+	FQuat Facing(const FVector& Forward, const FVector& UpHint)
+	{
+		return FRotationMatrix::MakeFromXZ(Forward, UpHint).ToQuat();
+	}
+
+	/* THE FALLBACK LATTICE (2026-10-18 to -22 the city itself; Walt: "glowing geodesic lattice. i
+	   like it", and four days later "lines and dots"). A Matrioshka brain: each shell a web round
+	   the star, struts between nodes. Drawn only where the dome's pack is not here.
 
 	   Each shell is a geodesic sphere - an icosahedron, its triangles split LatticeLevel times
 	   and pushed out to the sphere - turned at random so no two shells line up. One connection in
-	   seven is left out, so it reads as a web that grew rather than a mesh that was drawn; one
-	   node in twenty is a hub, bigger and brighter. Cells are 47, 64 and 83 m across, inner to outer:
-	   the outer shell at the inner ones' 45 m (a level finer) read as a tangle in the first render. */
+	   seven is left out; one node in twenty is a hub, bigger and brighter. */
 	constexpr int32 LatticeLevel[AAICity::ShellCount] = { 3, 3, 3 };   // 1,920 struts each
-	constexpr double StrutThick = 0.0028;    // of the shell's radius: 95 cm inner, 1.7 m outer
-	constexpr double NodeSize = 0.0095;      // of the shell's radius: a 3 to 6 m neuron
+	constexpr double StrutThick = 0.0028;    // of the shell's radius
+	constexpr double NodeSize = 0.0095;      // of the shell's radius
 	constexpr float MissingStrut = 0.14f;
 	constexpr float HubShare = 0.05f;
 
@@ -238,16 +221,12 @@ namespace AICityDetail
 
 	/* THE SUN OF CELESTIAL FORTUNE (Walt, 2026-10-15: "could the sun here be made to look like
 	   my sun in https://leonardsibelius.com/celestial-fortune/ ?"). The slot's own sun - its
-	   SVG rendered to T_Sun (make_sun_texture.mjs) - alive in M_GenesisSunDisc (a slow turn, a
-	   shimmer, a breath), on a flat disc facing the gallery: the gallery is 260 m off and 30 m
-	   across, so the star is only ever seen from this side. Until the material is made, the
-	   sphere and its glass corona stand in. */
+	   SVG rendered to T_Sun (make_sun_texture.mjs) - alive in M_GenesisSunSoft (a slow turn, a
+	   shimmer, a breath), on a flat disc that turns to face whoever is looking (FaceSun): since
+	   2026-10-22 he sees it from every side. Until the material is made, the sphere and its glass
+	   corona stand in. */
 	UMaterialInterface* SunDiscMaterial()
 	{
-		// The soft-edged layered one first (2026-10-18: the plain one's glow was cut off in straight
-		// lines at its square, plain against the lattice), then the layered one (Walt: "let's do
-		// the medium please" - each loop rising and falling on its own, the spots drifting, the
-		// flare bursting), then the one-picture one.
 		if (UMaterialInterface* Soft = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Genesis/M_GenesisSunSoft.M_GenesisSunSoft"), nullptr, LOAD_NoWarn | LOAD_Quiet))
 		{
 			return Soft;
@@ -260,6 +239,40 @@ namespace AICityDetail
 	}
 	// In the SVG the disc is 67 of a 200-unit square: the rest is corona and prominences.
 	constexpr double SunSquarePerRadius = 200.0 / 67.0;
+
+	/* THE DOME'S LAYERS, inner to outer (the pack's demo map, Main, places all of them on one
+	   spot): its blueprints, which build their own materials from ~28 look variables each. Every
+	   mesh is a whole shell (half-extent 333 cm the inner panels, 355 the buildings), so one
+	   scale fits them all. The pack's translucent Shield is left out: a glass skin over the city. */
+	const TCHAR* const DomeLayerClass[AAICity::DomeLayerCount] = {
+		TEXT("/Game/Megastructure_Dome_1/Blueprints/Dome1_Modules/BPC_InternalPanels.BPC_InternalPanels_C"),
+		TEXT("/Game/Megastructure_Dome_1/Blueprints/Dome1_Modules/BPC_InternalStructures.BPC_InternalStructures_C"),
+		TEXT("/Game/Megastructure_Dome_1/Blueprints/BP_Dome1.BP_Dome1_C"),
+		TEXT("/Game/Megastructure_Dome_1/Blueprints/Dome1_Modules/BPC_CellStructures.BPC_CellStructures_C"),
+		TEXT("/Game/Megastructure_Dome_1/Blueprints/Dome1_Modules/BPC_SurfacePanels.BPC_SurfacePanels_C"),
+		TEXT("/Game/Megastructure_Dome_1/Blueprints/Dome1_Modules/BPC_SurfaceStructures.BPC_SurfaceStructures_C"),
+		TEXT("/Game/Megastructure_Dome_1/Blueprints/Dome1_Modules/BP_Buildings.BP_Buildings_C"),
+	};
+	constexpr double DomeNativeRadius = 345.0;    // the pack's shell at scale 1 (Dome1Base: 343)
+
+	/* THE LANDINGS, measured 2026-10-22 from the pack's meshes (their OBJ exports, rays cast out
+	   from the star): the dome is a Goldberg sphere of 162 cells; at each of its 320 junctions a
+	   spire stands ~170 m toward the star, and along every frame between two junctions runs a
+	   ridge 60-100 m high with a flat top 25-32 m wide - the landing ground. Each is the ridge's
+	   top a little short of halfway along its frame, at DomeRadius 345000: the direction out to it
+	   from the star, the ridge's direction there, and the top's radius. The two are on opposite
+	   sides of the sphere. The way in is through the cell beside B (EntryCell), so the flight in
+	   crosses the whole sphere and lands at A. */
+	struct FLanding { FVector Dir; FVector Along; double RidgeRadius; };
+	const FLanding Landings[AAICity::PadCount] = {
+		{ FVector(-0.048082, -0.100174, -0.993807), FVector(0.948025, -0.317896, -0.013824), 329179.0 },   // A
+		{ FVector(0.048642, 0.099831, 0.993815), FVector(-0.948291, 0.317069, 0.014564), 320743.0 },       // B
+	};
+	const FVector EntryCell(0.08451, 0.24236, 0.96650);   // a hexagon, 7.1 degrees clear, 8.6 from B
+	constexpr double MeasuredDomeRadius = 345000.0;
+	constexpr double EyeHeight = 165.0;                  // the first-person camera, above the floor
+	constexpr double StartDistance = 2500000.0;          // the flight in starts 25 km out
+	constexpr double SkyRadius = 20000000.0;             // the far stars: 200 km, well beyond that
 }
 
 AAICity::AAICity()
@@ -316,35 +329,46 @@ AAICity::AAICity()
 		ShellStruts.Add(MakeMany(FString::Printf(TEXT("ShellStruts_%d"), S), Cube, false));
 		ShellNodes.Add(MakeMany(FString::Printf(TEXT("ShellNodes_%d"), S), Sphere, false));
 	}
-	Rings = MakeMany(TEXT("Rings"), Cube, false);
-	RingLights = MakeMany(TEXT("RingLights"), Cube, false);
 	SkyStars = MakeMany(TEXT("SkyStars"), Sphere, false);
-	GalleryFloor = MakeMesh(TEXT("GalleryFloor"), Cylinder, true);
-	GalleryRail = MakeMany(TEXT("GalleryRail"), Cube, true);
-	GalleryLines = MakeMany(TEXT("GalleryLines"), Cube, false);
-	for (int32 U = 0; U < UniverseCount; ++U)
+	for (int32 P = 0; P < PadCount; ++P)
 	{
-		UniverseGlass.Add(MakeMesh(FString::Printf(TEXT("UniverseGlass_%d"), U), Sphere, false));
-		UniverseStars.Add(MakeMany(FString::Printf(TEXT("UniverseStars_%d"), U), Sphere, false));
+		PadFloors.Add(MakeMesh(FString::Printf(TEXT("PadFloor_%d"), P), Cylinder, true));
 	}
+	PadRails = MakeMany(TEXT("PadRails"), Cube, true);
+	PadLines = MakeMany(TEXT("PadLines"), Cube, false);
+	PadLegs = MakeMany(TEXT("PadLegs"), Cylinder, false);
 
 	StarLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("StarLight"));
 	StarLight->SetupAttachment(SceneRoot);
 	StarLight->SetMobility(EComponentMobility::Movable);
 	StarLight->SetCastShadows(false);
 	StarLight->SetLightColor(StarColour);
+	StarLight->SetLightingChannels(true, true, false);
 
 	FillLight = CreateDefaultSubobject<UDirectionalLightComponent>(TEXT("FillLight"));
 	FillLight->SetupAttachment(SceneRoot);
 	FillLight->SetMobility(EComponentMobility::Movable);
 	FillLight->SetCastShadows(false);
 	FillLight->SetLightColor(FLinearColor(0.35f, 0.45f, 0.8f));
+	FillLight->SetLightingChannels(true, true, false);
 	// Travelling +X and a little down: it lights what faces away from the star.
 	FillLight->SetRelativeRotation(FRotator(-20.0, 0.0, 0.0));
 
 	Look = CreateDefaultSubobject<UPostProcessComponent>(TEXT("Look"));
 	Look->SetupAttachment(SceneRoot);
 	Look->bUnbound = true;
+
+	for (int32 L = 0; L < DomeLayerCount; ++L)
+	{
+		UChildActorComponent* Layer = CreateDefaultSubobject<UChildActorComponent>(*FString::Printf(TEXT("DomeLayer_%d"), L));
+		Layer->SetupAttachment(SceneRoot);
+		DomeLayers.Add(Layer);
+	}
+
+	FlightCam = CreateDefaultSubobject<UCameraComponent>(TEXT("FlightCam"));
+	FlightCam->SetupAttachment(SceneRoot);
+	FlightCam->SetFieldOfView(90.0f);
+	FlightCam->bConstrainAspectRatio = false;
 }
 
 void AAICity::OnConstruction(const FTransform& Transform)
@@ -355,41 +379,24 @@ void AAICity::OnConstruction(const FTransform& Transform)
 	Light();
 }
 
+void AAICity::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	/* BEFORE ANYONE IS SPAWNED. In Play the layers are spawned afresh when their components
+	   register, with the pack's own collision: one convex hull per mesh, which for a shell is a
+	   solid ball 6.9 km across. Leonard was placed inside it before BeginPlay quieted it, and the
+	   physics threw him out of the world (2026-10-22, "game is stuck": no pawn, the camera at
+	   KillZ). This runs after the layers exist and before any player logs in. */
+	QuietDome();
+}
+
 void AAICity::BeginPlay()
 {
 	Super::BeginPlay();
 	Build();
 	Paint();
 	Light();
-
-	// His three gallery slots (AUniverseExhibit), spawned here rather than saved in L_Genesis so
-	// the map needs no resave: a row across the gallery, 5 m toward the star from its centre.
-	for (int32 Slot = 0; Slot < UProgressionSubsystem::UniverseSlots; ++Slot)
-	{
-		const FVector Local = GalleryCentre() + FVector(500.0f, (Slot - 1) * 550.0f, 0.0f);
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		if (AUniverseExhibit* Exhibit = GetWorld()->SpawnActor<AUniverseExhibit>(GetActorTransform().TransformPosition(Local), GetActorRotation(), Params))
-		{
-			Exhibit->SetSlot(Slot);
-		}
-	}
-}
-
-void AAICity::AnswerUniverse()
-{
-	/* A universe he grew has made machines, and they signal: the city answers, a slow breath
-	   of light through each shell in turn (Tick). The first time ever it is long - 12 seconds -
-	   and is recorded only once it has played to the end, so leaving halfway means the next
-	   universe to get there is answered in full; after that, a short 5-second reply. */
-	if (IsAnswering())
-	{
-		return;
-	}
-	const UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this);
-	bFirstResponse = !Progress || !Progress->GetStateForRead().bUniverseContactComplete;
-	ResponseAge = 0.0f;
+	// The visit starts in Tick, once there is a pawn to take: the flight in, from 25 km out.
 }
 
 UMaterialInstanceDynamic* AAICity::Glow(const FLinearColor& Color, float Intensity)
@@ -428,6 +435,22 @@ UMaterialInstanceDynamic* AAICity::Surface(const FLinearColor& Color, float Roug
 	return M;
 }
 
+FTransform AAICity::PadFrame(int32 Pad) const
+{
+	using namespace AICityDetail;
+	const FLanding& Spot = Landings[FMath::Clamp(Pad, 0, PadCount - 1)];
+	const FVector Out = Spot.Dir.GetSafeNormal();
+	const FVector Up = -Out;
+	const double Radius = Spot.RidgeRadius * (DomeRadius / MeasuredDomeRadius) - PadLift;
+	return FTransform(FRotationMatrix::MakeFromXZ(Spot.Along, Up).ToQuat(), Out * Radius);
+}
+
+FQuat AAICity::PadBelow(int32 Pad) const
+{
+	// The pad's own frame, undone: its ridge to world X, its up (toward the star) to world Z.
+	return PadFrame(Pad).GetRotation().Inverse();
+}
+
 void AAICity::Build()
 {
 	using namespace AICityDetail;
@@ -435,17 +458,15 @@ void AAICity::Build()
 	// --- the star -------------------------------------------------------------------------
 	Star->SetRelativeScale3D(FVector(2.0 * StarRadius / ShapeSize));
 	UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane"));
-	if (SunDiscMaterial() && Plane)
+	bSunDisc = SunDiscMaterial() && Plane;
+	if (bSunDisc)
 	{
-		// Celestial Fortune's sun: the Corona part becomes the disc, facing the gallery (-X),
-		// its picture upright (U to the viewer's right, +Y; V down), the sphere hidden.
+		// Celestial Fortune's sun: the Corona part becomes the disc, at the star's centre, turned
+		// to face the eye every frame (FaceSun); until then toward -X, its picture upright.
 		Star->SetVisibility(false);
 		Corona->SetStaticMesh(Plane);
 		const double Width = StarRadius * SunSquarePerRadius;
-		// Lifted clear of the horizon: with its middle at the gallery floor's height, the floor
-		// hid its lower half and two of its loops (the first render, 2026-10-15). From his eyes
-		// the floor's edge dips about six degrees; 0.75 of a radius up clears it with the loops.
-		Corona->SetRelativeLocationAndRotation(FVector(0.0, 0.0, StarRadius * 0.75),
+		Corona->SetRelativeLocationAndRotation(FVector::ZeroVector,
 			FMatrix(FVector(0.0, 1.0, 0.0), FVector(0.0, 0.0, -1.0), FVector(-1.0, 0.0, 0.0), FVector::ZeroVector).ToQuat());
 		Corona->SetRelativeScale3D(FVector(Width / ShapeSize, Width / ShapeSize, 1.0));
 	}
@@ -457,158 +478,147 @@ void AAICity::Build()
 		Corona->SetRelativeScale3D(FVector(2.24 * StarRadius / ShapeSize));
 	}
 
-	// --- the shells: a lattice each, a web round the star (LayLattice) ----------------------
+	// --- the city: the dome where the pack is here, else a lattice each shell (LayLattice) ---
+	bDomeUp = RaiseDome();
 	for (int32 S = 0; S < ShellCount; ++S)
 	{
 		UInstancedStaticMeshComponent* Struts = ShellStruts.IsValidIndex(S) ? ShellStruts[S].Get() : nullptr;
 		UInstancedStaticMeshComponent* Nodes = ShellNodes.IsValidIndex(S) ? ShellNodes[S].Get() : nullptr;
-		if (Struts && Nodes)
+		if (!Struts || !Nodes)
+		{
+			continue;
+		}
+		if (bDomeUp)
+		{
+			Struts->ClearInstances();
+			Nodes->ClearInstances();
+		}
+		else
 		{
 			LayLattice(Struts, Nodes, S, ShellRadius[S]);
 		}
+		Struts->SetVisibility(!bDomeUp);
+		Nodes->SetVisibility(!bDomeUp);
 	}
 
-	// --- the transit rings ------------------------------------------------------------------
-	Rings->ClearInstances();
-	RingLights->ClearInstances();
-	{
-		struct FRingSpec { double Radius; FQuat Tilt; };
-		const FRingSpec Specs[] = {
-			{ 30000.0, FQuat::Identity },
-			{ 40000.0, FQuat(FVector(1.0, 0.0, 0.0), FMath::DegreesToRadians(28.0)) },
-			{ 53000.0, FQuat(FVector(0.0, 1.0, 0.0), FMath::DegreesToRadians(-38.0)) },
-		};
-		constexpr int32 Segments = 160;
-		TArray<FTransform> Hulls;
-		TArray<FTransform> Strips;
-		for (const FRingSpec& Ring : Specs)
-		{
-			const double Length = 2.0 * PI * Ring.Radius / Segments * 0.92;
-			for (int32 K = 0; K < Segments; ++K)
-			{
-				const double A = 2.0 * PI * K / Segments;
-				const FVector Out(FMath::Cos(A), FMath::Sin(A), 0.0);
-				// X along the ring, Y out from the star, Z through the ring's plane.
-				const FQuat Turn = Ring.Tilt * FQuat(FVector::UpVector, A + PI * 0.5);
-				Hulls.Add(Bar(Turn, Ring.Tilt.RotateVector(Out * Ring.Radius), FVector(Length, 900.0, 250.0)));
-				Strips.Add(Bar(Turn, Ring.Tilt.RotateVector(Out * (Ring.Radius - 470.0)), FVector(Length * 0.9, 40.0, 60.0)));
-			}
-		}
-		Rings->AddInstances(Hulls, false);
-		RingLights->AddInstances(Strips, false);
-	}
-
-	// --- the far sky ---------------------------------------------------------------------------
+	// --- the far sky: 200 km out, past where the flight in begins ---------------------------
 	SkyStars->ClearInstances();
 	{
 		FRandomStream Rng(77);
 		TArray<FTransform> Sky;
+		const double Grow = SkyRadius / 1800000.0;      // sized as they were at 18 km
 		for (int32 I = 0; I < 3500; ++I)
 		{
 			const double Z = Rng.FRandRange(-1.0f, 1.0f);
 			const double Phi = Rng.FRandRange(0.0f, 2.0f * PI);
 			const double Rho = FMath::Sqrt(FMath::Max(0.0, 1.0 - Z * Z));
-			const double Size = 1200.0 + FMath::Pow(static_cast<double>(Rng.FRand()), 4.0) * 5000.0;
-			Sky.Add(Bar(FQuat::Identity, FVector(Rho * FMath::Cos(Phi), Rho * FMath::Sin(Phi), Z) * 1800000.0, FVector(Size)));
+			const double Size = (1200.0 + FMath::Pow(static_cast<double>(Rng.FRand()), 4.0) * 5000.0) * Grow;
+			Sky.Add(Bar(FQuat::Identity, FVector(Rho * FMath::Cos(Phi), Rho * FMath::Sin(Phi), Z) * SkyRadius, FVector(Size)));
 		}
 		SkyStars->AddInstances(Sky, false);
 	}
 
-	// --- the gallery: a dark glass floor, a glass rail, a ring of light --------------------------
-	const FVector G = GalleryCentre();
-	GalleryFloor->SetRelativeLocation(G - FVector(0.0, 0.0, 20.0));   // its top at the star's equator
-	GalleryFloor->SetRelativeScale3D(FVector(2.0 * GalleryRadius / ShapeSize, 2.0 * GalleryRadius / ShapeSize, 40.0 / ShapeSize));
-	GalleryRail->ClearInstances();
-	GalleryLines->ClearInstances();
+	// --- the landing pads: a dark floor on three legs, a glass rail, a ring of light ----------
+	PadRails->ClearInstances();
+	PadLines->ClearInstances();
+	PadLegs->ClearInstances();
 	{
-		constexpr int32 Panels = 96;
 		TArray<FTransform> Rail;
 		TArray<FTransform> Lines;
-		const double RailR = GalleryRadius - 20.0;
-		for (int32 K = 0; K < Panels; ++K)
+		TArray<FTransform> Legs;
+		for (int32 P = 0; P < PadCount; ++P)
 		{
-			const double A = 2.0 * PI * (K + 0.5) / Panels;
-			const FQuat Turn(FVector::UpVector, A + PI * 0.5);
-			const FVector Out(FMath::Cos(A), FMath::Sin(A), 0.0);
-			Rail.Add(Bar(Turn, G + Out * RailR + FVector(0.0, 0.0, 55.0), FVector(2.0 * PI * RailR / Panels * 0.96, 4.0, 110.0)));
-			Lines.Add(Bar(Turn, G + Out * (GalleryRadius - 6.0) + FVector(0.0, 0.0, 1.0), FVector(2.0 * PI * GalleryRadius / Panels, 12.0, 3.0)));
+			const FTransform Frame = PadFrame(P);
+			auto Place = [&Frame](const FTransform& Local) { return Local * Frame; };
+			if (UStaticMeshComponent* Floor = PadFloors.IsValidIndex(P) ? PadFloors[P].Get() : nullptr)
+			{
+				// Its top at the frame's origin.
+				Floor->SetRelativeTransform(Place(Bar(FQuat::Identity, FVector(0.0, 0.0, -20.0), FVector(2.0 * PadRadius, 2.0 * PadRadius, 40.0))));
+			}
+			constexpr int32 Panels = 72;
+			const double RailR = PadRadius - 20.0;
+			for (int32 K = 0; K < Panels; ++K)
+			{
+				const double A = 2.0 * PI * (K + 0.5) / Panels;
+				const FQuat Turn(FVector::UpVector, A + PI * 0.5);
+				const FVector Out(FMath::Cos(A), FMath::Sin(A), 0.0);
+				Rail.Add(Place(Bar(Turn, Out * RailR + FVector(0.0, 0.0, 55.0), FVector(2.0 * PI * RailR / Panels * 0.96, 4.0, 110.0))));
+				Lines.Add(Place(Bar(Turn, Out * (PadRadius - 6.0) + FVector(0.0, 0.0, 1.0), FVector(2.0 * PI * PadRadius / Panels, 12.0, 3.0))));
+			}
+			constexpr int32 Inlay = 48;
+			const double InlayR = PadRadius * 0.55;
+			for (int32 K = 0; K < Inlay; ++K)
+			{
+				const double A = 2.0 * PI * (K + 0.5) / Inlay;
+				Lines.Add(Place(Bar(FQuat(FVector::UpVector, A + PI * 0.5), FVector(FMath::Cos(A), FMath::Sin(A), 0.0) * InlayR + FVector(0.0, 0.0, 0.5),
+					FVector(2.0 * PI * InlayR / Inlay, 6.0, 2.0))));
+			}
+			// Three legs down through the relief into the ridge.
+			const double LegLength = PadLift + 400.0;
+			for (int32 K = 0; K < 3; ++K)
+			{
+				const double A = 2.0 * PI * K / 3.0;
+				Legs.Add(Place(Bar(FQuat::Identity, FVector(FMath::Cos(A), FMath::Sin(A), 0.0) * PadRadius * 0.6 + FVector(0.0, 0.0, -40.0 - LegLength * 0.5),
+					FVector(80.0, 80.0, LegLength))));
+			}
 		}
-		constexpr int32 Inlay = 64;
-		for (int32 K = 0; K < Inlay; ++K)
-		{
-			const double A = 2.0 * PI * (K + 0.5) / Inlay;
-			Lines.Add(Bar(FQuat(FVector::UpVector, A + PI * 0.5), G + FVector(FMath::Cos(A), FMath::Sin(A), 0.0) * 700.0 + FVector(0.0, 0.0, 0.5),
-				FVector(2.0 * PI * 700.0 / Inlay, 6.0, 2.0)));
-		}
-		GalleryRail->AddInstances(Rail, false);
-		GalleryLines->AddInstances(Lines, false);
+		PadRails->AddInstances(Rail, false);
+		PadLines->AddInstances(Lines, false);
+		PadLegs->AddInstances(Legs, false);
 	}
+}
 
-	// --- the universes the AIs have grown, floating over the gallery ----------------------------
-	UniverseHome.Reset();
-	UniverseAxis.Reset();
-	UniverseRate.Reset();
-	for (int32 U = 0; U < UniverseCount; ++U)
+bool AAICity::RaiseDome()
+{
+	using namespace AICityDetail;
+	/* Each layer is the pack's own blueprint, made the child of a component here and scaled
+	   round the star. Its class is set only when it changes: setting it again would throw the
+	   layer away and build it anew, 1.6 million triangles of buildings and all, on every Build. */
+	const double Scale = DomeRadius / DomeNativeRadius;
+	int32 Raised = 0;
+	for (int32 L = 0; L < DomeLayers.Num() && L < DomeLayerCount; ++L)
 	{
-		const FUniverse& Spec = Universes[U];
-		FRandomStream Rng(500 + U);
-		const double A = FMath::DegreesToRadians(Spec.Angle);
-		const FVector Home = G + FVector(FMath::Cos(A), FMath::Sin(A), 0.0) * UniverseRing + FVector(0.0, 0.0, Spec.Height);
-		UniverseHome.Add(Home);
-		UniverseAxis.Add(FVector(Rng.FRandRange(-0.5f, 0.5f), Rng.FRandRange(-0.5f, 0.5f), 1.0f).GetSafeNormal());
-		UniverseRate.Add(Rng.FRandRange(12.0f, 28.0f));
-		if (UStaticMeshComponent* Shell = UniverseGlass.IsValidIndex(U) ? UniverseGlass[U].Get() : nullptr)
-		{
-			Shell->SetRelativeLocation(Home);
-			Shell->SetRelativeScale3D(FVector(2.0 * Spec.Radius / ShapeSize));
-		}
-		UInstancedStaticMeshComponent* Field = UniverseStars.IsValidIndex(U) ? UniverseStars[U].Get() : nullptr;
-		if (!Field)
+		UChildActorComponent* Layer = DomeLayers[L];
+		if (!Layer)
 		{
 			continue;
 		}
-		Field->ClearInstances();
-		Field->SetRelativeLocation(Home);
-		// The galaxy lies in its own XY plane; Tick turns the plane round its axis.
-		TArray<FTransform> Points;
-		const double Reach = Spec.Radius * 0.75;
-		const int32 Count = Spec.Kind == EGalaxy::Elliptical ? 220 : 260;
-		for (int32 I = 0; I < Count; ++I)
+		UClass* Wanted = bUseDome ? LoadClass<AActor>(nullptr, DomeLayerClass[L], nullptr, LOAD_NoWarn | LOAD_Quiet) : nullptr;
+		if (Layer->GetChildActorClass() != Wanted)
 		{
-			FVector P;
-			const double T = FMath::Pow(static_cast<double>(Rng.FRand()), 0.6);
-			if (Spec.Kind == EGalaxy::Elliptical)
-			{
-				// A ball of old stars, thickest in the middle, a little flattened.
-				const FVector D = FVector(Rng.FRandRange(-1.f, 1.f), Rng.FRandRange(-1.f, 1.f), Rng.FRandRange(-1.f, 1.f)).GetSafeNormal();
-				P = D * Reach * FMath::Pow(static_cast<double>(Rng.FRand()), 1.6);
-				P.Z *= 0.6;
-			}
-			else if (Spec.Kind == EGalaxy::Ring)
-			{
-				// A ring round a small bright core.
-				const double Th = Rng.FRandRange(0.0f, 2.0f * PI);
-				const double Rr = I < Count / 6 ? Reach * 0.12 * Rng.FRand() : Reach * Rng.FRandRange(0.78f, 0.98f);
-				P = FVector(Rr * FMath::Cos(Th), Rr * FMath::Sin(Th), Rng.FRandRange(-0.03f, 0.03f) * Reach);
-			}
-			else if (I < Count / 7)
-			{
-				// The bulge.
-				const FVector D = FVector(Rng.FRandRange(-1.f, 1.f), Rng.FRandRange(-1.f, 1.f), Rng.FRandRange(-0.5f, 0.5f)).GetSafeNormal();
-				P = D * Reach * 0.18 * Rng.FRand();
-			}
-			else
-			{
-				// The arms: logarithmic spirals, the stars scattered a little off them.
-				const int32 Arm = I % FMath::Max(Spec.Arms, 1);
-				const double Th = 2.0 * PI * Arm / FMath::Max(Spec.Arms, 1) + T * 3.6 + Rng.FRandRange(-0.25f, 0.25f);
-				const double Rr = Reach * (0.12 + 0.88 * T);
-				P = FVector(Rr * FMath::Cos(Th), Rr * FMath::Sin(Th), Rng.FRandRange(-0.05f, 0.05f) * Reach * (1.0 - T));
-			}
-			const double Size = Rng.FRandRange(2.4f, 4.5f);
-			Points.Add(Bar(FQuat::Identity, P, FVector(Size)));
+			Layer->SetChildActorClass(Wanted);
 		}
-		Field->AddInstances(Points, false);
+		Layer->SetRelativeScale3D(FVector(Scale));
+		Raised += Layer->GetChildActor() ? 1 : 0;
+	}
+	QuietDome();
+	return Raised > 0;
+}
+
+void AAICity::QuietDome()
+{
+	// No collision 3 km away (and none at all to a hull that fills the dome), no shadows, lit
+	// only by the star (channel 1), and movable like the rest of the city - which turns.
+	for (UChildActorComponent* Layer : DomeLayers)
+	{
+		AActor* Child = Layer ? Layer->GetChildActor() : nullptr;
+		if (!Child)
+		{
+			continue;
+		}
+		Child->SetActorEnableCollision(false);
+		TInlineComponentArray<USceneComponent*> Parts(Child);
+		for (USceneComponent* Part : Parts)
+		{
+			Part->SetMobility(EComponentMobility::Movable);
+			if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Part))
+			{
+				Prim->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				Prim->SetCanEverAffectNavigation(false);
+				Prim->SetCastShadow(false);
+				Prim->SetLightingChannels(false, true, false);
+			}
+		}
 	}
 }
 
@@ -642,64 +652,49 @@ void AAICity::Paint()
 	{
 		Wear(Corona, Glass(CoronaColour, 3.0f, 0.8f, 0.0f));
 	}
-	// The lattice: its struts' and nodes' materials (make_genesis_assets.py), loaded by path and
-	// cooked by DefaultGame.ini's /Game/Genesis line; plain glow until they are made.
-	ResponseLights.Reset();
-	ThoughtLights.Reset();
+	// The fallback lattice: its struts' and nodes' materials (make_genesis_assets.py), loaded by
+	// path and cooked by DefaultGame.ini's /Game/Genesis line; plain glow until they are made.
 	UMaterialInterface* NodeSkin = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/Genesis/M_GenesisNode.M_GenesisNode"), nullptr, LOAD_NoWarn | LOAD_Quiet);
 	UMaterialInterface* StrutSkin = LoadObject<UMaterialInterface>(nullptr,
 		TEXT("/Game/Genesis/M_GenesisStrut.M_GenesisStrut"), nullptr, LOAD_NoWarn | LOAD_Quiet);
-	for (int32 S = 0; S < ShellCount; ++S)
+	for (int32 S = 0; S < ShellCount && !bDomeUp; ++S)
 	{
-		// The nodes: what the city's answer breathes (Tick) - their Color and Intensity.
 		UMaterialInstanceDynamic* Node = NodeSkin ? UMaterialInstanceDynamic::Create(NodeSkin, this) : Glow(CityLight[S], CityGlow);
 		if (NodeSkin && Node)
 		{
 			Node->SetVectorParameterValue(TEXT("Color"), CityLight[S]);
 			Node->SetScalarParameterValue(TEXT("Intensity"), CityGlow);
 		}
-		ResponseLights.Add(Node);
 		Wear(ShellNodes.IsValidIndex(S) ? ShellNodes[S].Get() : nullptr, Node);
-
-		// The struts: dim rods, bright comets (the wiring's lesson - at an even balance the
-		// thought is lost in the rods), and what the answer surges.
 		UMaterialInstanceDynamic* Strut = StrutSkin ? UMaterialInstanceDynamic::Create(StrutSkin, this) : Glow(CityLight[S], CityGlow * 0.3f);
 		if (StrutSkin && Strut)
 		{
 			Strut->SetVectorParameterValue(TEXT("Color"), CityLight[S]);
 			Strut->SetVectorParameterValue(TEXT("PulseColor"), FMath::Lerp(CityLight[S], FLinearColor::White, 0.55f) * 4.0f);
-			// Half the city's glow, comets and all (Walt, 2026-10-18: "to give a more cosmic distance
-			// sense, please dim the rods even more, by half"): halving Base alone darkened the
-			// frame by a tenth - what reads as a rod is mostly the comets riding it.
 			Strut->SetScalarParameterValue(TEXT("Intensity"), CityGlow * 0.5f);
-			Strut->SetScalarParameterValue(TEXT("Base"), 0.03f);   // 0.15 washed every rod to white
+			Strut->SetScalarParameterValue(TEXT("Base"), 0.03f);
 		}
-		ThoughtLights.Add(Strut);
 		Wear(ShellStruts.IsValidIndex(S) ? ShellStruts[S].Get() : nullptr, Strut);
 	}
-	Wear(Rings, Surface(RingHull, 0.25f));
-	Wear(RingLights, Glow(RingLight, CityGlow * 1.5f));
 	Wear(SkyStars, Glow(FLinearColor(0.85f, 0.9f, 1.0f), 40.0f));
-	Wear(GalleryFloor, Surface(FloorDark, 0.06f));
-	Wear(GalleryRail, Glass(FLinearColor(0.5f, 0.75f, 1.0f), 0.8f, 0.25f, 0.03f));
-	Wear(GalleryLines, Glow(Edge, 8.0f));
-	for (int32 U = 0; U < UniverseCount; ++U)
+	for (UStaticMeshComponent* Floor : PadFloors)
 	{
-		const FLinearColor Hue = Universes[U].Hue;
-		Wear(UniverseGlass.IsValidIndex(U) ? UniverseGlass[U].Get() : nullptr, Glass(Hue * 0.6f + FLinearColor(0.4f, 0.4f, 0.4f), 1.2f, 0.45f, 0.02f));
-		Wear(UniverseStars.IsValidIndex(U) ? UniverseStars[U].Get() : nullptr, Glow(Hue, 25.0f));
+		Wear(Floor, Surface(PadDark, 0.2f));
 	}
+	Wear(PadRails, Glass(FLinearColor(0.5f, 0.75f, 1.0f), 0.8f, 0.25f, 0.03f));
+	Wear(PadLines, Glow(Edge, 8.0f));
+	Wear(PadLegs, Surface(PadDark, 0.35f));
 }
 
 void AAICity::Light()
 {
-	using namespace AICityDetail;
-	// The star's light by the inverse square, set so it is GalleryLux where he stands.
-	const double Metres = GalleryDistance / 100.0;
+	// The star's light by the inverse square, DomeLux on the dome's inner face - and, on channel
+	// 0, on him and the pads, which stand a little nearer.
+	const double Metres = DomeRadius / 100.0;
 	StarLight->SetIntensityUnits(ELightUnits::Candelas);
-	StarLight->SetIntensity(static_cast<float>(GalleryLux * Metres * Metres));
-	StarLight->SetAttenuationRadius(2000000.0f);
+	StarLight->SetIntensity(static_cast<float>(DomeLux * Metres * Metres));
+	StarLight->SetAttenuationRadius(static_cast<float>(DomeRadius * 1.4));
 	FillLight->SetIntensity(0.25f);
 
 	FPostProcessSettings& S = Look->Settings;
@@ -713,58 +708,310 @@ void AAICity::Light()
 	S.BloomIntensity = 1.2f;
 }
 
+void AAICity::StartFlight(EFlight Kind, int32 ToPad)
+{
+	using namespace AICityDetail;
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (!PC || !FlightCam)
+	{
+		return;
+	}
+	const double R = DomeRadius;
+	const FTransform To = PadFrame(ToPad);
+	const FVector ToUp = To.GetRotation().GetAxisZ();
+	const FVector ToAlong = To.GetRotation().GetAxisX();
+	const FVector Eye = To.TransformPosition(FVector(0.0, 0.0, EyeHeight));
+	const FVector Above = To.GetLocation() + ToUp * (R * 0.09);          // ~310 m over the pad
+	const FQuat Landed = Facing(ToAlong, ToUp);
+	const FQuat Descending = Facing(ToAlong * 0.45 - ToUp, ToAlong);     // down at the pad, a little ahead
+
+	PathPlace.Reset();
+	PathTurn.Reset();
+	TArray<FVector> Heading;     // per key: the way it is passed through, or zero to take the neighbours'
+	auto Key = [this, &Heading](float Seconds, const FVector& At, FQuat Turn, const FVector& Through = FVector::ZeroVector)
+	{
+		// Each turn on the same side as the last, so the curve never swings the long way round.
+		if (PathTurn.Points.Num() > 0 && (PathTurn.Points.Last().OutVal | Turn) < 0.0)
+		{
+			Turn = -Turn;
+		}
+		PathPlace.Points[PathPlace.AddPoint(Seconds, At)].InterpMode = CIM_CurveUser;
+		PathTurn.Points[PathTurn.AddPoint(Seconds, Turn)].InterpMode = CIM_CurveAuto;
+		Heading.Add(Through.GetSafeNormal());
+	};
+
+	if (Kind == EFlight::Intro)
+	{
+		/* THE WAY IN. From 25 km out the dome is a dark ball among the stars, the star blazing
+		   through its cells; he drifts, then closes on the cell beside B, the star dead ahead
+		   through it; through it, past the star a little over a kilometre off, and down onto the
+		   pad at A on the far side, turning to look along its ridge. The city does not turn: it
+		   is already as it will be when he lands. */
+		const FVector In = EntryCell.GetSafeNormal();
+		const FVector Side = (ToAlong - In * FVector::DotProduct(ToAlong, In)).GetSafeNormal();
+		const FQuat AtStar = Facing(-In, Side);
+		Key(0.0f, In * StartDistance, AtStar);
+		Key(4.0f, In * (StartDistance * 0.92), AtStar);
+		Key(19.0f, In * (R * 1.22), AtStar);         // just outside the cell
+		Key(23.0f, In * (R * 0.86), AtStar);         // through it
+		const FVector Past = Side * (R * 0.35);
+		Key(33.0f, Past, Facing(Above - Past, ToAlong));
+		Key(40.0f, Above, Descending, -ToUp);        // and straight down onto the pad
+		Key(46.0f, Eye, Landed);
+		TurnFrom = TurnTo = PadBelow(ToPad);
+		TurnStart = TurnEnd = 0.0f;
+	}
+	else
+	{
+		/* ACROSS. Up off the pad, over toward the star and past it, and down onto the other pad.
+		   The pads face each other through the star, so the path bows out along the ridge's line
+		   to pass it; meanwhile the city turns, so that when he lands the far pad is below him. */
+		const FTransform From = PadFrame(OnPad);
+		const FVector FromUp = From.GetRotation().GetAxisZ();
+		const FVector FromAlong = From.GetRotation().GetAxisX();
+		/* FROM WHERE HIS EYES ARE, looking where he looks: the flight took over at the middle of
+		   the pad facing along the ridge, and the view jerked there from wherever he stood and
+		   looked (Walt, 2026-10-22: "when you lift off ... there is a brief jerking of the view"). */
+		FVector Start = From.TransformPosition(FVector(0.0, 0.0, EyeHeight));
+		FQuat StartTurn = Facing(FromAlong, FromUp);
+		if (PC->PlayerCameraManager)
+		{
+			const FTransform City = GetActorTransform();
+			Start = City.InverseTransformPosition(PC->PlayerCameraManager->GetCameraLocation());
+			StartTurn = City.GetRotation().Inverse() * PC->PlayerCameraManager->GetCameraRotation().Quaternion();
+		}
+		Key(0.0f, Start, StartTurn);
+		Key(4.0f, From.GetLocation() + FromUp * (R * 0.09), Facing(FromAlong + FromUp * 1.2, FromUp));
+		const FVector Past = FromAlong * (R * 0.35);
+		Key(16.0f, Past, Facing(Above - Past, -FromAlong));
+		Key(27.0f, Above, Descending, -ToUp);        // and straight down onto the pad
+		Key(33.0f, Eye, Landed);
+		TurnFrom = PadBelow(OnPad);
+		TurnTo = PadBelow(ToPad);
+		TurnStart = 4.0f;
+		TurnEnd = 27.0f;
+	}
+	/* WHERE: smooth through every key, still at the ends, and never past one. The engine's auto
+	   tangents carried the cross-sphere speed into the last 300 m, and the first landing sank
+	   through the ridge below the pad and rose back up to it (Walt, 2026-10-22). So each key is
+	   passed at the slower of its two stretches' average speeds - a Hermite segment whose end
+	   speeds are no more than its average cannot overshoot - heading along its neighbours'
+	   chord, or the way the key itself says (straight down onto a pad). */
+	TArray<FInterpCurvePoint<FVector>>& Places = PathPlace.Points;
+	for (int32 I = 0; I < Places.Num(); ++I)
+	{
+		FVector Speed = FVector::ZeroVector;
+		if (I > 0 && I + 1 < Places.Num())
+		{
+			const FVector Chord = (Places[I + 1].OutVal - Places[I - 1].OutVal).GetSafeNormal();
+			const double In = (Places[I].OutVal - Places[I - 1].OutVal).Size() / FMath::Max(Places[I].InVal - Places[I - 1].InVal, 0.01f);
+			const double Out = (Places[I + 1].OutVal - Places[I].OutVal).Size() / FMath::Max(Places[I + 1].InVal - Places[I].InVal, 0.01f);
+			Speed = (Heading[I].IsNearlyZero() ? Chord : Heading[I]) * FMath::Min(In, Out);
+		}
+		Places[I].ArriveTangent = Places[I].LeaveTangent = Speed;
+	}
+	/* WHICH WAY: the turns between keys, smoothed - but still at the ends by holding each end's
+	   control point on the key itself. The engine's "stationary end" is a zero quaternion, which
+	   is no rotation at all: the flight in began by swinging the view away from the city and
+	   back (Walt, the same day). */
+	PathTurn.AutoSetTangents(0.0f, false);
+	for (FInterpCurvePoint<FQuat>* End : { &PathTurn.Points[0], &PathTurn.Points.Last() })
+	{
+		End->InterpMode = CIM_CurveUser;
+		End->ArriveTangent = End->LeaveTangent = End->OutVal;
+	}
+
+	Flight = Kind;
+	FlightAge = 0.0f;
+	FlightLength = PathPlace.Points.Last().InVal;
+	FlightTo = ToPad;
+	OnPad = -1;
+	FlightCam->SetRelativeLocationAndRotation(PathPlace.Eval(0.0f, FVector::ZeroVector), PathTurn.Eval(0.0f, FQuat::Identity).GetNormalized());
+	HoldPawn(UGameplayStatics::GetPlayerPawn(this, 0), true);
+	PC->SetViewTargetWithBlend(this, 0.0f);
+	UE_LOG(LogTemp, Display, TEXT("[AICity] %s to pad %d, %.0f s."), Kind == EFlight::Intro ? TEXT("flying in") : TEXT("flying across"), ToPad, FlightLength);
+}
+
+void AAICity::EndFlight()
+{
+	SetActorRotation(TurnTo);
+	Flight = EFlight::None;
+	OnPad = FlightTo;
+	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	HoldPawn(Pawn, false);
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		if (Pawn)
+		{
+			PC->SetViewTargetWithBlend(Pawn, 0.0f);
+		}
+	}
+	UE_LOG(LogTemp, Display, TEXT("[AICity] landed on pad %d."), OnPad);
+}
+
+void AAICity::HoldPawn(APawn* Pawn, bool bHold)
+{
+	if (!Pawn)
+	{
+		return;
+	}
+	APlayerController* PC = Cast<APlayerController>(Pawn->GetController());
+	ACharacter* Body = Cast<ACharacter>(Pawn);
+	UCharacterMovementComponent* Moves = Body ? Body->GetCharacterMovement() : nullptr;
+	if (bHold)
+	{
+		// Put away while the city's camera has him: unseen, untouchable, not falling.
+		if (Moves)
+		{
+			Moves->StopMovementImmediately();
+			Moves->DisableMovement();
+		}
+		Pawn->SetActorHiddenInGame(true);
+		Pawn->SetActorEnableCollision(false);
+		if (PC)
+		{
+			PC->SetIgnoreMoveInput(true);
+			PC->SetIgnoreLookInput(true);
+		}
+		return;
+	}
+	// Set down on the pad he flew to, facing along its ridge.
+	const FTransform Pad = PadFrame(FlightTo) * GetActorTransform();
+	const float Half = Body && Body->GetCapsuleComponent() ? Body->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 96.0f;
+	const FRotator Ahead(0.0, Pad.Rotator().Yaw, 0.0);
+	Pawn->SetActorLocationAndRotation(Pad.GetLocation() + Pad.GetRotation().GetAxisZ() * (Half + 5.0), Ahead, false, nullptr, ETeleportType::TeleportPhysics);
+	Pawn->SetActorHiddenInGame(false);
+	Pawn->SetActorEnableCollision(true);
+	if (Moves)
+	{
+		Moves->SetMovementMode(MOVE_Walking);
+	}
+	if (PC)
+	{
+		PC->SetControlRotation(Ahead);
+		PC->ResetIgnoreMoveInput();
+		PC->ResetIgnoreLookInput();
+	}
+}
+
+void AAICity::FaceSun()
+{
+	if (!bSunDisc || !Corona)
+	{
+		return;
+	}
+	FVector Eye;
+	FVector EyeUp;
+	const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (IsFlying() && FlightCam)
+	{
+		Eye = FlightCam->GetComponentLocation();
+		EyeUp = FlightCam->GetUpVector();
+	}
+	else if (PC && PC->PlayerCameraManager)
+	{
+		Eye = PC->PlayerCameraManager->GetCameraLocation();
+		EyeUp = PC->PlayerCameraManager->GetCameraRotation().Quaternion().GetUpVector();
+	}
+	else
+	{
+		return;
+	}
+	// The disc's Z toward the eye, its picture's down (Y) the eye's down, its right (X) the eye's
+	// right: the frame Build gave it at the gallery, now wherever he is.
+	const FVector Z = (Eye - GetActorLocation()).GetSafeNormal();
+	FVector Y = -(EyeUp - Z * FVector::DotProduct(EyeUp, Z)).GetSafeNormal();
+	if (Z.IsNearlyZero() || Y.IsNearlyZero())
+	{
+		return;
+	}
+	const FVector X = FVector::CrossProduct(Y, Z);
+	Corona->SetWorldRotation(FMatrix(X, Y, Z, FVector::ZeroVector).ToQuat());
+}
+
 void AAICity::Tick(float DeltaSeconds)
 {
 	using namespace AICityDetail;
 	Super::Tick(DeltaSeconds);
 	Age += DeltaSeconds;
-	if (IsAnswering())
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+
+	// The visit begins as soon as there is someone to take: the city turned for the landing at
+	// A, and the flight in.
+	if (!bVisitStarted && PC && Pawn)
 	{
-		ResponseAge += DeltaSeconds;
-		const float Duration = bFirstResponse ? 12.0f : 5.0f;
-		const float Stagger = bFirstResponse ? 2.0f : 0.7f;     // each shell starts this much after the last
-		const float Breath = bFirstResponse ? 6.0f : 2.5f;      // and takes this long to swell and fade
-		for (int32 S = 0; S < ResponseLights.Num(); ++S)
+		bVisitStarted = true;
+		SetActorRotation(PadBelow(0));
+		StartFlight(EFlight::Intro, 0);
+	}
+
+	if (IsFlying())
+	{
+		FlightAge += DeltaSeconds;
+		if (PC && PC->WasInputKeyJustPressed(EKeys::SpaceBar))
 		{
-			if (!ResponseLights[S])
-			{
-				continue;
-			}
-			const float Local = FMath::Clamp((ResponseAge - S * Stagger) / Breath, 0.0f, 1.0f);
-			// One slow breath per shell - brighter, toward sea-green, and back. No flashing, no
-			// camera move.
-			const float Wave = FMath::Square(FMath::Sin(PI * Local));
-			ResponseLights[S]->SetScalarParameterValue(TEXT("Intensity"), CityGlow * (1.0f + Wave * 0.65f));
-			ResponseLights[S]->SetVectorParameterValue(TEXT("Color"), FMath::Lerp(CityLight[S], FLinearColor(0.5f, 1.0f, 0.8f), Wave * 0.6f));
-			// ...and its thought surges: every comet on the shell brighter while the breath passes.
-			if (ThoughtLights.IsValidIndex(S) && ThoughtLights[S])
-			{
-				ThoughtLights[S]->SetScalarParameterValue(TEXT("Surge"), Wave);
-			}
+			FlightAge = FlightLength;       // [Space]: straight to the landing
 		}
-		if (ResponseAge >= Duration)
+		const float T = FMath::Min(FlightAge, FlightLength);
+		if (TurnEnd > TurnStart)
 		{
-			ResponseAge = -1.0f;
-			for (UMaterialInstanceDynamic* M : ThoughtLights)
+			const float Share = FMath::SmoothStep(0.0f, 1.0f, (T - TurnStart) / (TurnEnd - TurnStart));
+			SetActorRotation(FQuat::Slerp(TurnFrom, TurnTo, Share));
+		}
+		FlightCam->SetRelativeLocationAndRotation(PathPlace.Eval(T, FVector::ZeroVector), PathTurn.Eval(T, FQuat::Identity).GetNormalized());
+		if (FlightAge >= FlightLength)
+		{
+			EndFlight();
+		}
+	}
+	else if (OnPad >= 0)
+	{
+		if (PC && PC->WasInputKeyJustPressed(EKeys::F))
+		{
+			StartFlight(EFlight::Across, 1 - OnPad);
+		}
+		else if (Pawn)
+		{
+			// The rail should keep him on the pad; if anything ever puts him off it, he is set
+			// back down rather than falling through the dome into space.
+			const FTransform Pad = PadFrame(OnPad) * GetActorTransform();
+			const FVector Local = Pad.InverseTransformPosition(Pawn->GetActorLocation());
+			if (Local.Z < -1000.0 || FVector2D(Local.X, Local.Y).Size() > PadRadius * 1.5)
 			{
-				if (M)
-				{
-					M->SetScalarParameterValue(TEXT("Surge"), 0.0f);
-				}
-			}
-			// Recorded only now, at the end: a first contact cut short still counts as unseen.
-			if (bFirstResponse)
-			{
-				if (UProgressionSubsystem* Progress = UProgressionSubsystem::Get(this))
-				{
-					Progress->CompleteUniverseContact();
-				}
+				FlightTo = OnPad;
+				HoldPawn(Pawn, false);
 			}
 		}
 	}
 
-	// Each shell turns on its own axis, its struts and nodes together.
-	for (int32 S = 0; S < ShellCount; ++S)
+	FaceSun();
+
+	// What this is and what he can do, just above "[O] Back to Office".
+	if (PC)
+	{
+		if (ASibeliusHUD* Hud = Cast<ASibeliusHUD>(PC->GetHUD()))
+		{
+			// No size given (Walt, 2026-10-22: "please delete the '6.9 km across' - I would hope
+			// this city is much bigger than that").
+			const FString What = TEXT("The AI city: a sphere the AIs built round a star");
+			if (Flight == EFlight::Intro)
+			{
+				Hud->ShowAwayHint(What + TEXT("\n[Space] Skip the flight in"));
+			}
+			else if (Flight == EFlight::Across)
+			{
+				Hud->ShowAwayHint(TEXT("Across the sphere, past its star\n[Space] Skip to the landing"));
+			}
+			else if (OnPad >= 0)
+			{
+				Hud->ShowAwayHint(What + TEXT("\n[F] Fly across the sphere to the landing on the far side"));
+			}
+		}
+	}
+
+	// The fallback lattice turns, each shell on its own axis (only where the dome is not up).
+	for (int32 S = 0; S < ShellCount && !bDomeUp; ++S)
 	{
 		const float Spin = ShellSpin.IsValidIndex(S) ? ShellSpin[S] : 0.0f;
 		const FQuat Turn(ShellAxis[S], FMath::DegreesToRadians(Age * Spin));
@@ -775,37 +1022,6 @@ void AAICity::Tick(float DeltaSeconds)
 		if (ShellNodes.IsValidIndex(S) && ShellNodes[S])
 		{
 			ShellNodes[S]->SetRelativeRotation(Turn);
-		}
-	}
-
-	/* WHERE HE IS AND WHAT IS HERE, just above "[O] Back to Office" (Walt, 2026-10-15: "can
-	   you please put some instructions on the screen above [O] Back to Office?"). While he is
-	   at the forge's console it shows its own controls there instead. The third line (2026-10-17)
-	   tells him the empty plinths are his: nothing else says a universe can be kept. */
-	const APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (PC && !AUniverseForge::IsAnyInUse(this))
-	{
-		if (ASibeliusHUD* Hud = Cast<ASibeliusHUD>(PC->GetHUD()))
-		{
-			Hud->ShowAwayHint(TEXT("A city that is also a mind, wrapped round a star - built by the AIs to amuse themselves\n")
-				TEXT("The small glass spheres hold universes the AIs have grown.  Grow your own: [E] at the console by the great sphere.\n")
-				TEXT("Keep one with [K] when it ends - the three plinths facing the sun are your gallery."));
-		}
-	}
-
-	// The universes bob, and the galaxy in each turns.
-	for (int32 U = 0; U < UniverseCount && U < UniverseHome.Num(); ++U)
-	{
-		const FVector At = UniverseHome[U] + FVector(0.0, 0.0, 12.0 * FMath::Sin(Age * 0.6f + U));
-		if (UniverseGlass.IsValidIndex(U) && UniverseGlass[U])
-		{
-			UniverseGlass[U]->SetRelativeLocation(At);
-		}
-		if (UniverseStars.IsValidIndex(U) && UniverseStars[U])
-		{
-			const FQuat Tilt = FQuat::FindBetweenNormals(FVector::UpVector, UniverseAxis[U]);
-			const FQuat Spin(FVector::UpVector, FMath::DegreesToRadians(Age * UniverseRate[U]));
-			UniverseStars[U]->SetRelativeLocationAndRotation(At, Tilt * Spin);
 		}
 	}
 }

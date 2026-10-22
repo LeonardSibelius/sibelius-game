@@ -243,8 +243,8 @@ FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 	}
 	if (LevelName.Contains(TEXT("Genesis")))
 	{
-		// Through the seed upstairs (AUniverseSeed): where the AIs grow universes.
-		return NSLOCTEXT("Travel", "EnterGenesis", "The AI city, wrapped round a star...");
+		// Through the portal at the end of the upstairs hall: the sphere the AIs built round a star.
+		return NSLOCTEXT("Travel", "EnterGenesis", "The AI city, a sphere built round a star...");
 	}
 	if (LevelName.Contains(TEXT("Chess")))
 	{
