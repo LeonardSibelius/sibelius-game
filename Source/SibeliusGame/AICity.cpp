@@ -798,10 +798,35 @@ void AAICity::StartFlight(EFlight Kind, int32 ToPad)
 	   speeds are no more than its average cannot overshoot - heading along its neighbours'
 	   chord, or the way the key itself says (straight down onto a pad). */
 	TArray<FInterpCurvePoint<FVector>>& Places = PathPlace.Points;
+	FlightLength = Places.Last().InVal;
+	/* ACROSS IS KEYED BY DISTANCE, flown on one speed curve. Keyed by time, each stretch sped up
+	   and slowed down on its own, and past the star the flight dipped to 280 m/s between surges
+	   of nearly 400 (Walt, 2026-10-22: "mid-flight across the ai city there is a bit of a lurch in
+	   the travel motion"). Keyed by the distance along it, with unit tangents, the path runs at
+	   an even pace through every key, and Tick flies it on a single smootherstep: still at
+	   lift-off, one rise to full speed past the star, still at the landing. The way in keeps its
+	   time keys - fast from far out, slow through the cell, which is the point of it. */
+	const bool bByDistance = Kind == EFlight::Across;
+	if (bByDistance)
+	{
+		double Along = 0.0;
+		for (int32 I = 0; I < Places.Num(); ++I)
+		{
+			Along += I > 0 ? (Places[I].OutVal - Places[I - 1].OutVal).Size() : 0.0;
+			Places[I].InVal = PathTurn.Points[I].InVal = static_cast<float>(Along);
+		}
+	}
 	for (int32 I = 0; I < Places.Num(); ++I)
 	{
 		FVector Speed = FVector::ZeroVector;
-		if (I > 0 && I + 1 < Places.Num())
+		const bool bInside = I > 0 && I + 1 < Places.Num();
+		if (bByDistance)
+		{
+			const FVector Chord = bInside ? Places[I + 1].OutVal - Places[I - 1].OutVal
+				: I == 0 ? Places[1].OutVal - Places[0].OutVal : Places[I].OutVal - Places[I - 1].OutVal;
+			Speed = Heading[I].IsNearlyZero() ? Chord.GetSafeNormal() : Heading[I];
+		}
+		else if (bInside)
 		{
 			const FVector Chord = (Places[I + 1].OutVal - Places[I - 1].OutVal).GetSafeNormal();
 			const double In = (Places[I].OutVal - Places[I - 1].OutVal).Size() / FMath::Max(Places[I].InVal - Places[I - 1].InVal, 0.01f);
@@ -823,7 +848,6 @@ void AAICity::StartFlight(EFlight Kind, int32 ToPad)
 
 	Flight = Kind;
 	FlightAge = 0.0f;
-	FlightLength = PathPlace.Points.Last().InVal;
 	FlightTo = ToPad;
 	OnPad = -1;
 	FlightCam->SetRelativeLocationAndRotation(PathPlace.Eval(0.0f, FVector::ZeroVector), PathTurn.Eval(0.0f, FQuat::Identity).GetNormalized());
@@ -959,7 +983,14 @@ void AAICity::Tick(float DeltaSeconds)
 			const float Share = FMath::SmoothStep(0.0f, 1.0f, (T - TurnStart) / (TurnEnd - TurnStart));
 			SetActorRotation(FQuat::Slerp(TurnFrom, TurnTo, Share));
 		}
-		FlightCam->SetRelativeLocationAndRotation(PathPlace.Eval(T, FVector::ZeroVector), PathTurn.Eval(T, FQuat::Identity).GetNormalized());
+		// Where on the path: by time, or (across) the distance one smootherstep has covered by now.
+		float At = T;
+		if (Flight == EFlight::Across && FlightLength > 0.0f && PathPlace.Points.Num() > 0)
+		{
+			const float X = FMath::Clamp(T / FlightLength, 0.0f, 1.0f);
+			At = PathPlace.Points.Last().InVal * X * X * X * (X * (X * 6.0f - 15.0f) + 10.0f);
+		}
+		FlightCam->SetRelativeLocationAndRotation(PathPlace.Eval(At, FVector::ZeroVector), PathTurn.Eval(At, FQuat::Identity).GetNormalized());
 		if (FlightAge >= FlightLength)
 		{
 			EndFlight();

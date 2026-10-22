@@ -1004,14 +1004,20 @@ void ASibeliusGameCharacter::OnBuildPressed()
 
 	/* A PORTAL WITHIN REACH, looked at or not. After the unlock check on purpose: the
 	   portal down the hall from the start is the reason to earn Compile from Elise, and the
-	   refusal banner above is the whole of its gate. It claims only within a few metres, so
-	   it never shadows the sauce pot, a build site or the spaceport below. */
-	for (TActorIterator<ACompilePortal> It(GetWorld()); It; ++It)
+	   refusal banner above is the whole of its gate. It claims only within a few metres -
+	   AND YIELDS TO A BUILD SITE IN REACH, as the spaceport does below: the AI city's portal
+	   at the end of the upstairs hall (2026-10-22) stands within 4 m of the attic stairs'
+	   site, and took the C meant for the stairs (Walt: "I can't get past the portal to issue
+	   a 'C' to the stairs to the attic"). A portal he is looking at still goes first, above. */
+	if (!BuildComp || !BuildComp->HasSiteInReach())
 	{
-		if (It->TryClaim(this))
+		for (TActorIterator<ACompilePortal> It(GetWorld()); It; ++It)
 		{
-			OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);
-			return;
+			if (It->TryClaim(this))
+			{
+				OnPowerVerbUsed.Broadcast(EPowerVerb::Compile);
+				return;
+			}
 		}
 	}
 

@@ -218,7 +218,7 @@ private:
 
 	EFlight Flight = EFlight::None;
 	float FlightAge = 0.0f;
-	float FlightLength = 0.0f;
+	float FlightLength = 0.0f;      // seconds; across, the path itself is keyed by distance (StartFlight)
 	int32 FlightTo = 0;
 	int32 OnPad = -1;
 	FQuat TurnFrom = FQuat::Identity;

@@ -5,9 +5,10 @@
 # "[C] go through") and goes to L_Genesis; C's own gate is Compile, as for the agents' homes - the
 # seed's six-power gate went with it. Removes any UniverseSeed still in the level.
 #
-# Placed as Elise's portal stands: its centre 110 cm over the floor (the hall's floor is z 320),
-# about a metre in front of the hall's east end wall (45 cm east of where the seed stood), facing
-# down the hall.
+# Placed as Elise's portal stands, its centre 110 cm over the floor (the hall's floor is z 320),
+# facing down the hall - but 35 cm in front of the hall's east end wall (x -1677), not a metre:
+# Walt, the same day, "can the portal next to Isla be moved back towards the wall a bit? It is hard
+# to see the translucent attic stairs behind all that purple swirling".
 #
 # *** OPEN /Game/L_Office_v02 FIRST (File > Open Level), PIE stopped, THEN RUN ***
 #   py "C:/Users/wpark/projects/sibelius-game/Tools/Scripts/place_aicity_portal.py"
@@ -17,7 +18,7 @@
 import unreal
 
 TAG = "###AICITYPORTAL###"
-AT = unreal.Vector(-1777.0, 10010.0, 430.0)
+AT = unreal.Vector(-1712.0, 10040.0, 430.0)   # and 30 cm right of the alcove's old line, away from the attic stairs
 YAW = 90.0                          # the stood-up disc faces the actor's +-Y: here, along the hall
 LOOK = ("prompt_text", "not_ready_text", "claim_radius", "portal_system", "effect_offset",
         "effect_rotation", "effect_scale", "glow_lumens", "glow_color", "prompt_extent")
