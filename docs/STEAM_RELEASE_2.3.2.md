@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.3.1 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.3.2 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -34,11 +34,16 @@ first build since the review that sends the chat something new: a short list of 
 from the save and how long he was away. It is the same chat under the same rules (see
 the notes under Part B §3). **And to 2.3.1 that evening** (Walt: "please upload, copy, switch,
 update"): the Archaic Language Temple - a door by the poker corner seen only with V, into a
-Greek temple where five old programming languages stand as marble statues. No new chat. 2.3.1
-is the build that goes to Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261019-v2.3.1\` is the copy the upload script sends.
+Greek temple where five old programming languages stand as marble statues. No new chat. **And to
+2.3.2 on 2026-10-22** (Walt: "please upload, copy, switch, update"): the AI city is a bought
+megastructure now - a honeycomb sphere of hexagonal cells round its star, thick with city - that
+he flies into from among the stars and lands on, and flies across to its far side; the universe
+game is gone (Walt: "drop all the plot about universe building"), and the seed upstairs is a
+portal like the agents' homes'. No new chat. 2.3.2 is the build that goes to Steam's `default`
+branch, and `E:\builds\sibelius-shipping-chat-20261022-v2.3.2\` is the copy the upload script
+sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.3.1**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.3.2**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -63,7 +68,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.3.1 from the stick
+### 3. Upload 2.3.2 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -71,7 +76,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.3.1 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city and its gallery, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple"**. If it
+The banner should read **"v2.3.2 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -184,10 +189,10 @@ their jobs and post about what they dream of instead. Write to them. They rememb
 said, and they gossip about it.
 [/list]
 
-Upstairs, a grain of light opens only for someone who holds all six powers. Through it is
-[b]the AI city[/b]: a city that is also a mind, wrapped round a star, where the machines grow
-universes to amuse themselves. Set three dials - gravity, light, time - and grow one of your
-own, and watch it make galaxies, a world, life, and machines of its own. Or not.
+Upstairs, at the end of the hall, a portal opens onto [b]the AI city[/b]: a sphere the
+machines built round a star, a honeycomb of hexagons thick with city. You fly in from among
+the stars, through one of its cells and past its sun, and land on the far side with the star
+straight overhead. Then you can fly across it.
 
 Behind a wall only the fully-merged can drop sits [b]Celestial Fortune[/b]: a complete
 slot machine with a real par sheet. I spent 2007 building the data systems behind
@@ -229,7 +234,7 @@ PurePolygons[/b] · Office by [b]QuadArt[/b] · Space Port by [b]PackDev[/b] · 
 architecture by [b]DmitriyDryzhak[/b] · Pinball machine by [b]Speedbump Games[/b] · Pool
 table by [b]PijayArt[/b] · Bowling alley by [b]PixelForgeESP[/b] · Chess set by [b]Tomas
 Dvorak[/b] · The agents' worlds by [b]Etherion[/b] · Treasure by [b]Dekogon[/b] and
-[b][GEM VENDOR — confirm on Fab][/b] · Race kart by [b]Polygonal Assets[/b] · Space station
+[b][GEM VENDOR — confirm on Fab][/b] · Race kart by [b]Polygonal Assets[/b] · The AI city by [b]cglib team[/b] · Space station
 by [b][VENDOR — confirm on Fab][/b]
 ```
 
@@ -320,7 +325,7 @@ Guardrails:
   behaviours are inside what it describes.
 - **The welcome back and the deeds (2.3.0)** came after it too.
   - **What the game sends:** an allowlisted list of things he did in the game (the meadow
-    battle, universes kept, side-game wins and best scores) and how many hours since she last
+    battle, side-game wins and best scores; 2.3.0-2.3.1 also sent universes kept, gone with the universe game in 2.3.2) and how many hours since she last
     answered him. Nothing he typed goes in it.
   - **What the server does with it:** puts it in her instructions for that reply and keeps none
     of it, so the privacy line still holds.
@@ -340,10 +345,12 @@ Guardrails:
     (SMK, the National Gallery of Denmark, public domain), and the temple is a bought pack
     marked "Generated with AI: No". Its door sign and the statues' marble and bronze are
     drawn by ordinary code.
+  - 2.3.2: the AI city's dome is a bought pack (cglib team, "Megastructure: Dome 1") marked
+    "Generated with AI: No". Its landing platforms, the flights and the star are ordinary code.
 
 ### §4. System requirements
 
-The 2.3.1 package measures **8.7 GB** (9,337,021,586 bytes; 2.3.0 was 9,274,490,632; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.3.2 package measures **8.7 GB** (9,393,656,613 bytes; 2.3.1 was 9,337,021,586; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **10 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
