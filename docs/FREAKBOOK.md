@@ -202,6 +202,6 @@ programmers, it is on the work that was done to them. Write every post and reply
   `AFreakbookItem` with Person `gunther` or `brent`, anywhere in any level.
 - The pictures are drawn by a script Claude wrote (shapes and Comic Sans, no image model), the
   way the GO and chess door signs were. Steam's Pre-Generated disclosure today names only the
-  ElevenLabs voices (`STEAM_RELEASE_2.3.2.md`), and its notes call the door signs and the Go board
+  ElevenLabs voices (`STEAM_RELEASE_2.3.3.md`), and its notes call the door signs and the Go board
   "drawn by ordinary code"; these are the same. Whether it should also say the code and the
   drawn art were written with AI is Walt's call, for the signs as much as for these.

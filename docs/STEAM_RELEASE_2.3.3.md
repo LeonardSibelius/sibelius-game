@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.3.2 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.3.3 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -39,11 +39,13 @@ Greek temple where five old programming languages stand as marble statues. No ne
 megastructure now - a honeycomb sphere of hexagonal cells round its star, thick with city - that
 he flies into from among the stars and lands on, and flies across to its far side; the universe
 game is gone (Walt: "drop all the plot about universe building"), and the seed upstairs is a
-portal like the agents' homes'. No new chat. 2.3.2 is the build that goes to Steam's `default`
-branch, and `E:\builds\sibelius-shipping-chat-20261022-v2.3.2\` is the copy the upload script
-sends.
+portal like the agents' homes'. No new chat. **And to 2.3.3 that evening** (Walt: "commit it and
+do the 2.3.3 hotfix"): the attic stairs answer C again - the AI city's portal, 4 m away, had
+been taking it - the flight across the dome is one smooth run, and the portal stands back by
+the wall. No new chat. 2.3.3 is the build that goes to Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261022-v2.3.3\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.3.2**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.3.3**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -68,7 +70,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.3.2 from the stick
+### 3. Upload 2.3.3 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -76,7 +78,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.3.2 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple"**. If it
+The banner should read **"v2.3.3 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -350,7 +352,7 @@ Guardrails:
 
 ### §4. System requirements
 
-The 2.3.2 package measures **8.7 GB** (9,393,656,613 bytes; 2.3.1 was 9,337,021,586; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.3.3 package measures **8.7 GB** (9,393,659,685 bytes; 2.3.2 was 9,393,656,613; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **10 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
