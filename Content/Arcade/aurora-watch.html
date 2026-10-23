@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="leonards-arcade-picks" content="Aisling's snowfield · A dragon made of light · Tower defence · Faster and faster">
+<title>Aurora Watch</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #030814; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const TAU = Math.PI * 2;
+  const TAG = "Leonard's Arcade · sample game";
+  const VW = 960, VH = 600;
+
+  let W = 0, H = 0, S = 1, OX = 0, OY = 0;
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    S = Math.min(W / VW, H / VH); OX = (W - VW * S) / 2; OY = (H - VH * S) / 2;
+  }
+  addEventListener("resize", resize);
+  resize();
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const d2 = (ax, ay, bx, by) => (ax - bx) ** 2 + (ay - by) ** 2;
+
+  // ---------- the path across the snow to Aisling's lodge ----------
+  const PATH = [[-40, 150], [190, 150], [250, 330], [470, 330], [540, 170], [740, 170], [790, 400], [560, 470], [330, 470], [290, 560], [620, 570], [900, 520], [1010, 520]];
+  const SEG = [];
+  let PATH_LEN = 0;
+  for (let i = 0; i < PATH.length - 1; i++) {
+    const [x1, y1] = PATH[i], [x2, y2] = PATH[i + 1], len = Math.hypot(x2 - x1, y2 - y1);
+    SEG.push({ x1, y1, x2, y2, len, at: PATH_LEN }); PATH_LEN += len;
+  }
+  function pointAt(s) {
+    for (const g of SEG) if (s <= g.at + g.len) { const k = (s - g.at) / g.len; return [g.x1 + (g.x2 - g.x1) * k, g.y1 + (g.y2 - g.y1) * k]; }
+    const g = SEG[SEG.length - 1]; return [g.x2, g.y2];
+  }
+  const SPOTS = [[120, 230], [300, 250], [360, 400], [440, 250], [640, 250], [660, 110], [860, 290], [700, 400], [450, 400], [200, 520], [460, 530], [760, 500], [860, 440]].map(([x, y]) => ({ x, y, tower: null }));
+  const TOWERS = [
+    { key: "1", name: "Ice crystal", cost: 50, range: 95, rate: 0.5, dmg: 0.6, slow: 0.45, col: "#9fe7ff" },
+    { key: "2", name: "Lantern", cost: 70, range: 135, rate: 0.75, dmg: 3, col: "#ffd36a" },
+    { key: "3", name: "Aurora spire", cost: 120, range: 155, rate: 1.4, dmg: 2.2, chain: 4, col: "#b98aff" },
+  ];
+
+  // ---------- sound ----------
+  let AC = null, master = null, noiseBuf = null;
+  function initAudio() {
+    if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = 0.45; master.connect(AC.destination);
+      noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e) { AC = null; }
+  }
+  function tone(f, dur, type = "sine", vol = 0.15, to = 0, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function hiss(dur, vol, freq) {
+    if (!AC) return;
+    const t = AC.currentTime, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+    s.buffer = noiseBuf; f.type = "highpass"; f.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.05);
+  }
+  let lastZap = 0, lastBreath = 0;
+  const sfx = {
+    bolt() { if (clock - lastZap < 0.05) return; lastZap = clock; tone(1200, 0.08, "triangle", 0.05, 600); },
+    chain() { tone(1600, 0.25, "sawtooth", 0.05, 300); },
+    breath() { if (clock - lastBreath < 0.12) return; lastBreath = clock; hiss(0.15, 0.05, 3000); },
+    build() { [0, 7, 12].forEach((s, i) => tone(523 * 2 ** (s / 12), 0.2, "sine", 0.12, 0, i * 0.05)); },
+    nope() { tone(200, 0.15, "square", 0.08, 150); },
+    pop() { tone(900, 0.08, "sine", 0.08, 1800); hiss(0.12, 0.08, 4000); },
+    leak() { tone(300, 0.4, "sawtooth", 0.12, 100); },
+    wave() { [0, 4, 7, 11].forEach((s, i) => tone(392 * 2 ** (s / 12), 0.5, "sine", 0.1, 0, i * 0.1)); },
+    over() { [7, 4, 0, -5, -12].forEach((s, i) => tone(392 * 2 ** (s / 12), 0.5, "triangle", 0.14, 0, i * 0.2)); },
+  };
+  // the aurora hums: a slow pentatonic chime, quicker as the night quickens
+  let chimeNext = 0;
+  function chimes() {
+    if (!AC || state !== "play" || paused) return;
+    if (AC.currentTime < chimeNext) return;
+    const notes = [0, 2, 4, 7, 9, 12, 14];
+    tone(392 * 2 ** (notes[Math.floor(Math.random() * notes.length)] / 12), 1.6, "sine", 0.035);
+    chimeNext = AC.currentTime + 1.1 / speedK();
+  }
+
+  // ---------- input ----------
+  const keys = new Set();
+  const mouse = { x: 0, y: 0 };
+  let selected = null;   // a build spot chosen with the mouse
+  addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if (k === "escape") return;   // the arcade's key, never the game's
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+    initAudio(); keys.add(k);
+    if ((state === "title" && (k === "enter" || k === " ")) || (state === "over" && k === "enter" && overT > 0.9)) { start(); return; }
+    if (state !== "play") return;
+    if (k === "p") paused = !paused;
+    if (k === "n") callWave();   // not Enter: pressed out of habit, it would stack waves
+    if (k === "1" || k === "2" || k === "3") buildAt(selected || spotUnderDragon(), +k - 1);
+  });
+  addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+  addEventListener("blur", () => keys.clear());
+  canvas.addEventListener("mousemove", e => { mouse.x = (e.clientX - OX) / S; mouse.y = (e.clientY - OY) / S; });
+  canvas.addEventListener("mousedown", e => {
+    initAudio();
+    mouse.x = (e.clientX - OX) / S; mouse.y = (e.clientY - OY) / S;
+    if (state === "title" || (state === "over" && overT > 0.9)) { start(); return; }
+    if (state !== "play" || paused) return;
+    // the tower bar along the bottom
+    for (let i = 0; i < 3; i++) if (mouse.y > VH - 54 && mouse.x > 250 + i * 160 && mouse.x < 400 + i * 160) { buildAt(selected || spotUnderDragon(), i); return; }
+    if (mouse.y > VH - 54 && mouse.x > 760) { callWave(); return; }
+    selected = SPOTS.find(s => d2(s.x, s.y, mouse.x, mouse.y) < 30 ** 2) || null;
+  });
+
+  // ---------- state ----------
+  let state = "title", paused = false, clock = 0, overT = 0;
+  let dragon, foes = [], shots = [], arcs = [], parts = [], popups = [], snow = [];
+  let score = 0, best = 0, coins = 150, warmth = 20, wave = 0, waveQueue = [], waveT = 0, breather = 0, banner = null, shake = 0;
+  try { best = +localStorage.getItem("auroraWatchBest") || 0; } catch (e) {}
+  for (let i = 0; i < 160; i++) snow.push({ x: rand(0, VW), y: rand(0, VH), v: rand(14, 40), s: rand(1, 2.6) });
+
+  // THE TWIST: the higher the score, the faster everything runs - foes, towers and dragon alike
+  const speedK = () => Math.min(2.4, 1 + score / 5000);
+
+  function start() {
+    state = "play"; paused = false;
+    for (const s of SPOTS) s.tower = null;
+    dragon = { x: 120, y: 330, vx: 0, vy: 0, face: 0, energy: 1, flap: 0 };
+    foes = []; shots = []; arcs = []; parts = []; popups = [];
+    score = 0; coins = 150; warmth = 20; wave = 0; waveQueue = []; breather = 6; selected = null;
+    banner = { t: 3, a: "AURORA WATCH", b: "stand by a mound and press 1, 2 or 3 to build  ·  Space breathes light" };
+  }
+  function spotUnderDragon() { return SPOTS.find(s => d2(s.x, s.y, dragon.x, dragon.y) < 36 ** 2) || null; }
+  function buildAt(spot, kind) {
+    if (!spot) { popups.push({ x: dragon.x, y: dragon.y - 30, t: 0.9, text: "fly over a snow mound first" }); sfx.nope(); return; }
+    const T = TOWERS[kind];
+    if (spot.tower && spot.tower.kind === kind) {
+      if (spot.tower.lvl >= 3) { sfx.nope(); return; }
+      const cost = Math.round(T.cost * 0.7 * spot.tower.lvl);
+      if (coins < cost) { popups.push({ x: spot.x, y: spot.y - 30, t: 0.9, text: "needs " + cost }); sfx.nope(); return; }
+      coins -= cost; spot.tower.lvl++; sfx.build();
+      popups.push({ x: spot.x, y: spot.y - 30, t: 1, text: T.name + " level " + spot.tower.lvl, good: true });
+      return;
+    }
+    if (spot.tower) { popups.push({ x: spot.x, y: spot.y - 30, t: 0.9, text: "already a " + TOWERS[spot.tower.kind].name }); sfx.nope(); return; }
+    if (coins < T.cost) { popups.push({ x: spot.x, y: spot.y - 30, t: 0.9, text: "needs " + T.cost }); sfx.nope(); return; }
+    coins -= T.cost; spot.tower = { kind, lvl: 1, cd: 0 }; sfx.build();
+    for (let i = 0; i < 20; i++) parts.push({ x: spot.x, y: spot.y, vx: rand(-90, 90), vy: rand(-120, 20), life: 0.6, max: 0.6, col: T.col });
+  }
+  function callWave() {
+    if (waveQueue.length) return;
+    if (breather > 0 && wave > 0) { coins += Math.round(breather * 4); popups.push({ x: 860, y: VH - 70, t: 1, text: "+" + Math.round(breather * 4) + " for calling early", good: true }); }
+    breather = 0; nextWave();
+  }
+  function nextWave() {
+    wave++; waveT = 0;
+    const n = 6 + wave * 2;
+    for (let i = 0; i < n; i++) {
+      const r = Math.random();
+      const kind = wave >= 4 && r < 0.18 ? "golem" : wave >= 2 && r < 0.5 ? "wisp" : "wraith";
+      waveQueue.push({ at: i * Math.max(0.35, 0.9 - wave * 0.04), kind });
+    }
+    if (wave % 5 === 0) waveQueue.push({ at: n * 0.6, kind: "king" });
+    banner = { t: 1.8, a: "WAVE " + wave, b: wave % 5 === 0 ? "the Frost King walks tonight" : "" };
+    sfx.wave();
+  }
+  function spawn(kind) {
+    const hpBase = 1 + wave * 0.45 + wave * wave * 0.03;   // towers stack up, so the cold must too
+    const f = { kind, s: 0, slowT: 0, flash: 0, ph: rand(0, TAU) };
+    if (kind === "wraith") Object.assign(f, { hp: 6 * hpBase, v: 50, r: 12, gold: 6 });
+    else if (kind === "wisp") Object.assign(f, { hp: 3 * hpBase, v: 92, r: 9, gold: 5 });
+    else if (kind === "golem") Object.assign(f, { hp: 22 * hpBase, v: 30, r: 18, gold: 18 });
+    else Object.assign(f, { hp: 120 * hpBase, v: 26, r: 26, gold: 90 });
+    f.max = f.hp; foes.push(f);
+  }
+  function hit(f, dmg) {
+    f.hp -= dmg; f.flash = 0.08; score += Math.round(dmg * 4);
+    if (f.hp <= 0 && !f.dead) {
+      f.dead = true; coins += f.gold; score += f.gold * 5; sfx.pop();
+      const [x, y] = pointAt(f.s);
+      popups.push({ x, y: y - 16, t: 0.7, text: "+" + f.gold });
+      for (let i = 0; i < (f.kind === "king" ? 80 : 18); i++) parts.push({ x, y, vx: rand(-140, 140), vy: rand(-160, 60), life: 0.8, max: 0.8, col: "#dff6ff" });
+      if (f.kind === "king") { shake = 14; banner = { t: 1.8, a: "THE FROST KING FALLS", b: "" }; }
+    }
+  }
+
+  // ---------- update ----------
+  function update(rdt) {
+    const dt = rdt * speedK();
+    // the dragon flies with the arrows and breathes light with Space
+    let mx = 0, my = 0;
+    if (keys.has("arrowleft") || keys.has("a")) mx -= 1;
+    if (keys.has("arrowright") || keys.has("d")) mx += 1;
+    if (keys.has("arrowup") || keys.has("w")) my -= 1;
+    if (keys.has("arrowdown") || keys.has("s")) my += 1;
+    if (mx || my) { const l = Math.hypot(mx, my); dragon.vx += mx / l * 1500 * dt; dragon.vy += my / l * 1500 * dt; dragon.face = Math.atan2(my, mx); }
+    dragon.vx *= Math.exp(-5 * dt); dragon.vy *= Math.exp(-5 * dt);
+    dragon.x = Math.max(20, Math.min(VW - 20, dragon.x + dragon.vx * dt));
+    dragon.y = Math.max(20, Math.min(VH - 70, dragon.y + dragon.vy * dt));
+    dragon.flap += dt * (6 + Math.hypot(dragon.vx, dragon.vy) * 0.02);
+    const breathing = keys.has(" ") && dragon.energy > 0.02;
+    dragon.energy = Math.max(0, Math.min(1, dragon.energy + (breathing ? -0.45 : 0.2) * dt));
+    if (breathing) {
+      sfx.breath();
+      for (const f of foes) {
+        const [x, y] = pointAt(f.s), dx = x - dragon.x, dy = y - dragon.y, d = Math.hypot(dx, dy);
+        if (d < 150 && Math.abs(((Math.atan2(dy, dx) - dragon.face + Math.PI * 3) % TAU) - Math.PI) < 0.5) hit(f, 9 * dt);
+      }
+      for (let i = 0; i < 3; i++) { const a = dragon.face + rand(-0.45, 0.45), sp = rand(200, 360); parts.push({ x: dragon.x + Math.cos(dragon.face) * 16, y: dragon.y + Math.sin(dragon.face) * 16, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.4, max: 0.4, col: "#e8fbff" }); }
+    }
+
+    // waves
+    waveT += dt;
+    while (waveQueue.length && waveQueue[0].at <= waveT) spawn(waveQueue.shift().kind);
+    if (!waveQueue.length && foes.length === 0 && wave > 0 && breather <= 0) { breather = 8; banner = { t: 1.6, a: "WAVE " + wave + " HELD", b: "N calls the next one early, for coins" }; }
+    if (breather > 0) { breather -= dt; if (breather <= 0 && !waveQueue.length) nextWave(); }
+    if (wave === 0 && breather <= 0 && !waveQueue.length) nextWave();
+
+    // foes walk the path; ice slows them
+    for (let i = foes.length - 1; i >= 0; i--) {
+      const f = foes[i];
+      if (f.dead) { foes.splice(i, 1); continue; }
+      f.flash = Math.max(0, f.flash - dt); f.slowT = Math.max(0, f.slowT - dt);
+      f.s += f.v * (f.slowT > 0 ? 0.45 : 1) * dt;
+      if (f.s >= PATH_LEN) {
+        foes.splice(i, 1); warmth -= f.kind === "king" ? 6 : f.kind === "golem" ? 3 : 1; shake = 8; sfx.leak();
+        if (warmth <= 0) {
+          warmth = 0; state = "over"; overT = 0; sfx.over();
+          if (score > best) { best = score; try { localStorage.setItem("auroraWatchBest", String(best)); } catch (e) {} }
+          return;
+        }
+      }
+    }
+
+    // towers
+    for (const spot of SPOTS) {
+      const t = spot.tower; if (!t) continue;
+      const T = TOWERS[t.kind], range = T.range * (1 + 0.12 * (t.lvl - 1));
+      t.cd -= dt;
+      if (t.cd > 0) continue;
+      const inRange = foes.filter(f => { const [x, y] = pointAt(f.s); return d2(x, y, spot.x, spot.y) < range * range; });
+      if (!inRange.length) continue;
+      t.cd = T.rate / (1 + 0.25 * (t.lvl - 1));
+      inRange.sort((a, b) => b.s - a.s);   // the one nearest the lodge first
+      if (t.kind === 0) {
+        for (const f of inRange) { f.slowT = 1.2; hit(f, T.dmg * t.lvl); }
+        arcs.push({ ring: true, x: spot.x, y: spot.y, r: range, life: 0.35, col: T.col });
+      } else if (t.kind === 1) {
+        shots.push({ x: spot.x, y: spot.y - 18, target: inRange[0], v: 520, dmg: T.dmg * (1 + 0.6 * (t.lvl - 1)) }); sfx.bolt();
+      } else {
+        let fromX = spot.x, fromY = spot.y - 26;
+        for (const f of inRange.slice(0, T.chain + t.lvl - 1)) {
+          const [x, y] = pointAt(f.s);
+          arcs.push({ x1: fromX, y1: fromY, x2: x, y2: y, life: 0.25, col: T.col });
+          hit(f, T.dmg * (1 + 0.5 * (t.lvl - 1))); fromX = x; fromY = y;
+        }
+        sfx.chain();
+      }
+    }
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const s = shots[i];
+      if (!s.target || s.target.dead || !foes.includes(s.target)) { shots.splice(i, 1); continue; }
+      const [x, y] = pointAt(s.target.s), dx = x - s.x, dy = y - s.y, d = Math.hypot(dx, dy);
+      if (d < 10) { hit(s.target, s.dmg); shots.splice(i, 1); continue; }
+      s.x += dx / d * s.v * dt; s.y += dy / d * s.v * dt;
+    }
+  }
+
+  function ambient(rdt) {
+    const dt = rdt * (state === "play" ? speedK() : 1);
+    clock += rdt; shake *= Math.exp(-8 * rdt);
+    if (state === "over") overT += rdt;
+    if (banner) { banner.t -= rdt; if (banner.t <= 0) banner = null; }
+    for (const s of snow) { s.y += s.v * dt; s.x += Math.sin(clock + s.y * 0.02) * 10 * dt; if (s.y > VH) { s.y = -4; s.x = rand(0, VW); } }
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.life -= dt;
+      if (p.life <= 0) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.93; p.vy *= 0.93;
+    }
+    for (let i = arcs.length - 1; i >= 0; i--) { arcs[i].life -= dt; if (arcs[i].life <= 0) arcs.splice(i, 1); }
+    for (let i = popups.length - 1; i >= 0; i--) { popups[i].t -= rdt; popups[i].y -= 26 * rdt; if (popups[i].t <= 0) popups.splice(i, 1); }
+    chimes();
+  }
+
+  // ---------- drawing ----------
+  function drawSkyAndSnow() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#030814"); g.addColorStop(0.5, "#0a1a33"); g.addColorStop(1, "#1c2c4a");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.translate(OX, OY); ctx.scale(S, S);
+    // the northern lights, bands that ripple and breathe
+    ctx.globalCompositeOperation = "lighter";
+    for (let b = 0; b < 3; b++) {
+      const base = 70 + b * 40, hue = [140, 170, 280][b];
+      ctx.beginPath();
+      for (let x = -20; x <= VW + 20; x += 16) {
+        const y = base + Math.sin(x * 0.006 + clock * 0.3 * (b + 1)) * 30 + Math.sin(x * 0.017 - clock * 0.5) * 12;
+        x === -20 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      for (let x = VW + 20; x >= -20; x -= 16) {
+        const y = base + 90 + Math.sin(x * 0.006 + clock * 0.3 * (b + 1) + 0.6) * 40;
+        ctx.lineTo(x, y);
+      }
+      const ag = ctx.createLinearGradient(0, base - 30, 0, base + 130);
+      ag.addColorStop(0, `hsla(${hue},100%,65%,0)`); ag.addColorStop(0.4, `hsla(${hue},100%,60%,${0.16 + 0.06 * Math.sin(clock + b)})`); ag.addColorStop(1, `hsla(${hue + 40},100%,55%,0)`);
+      ctx.fillStyle = ag; ctx.fill();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    // the snowfield and its pines
+    // moonlit snow: blue, not white - it is night, and the text must read on it
+    const snowG = ctx.createLinearGradient(0, 120, 0, VH);
+    snowG.addColorStop(0, "#7088ad"); snowG.addColorStop(1, "#33466a");
+    ctx.fillStyle = snowG; ctx.beginPath(); ctx.moveTo(-10, 120);
+    for (let x = -10; x <= VW + 10; x += 20) ctx.lineTo(x, 118 + Math.sin(x * 0.01) * 8);
+    ctx.lineTo(VW + 10, VH); ctx.lineTo(-10, VH); ctx.fill();
+    const sg = ctx.createLinearGradient(0, 120, 0, VH); sg.addColorStop(0, `rgba(120,255,200,${0.1 + 0.04 * Math.sin(clock * 0.6)})`); sg.addColorStop(1, "rgba(120,255,200,0)");
+    ctx.fillStyle = sg; ctx.fillRect(0, 110, VW, VH);
+    for (let k = 0; k < 16; k++) {
+      const x = 20 + k * 62 + (k % 3) * 9, y = 124 + (k % 2) * 6, h = 34 + (k % 4) * 10;
+      ctx.fillStyle = "#183048"; ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x - h * 0.35, y); ctx.lineTo(x + h * 0.35, y); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawPath() {
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.strokeStyle = "rgba(120,150,190,0.45)"; ctx.lineWidth = 34;
+    ctx.beginPath(); PATH.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+    ctx.strokeStyle = "rgba(214,228,248,0.92)"; ctx.lineWidth = 26; ctx.stroke();
+    ctx.setLineDash([4, 14]); ctx.strokeStyle = "rgba(140,170,210,0.7)"; ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]);
+    // the lodge at the end, its windows warm while it lasts
+    const lx = 905, ly = 470;
+    ctx.fillStyle = "#5a3a2a"; ctx.fillRect(lx - 40, ly - 30, 80, 50);
+    ctx.fillStyle = "#e9f2fb"; ctx.beginPath(); ctx.moveTo(lx - 50, ly - 28); ctx.lineTo(lx, ly - 66); ctx.lineTo(lx + 50, ly - 28); ctx.fill();
+    const warm = warmth / 20;
+    ctx.fillStyle = `rgba(255,${150 + 70 * warm | 0},80,${0.3 + 0.7 * warm})`; ctx.fillRect(lx - 28, ly - 16, 16, 14); ctx.fillRect(lx + 12, ly - 16, 16, 14);
+    ctx.globalCompositeOperation = "lighter";
+    const lg = ctx.createRadialGradient(lx, ly - 10, 4, lx, ly - 10, 90);
+    lg.addColorStop(0, `rgba(255,190,100,${0.35 * warm})`); lg.addColorStop(1, "rgba(255,190,100,0)");
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(lx, ly - 10, 90, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function drawSpots() {
+    for (const s of SPOTS) {
+      const sel = s === selected || (dragon && s === spotUnderDragon());
+      ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.beginPath(); ctx.ellipse(s.x, s.y + 6, 24, 10, 0, 0, TAU); ctx.fill();
+      if (sel) { ctx.strokeStyle = `rgba(150,220,255,${0.6 + 0.4 * Math.sin(clock * 8)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(s.x, s.y + 6, 28, 13, 0, 0, TAU); ctx.stroke(); }
+      const t = s.tower; if (!t) continue;
+      const T = TOWERS[t.kind];
+      if (sel) { ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(s.x, s.y, T.range * (1 + 0.12 * (t.lvl - 1)), 0, TAU); ctx.stroke(); }
+      ctx.save(); ctx.translate(s.x, s.y);
+      if (t.kind === 0) {
+        ctx.fillStyle = T.col; ctx.beginPath(); ctx.moveTo(0, -30 - t.lvl * 4); ctx.lineTo(10, -6); ctx.lineTo(0, 4); ctx.lineTo(-10, -6); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.beginPath(); ctx.moveTo(0, -28 - t.lvl * 4); ctx.lineTo(4, -8); ctx.lineTo(0, 0); ctx.fill();
+      } else if (t.kind === 1) {
+        ctx.fillStyle = "#3a2a1a"; ctx.fillRect(-3, -34, 6, 36);
+        ctx.fillStyle = T.col; ctx.fillRect(-8, -46, 16, 14);
+        ctx.globalCompositeOperation = "lighter";
+        const g = ctx.createRadialGradient(0, -39, 2, 0, -39, 30); g.addColorStop(0, "rgba(255,210,110,0.7)"); g.addColorStop(1, "rgba(255,210,110,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -39, 30, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = "source-over";
+      } else {
+        ctx.fillStyle = "#3c2c5c"; ctx.beginPath(); ctx.moveTo(-9, 4); ctx.lineTo(0, -44 - t.lvl * 4); ctx.lineTo(9, 4); ctx.fill();
+        ctx.fillStyle = `hsla(${270 + 40 * Math.sin(clock * 2)},100%,70%,0.9)`; ctx.beginPath(); ctx.arc(0, -44 - t.lvl * 4, 6, 0, TAU); ctx.fill();
+      }
+      for (let k = 0; k < t.lvl; k++) { ctx.fillStyle = "#fff6c4"; ctx.beginPath(); ctx.arc(-8 + k * 8, 12, 2.5, 0, TAU); ctx.fill(); }
+      ctx.restore();
+    }
+  }
+
+  function drawFoes() {
+    for (const f of foes) {
+      const [x, y] = pointAt(f.s), bob = Math.sin(clock * 4 + f.ph) * 3;
+      ctx.save(); ctx.translate(x, y + bob);
+      const c = f.flash > 0 ? "#ffffff" : f.slowT > 0 ? "#bfefff" : f.kind === "king" ? "#a6c8ff" : f.kind === "golem" ? "#8fa6c8" : "#d4e4ff";
+      ctx.fillStyle = c; ctx.globalAlpha = f.kind === "wisp" ? 0.8 : 0.95;
+      ctx.beginPath(); ctx.moveTo(-f.r, f.r * 0.8);
+      ctx.quadraticCurveTo(-f.r * 1.1, -f.r * 1.2, 0, -f.r * 1.3); ctx.quadraticCurveTo(f.r * 1.1, -f.r * 1.2, f.r, f.r * 0.8);
+      for (let k = 3; k >= 0; k--) ctx.lineTo(-f.r + (k / 3) * 2 * f.r, f.r * 0.8 + (k % 2 ? 5 : 0) + Math.sin(clock * 8 + k) * 2);
+      ctx.fill(); ctx.globalAlpha = 1;
+      ctx.fillStyle = f.kind === "king" ? "#ff4060" : "#1a2a5a";
+      ctx.beginPath(); ctx.arc(-f.r * 0.35, -f.r * 0.3, f.r * 0.16, 0, TAU); ctx.arc(f.r * 0.35, -f.r * 0.3, f.r * 0.16, 0, TAU); ctx.fill();
+      if (f.kind === "king") { ctx.fillStyle = "#ffe27a"; ctx.beginPath(); ctx.moveTo(-14, -f.r * 1.25); ctx.lineTo(-10, -f.r * 1.7); ctx.lineTo(-3, -f.r * 1.4); ctx.lineTo(3, -f.r * 1.75); ctx.lineTo(9, -f.r * 1.4); ctx.lineTo(14, -f.r * 1.7); ctx.lineTo(15, -f.r * 1.25); ctx.fill(); }
+      ctx.restore();
+      if (f.hp < f.max) { ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(x - 14, y - f.r * 1.6 - 6, 28, 4); ctx.fillStyle = "#7dffb4"; ctx.fillRect(x - 14, y - f.r * 1.6 - 6, 28 * Math.max(0, f.hp / f.max), 4); }
+    }
+  }
+
+  function drawDragon() {
+    if (!dragon) return;
+    ctx.save(); ctx.translate(dragon.x, dragon.y);
+    ctx.globalCompositeOperation = "lighter";
+    const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 46);
+    g.addColorStop(0, "rgba(200,240,255,0.55)"); g.addColorStop(1, "rgba(120,200,255,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 46, 0, TAU); ctx.fill();
+    ctx.rotate(dragon.face);
+    const wing = Math.sin(dragon.flap) * 0.8;
+    ctx.fillStyle = "rgba(170,230,255,0.75)";
+    for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-2, 0); ctx.lineTo(-14, side * (26 + wing * 10)); ctx.lineTo(6, side * 6); ctx.fill(); }
+    ctx.fillStyle = "rgba(235,250,255,0.95)";
+    ctx.beginPath(); ctx.moveTo(18, 0); ctx.quadraticCurveTo(6, -7, -10, -3); ctx.quadraticCurveTo(-26, Math.sin(dragon.flap * 0.7) * 6, -34, 0); ctx.quadraticCurveTo(-26, Math.sin(dragon.flap * 0.7) * 6 + 3, -10, 3); ctx.quadraticCurveTo(6, 7, 18, 0); ctx.fill();
+    ctx.fillStyle = "#4ab8ff"; ctx.beginPath(); ctx.arc(11, -2, 1.8, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
+    ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.fillRect(dragon.x - 18, dragon.y + 26, 36, 4);
+    ctx.fillStyle = "#bff0ff"; ctx.fillRect(dragon.x - 18, dragon.y + 26, 36 * dragon.energy, 4);
+  }
+
+  function text(t, x, y, size, color, align = "center", weight = 700) {
+    ctx.font = `${weight} ${size}px "Segoe UI", system-ui, sans-serif`;
+    ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillStyle = color; ctx.fillText(t, x, y);
+  }
+  function glow(t, x, y, size, color, shadow) {
+    ctx.save(); ctx.shadowColor = shadow; ctx.shadowBlur = size * 0.5; text(t, x, y, size, color, "center", 800); ctx.restore();
+    text(t, x, y, size, color, "center", 800);
+  }
+
+  function draw() {
+    drawSkyAndSnow();
+    ctx.save();
+    if (shake > 0.3) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+    ctx.translate(OX, OY); ctx.scale(S, S);
+    drawPath();
+    if (state !== "title") { drawSpots(); drawFoes(); }
+    ctx.globalCompositeOperation = "lighter";
+    for (const a of arcs) {
+      ctx.strokeStyle = a.col; ctx.globalAlpha = Math.min(1, a.life * 4); ctx.lineWidth = a.ring ? 2 : 3;
+      ctx.beginPath();
+      if (a.ring) ctx.arc(a.x, a.y, a.r * (1 - a.life), 0, TAU);
+      else { ctx.moveTo(a.x1, a.y1); const n = 5; for (let k = 1; k < n; k++) ctx.lineTo(a.x1 + (a.x2 - a.x1) * k / n + rand(-8, 8), a.y1 + (a.y2 - a.y1) * k / n + rand(-8, 8)); ctx.lineTo(a.x2, a.y2); }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    for (const s of shots) { ctx.fillStyle = "#ffe9a0"; ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, TAU); ctx.fill(); }
+    for (const p of parts) { ctx.fillStyle = p.col; ctx.globalAlpha = p.life / p.max; ctx.fillRect(p.x, p.y, 3, 3); }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+    if (state === "play") drawDragon();
+    for (const s of snow) { ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillRect(s.x, s.y, s.s, s.s); }
+    for (const p of popups) text(p.text, p.x, p.y, 14, p.good ? `rgba(160,255,200,${Math.min(1, p.t * 2)})` : `rgba(255,240,180,${Math.min(1, p.t * 2)})`, "center", 700);
+
+    if (state === "play") {
+      text("SCORE " + score, 16, 20, 18, "#eaf6ff", "left", 800);
+      text("COINS " + coins, 16, 44, 16, "#ffe27a", "left", 700);
+      text("WARMTH " + warmth, VW - 16, 20, 16, warmth <= 5 ? "#ff8a8a" : "#ffd2a0", "right", 800);
+      text("WAVE " + Math.max(1, wave) + "   NIGHT x" + speedK().toFixed(2), VW - 16, 44, 14, "rgba(234,246,255,0.8)", "right", 700);
+      // the build bar
+      ctx.fillStyle = "rgba(4,10,24,0.78)"; ctx.fillRect(0, VH - 54, VW, 54);
+      text("on a mound:", 240, VH - 27, 14, "rgba(234,246,255,0.7)", "right", 600);
+      TOWERS.forEach((T, i) => {
+        const x = 250 + i * 160, afford = coins >= T.cost;
+        ctx.strokeStyle = afford ? T.col : "rgba(255,255,255,0.2)"; ctx.lineWidth = 2; ctx.strokeRect(x, VH - 48, 150, 42);
+        text(T.key + "  " + T.name, x + 75, VH - 34, 14, afford ? "#eaf6ff" : "rgba(234,246,255,0.4)", "center", 700);
+        text(T.cost + " coins  ·  again to upgrade", x + 75, VH - 16, 11, afford ? "rgba(234,246,255,0.7)" : "rgba(234,246,255,0.3)", "center", 500);
+      });
+      text(waveQueue.length || foes.length ? "Space: breathe light" : "N: next wave now", 860, VH - 27, 14, "rgba(234,246,255,0.8)", "center", 700);
+      if (banner) {
+        ctx.globalAlpha = Math.min(1, banner.t * 2);
+        ctx.fillStyle = "rgba(4,10,24,0.6)"; ctx.fillRect(VW / 2 - 380, 196, 760, 96);
+        glow(banner.a, VW / 2, 230, 40, "#eaf6ff", "rgba(120,255,200,0.9)");
+        if (banner.b) text(banner.b, VW / 2, 268, 15, "rgba(234,246,255,0.9)", "center", 500);
+        ctx.globalAlpha = 1;
+      }
+      if (paused) { ctx.fillStyle = "rgba(4,10,24,0.6)"; ctx.fillRect(0, 0, VW, VH); glow("PAUSED", VW / 2, VH / 2, 50, "#fff", "#7fd"); }
+    } else if (state === "title") {
+      ctx.fillStyle = "rgba(4,10,24,0.62)"; ctx.fillRect(VW / 2 - 440, 196, 880, 306);
+      glow("AURORA WATCH", VW / 2, 250, 72, "#eaf6ff", "rgba(120,255,200,1)");
+      text("a small dragon made of light guards Aisling's snowfield under the northern lights", VW / 2, 302, 18, "rgba(234,246,255,0.92)", "center", 500);
+      text("The higher your score climbs, the faster the night runs - for them and for you.", VW / 2, 332, 16, "rgba(190,170,255,0.95)", "center", 500);
+      text("Arrows or WASD fly the dragon  ·  Space breathes light  ·  over a mound, 1 2 3 build towers", VW / 2, 362, 14, "rgba(234,246,255,0.7)", "center", 500);
+      text("(or click a mound, then a tower in the bar)  ·  N calls the next wave  ·  P pauses", VW / 2, 384, 14, "rgba(234,246,255,0.6)", "center", 500);
+      text("Press Enter or Space to keep watch", VW / 2, 446, 28, `rgba(240,250,255,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+      if (best) text("Best: " + best, VW / 2, 480, 17, "rgba(234,246,255,0.8)");
+    } else {
+      ctx.fillStyle = `rgba(4,10,24,${Math.min(0.6, overT)})`; ctx.fillRect(0, 0, VW, VH);
+      glow("THE LODGE GOES COLD", VW / 2, VH * 0.38, 52, "#eaf6ff", "rgba(120,170,255,1)");
+      text("Score " + score + (score >= best && score > 0 ? "  ·  new best!" : "  ·  best " + best) + "  ·  you held " + Math.max(0, wave - 1) + " waves", VW / 2, VH * 0.38 + 50, 20, "#eaf6ff");
+      if (overT > 0.9) text("Press Enter to keep watch again", VW / 2, VH * 0.6, 26, `rgba(240,250,255,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+    }
+    ctx.restore();
+    if (state === "title") text(TAG, W - 14, H - 14, Math.max(11, Math.min(W, H) * 0.018), "rgba(234,246,255,0.55)", "right", 500);
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (state === "play" && !paused) update(dt);
+    ambient(state === "play" && paused ? 0 : dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

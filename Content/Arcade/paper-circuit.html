@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="leonards-arcade-picks" content="Transhuman City · A paper airplane · Racer · A trail of light">
+<title>Paper Circuit</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #070a14; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const TAU = Math.PI * 2;
+  const TAG = "Leonard's Arcade · sample game";
+  const LAPS = 3, HALF = 85, TRAIL_SECONDS = 2.2;
+
+  let W = 0, H = 0, Z = 1;
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    Z = Math.min(W, H) / 820;
+  }
+  addEventListener("resize", resize);
+  resize();
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const wrapA = a => { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; };
+
+  // ---------- the circuit: a Catmull-Rom loop through the city ----------
+  const CTRL = [[0, 0], [900, -120], [1500, 160], [1820, 700], [1420, 1120], [900, 900], [620, 1320], [0, 1420], [-520, 1020], [-300, 520], [-720, 220], [-420, -320]]
+    .map(([x, y]) => [x * 1.25, y * 1.25]);
+  const TRACK = [];
+  (function sample() {
+    const n = CTRL.length, per = 60;
+    for (let i = 0; i < n; i++) {
+      const p0 = CTRL[(i - 1 + n) % n], p1 = CTRL[i], p2 = CTRL[(i + 1) % n], p3 = CTRL[(i + 2) % n];
+      for (let k = 0; k < per; k++) {
+        const t = k / per, t2 = t * t, t3 = t2 * t;
+        const f = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+        TRACK.push({ x: f(p0[0], p1[0], p2[0], p3[0]), y: f(p0[1], p1[1], p2[1], p3[1]) });
+      }
+    }
+    for (let i = 0; i < TRACK.length; i++) {
+      const a = TRACK[(i - 1 + TRACK.length) % TRACK.length], b = TRACK[(i + 1) % TRACK.length];
+      TRACK[i].dir = Math.atan2(b.y - a.y, b.x - a.x);
+    }
+    for (let i = 0; i < TRACK.length; i++) {
+      const a = TRACK[i].dir, b = TRACK[(i + 12) % TRACK.length].dir;
+      TRACK[i].bend = Math.abs(wrapA(b - a));   // how sharp the road is just ahead
+    }
+  })();
+  const N = TRACK.length;
+  function nearest(x, y, hint) {
+    let best = hint, bd = Infinity;
+    const span = hint < 0 ? N : 50;
+    for (let k = -span; k <= span; k++) {
+      const i = ((hint < 0 ? 0 : hint) + k + N) % N, p = TRACK[i], d = (p.x - x) ** 2 + (p.y - y) ** 2;
+      if (d < bd) { bd = d; best = i; }
+    }
+    return { i: best, d: Math.sqrt(bd) };
+  }
+
+  // the city: glass towers wherever the road is not
+  const towers = [];
+  (function build() {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of TRACK) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
+    for (let x = minX - 900; x < maxX + 900; x += 230) for (let y = minY - 900; y < maxY + 900; y += 230) {
+      const cx = x + rand(-40, 40), cy = y + rand(-40, 40), w = rand(90, 170), h = rand(90, 170);
+      if (nearest(cx, cy, -1).d < HALF + Math.max(w, h) * 0.75 + 30) continue;
+      towers.push({ x: cx, y: cy, w, h, ht: rand(0.4, 1.6), hue: rand(185, 260), lights: Math.random(), garden: Math.random() < 0.25 });
+    }
+  })();
+
+  // ---------- sound ----------
+  let AC = null, master = null, noiseBuf = null, wind = null, windF = null;
+  function initAudio() {
+    if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+      noiseBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const s = AC.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
+      windF = AC.createBiquadFilter(); windF.type = "bandpass"; windF.Q.value = 0.8; windF.frequency.value = 400;
+      wind = AC.createGain(); wind.gain.value = 0;
+      s.connect(windF); windF.connect(wind); wind.connect(master); s.start();
+    } catch (e) { AC = null; }
+  }
+  function tone(f, dur, type = "sine", vol = 0.15, to = 0, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  const sfx = {
+    beep(hi) { tone(hi ? 880 : 440, hi ? 0.5 : 0.2, "square", 0.12); },
+    zap() { tone(1400, 0.3, "sawtooth", 0.12, 200); tone(700, 0.4, "square", 0.06, 100, 0.05); },
+    lap() { [0, 4, 7, 12].forEach((s, i) => tone(660 * 2 ** (s / 12), 0.25, "triangle", 0.12, 0, i * 0.07)); },
+    bump() { tone(160, 0.1, "triangle", 0.15, 90); },
+    win(place) { const notes = place === 1 ? [0, 4, 7, 12, 16, 19, 24] : [0, 3, 7, 12]; notes.forEach((s, i) => tone(523 * 2 ** (s / 12), 0.4, "triangle", 0.12, 0, i * 0.1)); },
+  };
+
+  // ---------- input ----------
+  const keys = new Set();
+  addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if (k === "escape") return;   // the arcade's key, never the game's
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+    initAudio(); keys.add(k);
+    if ((state === "title" && (k === "enter" || k === " ")) || (state === "over" && k === "enter" && overT > 0.9)) { start(); return; }
+    if (state === "play" && k === "p") paused = !paused;
+  });
+  addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+  addEventListener("blur", () => keys.clear());
+  canvas.addEventListener("mousedown", () => { initAudio(); if (state === "title" || (state === "over" && overT > 0.9)) start(); });
+
+  // ---------- the racers ----------
+  const RIVALS = [
+    { name: "Crimson", col: "#ff5a6e", skill: 0.94 },
+    { name: "Gilt", col: "#ffd25a", skill: 0.97 },
+    { name: "Teal", col: "#4ae0d0", skill: 1.0 },
+  ];
+  let state = "title", paused = false, clock = 0, overT = 0;
+  let planes = [], me = null, trail = [], parts = [], countdown = 0, raceT = 0, place = 0, banner = null, shake = 0, cam = { x: 0, y: 0 };
+  let bestTime = 0, bestPlace = 0;
+  try { bestTime = +localStorage.getItem("paperCircuitBestTime") || 0; bestPlace = +localStorage.getItem("paperCircuitBestPlace") || 0; } catch (e) {}
+
+  function makePlane(slot, col, isMe, skill) {
+    const i = (N - 8 - slot * 7 + N) % N, p = TRACK[i];
+    const side = (slot % 2 ? 1 : -1) * 34, nx = -Math.sin(p.dir), ny = Math.cos(p.dir);
+    return { x: p.x + nx * side, y: p.y + ny * side, a: p.dir, v: 0, col, me: isMe, skill, idx: i, lap: 0, prog: 0, spin: 0, done: false, finishT: 0, wob: rand(0, TAU) };
+  }
+  function start() {
+    state = "play"; paused = false;
+    planes = RIVALS.map((r, k) => Object.assign(makePlane(k + 1, r.col, false, r.skill), { name: r.name }));
+    me = Object.assign(makePlane(0, "#f4f7ff", true, 1), { name: "You" });
+    planes.unshift(me);
+    trail = []; parts = []; countdown = 3.5; raceT = 0; place = 1;   // you start at the front of the grid
+    // the grid sits just behind the line, so crossing it at the start begins lap one
+    for (const p of planes) { p.prog = progressOf(p); p.lap = -1; }
+    banner = null;
+  }
+  // distance round the lap, 0..1, from the start line
+  const progressOf = p => ((p.idx + N) % N) / N;
+
+  function update(dt) {
+    if (countdown > 0) {
+      const before = Math.ceil(countdown - 0.5);
+      countdown -= dt;
+      const now = Math.ceil(countdown - 0.5);
+      if (now !== before) sfx.beep(now <= 0);
+      if (countdown > 0.5) { cam.x = me.x; cam.y = me.y; return; }
+    }
+    raceT += dt;
+    for (const p of planes) {
+      const near = nearest(p.x, p.y, p.idx);
+      const prevIdx = p.idx; p.idx = near.i;
+      const off = near.d > HALF;
+      let throttle = 0, steer = 0;
+      if (p.spin > 0) {
+        p.spin -= dt; p.a += dt * 14; p.v *= Math.exp(-3 * dt);
+      } else if (p.done) {
+        throttle = 0.3; steer = wrapA(TRACK[(p.idx + 20) % N].dir - p.a) * 2;
+      } else if (p.me) {
+        if (keys.has("arrowup") || keys.has("w")) throttle = 1;
+        if (keys.has("arrowdown") || keys.has("s")) throttle = -0.7;
+        if (keys.has("arrowleft") || keys.has("a")) steer -= 1;
+        if (keys.has("arrowright") || keys.has("d")) steer += 1;
+      } else {
+        // look ahead down the road, ease off for the bends
+        const look = TRACK[(p.idx + 14) % N];
+        const lane = Math.sin(clock * 0.4 + p.wob) * 30;
+        const tx = look.x - Math.sin(look.dir) * lane, ty = look.y + Math.cos(look.dir) * lane;
+        steer = Math.max(-1, Math.min(1, wrapA(Math.atan2(ty - p.y, tx - p.x) - p.a) * 2.5));
+        const bend = TRACK[(p.idx + 6) % N].bend;
+        const want = 520 * p.skill * (1 - Math.min(0.45, bend * 0.55)) * (1 + Math.min(0.12, Math.max(0, me.prog + me.lap - (p.prog + p.lap)) * 0.6));
+        throttle = p.v < want ? 1 : 0.1;
+      }
+      const top = (off ? 240 : 560) * (p.me ? 1 : 1);
+      p.v += throttle * (throttle > 0 ? 420 : 600) * dt;
+      p.v *= Math.exp(-(off ? 2.4 : 0.35) * dt);
+      p.v = Math.max(-120, Math.min(top, p.v));
+      p.a += steer * dt * (1.4 + Math.min(1.6, Math.abs(p.v) / 260));
+      p.x += Math.cos(p.a) * p.v * dt; p.y += Math.sin(p.a) * p.v * dt;
+      // laps: crossing the line forwards, having been most of the way round
+      if (prevIdx > N * 0.8 && p.idx < N * 0.2 && !p.done) {
+        p.lap++;
+        if (p.me && p.lap > 0 && p.lap < LAPS) { banner = { t: 1.4, a: p.lap === LAPS - 1 ? "FINAL LAP" : "LAP " + (p.lap + 1) }; sfx.lap(); }
+        if (p.lap >= LAPS) { p.done = true; p.finishT = raceT; if (p.me) finish(); }
+      } else if (prevIdx < N * 0.2 && p.idx > N * 0.8) p.lap--;   // backwards over the line
+      p.prog = progressOf(p);
+    }
+    // planes nudge each other apart
+    for (let i = 0; i < planes.length; i++) for (let j = i + 1; j < planes.length; j++) {
+      const a = planes[i], b = planes[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+      if (d > 0 && d < 30) { const push = (30 - d) / 2; a.x -= dx / d * push; a.y -= dy / d * push; b.x += dx / d * push; b.y += dy / d * push; if (a.me || b.me) sfx.bump(); }
+    }
+    // THE TWIST: your trail of light knocks any rival who touches it into a spin
+    if (!me.done && Math.abs(me.v) > 60) trail.push({ x: me.x - Math.cos(me.a) * 14, y: me.y - Math.sin(me.a) * 14, t: clock });
+    while (trail.length && clock - trail[0].t > TRAIL_SECONDS) trail.shift();
+    for (const p of planes) {
+      if (p.me || p.spin > 0 || p.done) continue;
+      for (let k = 0; k < trail.length - 6; k += 2) {
+        const t = trail[k];
+        if ((t.x - p.x) ** 2 + (t.y - p.y) ** 2 < 16 ** 2) {
+          p.spin = 1.4; shake = 6; sfx.zap();
+          for (let q = 0; q < 30; q++) parts.push({ x: p.x, y: p.y, vx: rand(-200, 200), vy: rand(-200, 200), life: 0.7, max: 0.7, hue: rand(170, 320) });
+          break;
+        }
+      }
+    }
+    // standings
+    const order = planes.slice().sort((a, b) => (b.done ? 1e6 - b.finishT : 0) - (a.done ? 1e6 - a.finishT : 0) || (b.lap + b.prog) - (a.lap + a.prog));
+    place = order.indexOf(me) + 1;
+    cam.x += (me.x + Math.cos(me.a) * me.v * 0.25 - cam.x) * Math.min(1, dt * 4);
+    cam.y += (me.y + Math.sin(me.a) * me.v * 0.25 - cam.y) * Math.min(1, dt * 4);
+    if (wind) { wind.gain.setTargetAtTime(Math.min(0.22, Math.abs(me.v) / 2600), AC.currentTime, 0.1); windF.frequency.setTargetAtTime(300 + Math.abs(me.v) * 2.2, AC.currentTime, 0.1); }
+  }
+
+  function finish() {
+    const ahead = planes.filter(p => !p.me && p.done).length;
+    place = ahead + 1;
+    state = "over"; overT = 0;
+    sfx.win(place);
+    if (!bestTime || raceT < bestTime) bestTime = raceT;
+    if (!bestPlace || place < bestPlace) bestPlace = place;
+    try { localStorage.setItem("paperCircuitBestTime", String(bestTime)); localStorage.setItem("paperCircuitBestPlace", String(bestPlace)); } catch (e) {}
+    if (wind) wind.gain.setTargetAtTime(0, AC.currentTime, 0.3);
+  }
+
+  function ambient(dt) {
+    clock += dt; shake *= Math.exp(-8 * dt);
+    if (state === "over") overT += dt;
+    if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
+    if (state === "title") { const i = Math.floor(clock * 40) % N; cam.x += (TRACK[i].x - cam.x) * Math.min(1, dt * 2); cam.y += (TRACK[i].y - cam.y) * Math.min(1, dt * 2); }
+    if (state === "over") for (const p of planes) { p.x += Math.cos(p.a) * p.v * dt * 0.4; p.y += Math.sin(p.a) * p.v * dt * 0.4; }
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.life -= dt;
+      if (p.life <= 0) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.94; p.vy *= 0.94;
+    }
+  }
+
+  // ---------- drawing ----------
+  const fmt = t => { const m = Math.floor(t / 60), s = t - m * 60; return m + ":" + (s < 10 ? "0" : "") + s.toFixed(2); };
+  function toScreen(x, y) { return [(x - cam.x) * Z + W / 2, (y - cam.y) * Z + H / 2]; }
+
+  function drawGround() {
+    ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, W, H);
+    // the street grid of the city floor
+    ctx.strokeStyle = "rgba(90,120,200,0.08)"; ctx.lineWidth = 1;
+    const step = 115 * Z, ox = (-cam.x * Z + W / 2) % step, oy = (-cam.y * Z + H / 2) % step;
+    for (let x = ox; x < W; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = oy; y < H; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  }
+
+  function trackPath() {
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) { const [x, y] = toScreen(TRACK[i % N].x, TRACK[i % N].y); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  }
+  function drawTrack() {
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    trackPath(); ctx.strokeStyle = "rgba(120,170,255,0.18)"; ctx.lineWidth = (HALF * 2 + 26) * Z; ctx.stroke();
+    trackPath(); ctx.strokeStyle = "#7fb0ff"; ctx.lineWidth = (HALF * 2 + 6) * Z; ctx.stroke();
+    trackPath(); ctx.strokeStyle = "#151b2e"; ctx.lineWidth = HALF * 2 * Z; ctx.stroke();
+    ctx.setLineDash([26 * Z, 30 * Z]); trackPath(); ctx.strokeStyle = "rgba(255,255,255,0.18)"; ctx.lineWidth = 3 * Z; ctx.stroke(); ctx.setLineDash([]);
+    // the start line, chequered
+    const p = TRACK[0], nx = -Math.sin(p.dir), ny = Math.cos(p.dir);
+    for (let k = -6; k < 6; k++) for (let r = 0; r < 2; r++) {
+      const [x, y] = toScreen(p.x + nx * (k + 0.5) * (HALF / 6) + Math.cos(p.dir) * r * 12, p.y + ny * (k + 0.5) * (HALF / 6) + Math.sin(p.dir) * r * 12);
+      ctx.fillStyle = (k + r) % 2 ? "#fff" : "#222";
+      ctx.save(); ctx.translate(x, y); ctx.rotate(p.dir); ctx.fillRect(-6 * Z, -HALF / 12 * Z, 12 * Z, HALF / 6 * Z); ctx.restore();
+    }
+  }
+
+  function drawTowers(roofs) {
+    for (const t of towers) {
+      const [x, y] = toScreen(t.x, t.y);
+      if (x < -300 || x > W + 300 || y < -300 || y > H + 300) continue;
+      // lean the roof away from the screen's centre: a cheap, convincing height
+      const lx = (x - W / 2) * t.ht * 0.22, ly = (y - H / 2) * t.ht * 0.22;
+      const w = t.w * Z, h = t.h * Z;
+      if (!roofs) {
+        ctx.fillStyle = `hsla(${t.hue},40%,22%,0.95)`;
+        ctx.beginPath();
+        ctx.moveTo(x - w / 2, y - h / 2); ctx.lineTo(x + w / 2, y - h / 2); ctx.lineTo(x + w / 2 + lx, y - h / 2 + ly); ctx.lineTo(x - w / 2 + lx, y - h / 2 + ly); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x - w / 2, y + h / 2); ctx.lineTo(x + w / 2, y + h / 2); ctx.lineTo(x + w / 2 + lx, y + h / 2 + ly); ctx.lineTo(x - w / 2 + lx, y + h / 2 + ly); ctx.fill();
+        ctx.fillStyle = `hsla(${t.hue},45%,30%,0.95)`;
+        ctx.beginPath(); ctx.moveTo(x - w / 2, y - h / 2); ctx.lineTo(x - w / 2, y + h / 2); ctx.lineTo(x - w / 2 + lx, y + h / 2 + ly); ctx.lineTo(x - w / 2 + lx, y - h / 2 + ly); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x + w / 2, y - h / 2); ctx.lineTo(x + w / 2, y + h / 2); ctx.lineTo(x + w / 2 + lx, y + h / 2 + ly); ctx.lineTo(x + w / 2 + lx, y - h / 2 + ly); ctx.fill();
+      } else {
+        const rx = x - w / 2 + lx, ry = y - h / 2 + ly;
+        const g = ctx.createLinearGradient(rx, ry, rx + w, ry + h);
+        g.addColorStop(0, `hsla(${t.hue},70%,62%,0.95)`); g.addColorStop(1, `hsla(${t.hue + 20},60%,32%,0.95)`);
+        ctx.fillStyle = g; ctx.fillRect(rx, ry, w, h);
+        if (t.garden) { ctx.fillStyle = "rgba(90,220,140,0.55)"; ctx.fillRect(rx + w * 0.2, ry + h * 0.2, w * 0.6, h * 0.6); }
+        ctx.strokeStyle = "rgba(220,240,255,0.5)"; ctx.lineWidth = 1; ctx.strokeRect(rx, ry, w, h);
+        if (t.lights > 0.4) { ctx.fillStyle = `rgba(255,${200 + 40 * Math.sin(clock * 2 + t.x) | 0},150,0.9)`; ctx.fillRect(rx + w * 0.45, ry + h * 0.45, 4, 4); }
+      }
+    }
+  }
+
+  function drawTrail() {
+    if (trail.length < 2) return;
+    ctx.globalCompositeOperation = "lighter"; ctx.lineCap = "round";
+    for (let i = 1; i < trail.length; i++) {
+      const a = trail[i - 1], b = trail[i], k = 1 - (clock - b.t) / TRAIL_SECONDS;
+      const [x1, y1] = toScreen(a.x, a.y), [x2, y2] = toScreen(b.x, b.y);
+      ctx.strokeStyle = `hsla(${180 + i * 1.5},100%,65%,${0.7 * k})`; ctx.lineWidth = (6 + 6 * k) * Z;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function drawPlane(p) {
+    const [x, y] = toScreen(p.x, p.y);
+    const s = 16 * Z;
+    ctx.save(); ctx.translate(x + 6 * Z, y + 8 * Z); ctx.rotate(p.a);   // its shadow on the road
+    ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.moveTo(s * 1.3, 0); ctx.lineTo(-s, -s * 0.8); ctx.lineTo(-s * 0.6, 0); ctx.lineTo(-s, s * 0.8); ctx.fill();
+    ctx.restore();
+    ctx.save(); ctx.translate(x, y); ctx.rotate(p.a + Math.sin(clock * 6 + p.wob) * 0.04);
+    ctx.fillStyle = p.col; ctx.beginPath(); ctx.moveTo(s * 1.3, 0); ctx.lineTo(-s, -s * 0.8); ctx.lineTo(-s * 0.6, 0); ctx.lineTo(-s, s * 0.8); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(s * 1.3, 0); ctx.lineTo(-s * 0.6, 0); ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.beginPath(); ctx.moveTo(s * 1.3, 0); ctx.lineTo(-s, -s * 0.8); ctx.lineTo(-s * 0.6, 0); ctx.fill();
+    ctx.restore();
+    if (p.spin > 0) { ctx.strokeStyle = `rgba(255,120,255,${p.spin})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 26 * Z, 0, TAU); ctx.stroke(); }
+  }
+
+  function drawMinimap() {
+    const m = Math.min(W, H) * 0.24, x0 = W - m - 18, y0 = H - m - 18;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of TRACK) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
+    const sc = m / Math.max(maxX - minX, maxY - minY);
+    ctx.fillStyle = "rgba(5,8,18,0.7)"; ctx.fillRect(x0 - 8, y0 - 8, m + 16, m + 16);
+    ctx.strokeStyle = "rgba(127,176,255,0.8)"; ctx.lineWidth = 3; ctx.beginPath();
+    TRACK.forEach((p, i) => { const x = x0 + (p.x - minX) * sc, y = y0 + (p.y - minY) * sc; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.closePath(); ctx.stroke();
+    for (const p of planes) { ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(x0 + (p.x - minX) * sc, y0 + (p.y - minY) * sc, p.me ? 5 : 3.5, 0, TAU); ctx.fill(); }
+  }
+
+  function text(t, x, y, size, color, align = "center", weight = 700) {
+    ctx.font = `${weight} ${size}px "Segoe UI", system-ui, sans-serif`;
+    ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillStyle = color; ctx.fillText(t, x, y);
+  }
+  function glow(t, x, y, size, color, shadow) {
+    ctx.save(); ctx.shadowColor = shadow; ctx.shadowBlur = size * 0.5; text(t, x, y, size, color, "center", 800); ctx.restore();
+    text(t, x, y, size, color, "center", 800);
+  }
+  const ord = n => n + (["th", "st", "nd", "rd"][n] || "th");
+
+  function draw() {
+    ctx.save();
+    if (shake > 0.3) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+    drawGround(); drawTrack(); drawTowers(false);
+    drawTrail();
+    for (const p of planes) drawPlane(p);
+    ctx.globalCompositeOperation = "lighter";
+    for (const p of parts) { const k = p.life / p.max; const [x, y] = toScreen(p.x, p.y); ctx.fillStyle = `hsla(${p.hue},100%,65%,${k})`; ctx.fillRect(x, y, 3, 3); }
+    ctx.globalCompositeOperation = "source-over";
+    drawTowers(true);
+    ctx.restore();
+    const u = Math.min(W, H);
+    if (state === "play") {
+      text(ord(place), 24, 40, u * 0.07, "#f4f7ff", "left", 800);
+      text("LAP " + Math.max(1, Math.min(LAPS, me.lap + 1)) + "/" + LAPS, 24, 40 + u * 0.06, u * 0.028, "rgba(244,247,255,0.85)", "left", 600);
+      text(fmt(raceT), 24, 40 + u * 0.1, u * 0.026, "rgba(244,247,255,0.7)", "left", 600);
+      text(Math.round(Math.abs(me.v) / 5) + " kph", W / 2, H - 30, u * 0.03, "rgba(244,247,255,0.8)", "center", 700);
+      drawMinimap();
+      if (countdown > 0) {
+        const n = Math.ceil(countdown - 0.5);
+        glow(n > 0 ? String(n) : "GO!", W / 2, H * 0.4, u * 0.16, "#fff", "rgba(120,200,255,1)");
+      }
+      if (banner) { ctx.globalAlpha = Math.min(1, banner.t * 2); glow(banner.a, W / 2, H * 0.26, u * 0.07, "#f4f7ff", "rgba(255,120,255,0.9)"); ctx.globalAlpha = 1; }
+      if (paused) { ctx.fillStyle = "rgba(5,8,18,0.55)"; ctx.fillRect(0, 0, W, H); glow("PAUSED", W / 2, H / 2, u * 0.08, "#fff", "#7fb0ff"); }
+    } else if (state === "title") {
+      ctx.fillStyle = "rgba(5,8,18,0.5)"; ctx.fillRect(0, 0, W, H);
+      glow("PAPER CIRCUIT", W / 2, H * 0.3, u * 0.11, "#f4f7ff", "rgba(120,190,255,1)");
+      text("a paper airplane races three rivals through the glass towers of Transhuman City", W / 2, H * 0.3 + u * 0.085, u * 0.027, "rgba(244,247,255,0.9)", "center", 500);
+      text("Your plane leaves a trail of light. Any rival who touches it spins out.", W / 2, H * 0.3 + u * 0.125, u * 0.025, "rgba(255,170,255,0.9)", "center", 500);
+      text("Up / W to fly faster  ·  Down / S to brake  ·  Left and Right to steer  ·  P pauses", W / 2, H * 0.3 + u * 0.165, u * 0.022, "rgba(244,247,255,0.7)", "center", 500);
+      text("Press Enter or Space to race", W / 2, H * 0.68, u * 0.045, `rgba(244,247,255,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+      if (bestTime) text("Best: " + ord(bestPlace) + " place  ·  fastest " + fmt(bestTime), W / 2, H * 0.68 + u * 0.06, u * 0.025, "rgba(244,247,255,0.8)", "center", 600);
+      text(TAG, W - 14, H - 14, Math.max(11, u * 0.018), "rgba(244,247,255,0.55)", "right", 500);
+    } else {
+      ctx.fillStyle = `rgba(5,8,18,${Math.min(0.6, overT)})`; ctx.fillRect(0, 0, W, H);
+      glow(place === 1 ? "YOU WIN!" : ord(place) + " PLACE", W / 2, H * 0.34, u * 0.11, "#f4f7ff", place === 1 ? "rgba(255,210,90,1)" : "rgba(120,190,255,1)");
+      text("Time " + fmt(raceT) + "  ·  fastest " + fmt(bestTime), W / 2, H * 0.34 + u * 0.09, u * 0.032, "#f4f7ff");
+      if (overT > 0.9) text("Press Enter to race again", W / 2, H * 0.62, u * 0.04, `rgba(244,247,255,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+    }
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (state === "play" && !paused) update(dt);
+    ambient(state === "play" && paused ? 0 : dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

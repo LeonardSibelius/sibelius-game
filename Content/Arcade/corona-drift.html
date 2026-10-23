@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="leonards-arcade-picks" content="The Dyson sphere · A tiny rocket · Collect and dodge · A pull to the centre">
+<title>Corona Drift</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #05030a; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+(() => {
+  // ---------- setup ----------
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const TAU = Math.PI * 2;
+  const ARCADE_TAG = "Leonard's Arcade · sample game";
+
+  let W = 0, H = 0, DPR = 1, CX = 0, CY = 0, R = 1;   // R = the sphere's radius in pixels
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * DPR); canvas.height = Math.floor(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    CX = W / 2; CY = H / 2; R = Math.min(W, H) * 0.46;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  // The world is measured in sphere radii: the shell is at 1, the star at the origin.
+  const sx = x => CX + x * R;
+  const sy = y => CY + y * R;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const wrapAngle = a => { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; };
+
+  const STAR_R = 0.11, HERO_R = 0.022, SHARD_R = 0.022;
+  const THRUST = 1.15, MAX_SPEED = 1.4, BOOST_CD = 2.2;
+
+  // ---------- sound (Web Audio, all synthesised) ----------
+  let AC = null, master = null, thrustGain = null, noiseBuf = null;
+  function initAudio() {
+    if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+      noiseBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = AC.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+      const lp = AC.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 520;
+      thrustGain = AC.createGain(); thrustGain.gain.value = 0;
+      src.connect(lp); lp.connect(thrustGain); thrustGain.connect(master); src.start();
+    } catch (e) { AC = null; }
+  }
+  function tone(freq, dur, type = "sine", vol = 0.3, slideTo = 0, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay;
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function noiseBurst(dur, vol, freq) {
+    if (!AC || !noiseBuf) return;
+    const t = AC.currentTime;
+    const s = AC.createBufferSource(); s.buffer = noiseBuf;
+    const f = AC.createBiquadFilter(); f.type = "lowpass";
+    f.frequency.setValueAtTime(freq, t); f.frequency.exponentialRampToValueAtTime(60, t + dur);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random()); s.stop(t + dur + 0.05);
+  }
+  let lastBounceSound = 0;
+  const sfx = {
+    collect(c) { const f = 520 * Math.pow(1.06, Math.min(c, 24)); tone(f, 0.18, "triangle", 0.22); tone(f * 1.5, 0.24, "sine", 0.16, 0, 0.05); },
+    hit() { noiseBurst(0.7, 0.6, 2600); tone(190, 0.55, "sawtooth", 0.22, 40); },
+    bounce() { if (clock - lastBounceSound < 0.12) return; lastBounceSound = clock; tone(260, 0.08, "square", 0.06, 140); },
+    warn() { tone(300, 1.0, "sine", 0.1, 900); },
+    flare() { noiseBurst(0.8, 0.35, 5200); tone(90, 0.6, "sawtooth", 0.12, 45); },
+    boost() { tone(140, 0.35, "sawtooth", 0.14, 560); noiseBurst(0.3, 0.22, 3200); },
+    level() { [0, 4, 7, 12].forEach((s, i) => tone(440 * Math.pow(2, s / 12), 0.3, "triangle", 0.16, 0, i * 0.09)); },
+    over() { [12, 7, 3, 0].forEach((s, i) => tone(330 * Math.pow(2, s / 12), 0.5, "triangle", 0.18, 0, i * 0.17)); },
+    launch() { tone(220, 0.6, "sawtooth", 0.13, 880); }
+  };
+
+  // ---------- input ----------
+  const keys = new Set();
+  const mouse = { x: 0, y: 0, down: false };
+  window.addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if (k === "escape") return;   // never ours: the arcade cabinet uses Escape
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+    initAudio();
+    keys.add(k);
+    if (state === "title" && (k === "enter" || k === " ")) startGame();
+    else if (state === "over" && (k === "enter" || k === " ") && overTimer > 0.9) startGame();
+    else if (state === "play" && k === "p") paused = !paused;
+    else if (state === "play" && k === " " && !e.repeat && !paused) tryBoost();
+  });
+  window.addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+  window.addEventListener("blur", () => { keys.clear(); mouse.down = false; });
+  canvas.addEventListener("mousemove", e => { mouse.x = (e.clientX - CX) / R; mouse.y = (e.clientY - CY) / R; });
+  canvas.addEventListener("mousedown", e => {
+    initAudio();
+    mouse.x = (e.clientX - CX) / R; mouse.y = (e.clientY - CY) / R;
+    if (state === "title") { startGame(); return; }
+    if (state === "over" && overTimer > 0.9) { startGame(); return; }
+    mouse.down = true;
+  });
+  window.addEventListener("mouseup", () => { mouse.down = false; });
+  canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+  // ---------- the sphere's inner face: panels with city lights ----------
+  const panels = [];
+  const BANDS = [[0.9, 0.945], [0.945, 0.985], [0.985, 1.04]];
+  const SEGS = 64;
+  for (let b = 0; b < BANDS.length; b++) {
+    for (let i = 0; i < SEGS; i++) {
+      const lights = [];
+      const n = Math.random() < 0.55 ? Math.floor(rand(1, 5)) : 0;
+      for (let j = 0; j < n; j++) lights.push({ u: Math.random(), v: Math.random(), ph: rand(0, TAU), sp: rand(1, 4) });
+      panels.push({ b, i, shade: rand(0.55, 1), lights });
+    }
+  }
+  const motes = [];
+  for (let i = 0; i < 150; i++) {
+    const r = rand(0.16, 0.95);
+    motes.push({ r, a: rand(0, TAU), w: (0.03 + 0.12 / r) * (Math.random() < 0.5 ? 1 : 0.6), s: rand(0.5, 1.8), al: rand(0.15, 0.6) });
+  }
+
+  // ---------- game state ----------
+  let state = "title", paused = false, clock = 0;
+  let hero, shards = [], debris = [], flares = [], particles = [];
+  let score = 0, best = 0, lives = 3, level = 1, time = 0, combo = 0, comboTimer = 0;
+  let flareTimer = 0, invuln = 0, boostCd = 0, shake = 0, shellRot = 0, overTimer = 0;
+  let banner = null;
+  try { best = parseInt(localStorage.getItem("coronaDriftBest") || "0", 10) || 0; } catch (e) {}
+
+  const gravity = () => 0.0875 * (1 + 0.07 * (level - 1));
+
+  function orbitSpeed(r) { return Math.sqrt(gravity() / Math.pow(r, 3)) * 0.9; }
+
+  function spawnShard() {
+    const r = rand(0.24, 0.88);
+    shards.push({ r, a: rand(0, TAU), w: orbitSpeed(r) * (Math.random() < 0.25 ? -1 : 1), hue: rand(0, 360), spin: rand(0, TAU), born: clock });
+  }
+  function spawnDebris() {
+    let r, tries = 0;
+    do { r = rand(0.3, 0.86); tries++; } while (hero && Math.abs(Math.hypot(hero.x, hero.y) - r) < 0.08 && tries < 10);
+    debris.push({ r, a: rand(0, TAU), w: orbitSpeed(r) * rand(0.6, 1.3) * (Math.random() < 0.5 ? -1 : 1), size: rand(0.03, 0.045), rot: rand(0, TAU), spin: rand(-2, 2) });
+  }
+
+  function startGame() {
+    state = "play"; paused = false;
+    score = 0; lives = 3; level = 1; time = 0; combo = 0; comboTimer = 0;
+    flareTimer = 5; invuln = 2; boostCd = 0; shake = 0;
+    hero = { x: 0, y: 0.62, vx: Math.sqrt(gravity() / 0.62), vy: 0, angle: 0, thrusting: false };
+    shards = []; debris = []; flares = []; particles = [];
+    for (let i = 0; i < 6; i++) spawnShard();
+    for (let i = 0; i < 2; i++) spawnDebris();
+    banner = { text: "COLLECT THE LIGHT", sub: "the star wants you back", t: 2.6 };
+    sfx.launch();
+  }
+
+  function gameOver() {
+    state = "over"; overTimer = 0;
+    if (score > best) { best = score; try { localStorage.setItem("coronaDriftBest", String(best)); } catch (e) {} }
+    burst(hero.x, hero.y, 120, 0.9, [30, 50], 1.4);
+    shake = 26;
+    if (thrustGain) thrustGain.gain.setTargetAtTime(0, AC.currentTime, 0.05);
+    sfx.over();
+  }
+
+  function damage() {
+    if (invuln > 0 || state !== "play") return;
+    lives--; invuln = 2; shake = 18; combo = 0;
+    burst(hero.x, hero.y, 60, 0.7, [0, 40], 1.0);
+    sfx.hit();
+    if (lives <= 0) gameOver();
+  }
+
+  function tryBoost() {
+    if (boostCd > 0) return;
+    hero.vx += Math.cos(hero.angle) * 0.75;
+    hero.vy += Math.sin(hero.angle) * 0.75;
+    boostCd = BOOST_CD; shake = Math.max(shake, 5);
+    for (let i = 0; i < 40; i++) {
+      const a = hero.angle + Math.PI + rand(-0.5, 0.5), sp = rand(0.3, 0.9);
+      particles.push({ x: hero.x, y: hero.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.3, 0.7), max: 0.7, size: rand(1.5, 3.5), hue: rand(180, 210), drag: 3 });
+    }
+    sfx.boost();
+  }
+
+  function burst(x, y, n, speed, hueRange, life) {
+    for (let i = 0; i < n; i++) {
+      const a = rand(0, TAU), sp = rand(0.05, speed);
+      particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.3, life), max: life, size: rand(1, 4), hue: rand(hueRange[0], hueRange[1]), drag: 2.2 });
+    }
+    if (particles.length > 1400) particles.splice(0, particles.length - 1400);
+  }
+
+  // ---------- update ----------
+  function update(dt) {
+    time += dt;
+    const newLevel = 1 + Math.floor(time / 20);
+    if (newLevel !== level) {
+      level = newLevel;
+      banner = { text: "LEVEL " + level, sub: level % 3 === 0 ? "the flares are learning" : "the star burns hotter", t: 2.2 };
+      sfx.level();
+    }
+
+    // steering: keys, or hold the mouse to fly toward the pointer
+    let ix = 0, iy = 0;
+    if (keys.has("arrowleft") || keys.has("a")) ix -= 1;
+    if (keys.has("arrowright") || keys.has("d")) ix += 1;
+    if (keys.has("arrowup") || keys.has("w")) iy -= 1;
+    if (keys.has("arrowdown") || keys.has("s")) iy += 1;
+    if (mouse.down) { ix = mouse.x - hero.x; iy = mouse.y - hero.y; }
+    const il = Math.hypot(ix, iy);
+    hero.thrusting = il > 0.001;
+    if (hero.thrusting) { ix /= il; iy /= il; }
+
+    let d = Math.hypot(hero.x, hero.y);
+    const g = Math.min(3, gravity() / Math.pow(Math.max(d, 0.08), 2));
+    hero.vx += (ix * THRUST - hero.x / d * g) * dt;
+    hero.vy += (iy * THRUST - hero.y / d * g) * dt;
+    const drag = Math.exp(-0.22 * dt);
+    hero.vx *= drag; hero.vy *= drag;
+    const sp = Math.hypot(hero.vx, hero.vy);
+    if (sp > MAX_SPEED) { hero.vx *= MAX_SPEED / sp; hero.vy *= MAX_SPEED / sp; }
+    hero.x += hero.vx * dt; hero.y += hero.vy * dt;
+
+    const target = hero.thrusting ? Math.atan2(iy, ix) : Math.atan2(hero.vy, hero.vx);
+    hero.angle += wrapAngle(target - hero.angle) * Math.min(1, dt * (hero.thrusting ? 10 : 3));
+
+    if (hero.thrusting) {
+      for (let i = 0; i < 3; i++) {
+        const a = hero.angle + Math.PI + rand(-0.35, 0.35), s = rand(0.2, 0.5);
+        particles.push({ x: hero.x - Math.cos(hero.angle) * HERO_R, y: hero.y - Math.sin(hero.angle) * HERO_R, vx: hero.vx * 0.3 + Math.cos(a) * s, vy: hero.vy * 0.3 + Math.sin(a) * s, life: rand(0.2, 0.45), max: 0.45, size: rand(1.5, 3), hue: rand(20, 50), drag: 4 });
+      }
+    }
+    if (thrustGain) thrustGain.gain.setTargetAtTime(hero.thrusting ? 0.16 : 0, AC.currentTime, 0.04);
+
+    // the shell: bounce off the inside of the sphere
+    d = Math.hypot(hero.x, hero.y);
+    if (d > 1 - HERO_R) {
+      const nx = hero.x / d, ny = hero.y / d;
+      const vn = hero.vx * nx + hero.vy * ny;
+      if (vn > 0) { hero.vx -= 1.6 * vn * nx; hero.vy -= 1.6 * vn * ny; }
+      hero.x = nx * (1 - HERO_R); hero.y = ny * (1 - HERO_R);
+      if (vn > 0.15) { burst(hero.x, hero.y, 8, 0.4, [190, 220], 0.4); sfx.bounce(); }
+    }
+    // the star: touch it and it burns
+    if (d < STAR_R + HERO_R) {
+      const nx = hero.x / d, ny = hero.y / d;
+      hero.x = nx * (STAR_R + HERO_R + 0.01); hero.y = ny * (STAR_R + HERO_R + 0.01);
+      hero.vx = nx * 0.95; hero.vy = ny * 0.95;
+      damage();
+    }
+
+    // shards: orbit, shine, get collected
+    const wantShards = Math.min(14, 5 + level);
+    for (let i = shards.length - 1; i >= 0; i--) {
+      const s = shards[i];
+      s.a += s.w * dt; s.spin += dt * 2.5;
+      const x = Math.cos(s.a) * s.r, y = Math.sin(s.a) * s.r;
+      if (Math.hypot(x - hero.x, y - hero.y) < HERO_R + SHARD_R + 0.008) {
+        combo = comboTimer > 0 ? combo + 1 : 1;
+        comboTimer = 1.6;
+        score += 10 * combo;
+        burst(x, y, 24, 0.45, [s.hue - 20, s.hue + 20], 0.7);
+        sfx.collect(combo);
+        shards.splice(i, 1);
+      }
+    }
+    while (shards.length < wantShards) spawnShard();
+
+    // debris: wreckage of old panels, orbiting
+    const wantDebris = Math.min(10, 2 + Math.floor(level / 2));
+    while (debris.length < wantDebris) spawnDebris();
+    for (const b of debris) {
+      b.a += b.w * dt; b.rot += b.spin * dt;
+      const x = Math.cos(b.a) * b.r, y = Math.sin(b.a) * b.r;
+      if (Math.hypot(x - hero.x, y - hero.y) < HERO_R + b.size * 0.8) {
+        damage();
+        const nx = (hero.x - x), ny = (hero.y - y), nl = Math.hypot(nx, ny) || 1;
+        hero.vx += nx / nl * 0.5; hero.vy += ny / nl * 0.5;
+      }
+    }
+
+    // solar flares: a warning, then the star throws a wedge of fire out to the shell
+    flareTimer -= dt;
+    if (flareTimer <= 0) {
+      const width = Math.min(0.32, 0.13 + 0.012 * level);
+      const a = rand(0, TAU);
+      flares.push({ angle: a, width, warn: 1.1, warnMax: 1.1, life: 0.65 });
+      if (level >= 4 && Math.random() < 0.35) flares.push({ angle: a + Math.PI, width, warn: 1.1, warnMax: 1.1, life: 0.65 });
+      flareTimer = Math.max(1.5, 6 - level * 0.45) * rand(0.7, 1.3);
+      sfx.warn();
+    }
+    for (let i = flares.length - 1; i >= 0; i--) {
+      const f = flares[i];
+      if (f.warn > 0) {
+        f.warn -= dt;
+        if (f.warn <= 0) {
+          sfx.flare(); shake = Math.max(shake, 7);
+          for (let k = 0; k < 50; k++) {
+            const a = f.angle + rand(-f.width, f.width), r = rand(STAR_R, 0.95), s = rand(0.2, 0.7);
+            particles.push({ x: Math.cos(a) * r, y: Math.sin(a) * r, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rand(0.3, 0.8), max: 0.8, size: rand(1.5, 4), hue: rand(10, 45), drag: 2 });
+          }
+        }
+      } else {
+        f.life -= dt;
+        const hd = Math.hypot(hero.x, hero.y);
+        const diff = Math.abs(wrapAngle(Math.atan2(hero.y, hero.x) - f.angle));
+        if (hd > STAR_R && diff < f.width + HERO_R / hd) damage();
+        if (f.life <= 0) flares.splice(i, 1);
+      }
+    }
+
+    if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) combo = 0; }
+    invuln = Math.max(0, invuln - dt);
+    boostCd = Math.max(0, boostCd - dt);
+  }
+
+  function ambient(dt) {
+    clock += dt;
+    shellRot += dt * 0.025;
+    shake *= Math.exp(-6 * dt);
+    for (const m of motes) m.a += m.w * dt * 0.3;
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      const k = Math.exp(-p.drag * dt);
+      p.vx *= k; p.vy *= k;
+      p.x += p.vx * dt; p.y += p.vy * dt;
+    }
+    if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
+    if (state === "over") overTimer += dt;
+    if (state !== "play") {
+      // keep the sphere alive behind the menus
+      if (shards.length < 7) spawnShard();
+      for (const s of shards) { s.a += s.w * dt; s.spin += dt * 2.5; }
+      for (const b of debris) { b.a += b.w * dt; b.rot += b.spin * dt; }
+    }
+  }
+
+  // ---------- drawing ----------
+  function drawBackdrop() {
+    ctx.fillStyle = "#05030a";
+    ctx.fillRect(-50, -50, W + 100, H + 100);
+    const g = ctx.createRadialGradient(CX, CY, R * 0.2, CX, CY, R * 1.15);
+    g.addColorStop(0, "rgba(70,30,20,0.55)");
+    g.addColorStop(0.7, "rgba(30,14,30,0.35)");
+    g.addColorStop(1, "rgba(5,3,10,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(CX, CY, R * 1.15, 0, TAU); ctx.fill();
+  }
+
+  function drawShell() {
+    const step = TAU / SEGS;
+    for (const p of panels) {
+      const [r0, r1] = BANDS[p.b];
+      const off = p.b % 2 ? step / 2 : 0;
+      const a0 = p.i * step + off + shellRot * (p.b === 1 ? -1 : 1) + 0.004;
+      const a1 = a0 + step - 0.008;
+      const glow = 0.5 + 0.5 * Math.sin(clock * 0.7 + p.i * 0.4 + p.b);
+      const k = p.shade * (0.55 + 0.25 * glow);
+      ctx.fillStyle = `rgb(${Math.floor(70 * k + 18)},${Math.floor(42 * k + 12)},${Math.floor(64 * k + 22)})`;
+      ctx.beginPath();
+      ctx.arc(CX, CY, r1 * R, a0, a1);
+      ctx.arc(CX, CY, r0 * R, a1, a0, true);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,170,90,0.28)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      for (const L of p.lights) {
+        const a = a0 + (a1 - a0) * L.u, r = (r0 + (r1 - r0) * L.v) * R;
+        const tw = 0.45 + 0.55 * Math.abs(Math.sin(clock * L.sp + L.ph));
+        ctx.fillStyle = `rgba(255,${200 + Math.floor(40 * tw)},150,${0.35 + 0.6 * tw})`;
+        ctx.fillRect(CX + Math.cos(a) * r - 1, CY + Math.sin(a) * r - 1, 2, 2);
+      }
+    }
+    // the inner rim catches the starlight
+    ctx.strokeStyle = "rgba(255,190,120,0.45)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(CX, CY, 0.9 * R, 0, TAU); ctx.stroke();
+  }
+
+  function drawMotes() {
+    for (const m of motes) {
+      ctx.fillStyle = `rgba(255,220,180,${m.al})`;
+      ctx.fillRect(sx(Math.cos(m.a) * m.r), sy(Math.sin(m.a) * m.r), m.s, m.s);
+    }
+  }
+
+  function drawStar() {
+    const sr = STAR_R * R;
+    const pulse = 1 + 0.04 * Math.sin(clock * 3) + 0.02 * Math.sin(clock * 7.3);
+    ctx.globalCompositeOperation = "lighter";
+    let g = ctx.createRadialGradient(CX, CY, 0, CX, CY, sr * 4.6 * pulse);
+    g.addColorStop(0, "rgba(255,235,190,0.55)");
+    g.addColorStop(0.25, "rgba(255,150,60,0.22)");
+    g.addColorStop(1, "rgba(255,70,20,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(CX, CY, sr * 4.6 * pulse, 0, TAU); ctx.fill();
+    ctx.lineWidth = Math.max(1.5, sr * 0.07);
+    for (let i = 0; i < 9; i++) {
+      const a = i / 9 * TAU + clock * 0.12;
+      const h = sr * (1.35 + 0.3 * Math.sin(clock * 1.6 + i * 2.1));
+      ctx.strokeStyle = `rgba(255,${120 + i * 10},50,0.45)`;
+      ctx.beginPath();
+      ctx.moveTo(CX + Math.cos(a - 0.22) * sr, CY + Math.sin(a - 0.22) * sr);
+      ctx.quadraticCurveTo(CX + Math.cos(a) * h * 1.25, CY + Math.sin(a) * h * 1.25, CX + Math.cos(a + 0.22) * sr, CY + Math.sin(a + 0.22) * sr);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    g = ctx.createRadialGradient(CX - sr * 0.2, CY - sr * 0.2, 0, CX, CY, sr * pulse);
+    g.addColorStop(0, "#fffef5");
+    g.addColorStop(0.5, "#ffe08a");
+    g.addColorStop(0.85, "#ff9a3a");
+    g.addColorStop(1, "#ff5a1a");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(CX, CY, sr * pulse, 0, TAU); ctx.fill();
+  }
+
+  function wedgePath(f) {
+    const a0 = f.angle - f.width, a1 = f.angle + f.width;
+    ctx.beginPath();
+    ctx.arc(CX, CY, 0.9 * R, a0, a1);
+    ctx.arc(CX, CY, STAR_R * R, a1, a0, true);
+    ctx.closePath();
+  }
+
+  function drawFlares() {
+    for (const f of flares) {
+      if (f.warn > 0) {
+        const k = 1 - f.warn / f.warnMax;
+        wedgePath(f);
+        ctx.fillStyle = `rgba(255,60,40,${0.05 + 0.12 * k})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(255,90,60,${0.3 + 0.5 * k * (0.5 + 0.5 * Math.sin(clock * 30))})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        const k = Math.max(0, f.life / 0.65);
+        ctx.globalCompositeOperation = "lighter";
+        const g = ctx.createRadialGradient(CX, CY, STAR_R * R, CX, CY, 0.9 * R);
+        g.addColorStop(0, `rgba(255,250,220,${0.95 * k})`);
+        g.addColorStop(0.35, `rgba(255,170,60,${0.75 * k})`);
+        g.addColorStop(1, `rgba(255,60,20,${0.25 * k})`);
+        wedgePath(f);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+      }
+    }
+  }
+
+  function drawShards() {
+    ctx.globalCompositeOperation = "lighter";
+    for (const s of shards) {
+      const x = sx(Math.cos(s.a) * s.r), y = sy(Math.sin(s.a) * s.r);
+      const hue = (s.hue + clock * 40) % 360;
+      const sz = SHARD_R * R * (1 + 0.15 * Math.sin(clock * 5 + s.spin));
+      const g = ctx.createRadialGradient(x, y, 0, x, y, sz * 3);
+      g.addColorStop(0, `hsla(${hue},100%,75%,0.55)`);
+      g.addColorStop(1, `hsla(${hue},100%,60%,0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, sz * 3, 0, TAU); ctx.fill();
+      ctx.save(); ctx.translate(x, y); ctx.rotate(s.spin);
+      ctx.fillStyle = `hsl(${hue},100%,82%)`;
+      ctx.beginPath(); ctx.moveTo(0, -sz); ctx.lineTo(sz * 0.6, 0); ctx.lineTo(0, sz); ctx.lineTo(-sz * 0.6, 0); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function drawDebris() {
+    for (const b of debris) {
+      const x = sx(Math.cos(b.a) * b.r), y = sy(Math.sin(b.a) * b.r), s = b.size * R;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(b.rot);
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s * 0.8); }
+      ctx.closePath();
+      ctx.fillStyle = "#2b2236"; ctx.fill();
+      ctx.strokeStyle = "rgba(255,130,60,0.9)"; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = "rgba(255,210,150,0.8)";
+      ctx.fillRect(-s * 0.3, -s * 0.1, 2, 2); ctx.fillRect(s * 0.2, s * 0.15, 2, 2);
+      ctx.restore();
+    }
+  }
+
+  function drawHero() {
+    if (!hero) return;
+    const x = sx(hero.x), y = sy(hero.y), s = HERO_R * R;
+    // boost ring
+    ctx.lineWidth = 2;
+    if (boostCd > 0) {
+      ctx.strokeStyle = "rgba(120,220,255,0.45)";
+      ctx.beginPath(); ctx.arc(x, y, s * 2.4, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - boostCd / BOOST_CD)); ctx.stroke();
+    } else {
+      ctx.strokeStyle = `rgba(120,220,255,${0.15 + 0.15 * Math.sin(clock * 6)})`;
+      ctx.beginPath(); ctx.arc(x, y, s * 2.4, 0, TAU); ctx.stroke();
+    }
+    if (invuln > 0 && Math.floor(clock * 14) % 2 === 0) return;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(hero.angle);
+    if (hero.thrusting) {
+      const len = s * (1.6 + Math.random() * 0.9);
+      ctx.globalCompositeOperation = "lighter";
+      const g = ctx.createLinearGradient(-s * 0.9, 0, -s * 0.9 - len, 0);
+      g.addColorStop(0, "rgba(255,240,180,0.95)");
+      g.addColorStop(0.4, "rgba(255,140,40,0.7)");
+      g.addColorStop(1, "rgba(255,60,20,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(-s * 0.85, -s * 0.38); ctx.lineTo(-s * 0.9 - len, 0); ctx.lineTo(-s * 0.85, s * 0.38); ctx.closePath(); ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
+    }
+    ctx.fillStyle = "#ff4d5e";
+    ctx.beginPath(); ctx.moveTo(-s * 0.2, -s * 0.55); ctx.lineTo(-s * 1.05, -s * 1.0); ctx.lineTo(-s * 0.9, -s * 0.3); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-s * 0.2, s * 0.55); ctx.lineTo(-s * 1.05, s * 1.0); ctx.lineTo(-s * 0.9, s * 0.3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#eef1f8";
+    ctx.beginPath();
+    ctx.moveTo(s * 1.6, 0);
+    ctx.quadraticCurveTo(s * 0.6, -s * 0.78, -s * 0.9, -s * 0.5);
+    ctx.lineTo(-s * 0.9, s * 0.5);
+    ctx.quadraticCurveTo(s * 0.6, s * 0.78, s * 1.6, 0);
+    ctx.fill();
+    ctx.fillStyle = "#5fd0ff";
+    ctx.beginPath(); ctx.arc(s * 0.45, 0, s * 0.28, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    ctx.globalCompositeOperation = "lighter";
+    for (const p of particles) {
+      const k = Math.max(0, p.life / p.max);
+      ctx.fillStyle = `hsla(${p.hue},100%,${55 + 25 * k}%,${k})`;
+      const s = p.size * (0.5 + k);
+      ctx.fillRect(sx(p.x) - s / 2, sy(p.y) - s / 2, s, s);
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function text(str, x, y, size, color, align = "center", weight = 700) {
+    ctx.font = `${weight} ${size}px "Segoe UI", system-ui, sans-serif`;
+    ctx.textAlign = align; ctx.textBaseline = "middle";
+    ctx.fillStyle = color;
+    ctx.fillText(str, x, y);
+  }
+
+  function glowText(str, x, y, size, color, glow) {
+    ctx.save();
+    ctx.shadowColor = glow; ctx.shadowBlur = size * 0.6;
+    text(str, x, y, size, color, "center", 800);
+    ctx.restore();
+    text(str, x, y, size, color, "center", 800);
+  }
+
+  function drawHUD() {
+    const u = Math.max(12, Math.min(W, H) * 0.028);
+    text("SCORE " + score, 20, 26, u, "#ffe9c4", "left");
+    text("BEST " + Math.max(best, score), 20, 26 + u * 1.4, u * 0.75, "rgba(255,233,196,0.65)", "left", 600);
+    text("LEVEL " + level, W - 20, 26, u, "#ffe9c4", "right");
+    for (let i = 0; i < lives; i++) {
+      const x = W - 28 - i * u * 1.6, y = 26 + u * 1.5;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = "#eef1f8";
+      ctx.beginPath(); ctx.moveTo(u * 0.5, 0); ctx.lineTo(-u * 0.35, -u * 0.25); ctx.lineTo(-u * 0.35, u * 0.25); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    if (combo > 1 && hero) {
+      const k = Math.max(0, comboTimer / 1.6);
+      text("x" + combo, sx(hero.x), sy(hero.y) - HERO_R * R * 3.2, u * (0.9 + 0.4 * k), `rgba(255,240,150,${0.4 + 0.6 * k})`);
+    }
+    text("Arrows / WASD or hold the mouse to fly  ·  Space: afterburner  ·  P: pause", W / 2, H - 18, u * 0.6, "rgba(255,233,196,0.45)", "center", 500);
+  }
+
+  function drawBanner() {
+    if (!banner) return;
+    const k = Math.min(1, banner.t / 0.5);
+    const u = Math.min(W, H);
+    ctx.globalAlpha = k;
+    glowText(banner.text, W / 2, H * 0.3, u * 0.06, "#fff4dc", "rgba(255,140,60,0.9)");
+    text(banner.sub, W / 2, H * 0.3 + u * 0.055, u * 0.025, "rgba(255,220,190,0.8)", "center", 500);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawTitle() {
+    const u = Math.min(W, H);
+    ctx.fillStyle = "rgba(5,3,10,0.45)";
+    ctx.fillRect(0, 0, W, H);
+    glowText("CORONA DRIFT", W / 2, H * 0.36, u * 0.11, "#fff4dc", "rgba(255,120,40,1)");
+    text("a tiny rocket inside a Dyson sphere, and a star that wants it back", W / 2, H * 0.36 + u * 0.09, u * 0.026, "rgba(255,220,190,0.85)", "center", 500);
+    const blink = 0.55 + 0.45 * Math.sin(clock * 4);
+    text("Press Enter or Space to launch", W / 2, H * 0.62, u * 0.04, `rgba(255,240,200,${blink})`);
+    text("Steer with the arrows or WASD (or hold the mouse)  ·  Space fires the afterburner", W / 2, H * 0.62 + u * 0.065, u * 0.022, "rgba(255,220,190,0.7)", "center", 500);
+    text("Grab the shining shards, chain them for combos. Dodge the wreckage. When the star flashes red, get out of the way.", W / 2, H * 0.62 + u * 0.1, u * 0.022, "rgba(255,220,190,0.7)", "center", 500);
+    if (best > 0) text("Best: " + best, W / 2, H * 0.62 + u * 0.15, u * 0.026, "rgba(255,233,196,0.8)");
+    text(ARCADE_TAG, W - 16, H - 16, Math.max(11, u * 0.018), "rgba(255,233,196,0.55)", "right", 500);
+  }
+
+  function drawOver() {
+    const u = Math.min(W, H);
+    ctx.fillStyle = `rgba(5,3,10,${Math.min(0.55, overTimer * 0.8)})`;
+    ctx.fillRect(0, 0, W, H);
+    glowText("THE STAR WINS", W / 2, H * 0.38, u * 0.085, "#fff4dc", "rgba(255,80,40,1)");
+    text("Score " + score + (score >= best && score > 0 ? "  ·  new best!" : "  ·  best " + best), W / 2, H * 0.38 + u * 0.085, u * 0.035, "rgba(255,230,200,0.9)");
+    if (overTimer > 0.9) {
+      const blink = 0.55 + 0.45 * Math.sin(clock * 4);
+      text("Press Enter to fly again", W / 2, H * 0.62, u * 0.04, `rgba(255,240,200,${blink})`);
+    }
+  }
+
+  function draw() {
+    ctx.save();
+    if (shake > 0.3) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+    drawBackdrop();
+    drawMotes();
+    drawShell();
+    drawFlares();
+    drawStar();
+    drawShards();
+    drawDebris();
+    if (state !== "title" && !(state === "over")) drawHero();
+    drawParticles();
+    ctx.restore();
+    if (state === "play") {
+      drawHUD(); drawBanner();
+      if (paused) {
+        ctx.fillStyle = "rgba(5,3,10,0.5)"; ctx.fillRect(0, 0, W, H);
+        glowText("PAUSED", W / 2, H / 2, Math.min(W, H) * 0.08, "#fff4dc", "rgba(255,140,60,0.9)");
+        text("P to carry on", W / 2, H / 2 + Math.min(W, H) * 0.07, Math.min(W, H) * 0.028, "rgba(255,220,190,0.8)", "center", 500);
+      }
+    } else if (state === "title") drawTitle();
+    else drawOver();
+  }
+
+  // ---------- loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+    last = now;
+    if (state === "play" && !paused) update(dt);
+    ambient(state === "play" && paused ? 0 : dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  for (let i = 0; i < 7; i++) spawnShard();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

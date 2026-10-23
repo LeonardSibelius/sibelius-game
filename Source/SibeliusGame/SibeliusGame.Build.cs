@@ -42,10 +42,16 @@ public class SibeliusGame : ModuleRules
 		});
 
 		// WebBrowserWidget and WebBrowser were here until v1.1.3, for the cathedral
-		// cabinet's embedded Celestial Fortune. Removing them is what drops 334 MB of
+		// cabinet's embedded Celestial Fortune. Removing them is what dropped 334 MB of
 		// Chromium from the shipped build — the plugin stages libcef.dll and its
 		// resources whether or not a single line of code ever calls into them.
+		// WebBrowser is BACK (2026-10-23) for Leonard's Arcade on the TVs, which plays the
+		// games players make with one prompt (ArcadeMenuWidget). The module alone, through
+		// SWebBrowserView: the UMG plugin is still not needed, and the 334 MB is the price.
 		PrivateDependencyModuleNames.AddRange(new string[] {
+			"WebBrowser",
+			// The arcade's "Copy the prompt": FPlatformApplicationMisc::ClipboardCopy.
+			"ApplicationCore",
 			// NPC chat step 6: the proxy transport. HTTP for the call, Json for the
 			// contract. JsonUtilities is deliberately absent - the bodies are small and
 			// hand-built, and a struct reflector would hide the shape from the gate.

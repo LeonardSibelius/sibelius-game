@@ -74,8 +74,9 @@ public:
 	// dependencies, the staged Content/WebGame/index.html, and 334 MB of Chromium that
 	// shipped in every build for a feature nobody could reach.
 	//
-	// The web game is still in the game — reached the way a person reaches a website,
-	// from the TVs in the living room and the bedroom (see InteractorComponent).
+	// The TVs in the living room and the bedroom showed the web game's address until
+	// 2026-10-23; they are Leonard's Arcade now (ArcadeMenuWidget), and the web version of
+	// Celestial Fortune lives on the open web alone, at leonardsibelius.com.
 	//
 	// The native screen is not a stub: it carries the 2026-07-17 facelift (spinning
 	// reels, win presentation, procedural sound) and its 9 symbol sprites are asserted

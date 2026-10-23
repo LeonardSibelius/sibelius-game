@@ -79,7 +79,8 @@ void ASlotCabinet::OpenScreen(APlayerController* PC)
 	// removed in v1.1.3, because the technician's panel edits the C++ par sheet and
 	// the web build's maths lived inside a minified JS bundle no panel could reach.
 	// The web version of Celestial Fortune now lives where it belongs — on the open
-	// web, reached from the televisions in the house.
+	// web. (The televisions in the house showed its address until they became Leonard's
+	// Arcade, 2026-10-23.)
 	if (!Screen)
 	{
 		Screen = CreateWidget<USlotScreenWidget>(PC, USlotScreenWidget::StaticClass());

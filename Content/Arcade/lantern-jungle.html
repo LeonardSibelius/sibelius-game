@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="leonards-arcade-picks" content="Kaia's alien jungle · An explorer with a lantern · Platformer · Gravity flips">
+<title>Lantern Jungle</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #05030c; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const TAU = Math.PI * 2;
+  const TAG = "Leonard's Arcade · sample game";
+  const T = 30, COLS = 32, ROWS = 18, VW = COLS * T, VH = ROWS * T;
+  const FLIP_EVERY = 10;
+
+  let W = 0, H = 0, S = 1, OX = 0, OY = 0;
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    S = Math.min(W / VW, H / VH); OX = (W - VW * S) / 2; OY = (H - VH * S) / 2;
+  }
+  addEventListener("resize", resize);
+  resize();
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const ri = (a, b) => Math.floor(rand(a, b + 1));
+
+  // ---------- sound ----------
+  let AC = null, master = null, noiseBuf = null;
+  function initAudio() {
+    if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+      noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e) { AC = null; }
+  }
+  function tone(f, dur, type = "sine", vol = 0.15, to = 0, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function whoosh(dur, vol, from, to) {
+    if (!AC) return;
+    const t = AC.currentTime, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+    s.buffer = noiseBuf; s.loop = true; f.type = "bandpass"; f.Q.value = 2;
+    f.frequency.setValueAtTime(from, t); f.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.05);
+  }
+  const sfx = {
+    jump() { tone(330, 0.14, "triangle", 0.1, 520); },
+    land() { tone(140, 0.06, "sine", 0.1, 90); },
+    seed(n) { const f = 523 * 2 ** ([0, 2, 4, 7, 9, 12, 14, 16][n % 8] / 12); tone(f, 0.35, "sine", 0.16); tone(f * 2, 0.25, "sine", 0.06, 0, 0.04); },
+    tick() { tone(880, 0.07, "square", 0.05); },
+    flip() { whoosh(0.7, 0.35, 300, 2400); tone(220, 0.6, "sine", 0.12, 440); },
+    hurt() { whoosh(0.4, 0.3, 1200, 200); tone(180, 0.4, "sawtooth", 0.14, 60); },
+    open() { [0, 4, 7, 11, 14].forEach((s, i) => tone(392 * 2 ** (s / 12), 0.6, "sine", 0.1, 0, i * 0.08)); },
+    win() { [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => tone(523 * 2 ** (s / 12), 0.4, "triangle", 0.12, 0, i * 0.07)); },
+  };
+
+  // ---------- input ----------
+  const keys = new Set();
+  let jumpBuffer = 0;
+  addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if (k === "escape") return;   // the arcade's key, never the game's
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+    initAudio();
+    if (!keys.has(k) && (k === " " || k === "arrowup" || k === "w")) jumpBuffer = 0.12;
+    keys.add(k);
+    if ((state === "title" && (k === "enter" || k === " ")) || (state === "over" && k === "enter" && overT > 0.9)) { start(); return; }
+    if (state === "play" && k === "p") paused = !paused;
+  });
+  addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+  addEventListener("blur", () => keys.clear());
+  canvas.addEventListener("mousedown", () => { initAudio(); if (state === "title" || (state === "over" && overT > 0.9)) start(); });
+
+  // ---------- the rooms ----------
+  // 0 air, 1 vine-wood, 2 thorns
+  function buildRoom(n) {
+    const g = Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
+    for (let c = 0; c < COLS; c++) { g[ROWS - 1][c] = 1; g[0][c] = 1; }
+    for (let r = 0; r < ROWS; r++) { g[r][0] = 1; g[r][COLS - 1] = 1; }
+    const gaps = Math.min(4, 1 + Math.floor(n / 2));
+    const cut = (row, used) => {
+      for (let k = 0; k < gaps; k++) {
+        for (let tries = 0; tries < 20; tries++) {
+          const w = ri(2, 3), c = ri(6, COLS - 8 - w);
+          if (used.some(u => Math.abs(u - c) < 6)) continue;
+          used.push(c); for (let i = 0; i < w; i++) g[row][c + i] = 0; break;
+        }
+      }
+    };
+    const usedFloor = [], usedRoof = [];
+    cut(ROWS - 1, usedFloor); cut(0, usedRoof);
+    const plats = [];
+    for (let k = 0; k < 7; k++) {
+      const len = ri(3, 6), r = ri(5, 12), c = ri(4, COLS - 5 - len);
+      if (plats.some(p => Math.abs(p.r - r) < 3 && c < p.c + p.len + 2 && p.c < c + len + 2)) continue;
+      for (let i = 0; i < len; i++) g[r][c + i] = 1;
+      plats.push({ r, c, len });
+    }
+    if (n >= 1) {
+      const th = Math.min(8, 2 + n);
+      for (let k = 0; k < th; k++) {
+        const c = ri(7, COLS - 9), roof = Math.random() < 0.5;
+        const r = roof ? 1 : ROWS - 2, base = roof ? 0 : ROWS - 1;
+        if (g[base][c] === 1 && g[r][c] === 0) g[r][c] = 2;
+      }
+    }
+    // star-seeds: on both faces of the platforms, along the floor and under the roof
+    const seeds = [];
+    for (const p of plats) {
+      const c = p.c + Math.floor(p.len / 2);
+      seeds.push({ x: (c + 0.5) * T, y: (p.r - 0.5) * T });
+      if (Math.random() < 0.5) seeds.push({ x: (p.c + 0.5) * T, y: (p.r + 1.5) * T });
+    }
+    for (let k = 0; k < 2; k++) seeds.push({ x: (ri(8, COLS - 9) + 0.5) * T, y: k ? 1.6 * T : (ROWS - 1.6) * T });
+    while (seeds.length > 8) seeds.splice(ri(0, seeds.length - 1), 1);
+    for (const s of seeds) { s.got = false; s.ph = rand(0, TAU); }
+    const roofExit = n % 2 === 1;   // odd rooms: the door hangs from the roof, so wait for the flip
+    const exit = { x: (COLS - 3) * T, y: roofExit ? 1 * T : (ROWS - 3) * T, w: T * 1.4, h: T * 2, roof: roofExit, open: false };
+    const plants = [];
+    for (let k = 0; k < 9; k++) plants.push({ x: rand(30, VW - 30), roof: Math.random() < 0.4, h: rand(50, 120), hue: rand(150, 300), ph: rand(0, TAU) });
+    return { g, seeds, exit, plants };
+  }
+  const solid = (c, r) => c < 0 || c >= COLS ? true : r < 0 || r >= ROWS ? false : room.g[r][c] === 1;
+  const tileAt = (c, r) => (c < 0 || c >= COLS || r < 0 || r >= ROWS) ? 0 : room.g[r][c];
+
+  // ---------- state ----------
+  let state = "title", paused = false, clock = 0, overT = 0;
+  let room = buildRoom(0), hero, parts = [], flies = [];
+  let score = 0, best = 0, lives = 3, roomN = 0, gravity = 1, flipT = FLIP_EVERY, shake = 0, banner = null, got = 0, roomT = 0, flipVis = 1;
+  try { best = +localStorage.getItem("lanternJungleBest") || 0; } catch (e) {}
+  for (let i = 0; i < 40; i++) flies.push({ x: rand(0, VW), y: rand(0, VH), ph: rand(0, TAU), sp: rand(0.5, 1.5) });
+
+  function spawnHero() {
+    const up = gravity < 0;
+    hero = { x: 2.2 * T, y: up ? 1 * T : (ROWS - 1) * T - 26, w: 18, h: 26, vx: 0, vy: 0, ground: false, coyote: 0, face: 1, inv: 1.2, step: 0 };
+  }
+  function start() {
+    state = "play"; paused = false;
+    score = 0; lives = 3; roomN = 0; gravity = 1; flipVis = 1;
+    enterRoom();
+  }
+  function enterRoom() {
+    room = buildRoom(roomN); got = 0; roomT = 0; flipT = FLIP_EVERY;
+    spawnHero();
+    banner = { t: 2.4, a: "ROOM " + (roomN + 1), b: room.exit.roof ? "the door hangs from the roof - wait for the flip" : "gather every star-seed to open the door" };
+  }
+
+  function hurt() {
+    if (hero.inv > 0) return;
+    lives--; shake = 12; sfx.hurt();
+    for (let i = 0; i < 40; i++) parts.push({ x: hero.x + 9, y: hero.y + 13, vx: rand(-200, 200), vy: rand(-200, 200), life: 0.8, max: 0.8, hue: 300, s: rand(2, 4) });
+    if (lives <= 0) {
+      state = "over"; overT = 0;
+      if (score > best) { best = score; try { localStorage.setItem("lanternJungleBest", String(best)); } catch (e) {} }
+    } else spawnHero();
+  }
+
+  // ---------- update ----------
+  function moveAxis(dx, dy) {
+    hero.x += dx;
+    let c0 = Math.floor(hero.x / T), c1 = Math.floor((hero.x + hero.w - 0.01) / T);
+    let r0 = Math.floor(hero.y / T), r1 = Math.floor((hero.y + hero.h - 0.01) / T);
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (solid(c, r)) {
+      if (dx > 0) hero.x = c * T - hero.w; else if (dx < 0) hero.x = (c + 1) * T;
+      hero.vx = 0;
+    }
+    hero.y += dy;
+    c0 = Math.floor(hero.x / T); c1 = Math.floor((hero.x + hero.w - 0.01) / T);
+    r0 = Math.floor(hero.y / T); r1 = Math.floor((hero.y + hero.h - 0.01) / T);
+    let landed = false;
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (solid(c, r)) {
+      if (dy > 0) { hero.y = r * T - hero.h; if (gravity > 0) landed = true; }
+      else if (dy < 0) { hero.y = (r + 1) * T; if (gravity < 0) landed = true; }
+      hero.vy = 0;
+    }
+    return landed;
+  }
+
+  function update(dt) {
+    roomT += dt;
+    // THE TWIST: gravity turns over every ten seconds
+    const before = flipT;
+    flipT -= dt;
+    if (flipT <= 3 && Math.ceil(flipT) !== Math.ceil(before) && flipT > 0) sfx.tick();
+    if (flipT <= 0) {
+      gravity = -gravity; flipT = FLIP_EVERY; shake = 8; sfx.flip();
+      hero.ground = false; hero.coyote = 0;
+      banner = { t: 1.2, a: "GRAVITY FLIPS", b: "" };
+    }
+    flipVis += ((gravity > 0 ? 1 : -1) - flipVis) * Math.min(1, dt * 10);
+
+    let dir = 0;
+    if (keys.has("arrowleft") || keys.has("a")) dir -= 1;
+    if (keys.has("arrowright") || keys.has("d")) dir += 1;
+    const accel = hero.ground ? 2400 : 1500;
+    if (dir) { hero.vx += dir * accel * dt; hero.face = dir; } else hero.vx *= Math.exp(-(hero.ground ? 14 : 3) * dt);
+    hero.vx = Math.max(-250, Math.min(250, hero.vx));
+    jumpBuffer -= dt; hero.coyote -= dt;
+    if (jumpBuffer > 0 && (hero.ground || hero.coyote > 0)) {
+      hero.vy = -640 * gravity; hero.ground = false; hero.coyote = 0; jumpBuffer = 0; sfx.jump();
+    }
+    const held = keys.has(" ") || keys.has("arrowup") || keys.has("w");
+    const g = 1900 * (held && hero.vy * gravity < 0 ? 0.6 : 1);   // hold to jump higher
+    hero.vy += g * gravity * dt;
+    hero.vy = Math.max(-900, Math.min(900, hero.vy));
+    const wasGround = hero.ground;
+    hero.ground = moveAxis(hero.vx * dt, 0) || false;
+    hero.ground = moveAxis(0, hero.vy * dt);
+    if (hero.ground && !wasGround) { sfx.land(); for (let i = 0; i < 6; i++) parts.push({ x: hero.x + 9, y: gravity > 0 ? hero.y + hero.h : hero.y, vx: rand(-60, 60), vy: rand(-30, 30), life: 0.35, max: 0.35, hue: 170, s: 2 }); }
+    if (wasGround && !hero.ground) hero.coyote = 0.09;
+    if (hero.ground && Math.abs(hero.vx) > 30) hero.step += dt * 12;
+    hero.inv = Math.max(0, hero.inv - dt);
+
+    // thorns
+    const c0 = Math.floor((hero.x + 3) / T), c1 = Math.floor((hero.x + hero.w - 3) / T);
+    const r0 = Math.floor((hero.y + 3) / T), r1 = Math.floor((hero.y + hero.h - 3) / T);
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (tileAt(c, r) === 2) hurt();
+    if (state !== "play") return;
+    if (hero.y > VH + 60 || hero.y < -60) { hurt(); return; }
+
+    // seeds and the door
+    const hx = hero.x + hero.w / 2, hy = hero.y + hero.h / 2;
+    for (const s of room.seeds) {
+      if (s.got || Math.hypot(s.x - hx, s.y - hy) > 22) continue;
+      s.got = true; got++; score += 50; sfx.seed(got);
+      for (let i = 0; i < 18; i++) parts.push({ x: s.x, y: s.y, vx: rand(-160, 160), vy: rand(-160, 160), life: 0.6, max: 0.6, hue: 50, s: rand(2, 4) });
+      if (got === room.seeds.length) { room.exit.open = true; sfx.open(); banner = { t: 1.6, a: "THE DOOR OPENS", b: room.exit.roof ? "it is on the roof" : "" }; }
+    }
+    const e = room.exit;
+    if (e.open && hx > e.x && hx < e.x + e.w && hy > e.y && hy < e.y + e.h) {
+      const bonus = 200 + Math.max(0, Math.round(60 - roomT) * 5);
+      score += bonus; sfx.win(); roomN++;
+      banner = { t: 1.8, a: "+" + bonus, b: "" };
+      enterRoom();
+    }
+  }
+
+  function ambient(dt) {
+    clock += dt; shake *= Math.exp(-8 * dt);
+    if (state === "over") overT += dt;
+    if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
+    for (const f of flies) { f.x += Math.cos(clock * f.sp + f.ph) * 20 * dt; f.y += Math.sin(clock * f.sp * 1.3 + f.ph) * 14 * dt; }
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.life -= dt;
+      if (p.life <= 0) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.95; p.vy *= 0.95;
+    }
+  }
+
+  // ---------- drawing ----------
+  function drawSky() {
+    const g = ctx.createLinearGradient(0, 0, 0, VH);
+    g.addColorStop(0, "#120a2a"); g.addColorStop(0.5, "#0d2a35"); g.addColorStop(1, "#071418");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+    // two moons
+    ctx.fillStyle = "rgba(200,255,220,0.85)"; ctx.beginPath(); ctx.arc(VW * 0.75, VH * 0.3, 44, 0, TAU); ctx.fill();
+    ctx.fillStyle = "rgba(170,230,200,0.5)"; ctx.beginPath(); ctx.arc(VW * 0.75 - 12, VH * 0.3 - 8, 10, 0, TAU); ctx.arc(VW * 0.75 + 14, VH * 0.3 + 10, 7, 0, TAU); ctx.fill();
+    ctx.fillStyle = "rgba(255,170,220,0.8)"; ctx.beginPath(); ctx.arc(VW * 0.62, VH * 0.18, 17, 0, TAU); ctx.fill();
+    // giant plant silhouettes and drifting mist
+    ctx.fillStyle = "#08151a";
+    for (let k = 0; k < 7; k++) {
+      const x = k * 150 + 40, h = 180 + (k % 3) * 60;
+      ctx.beginPath(); ctx.moveTo(x - 14, VH); ctx.quadraticCurveTo(x + 30 * Math.sin(k), VH - h * 0.6, x + 10, VH - h); ctx.quadraticCurveTo(x + 40, VH - h * 0.5, x + 18, VH); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x + 10, VH - h, 46, 18, -0.3 + k * 0.2, 0, TAU); ctx.fill();
+    }
+    for (let k = 0; k < 3; k++) {
+      ctx.fillStyle = "rgba(120,220,210,0.05)";
+      const x = ((clock * 12 * (k + 1)) % (VW + 400)) - 200;
+      ctx.beginPath(); ctx.ellipse(x, VH * (0.45 + k * 0.15), 300, 40, 0, 0, TAU); ctx.fill();
+    }
+  }
+
+  function drawTiles() {
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const t = room.g[r][c], x = c * T, y = r * T;
+      if (t === 1) {
+        ctx.fillStyle = "#16302c"; ctx.fillRect(x, y, T, T);
+        ctx.fillStyle = "#1f4a40"; ctx.fillRect(x + 2, y + 2, T - 4, T - 4);
+        if (!solid(c, r - 1)) { ctx.fillStyle = "#3fe0a0"; ctx.fillRect(x, y, T, 3); }
+        if (!solid(c, r + 1) && r + 1 < ROWS) { ctx.fillStyle = "#3fe0a0"; ctx.fillRect(x, y + T - 3, T, 3); }
+      } else if (t === 2) {
+        const roof = solid(c, r - 1);
+        ctx.fillStyle = "#d040ff";
+        for (let k = 0; k < 3; k++) {
+          const sx = x + 5 + k * 10;
+          ctx.beginPath();
+          if (roof) { ctx.moveTo(sx - 5, y); ctx.lineTo(sx, y + T - 6); ctx.lineTo(sx + 5, y); }
+          else { ctx.moveTo(sx - 5, y + T); ctx.lineTo(sx, y + 6); ctx.lineTo(sx + 5, y + T); }
+          ctx.fill();
+        }
+      }
+    }
+  }
+
+  function drawHero() {
+    if (!hero || (hero.inv > 0 && Math.floor(clock * 14) % 2 === 0)) return;
+    const cx = hero.x + hero.w / 2, cy = hero.y + hero.h / 2;
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(hero.face, flipVis);
+    const bob = hero.ground ? Math.abs(Math.sin(hero.step)) * 2 : 0;
+    ctx.fillStyle = "#3a2a1e"; ctx.fillRect(-6, 6, 4, 7 - Math.sin(hero.step) * 2); ctx.fillRect(2, 6, 4, 7 + Math.sin(hero.step) * 2);
+    ctx.fillStyle = "#c98a4a"; ctx.fillRect(-8, -6 - bob, 16, 13);
+    ctx.fillStyle = "#f2d2a8"; ctx.beginPath(); ctx.arc(0, -10 - bob, 6, 0, TAU); ctx.fill();
+    ctx.fillStyle = "#6b4a2a"; ctx.fillRect(-9, -16 - bob, 18, 4); ctx.fillRect(-6, -20 - bob, 12, 5);
+    ctx.fillStyle = "#222"; ctx.fillRect(2, -11 - bob, 2, 2);
+    // the lantern, held out front
+    ctx.strokeStyle = "#8a6a3a"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(7, -2 - bob); ctx.lineTo(12, 0); ctx.stroke();
+    ctx.fillStyle = "#ffd27a"; ctx.fillRect(10, 0, 6, 8);
+    ctx.restore();
+  }
+
+  function drawGlowing() {
+    ctx.globalCompositeOperation = "lighter";
+    // the moss on every ledge glows a little, so the room's shape shows through the dark
+    ctx.fillStyle = `rgba(63,224,160,${0.5 + 0.08 * Math.sin(clock * 1.3)})`;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (room.g[r][c] !== 1) continue;
+      if (!solid(c, r - 1) && r > 0) ctx.fillRect(c * T, r * T, T, 3);
+      if (!solid(c, r + 1) && r + 1 < ROWS) ctx.fillRect(c * T, r * T + T - 3, T, 3);
+    }
+    ctx.fillStyle = "rgba(208,64,255,0.3)";
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (room.g[r][c] === 2) ctx.fillRect(c * T + 3, r * T + 8, T - 6, T - 16);
+    for (const p of room.plants) {
+      const base = p.roof ? 0 : VH, sgn = p.roof ? 1 : -1;
+      const sway = Math.sin(clock * 0.8 + p.ph) * 8;
+      ctx.strokeStyle = `hsla(${p.hue},80%,55%,0.35)`; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(p.x, base); ctx.quadraticCurveTo(p.x + sway, base + sgn * p.h * 0.5, p.x + sway * 1.5, base + sgn * p.h); ctx.stroke();
+      const bx = p.x + sway * 1.5, by = base + sgn * p.h, pulse = 0.6 + 0.4 * Math.sin(clock * 1.6 + p.ph);
+      const g = ctx.createRadialGradient(bx, by, 0, bx, by, 40);
+      g.addColorStop(0, `hsla(${p.hue},100%,70%,${0.5 * pulse})`); g.addColorStop(1, `hsla(${p.hue},100%,60%,0)`);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, 40, 0, TAU); ctx.fill();
+    }
+    for (const f of flies) {
+      const a = 0.4 + 0.6 * Math.abs(Math.sin(clock * 2 + f.ph));
+      ctx.fillStyle = `rgba(210,255,140,${a})`; ctx.fillRect(f.x, f.y, 2, 2);
+    }
+    for (const s of room.seeds) {
+      if (s.got) continue;
+      const pulse = 1 + 0.2 * Math.sin(clock * 4 + s.ph);
+      const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 26 * pulse);
+      g.addColorStop(0, "rgba(255,240,150,0.85)"); g.addColorStop(1, "rgba(255,200,80,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, 26 * pulse, 0, TAU); ctx.fill();
+      ctx.fillStyle = "#fff7c4"; ctx.beginPath();
+      for (let k = 0; k < 10; k++) { const a = k / 10 * TAU + clock, r = k % 2 ? 4 : 9; ctx.lineTo(s.x + Math.cos(a) * r, s.y + Math.sin(a) * r); }
+      ctx.fill();
+    }
+    const e = room.exit;
+    const glowA = e.open ? 0.9 : 0.25;
+    const eg = ctx.createRadialGradient(e.x + e.w / 2, e.y + e.h / 2, 4, e.x + e.w / 2, e.y + e.h / 2, 60);
+    eg.addColorStop(0, `rgba(120,255,220,${glowA})`); eg.addColorStop(1, "rgba(120,255,220,0)");
+    ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(e.x + e.w / 2, e.y + e.h / 2, 60, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = e.open ? "#9fffe0" : "rgba(159,255,224,0.4)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(e.x + e.w / 2, e.y + e.h / 2, e.w / 2, e.h / 2, 0, 0, TAU); ctx.stroke();
+    if (e.open) { ctx.fillStyle = `rgba(159,255,224,${0.25 + 0.15 * Math.sin(clock * 5)})`; ctx.fill(); }
+    ctx.globalCompositeOperation = "lighter";
+    for (const p of parts) { const k = p.life / p.max; ctx.fillStyle = `hsla(${p.hue},100%,65%,${k})`; ctx.fillRect(p.x, p.y, p.s, p.s); }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function drawDark() {
+    // the jungle is dark: you see by your lantern
+    if (!hero) return;
+    const cx = hero.x + hero.w / 2 + hero.face * 10, cy = hero.y + hero.h / 2;
+    const flick = 1 + 0.04 * Math.sin(clock * 23) + 0.03 * Math.sin(clock * 37);
+    const g = ctx.createRadialGradient(cx, cy, 50 * flick, cx, cy, 300 * flick);
+    g.addColorStop(0, "rgba(4,2,12,0)"); g.addColorStop(0.6, "rgba(4,2,12,0.45)"); g.addColorStop(1, "rgba(4,2,12,0.74)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+    ctx.globalCompositeOperation = "lighter";
+    const warm = ctx.createRadialGradient(cx, cy, 0, cx, cy, 140);
+    warm.addColorStop(0, "rgba(255,190,90,0.22)"); warm.addColorStop(1, "rgba(255,190,90,0)");
+    ctx.fillStyle = warm; ctx.beginPath(); ctx.arc(cx, cy, 140, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function text(t, x, y, size, color, align = "center", weight = 700) {
+    ctx.font = `${weight} ${size}px "Segoe UI", system-ui, sans-serif`;
+    ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillStyle = color; ctx.fillText(t, x, y);
+  }
+  function glow(t, x, y, size, color, shadow) {
+    ctx.save(); ctx.shadowColor = shadow; ctx.shadowBlur = size * 0.5; text(t, x, y, size, color, "center", 800); ctx.restore();
+    text(t, x, y, size, color, "center", 800);
+  }
+
+  function draw() {
+    ctx.fillStyle = "#05030c"; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    if (shake > 0.3) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+    ctx.translate(OX, OY); ctx.scale(S, S);
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, VW, VH); ctx.clip();
+    drawSky(); drawTiles();
+    if (state === "play") drawHero();
+    if (state === "play") drawDark();
+    drawGlowing();
+    ctx.restore();
+
+    if (state === "play") {
+      text("SCORE " + score, 40, 50, 18, "#e8fff4", "left");
+      text("ROOM " + (roomN + 1) + "   SEEDS " + got + "/" + room.seeds.length, VW / 2, 50, 16, "rgba(232,255,244,0.85)", "center", 600);
+      for (let i = 0; i < lives; i++) { ctx.fillStyle = "#ffd27a"; ctx.fillRect(VW - 50 - i * 18, 44, 10, 13); }
+      // the flip clock, a ring that drains
+      const k = flipT / FLIP_EVERY, warn = flipT < 3;
+      ctx.strokeStyle = warn ? `rgba(255,120,220,${0.6 + 0.4 * Math.sin(clock * 16)})` : "rgba(160,255,230,0.6)"; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(VW / 2, VH - 50, 16, -Math.PI / 2, -Math.PI / 2 + TAU * k); ctx.stroke();
+      text(gravity > 0 ? "↓" : "↑", VW / 2, VH - 50, 16, "#e8fff4");
+      if (warn) text(Math.ceil(flipT) + "", hero.x + 9, hero.y + (gravity > 0 ? -24 : 50), 22, "rgba(255,150,230,0.95)");
+      if (banner) {
+        ctx.globalAlpha = Math.min(1, banner.t * 2);
+        glow(banner.a, VW / 2, VH * 0.36, 44, "#e8fff4", "rgba(80,255,200,0.9)");
+        if (banner.b) text(banner.b, VW / 2, VH * 0.36 + 38, 17, "rgba(232,255,244,0.9)", "center", 500);
+        ctx.globalAlpha = 1;
+      }
+      if (paused) { ctx.fillStyle = "rgba(4,2,12,0.6)"; ctx.fillRect(0, 0, VW, VH); glow("PAUSED", VW / 2, VH / 2, 50, "#fff", "#3fe0a0"); }
+    } else if (state === "title") {
+      ctx.fillStyle = "rgba(4,2,12,0.45)"; ctx.fillRect(0, 0, VW, VH);
+      glow("LANTERN JUNGLE", VW / 2, VH * 0.3, 68, "#e8fff4", "rgba(80,255,200,1)");
+      text("a tiny explorer with a lantern, deep in Kaia's alien jungle", VW / 2, VH * 0.3 + 52, 19, "rgba(232,255,244,0.92)", "center", 500);
+      text("Every ten seconds gravity flips, and the roof becomes the floor.", VW / 2, VH * 0.3 + 82, 17, "rgba(255,190,240,0.9)", "center", 500);
+      text("Arrows or A/D to walk  ·  Space, Up or W to jump (hold for higher)  ·  P to pause", VW / 2, VH * 0.3 + 110, 15, "rgba(232,255,244,0.7)", "center", 500);
+      text("Gather every star-seed to open the door, then step through.", VW / 2, VH * 0.3 + 134, 15, "rgba(232,255,244,0.7)", "center", 500);
+      text("Press Enter or Space to explore", VW / 2, VH * 0.72, 28, `rgba(240,255,248,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+      if (best) text("Best: " + best, VW / 2, VH * 0.72 + 34, 17, "rgba(232,255,244,0.8)");
+    } else {
+      ctx.fillStyle = `rgba(4,2,12,${Math.min(0.65, overT)})`; ctx.fillRect(0, 0, VW, VH);
+      glow("THE LANTERN GOES OUT", VW / 2, VH * 0.38, 50, "#e8fff4", "rgba(255,90,200,1)");
+      text("Score " + score + (score >= best && score > 0 ? "  ·  new best!" : "  ·  best " + best), VW / 2, VH * 0.38 + 50, 22, "#e8fff4");
+      text("You reached room " + (roomN + 1) + ".", VW / 2, VH * 0.38 + 80, 17, "rgba(232,255,244,0.75)", "center", 500);
+      if (overT > 0.9) text("Press Enter to light it again", VW / 2, VH * 0.65, 26, `rgba(240,255,248,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+    }
+    ctx.restore();
+    if (state === "title") text(TAG, W - 14, H - 14, Math.max(11, Math.min(W, H) * 0.018), "rgba(232,255,244,0.55)", "right", 500);
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (state === "play" && !paused) update(dt);
+    ambient(state === "play" && paused ? 0 : dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

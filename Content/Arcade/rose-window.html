@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="leonards-arcade-picks" content="The stained-glass cathedral · A cue ball come to life · Brick breaker · Colour storms">
+<title>Rose Window</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0810; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; cursor: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const TAU = Math.PI * 2;
+  const TAG = "Leonard's Arcade · sample game";
+  const VW = 800, VH = 600;
+
+  let W = 0, H = 0, S = 1, OX = 0, OY = 0;
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    S = Math.min(W / VW, H / VH) * 0.98; OX = (W - VW * S) / 2; OY = (H - VH * S) / 2;
+  }
+  addEventListener("resize", resize);
+  resize();
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // ---------- THE PALETTES: every power-up repaints the cathedral ----------
+  const PALETTES = [
+    { name: "Chartres", glass: [215, 0, 45, 270, 120], stone: [52, 44, 58], light: [255, 220, 170] },
+    { name: "Ember", glass: [10, 30, 50, 340, 20], stone: [60, 36, 30], light: [255, 170, 110] },
+    { name: "Deep Sea", glass: [180, 200, 160, 220, 140], stone: [28, 44, 58], light: [160, 230, 255] },
+    { name: "Orchard", glass: [90, 120, 60, 30, 140], stone: [44, 54, 36], light: [230, 255, 180] },
+    { name: "Midnight", glass: [260, 290, 230, 310, 200], stone: [30, 26, 54], light: [210, 190, 255] },
+    { name: "Carnival", glass: [330, 50, 180, 90, 280], stone: [58, 34, 54], light: [255, 200, 240] },
+  ];
+  let palFrom = 0, palTo = 0, palT = 1;
+  function hueAt(i) {
+    const a = PALETTES[palFrom].glass, b = PALETTES[palTo].glass;
+    const ha = a[i % a.length], hb = b[i % b.length];
+    let d = ((hb - ha + 540) % 360) - 180;
+    return (ha + d * palT + 360) % 360;
+  }
+  function mixRGB(k) {
+    const a = PALETTES[palFrom][k], b = PALETTES[palTo][k];
+    return [lerp(a[0], b[0], palT), lerp(a[1], b[1], palT), lerp(a[2], b[2], palT)];
+  }
+  function repaint() {
+    palFrom = palTo; palTo = (palTo + 1 + Math.floor(Math.random() * (PALETTES.length - 1))) % PALETTES.length; palT = 0;
+    banner = { t: 1.8, a: "COLOUR STORM", b: "the window turns " + PALETTES[palTo].name };
+    sfx.storm();
+  }
+
+  // ---------- sound ----------
+  let AC = null, master = null, noiseBuf = null;
+  function initAudio() {
+    if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+      noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e) { AC = null; }
+  }
+  function tone(f, dur, type = "sine", vol = 0.15, to = 0, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function chime(freq, vol) {
+    if (!AC) return;
+    const t = AC.currentTime, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+    s.buffer = noiseBuf; f.type = "bandpass"; f.frequency.value = freq * 3; f.Q.value = 8;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random() * 0.5); s.stop(t + 0.3);
+    tone(freq, 0.5, "sine", vol * 0.5); tone(freq * 2.76, 0.3, "sine", vol * 0.2);
+  }
+  const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+  const sfx = {
+    glass(c) { chime(660 * 2 ** (SCALE[Math.min(c, SCALE.length - 1)] / 12), 0.22); },
+    knock() { tone(180, 0.09, "triangle", 0.25, 120); },
+    wall() { tone(420, 0.05, "sine", 0.06); },
+    power() { [0, 4, 7].forEach((s, i) => tone(523 * 2 ** (s / 12), 0.3, "triangle", 0.14, 0, i * 0.06)); },
+    storm() { [0, 7, 12, 16, 19, 24].forEach((s, i) => tone(392 * 2 ** (s / 12), 0.6, "sine", 0.1, 0, i * 0.05)); },
+    lose() { [7, 4, 0, -5].forEach((s, i) => tone(392 * 2 ** (s / 12), 0.35, "triangle", 0.16, 0, i * 0.15)); },
+    clear() { [0, 4, 7, 12, 7, 12, 16].forEach((s, i) => tone(523 * 2 ** (s / 12), 0.35, "triangle", 0.14, 0, i * 0.09)); },
+  };
+
+  // ---------- input ----------
+  const keys = new Set();
+  let mouseX = null;
+  addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if (k === "escape") return;   // the arcade's key, never the game's
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+    initAudio(); keys.add(k);
+    if ((state === "title" && (k === "enter" || k === " ")) || (state === "over" && k === "enter" && overT > 0.9)) { start(); return; }
+    if (state === "play" && k === "p") paused = !paused;
+    if (state === "play" && (k === " " || k === "arrowup" || k === "w")) launch();
+    if (k === "arrowleft" || k === "arrowright" || k === "a" || k === "d") mouseX = null;
+  });
+  addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+  addEventListener("blur", () => keys.clear());
+  canvas.addEventListener("mousemove", e => { mouseX = (e.clientX - OX) / S; });
+  canvas.addEventListener("mousedown", () => {
+    initAudio();
+    if (state === "title" || (state === "over" && overT > 0.9)) start();
+    else if (state === "play") launch();
+  });
+
+  // ---------- the windows ----------
+  const BW = 36, BH = 18, TOP = 54;
+  function buildLevel(n) {
+    const list = [];
+    const cols = Math.floor((VW - 60) / BW), x0 = (VW - cols * BW) / 2;
+    const shape = n % 4;
+    for (let r = 0; r < 14; r++) for (let c = 0; c < cols; c++) {
+      const x = x0 + c * BW, y = TOP + r * BH, cx = x + BW / 2 - VW / 2, cy = y + BH / 2 - (TOP + 7 * BH);
+      let inside = false, ring = 0;
+      if (shape === 0) {            // the rose: a round window, rings of colour
+        const d = Math.hypot(cx, cy * 1.6); inside = d < 230 && d > 18; ring = Math.floor(d / 48) + Math.floor((Math.atan2(cy, cx) + Math.PI) / TAU * 12) % 2;
+      } else if (shape === 1) {     // three lancets: tall pointed arches
+        for (let k = -1; k <= 1; k++) {
+          const ax = cx - k * 200, w = 70;
+          const top = -110 + (Math.abs(ax) / w) ** 2 * 60;
+          if (Math.abs(ax) < w && cy > top) { inside = true; ring = k + 1 + (r % 3 === 0 ? 3 : 0); }
+        }
+      } else if (shape === 2) {     // the quatrefoil: four circles round a centre
+        for (const [qx, qy] of [[-80, 0], [80, 0], [0, -60], [0, 60]]) if (Math.hypot(cx - qx * 1.4, (cy - qy) * 1.6) < 110) { inside = true; ring = (qx ? 1 : 2) + (Math.hypot(cx, cy) < 60 ? 2 : 0); }
+      } else {                      // a wheel of spokes
+        const a = Math.atan2(cy * 1.6, cx), d = Math.hypot(cx, cy * 1.6);
+        inside = d < 250 && (Math.abs(Math.sin(a * 6)) > 0.45 || d < 70); ring = Math.floor(d / 60);
+      }
+      if (!inside) continue;
+      const tough = n >= 2 && Math.random() < 0.12 + n * 0.03 ? 2 : 1;
+      list.push({ x, y, w: BW, h: BH, ring, hp: tough, max: tough, glint: Math.random() * TAU });
+    }
+    return list;
+  }
+
+  // ---------- state ----------
+  let state = "title", paused = false, clock = 0, overT = 0;
+  let paddle, balls = [], panes = [], drops = [], shards = [], motes = [];
+  let score = 0, best = 0, lives = 3, level = 0, combo = 0, shake = 0, banner = null, fire = 0, slow = 0, wide = 0;
+  try { best = +localStorage.getItem("roseWindowBest") || 0; } catch (e) {}
+  for (let i = 0; i < 60; i++) motes.push({ x: rand(0, VW), y: rand(0, VH), v: rand(4, 14), s: rand(0.8, 2) });
+
+  function newBall(stuck) {
+    return { x: paddle.x, y: paddle.y - 14, vx: 0, vy: 0, r: 9, stuck, look: -Math.PI / 2, blush: 0, trail: [] };
+  }
+  function start() {
+    state = "play"; paused = false;
+    score = 0; lives = 3; level = 0; combo = 0; fire = 0; slow = 0; wide = 0;
+    paddle = { x: VW / 2, y: VH - 40, w: 110 };
+    nextLevel();
+  }
+  function nextLevel() {
+    level++;
+    panes = buildLevel(level - 1);
+    balls = [newBall(true)]; drops = [];
+    banner = { t: 2.2, a: "WINDOW " + level, b: ["the rose", "three lancets", "the quatrefoil", "the wheel"][(level - 1) % 4] + "  ·  Space or click to roll" };
+  }
+  function launch() {
+    for (const b of balls) if (b.stuck) {
+      const sp = ballSpeed(); const a = -Math.PI / 2 + rand(-0.35, 0.35);
+      b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp; b.stuck = false;
+    }
+  }
+  const ballSpeed = () => (380 + level * 25) * (slow > 0 ? 0.65 : 1);
+
+  function breakPane(p, i, b) {
+    p.hp--;
+    if (p.hp > 0) { sfx.glass(1); p.glint = 0; return; }
+    panes.splice(i, 1);
+    combo++;
+    const pts = 10 * level * Math.min(combo, 8);
+    score += pts;
+    sfx.glass(combo);
+    const hue = hueAt(p.ring);
+    for (let k = 0; k < 10; k++) shards.push({ x: p.x + rand(0, p.w), y: p.y + rand(0, p.h), vx: rand(-120, 120) + (b ? b.vx * 0.2 : 0), vy: rand(-140, 40), rot: rand(0, TAU), vr: rand(-10, 10), life: rand(0.6, 1.2), hue, s: rand(3, 7) });
+    if (shards.length > 900) shards.splice(0, shards.length - 900);
+    shake = Math.max(shake, 2.5);
+    if (Math.random() < 0.13) drops.push({ x: p.x + p.w / 2, y: p.y + p.h / 2, kind: ["wide", "multi", "slow", "fire", "life"][Math.floor(Math.random() * (lives < 3 ? 5 : 4))] });
+    if (panes.length === 0) {
+      score += 250 * level; sfx.clear();
+      banner = { t: 2, a: "WINDOW CLEARED", b: "+" + 250 * level };
+      setTimeoutFree(nextLevel, 1.6);
+    }
+  }
+  // a timer that runs on the game clock (and so pauses with it)
+  const timers = [];
+  function setTimeoutFree(fn, sec) { timers.push({ fn, at: clock + sec }); }
+
+  function catchDrop(d) {
+    if (d.kind === "wide") wide = 12;
+    else if (d.kind === "slow") { slow = 10; for (const b of balls) { b.vx *= 0.7; b.vy *= 0.7; } }
+    else if (d.kind === "fire") fire = 7;
+    else if (d.kind === "life") lives = Math.min(5, lives + 1);
+    else {
+      const extra = [];
+      for (const b of balls.slice(0, 2)) for (const da of [-0.5, 0.5]) {
+        if (b.stuck) continue;
+        const a = Math.atan2(b.vy, b.vx) + da, sp = Math.hypot(b.vx, b.vy);
+        extra.push({ ...newBall(false), x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp });
+      }
+      balls.push(...extra);
+    }
+    sfx.power();
+    repaint();   // THE TWIST: every power-up repaints the world
+  }
+
+  // ---------- update ----------
+  function update(dt) {
+    for (let i = timers.length - 1; i >= 0; i--) if (clock >= timers[i].at) { const t = timers.splice(i, 1)[0]; t.fn(); }
+    fire = Math.max(0, fire - dt); slow = Math.max(0, slow - dt); wide = Math.max(0, wide - dt);
+    paddle.w = lerp(paddle.w, wide > 0 ? 170 : 110, Math.min(1, dt * 8));
+    let dir = 0;
+    if (keys.has("arrowleft") || keys.has("a")) dir -= 1;
+    if (keys.has("arrowright") || keys.has("d")) dir += 1;
+    if (dir) paddle.x += dir * 620 * dt;
+    else if (mouseX !== null) paddle.x = lerp(paddle.x, mouseX, Math.min(1, dt * 18));
+    paddle.x = clamp(paddle.x, paddle.w / 2 + 10, VW - paddle.w / 2 - 10);
+
+    for (let bi = balls.length - 1; bi >= 0; bi--) {
+      const b = balls[bi];
+      b.blush = Math.max(0, b.blush - dt);
+      if (b.stuck) { b.x = paddle.x; b.y = paddle.y - 14; continue; }
+      const steps = 3;
+      for (let s = 0; s < steps; s++) {
+        b.x += b.vx * dt / steps; b.y += b.vy * dt / steps;
+        if (b.x < 10 + b.r) { b.x = 10 + b.r; b.vx = Math.abs(b.vx); sfx.wall(); }
+        if (b.x > VW - 10 - b.r) { b.x = VW - 10 - b.r; b.vx = -Math.abs(b.vx); sfx.wall(); }
+        if (b.y < 30 + b.r) { b.y = 30 + b.r; b.vy = Math.abs(b.vy); sfx.wall(); }
+        // the paddle: where it lands decides where it goes
+        if (b.vy > 0 && b.y + b.r > paddle.y - 7 && b.y < paddle.y + 8 && Math.abs(b.x - paddle.x) < paddle.w / 2 + b.r) {
+          const off = clamp((b.x - paddle.x) / (paddle.w / 2), -1, 1);
+          const a = -Math.PI / 2 + off * 1.05, sp = ballSpeed();
+          b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp; b.y = paddle.y - 8 - b.r;
+          combo = 0; b.blush = 0.3; sfx.knock();
+        }
+        for (let i = panes.length - 1; i >= 0; i--) {
+          const p = panes[i];
+          const nx = clamp(b.x, p.x, p.x + p.w), ny = clamp(b.y, p.y, p.y + p.h);
+          const dx = b.x - nx, dy = b.y - ny;
+          if (dx * dx + dy * dy > b.r * b.r) continue;
+          if (fire <= 0) {
+            // bounce off the side we came through
+            const ox = Math.min(b.x + b.r - p.x, p.x + p.w - (b.x - b.r));
+            const oy = Math.min(b.y + b.r - p.y, p.y + p.h - (b.y - b.r));
+            if (ox < oy) b.vx = b.x < p.x + p.w / 2 ? -Math.abs(b.vx) : Math.abs(b.vx);
+            else b.vy = b.y < p.y + p.h / 2 ? -Math.abs(b.vy) : Math.abs(b.vy);
+          }
+          breakPane(p, i, b);
+          if (fire <= 0) break;
+        }
+      }
+      b.look = Math.atan2(b.vy, b.vx);
+      b.trail.push({ x: b.x, y: b.y }); if (b.trail.length > 10) b.trail.shift();
+      if (b.y > VH + 30) balls.splice(bi, 1);
+    }
+    if (balls.length === 0) {
+      lives--; combo = 0; shake = 10; sfx.lose();
+      if (lives <= 0) {
+        state = "over"; overT = 0;
+        if (score > best) { best = score; try { localStorage.setItem("roseWindowBest", String(best)); } catch (e) {} }
+      } else { balls = [newBall(true)]; banner = { t: 1.4, a: lives + (lives === 1 ? " BALL LEFT" : " BALLS LEFT"), b: "" }; }
+    }
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const d = drops[i]; d.y += 150 * dt;
+      if (d.y > VH + 20) { drops.splice(i, 1); continue; }
+      if (Math.abs(d.x - paddle.x) < paddle.w / 2 + 12 && Math.abs(d.y - paddle.y) < 14) { drops.splice(i, 1); catchDrop(d); }
+    }
+  }
+
+  function ambient(dt) {
+    clock += dt; shake *= Math.exp(-9 * dt);
+    if (palT < 1) palT = Math.min(1, palT + dt / 0.9);
+    if (state === "over") overT += dt;
+    if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
+    for (const m of motes) { m.y -= m.v * dt; m.x += Math.sin(clock + m.y * 0.02) * 6 * dt; if (m.y < 0) { m.y = VH; m.x = rand(0, VW); } }
+    for (let i = shards.length - 1; i >= 0; i--) {
+      const s = shards[i]; s.life -= dt;
+      if (s.life <= 0) { shards.splice(i, 1); continue; }
+      s.vy += 520 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.rot += s.vr * dt;
+    }
+    for (const p of panes) p.glint += dt * 0.7;
+  }
+
+  // ---------- drawing ----------
+  function drawNave() {
+    const [sr, sg, sb] = mixRGB("stone"), [lr, lg, lb] = mixRGB("light");
+    ctx.fillStyle = `rgb(${sr * 0.35 | 0},${sg * 0.35 | 0},${sb * 0.35 | 0})`; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.translate(OX, OY); ctx.scale(S, S);
+    // stone arches down each side of the nave, into the dark beyond the play area
+    for (let side = -1; side <= 1; side += 2) for (let k = 0; k < 5; k++) {
+      const x = VW / 2 + side * (VW / 2 + 40 + k * 90);
+      ctx.fillStyle = `rgba(${sr},${sg},${sb},${0.9 - k * 0.15})`;
+      ctx.fillRect(x - 18, 60, 36, VH); ctx.beginPath(); ctx.arc(x - side * 45, 120, 63, Math.PI, TAU); ctx.lineWidth = 14; ctx.strokeStyle = ctx.fillStyle; ctx.stroke();
+    }
+    // the window's light falling through the nave
+    ctx.globalCompositeOperation = "lighter";
+    for (let k = 0; k < 5; k++) {
+      const x = VW / 2 + (k - 2) * 120 + Math.sin(clock * 0.3 + k) * 10;
+      const g = ctx.createLinearGradient(x, 0, x + 140, VH);
+      g.addColorStop(0, `rgba(${lr},${lg},${lb},0.10)`); g.addColorStop(1, `rgba(${lr},${lg},${lb},0)`);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x - 30, 40); ctx.lineTo(x + 30, 40); ctx.lineTo(x + 210, VH); ctx.lineTo(x + 80, VH); ctx.fill();
+    }
+    for (const m of motes) { ctx.fillStyle = `rgba(${lr},${lg},${lb},0.35)`; ctx.fillRect(m.x, m.y, m.s, m.s); }
+    ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
+  }
+
+  function drawPanes() {
+    for (const p of panes) {
+      const h = hueAt(p.ring), cracked = p.hp < p.max;
+      const tw = 0.5 + 0.5 * Math.sin(p.glint + p.x * 0.01);
+      ctx.fillStyle = `hsl(${h},${80 - (p.max > 1 ? 15 : 0)}%,${38 + tw * 14}%)`;
+      ctx.fillRect(p.x + 1, p.y + 1, p.w - 2, p.h - 2);
+      ctx.fillStyle = `hsla(${h},100%,85%,${0.18 + tw * 0.2})`; ctx.fillRect(p.x + 3, p.y + 3, p.w * 0.4, 3);
+      if (p.max > 1 && !cracked) { ctx.strokeStyle = "rgba(255,255,255,0.35)"; ctx.lineWidth = 1; ctx.strokeRect(p.x + 4, p.y + 4, p.w - 8, p.h - 8); }
+      if (cracked) { ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x + 5, p.y + 3); ctx.lineTo(p.x + p.w / 2, p.y + p.h / 2); ctx.lineTo(p.x + p.w - 6, p.y + p.h - 3); ctx.moveTo(p.x + p.w / 2, p.y + p.h / 2); ctx.lineTo(p.x + p.w / 2 + 4, p.y + 2); ctx.stroke(); }
+      ctx.strokeStyle = "#16121c"; ctx.lineWidth = 2; ctx.strokeRect(p.x + 1, p.y + 1, p.w - 2, p.h - 2);   // the lead
+    }
+  }
+
+  function drawBall(b) {
+    if (b.trail.length > 1) {
+      ctx.globalCompositeOperation = "lighter";
+      b.trail.forEach((t, i) => { ctx.fillStyle = fire > 0 ? `rgba(255,150,60,${i / b.trail.length * 0.4})` : `rgba(255,255,255,${i / b.trail.length * 0.15})`; ctx.beginPath(); ctx.arc(t.x, t.y, b.r * i / b.trail.length, 0, TAU); ctx.fill(); });
+      ctx.globalCompositeOperation = "source-over";
+    }
+    ctx.save(); ctx.translate(b.x, b.y);
+    const g = ctx.createRadialGradient(-3, -3, 1, 0, 0, b.r);
+    g.addColorStop(0, "#ffffff"); g.addColorStop(1, fire > 0 ? "#ffb070" : "#d8d4cc");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, b.r, 0, TAU); ctx.fill();
+    // it looks where it is going
+    const ex = Math.cos(b.look) * 2.5, ey = Math.sin(b.look) * 2.5;
+    ctx.fillStyle = "#1c1820";
+    ctx.beginPath(); ctx.arc(-3 + ex, -1 + ey, 1.7, 0, TAU); ctx.arc(3 + ex, -1 + ey, 1.7, 0, TAU); ctx.fill();
+    ctx.strokeStyle = "#1c1820"; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(ex * 0.5, 2.5 + ey * 0.5, 2.6, 0.2, Math.PI - 0.2); ctx.stroke();
+    if (b.blush > 0) { ctx.fillStyle = `rgba(255,120,140,${b.blush * 2})`; ctx.beginPath(); ctx.arc(-5, 2, 1.8, 0, TAU); ctx.arc(5, 2, 1.8, 0, TAU); ctx.fill(); }
+    ctx.restore();
+  }
+
+  function text(t, x, y, size, color, align = "center", weight = 700) {
+    ctx.font = `${weight} ${size}px "Segoe UI", Georgia, serif`;
+    ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillStyle = color; ctx.fillText(t, x, y);
+  }
+  function glow(t, x, y, size, color, shadow) {
+    ctx.save(); ctx.shadowColor = shadow; ctx.shadowBlur = size * 0.5; text(t, x, y, size, color, "center", 800); ctx.restore();
+    text(t, x, y, size, color, "center", 800);
+  }
+
+  function draw() {
+    drawNave();
+    ctx.save();
+    if (shake > 0.3) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+    ctx.translate(OX, OY); ctx.scale(S, S);
+    // the window's stone frame
+    const [sr, sg, sb] = mixRGB("stone");
+    ctx.fillStyle = `rgba(${sr * 0.5 | 0},${sg * 0.5 | 0},${sb * 0.5 | 0},0.85)`; ctx.fillRect(0, 0, VW, VH);
+    ctx.strokeStyle = `rgb(${sr * 1.6 | 0},${sg * 1.6 | 0},${sb * 1.6 | 0})`; ctx.lineWidth = 10; ctx.strokeRect(5, 25, VW - 10, VH);
+    if (state === "title") {
+      const demo = buildDemo();
+      for (const p of demo) { ctx.fillStyle = `hsl(${hueAt(p.ring)},75%,${40 + 12 * Math.sin(clock + p.x * 0.02)}%)`; ctx.fillRect(p.x + 1, p.y + 1, BW - 2, BH - 2); ctx.strokeStyle = "#16121c"; ctx.lineWidth = 2; ctx.strokeRect(p.x + 1, p.y + 1, BW - 2, BH - 2); }
+    } else drawPanes();
+    for (const s of shards) {
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.rot);
+      ctx.fillStyle = `hsla(${s.hue},90%,60%,${Math.min(1, s.life)})`;
+      ctx.beginPath(); ctx.moveTo(0, -s.s); ctx.lineTo(s.s * 0.7, s.s * 0.6); ctx.lineTo(-s.s * 0.6, s.s * 0.4); ctx.fill();
+      ctx.restore();
+    }
+    if (state !== "title") {
+      for (const d of drops) {
+        const c = { wide: "#ffd35a", multi: "#7dd6ff", slow: "#9dff8a", fire: "#ff8a4a", life: "#ff7aa8" }[d.kind];
+        ctx.fillStyle = c; ctx.beginPath(); ctx.arc(d.x, d.y, 11, 0, TAU); ctx.fill();
+        text({ wide: "W", multi: "3", slow: "S", fire: "F", life: "+" }[d.kind], d.x, d.y + 1, 13, "#1a1420", "center", 800);
+      }
+      // the paddle: a brass altar rail
+      const pg = ctx.createLinearGradient(0, paddle.y - 7, 0, paddle.y + 7);
+      pg.addColorStop(0, "#ffe39a"); pg.addColorStop(0.5, "#c99a3a"); pg.addColorStop(1, "#7a5418");
+      ctx.fillStyle = pg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(paddle.x - paddle.w / 2, paddle.y - 7, paddle.w, 14, 7) : ctx.rect(paddle.x - paddle.w / 2, paddle.y - 7, paddle.w, 14); ctx.fill();
+      for (const b of balls) drawBall(b);
+      text("SCORE " + score, 18, 12, 16, "#fff2dc", "left");
+      text("WINDOW " + level + "   BEST " + Math.max(best, score), VW / 2, 12, 14, "rgba(255,242,220,0.7)", "center", 600);
+      for (let i = 0; i < lives; i++) { ctx.fillStyle = "#eee8de"; ctx.beginPath(); ctx.arc(VW - 18 - i * 20, 12, 6, 0, TAU); ctx.fill(); }
+      if (combo > 2) text("x" + Math.min(combo, 8), paddle.x, paddle.y - 32, 18, "rgba(255,240,170,0.9)");
+      const fx = [fire > 0 ? "FIRE" : "", slow > 0 ? "SLOW" : "", wide > 0 ? "WIDE" : ""].filter(Boolean).join("  ");
+      if (fx) text(fx, VW - 18, VH - 14, 13, "rgba(255,240,200,0.75)", "right", 700);
+      if (banner) {
+        ctx.globalAlpha = Math.min(1, banner.t * 2);
+        glow(banner.a, VW / 2, VH * 0.62, 42, "#fff6e4", `hsl(${hueAt(0)},90%,60%)`);
+        if (banner.b) text(banner.b, VW / 2, VH * 0.62 + 38, 17, "rgba(255,242,230,0.9)", "center", 500);
+        ctx.globalAlpha = 1;
+      }
+      if (paused) { ctx.fillStyle = "rgba(10,6,14,0.55)"; ctx.fillRect(0, 0, VW, VH); glow("PAUSED", VW / 2, VH / 2, 50, "#fff", "#c9a"); }
+    }
+    if (state === "title") {
+      glow("ROSE WINDOW", VW / 2, VH * 0.6, 66, "#fff6e4", `hsl(${hueAt(0)},90%,60%)`);
+      text("a cue ball come to life, loose in a cathedral of stained glass", VW / 2, VH * 0.6 + 50, 18, "rgba(255,242,230,0.9)", "center", 500);
+      text("Every power-up repaints the whole window in new colours.", VW / 2, VH * 0.6 + 78, 16, "rgba(255,242,230,0.8)", "center", 500);
+      text("Mouse or arrows move the rail  ·  Space or click rolls the ball  ·  P pauses", VW / 2, VH * 0.6 + 104, 14, "rgba(255,242,230,0.65)", "center", 500);
+      text("Press Enter or Space to begin", VW / 2, VH * 0.6 + 150, 26, `rgba(255,248,235,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+      if (best) text("Best: " + best, VW / 2, VH * 0.6 + 182, 16, "rgba(255,242,220,0.75)");
+      if (Math.floor(clock / 3) !== Math.floor((clock - 1 / 60) / 3)) { palFrom = palTo; palTo = (palTo + 1) % PALETTES.length; palT = 0; }
+    } else if (state === "over") {
+      ctx.fillStyle = `rgba(10,6,14,${Math.min(0.6, overT)})`; ctx.fillRect(0, 0, VW, VH);
+      glow("THE WINDOW HOLDS", VW / 2, VH * 0.4, 48, "#fff6e4", "rgba(255,90,110,1)");
+      text("Score " + score + (score >= best && score > 0 ? "  ·  new best!" : "  ·  best " + best), VW / 2, VH * 0.4 + 50, 22, "#fff0e6");
+      if (overT > 0.9) text("Press Enter to roll again", VW / 2, VH * 0.62, 26, `rgba(255,248,235,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+    }
+    ctx.restore();
+    if (state === "title") text(TAG, W - 14, H - 14, Math.max(11, Math.min(W, H) * 0.018), "rgba(255,242,220,0.6)", "right", 500);
+  }
+  let demoPanes = null;
+  function buildDemo() { if (!demoPanes) demoPanes = buildLevel(0).filter(p => p.y < 260); return demoPanes; }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (state === "play" && !paused) update(dt);
+    ambient(state === "play" && paused ? 0 : dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

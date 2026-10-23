@@ -18,12 +18,13 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "SibeliusHUD.h"   // the prompt draws on the HUD canvas so it survives packaging
-#include "HAL/PlatformTime.h"
+#include "ArcadeMenuWidget.h"
 
-namespace WebSlotInteraction
+namespace ArcadeTV
 {
-const FName TVTag(TEXT("CelestialFortuneWebTV"));
-bool IsTV(const AActor* Actor) { return Actor && Actor->ActorHasTag(TVTag); }
+// The two TVs in the house - the living room's and the bedroom's - are Leonard's Arcade now
+// (ArcadeMenuWidget.h; the tag's name is explained at SibArcade::TVTag).
+bool IsTV(const AActor* Actor) { return Actor && Actor->ActorHasTag(SibArcade::TVTag()); }
 }
 
 namespace InteractorDetail
@@ -186,7 +187,7 @@ void UInteractorComponent::UpdateFocus()
 
 	auto IsInteractTarget = [](AActor* A) -> bool
 	{
-		return A && (WebSlotInteraction::IsTV(A) || A->Implements<UInteractable>()
+		return A && (ArcadeTV::IsTV(A) || A->Implements<UInteractable>()
 			|| A->FindComponentByClass<UDancerAgentComponent>() != nullptr);
 	};
 
@@ -257,9 +258,9 @@ void UInteractorComponent::UpdateFocus()
 	FocusedActor = Target;
 	if (Prompt.IsEmpty())
 	{
-		if (WebSlotInteraction::IsTV(Target))
+		if (ArcadeTV::IsTV(Target))
 		{
-			Prompt = NSLOCTEXT("Sibelius", "WebSlotTVPrompt", "E \u2014 Celestial Fortune web version");
+			Prompt = NSLOCTEXT("Sibelius", "ArcadeTVPrompt", "E \u2014 Leonard's Arcade");
 		}
 		else if (Target->Implements<UInteractable>())
 		{
@@ -404,22 +405,27 @@ void UInteractorComponent::TryInteract()
 		return;
 	}
 
-	if (WebSlotInteraction::IsTV(Target))
+	if (ArcadeTV::IsTV(Target))
 	{
 		// Refresh the trace so pressing E cannot activate a TV after looking away.
 		UpdateFocus();
 		if (FocusedActor.Get() != Target) return;
-		/* SHOW THE ADDRESS, NEVER OPEN IT (Steam review, build 25330029, 2026-09-22).
-		   The TV used to LaunchURL the web game, and Steam failed the build for it:
-		   a game may not send players out of Steam to play somewhere else. So the TV
-		   now puts the address on screen and the player decides what to do with it. */
-		// Prevent a held/repeated E from stacking the same toast.
-		static double LastShown = -10.0;
-		const double Now = FPlatformTime::Seconds();
-		if (Now - LastShown < 2.0) return;
-		LastShown = Now;
-		ASibeliusHUD::Toast(this, TEXT("Celestial Fortune web version:  leonardsibelius.com/celestial-fortune"),
-			8.0f, SibeliusToast::Prize);
+		/* LEONARD'S ARCADE (2026-10-23), in place of the web slot machine's address. Walt:
+		   "remove the link displayed for my web version of Celestial Fortune and have 'E'
+		   open the menu from the TVs". The TV still never opens a website - Steam failed
+		   build 25330029 when it did (a game may not send players out of Steam to play
+		   somewhere else) - it plays games the player saved, from a folder, offline. */
+		const APawn* Pawn = Cast<APawn>(GetOwner());
+		APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
+		if (!PC) return;
+		if (!ArcadeMenu)
+		{
+			ArcadeMenu = CreateWidget<UArcadeMenuWidget>(PC, UArcadeMenuWidget::StaticClass());
+		}
+		if (ArcadeMenu && !ArcadeMenu->IsInViewport())
+		{
+			ArcadeMenu->Open();
+		}
 		return;
 	}
 	if (Target->Implements<UInteractable>())

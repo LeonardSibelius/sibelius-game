@@ -239,6 +239,44 @@ foreach ($skin in "Novaborn","Tough","WhiteTiger") {
   else { Write-Output "OK      Greystone's $skin skin left out" }
 }
 
+# ---- LEONARD'S ARCADE (2026-10-23): the TVs play the games players make with one prompt ----
+# The TVs are found by their actor tag, which is map data: a re-saved L_Office_v02 that lost it
+# would leave both TVs dead and nothing would say so (package_v113.ps1 learned this).
+$officeText = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes("$cooked\L_Office_v02.umap"))
+if ($officeText.Contains("CelestialFortuneWebTV")) {
+  Write-Output "OK      the TVs' tag survived the cook"
+} else {
+  Write-Output "MISSING the TVs' tag -> CelestialFortuneWebTV absent from the cooked L_Office_v02"
+  Write-Output "        Both TVs are dead and nothing will say so. Do NOT push."
+  exit 1
+}
+# And Chromium, which plays them. From v1.1.3 to 2.3.3 its ABSENCE was checked, to keep 334 MB
+# out of a build that never used it; the arcade does, so now a build without it is the failure.
+$cefDll = Get-ChildItem $outDir -Recurse -File -Filter "libcef.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+$helper = Get-ChildItem $outDir -Recurse -File -Filter "EpicWebHelper.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($cefDll -and $helper) {
+  $cefMB = [math]::Round((Get-ChildItem $cefDll.DirectoryName -Recurse -File | Measure-Object Length -Sum).Sum / 1MB, 0)
+  Write-Output "OK      Chromium for the arcade ($cefMB MB) and its helper"
+} else {
+  Write-Output "MISSING Chromium -> libcef.dll or EpicWebHelper.exe absent from $outDir"
+  Write-Output "        The TVs would open the arcade and play nothing. Do NOT push."
+  exit 1
+}
+# The arcade's own games (Content\Arcade), staged LOOSE by DirectoriesToAlwaysStageAsNonUFS -
+# Chromium cannot read a .pak - and the glowing material the TVs' "LEONARD'S ARCADE" screens are
+# drawn with, which only C++ names (UArcadeTVSubsystem, by path; DirectoriesToAlwaysCook cooks it).
+$samples = @(Get-ChildItem "$outDir\Windows\SibeliusGame\Content\Arcade" -Filter "*.html" -ErrorAction SilentlyContinue)
+$want = @(Get-ChildItem "$root\Content\Arcade" -Filter "*.html" -ErrorAction SilentlyContinue).Count
+if ($want -gt 0 -and $samples.Count -eq $want) {
+  Write-Output "OK      the arcade's $want sample games, loose"
+} else {
+  Write-Output "MISSING sample games -> $($samples.Count) of $want staged in Content\Arcade"
+  exit 1
+}
+$tvMat = "$cooked\ArcadeTV\M_ArcadeTVScreen.uasset"
+if (Test-Path $tvMat) { Write-Output "OK      the TVs' screen material" }
+else { Write-Output "MISSING the TVs' screen material -> $tvMat"; exit 1 }
+
 # ---- what did Kaia's planet cost? -------------------------------------------
 function PakGB($path) {
   if (-not (Test-Path $path)) { return $null }

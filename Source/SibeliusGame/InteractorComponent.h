@@ -11,6 +11,7 @@
 #include "InteractorComponent.generated.h"
 
 class UCameraComponent;
+class UArcadeMenuWidget;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SIBELIUSGAME_API UInteractorComponent : public UActorComponent
@@ -73,4 +74,8 @@ protected:
 private:
 	TWeakObjectPtr<UCameraComponent> CameraComp;
 	TWeakObjectPtr<AActor> FocusedActor;
+
+	/** Leonard's Arcade, opened by E at either TV. Made on first use, kept for the level. */
+	UPROPERTY(Transient)
+	TObjectPtr<UArcadeMenuWidget> ArcadeMenu;
 };

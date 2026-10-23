@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="leonards-arcade-picks" content="The casino floor · A dancing alien · Match-three puzzle · Something huge wakes">
+<title>Jackpot Jam</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #12061a; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+(() => {
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const TAU = Math.PI * 2;
+  const TAG = "Leonard's Arcade · sample game";
+  const VW = 960, VH = 600, N = 8, CELL = 62, BX = 66, BY = 64, KINDS = 6, MOVES = 22;
+
+  let W = 0, H = 0, S = 1, OX = 0, OY = 0;
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    S = Math.min(W / VW, H / VH); OX = (W - VW * S) / 2; OY = (H - VH * S) / 2;
+  }
+  addEventListener("resize", resize);
+  resize();
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const ri = n => Math.floor(Math.random() * n);
+
+  // ---------- sound ----------
+  let AC = null, master = null, noiseBuf = null;
+  function initAudio() {
+    if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = 0.5; master.connect(AC.destination);
+      noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e) { AC = null; }
+  }
+  function tone(f, dur, type = "sine", vol = 0.15, to = 0, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function rumble(dur, vol) {
+    if (!AC) return;
+    const t = AC.currentTime, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+    s.buffer = noiseBuf; s.loop = true; f.type = "lowpass"; f.frequency.value = 180;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.05);
+  }
+  const PENT = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+  const sfx = {
+    click() { tone(1200, 0.04, "square", 0.05); },
+    swap() { tone(500, 0.08, "triangle", 0.1, 700); },
+    nope() { tone(220, 0.12, "square", 0.08, 160); tone(220, 0.12, "square", 0.08, 160, 0.14); },
+    match(chain) { const f = 523 * 2 ** (PENT[Math.min(chain, PENT.length - 1)] / 12); tone(f, 0.25, "triangle", 0.14); tone(f * 1.5, 0.2, "sine", 0.08, 0, 0.03); },
+    special() { tone(300, 0.5, "sawtooth", 0.1, 1200); },
+    coin() { tone(1568, 0.06, "square", 0.06); tone(2093, 0.12, "square", 0.06, 0, 0.06); },
+    wake() { rumble(2.2, 0.6); tone(70, 2, "sawtooth", 0.2, 40); [0, 0.5, 1].forEach(d => tone(110, 0.4, "square", 0.1, 90, d)); },
+    lock() { tone(180, 0.15, "square", 0.12, 120); tone(900, 0.05, "triangle", 0.08, 0, 0.12); },
+    win() { [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => tone(523 * 2 ** (s / 12), 0.35, "square", 0.08, 0, i * 0.08)); },
+    lose() { [7, 4, 0, -5, -12].forEach((s, i) => tone(392 * 2 ** (s / 12), 0.4, "triangle", 0.14, 0, i * 0.18)); },
+  };
+
+  // ---------- the board ----------
+  // a cell: { t: kind 0..5, or 6 for the wild seven; sp: 0 plain, 1 row stripe, 2 column stripe; lock; dy: fall offset; pop }
+  let board = [];
+  const at = (r, c) => (r >= 0 && r < N && c >= 0 && c < N) ? board[r][c] : null;
+  function freshCell(t) { return { t: t ?? ri(KINDS), sp: 0, lock: false, dy: 0, pop: 0 }; }
+  function newBoard() {
+    board = [];
+    for (let r = 0; r < N; r++) {
+      board.push([]);
+      for (let c = 0; c < N; c++) {
+        let t;
+        do { t = ri(KINDS); } while ((c >= 2 && board[r][c - 1].t === t && board[r][c - 2].t === t) || (r >= 2 && board[r - 1][c].t === t && board[r - 2][c].t === t));
+        board[r].push(freshCell(t));
+      }
+    }
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) board[r][c].dy = -(N - r) * CELL - rand(0, 60);
+  }
+  function findRuns() {
+    const runs = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N;) {
+      const t = board[r][c].t; let e = c + 1;
+      while (e < N && t < KINDS && board[r][e].t === t) e++;
+      if (t < KINDS && e - c >= 3) runs.push({ cells: Array.from({ length: e - c }, (_, k) => [r, c + k]), dir: 0 });
+      c = e;
+    }
+    for (let c = 0; c < N; c++) for (let r = 0; r < N;) {
+      const t = board[r][c].t; let e = r + 1;
+      while (e < N && t < KINDS && board[e][c].t === t) e++;
+      if (t < KINDS && e - r >= 3) runs.push({ cells: Array.from({ length: e - r }, (_, k) => [r + k, c]), dir: 1 });
+      r = e;
+    }
+    return runs;
+  }
+  function anyMove() {
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const a = at(r, c), b = at(r + dr, c + dc);
+      if (!b || a.lock || b.lock) continue;
+      if (a.t === KINDS || b.t === KINDS) return true;
+      board[r][c] = b; board[r + dr][c + dc] = a;
+      const ok = findRuns().length > 0;
+      board[r][c] = a; board[r + dr][c + dc] = b;
+      if (ok) return true;
+    }
+    return false;
+  }
+
+  // ---------- input ----------
+  const keys = new Set();
+  let cursor = { r: 3, c: 3 }, picked = null, drag = null;
+  addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if (k === "escape") return;   // the arcade's key, never the game's
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault();
+    initAudio(); keys.add(k);
+    if ((state === "title" && (k === "enter" || k === " ")) || (state === "over" && k === "enter" && overT > 0.9)) { start(); return; }
+    if (state !== "play") return;
+    if (k === "p") { paused = !paused; return; }
+    const d = { arrowup: [-1, 0], w: [-1, 0], arrowdown: [1, 0], s: [1, 0], arrowleft: [0, -1], a: [0, -1], arrowright: [0, 1], d: [0, 1] }[k];
+    if (d) {
+      if (picked) { trySwap(picked.r, picked.c, picked.r + d[0], picked.c + d[1]); picked = null; }
+      else { cursor.r = Math.max(0, Math.min(N - 1, cursor.r + d[0])); cursor.c = Math.max(0, Math.min(N - 1, cursor.c + d[1])); }
+    } else if (k === " " || k === "enter") { picked = picked ? null : { r: cursor.r, c: cursor.c }; sfx.click(); }
+  });
+  addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+  addEventListener("blur", () => keys.clear());
+  const cellAt = (x, y) => { const c = Math.floor((x - BX) / CELL), r = Math.floor((y - BY) / CELL); return r >= 0 && r < N && c >= 0 && c < N ? { r, c } : null; };
+  const toV = e => [(e.clientX - OX) / S, (e.clientY - OY) / S];
+  canvas.addEventListener("mousedown", e => {
+    initAudio();
+    if (state === "title" || (state === "over" && overT > 0.9)) { start(); return; }
+    if (state !== "play" || paused) return;
+    const [x, y] = toV(e), cell = cellAt(x, y);
+    if (!cell) { picked = null; return; }
+    if (picked && Math.abs(picked.r - cell.r) + Math.abs(picked.c - cell.c) === 1) { trySwap(picked.r, picked.c, cell.r, cell.c); picked = null; return; }
+    picked = cell; cursor = { ...cell }; drag = { ...cell, x, y }; sfx.click();
+  });
+  canvas.addEventListener("mousemove", e => {
+    if (!drag) return;
+    const [x, y] = toV(e), dx = x - drag.x, dy = y - drag.y;
+    if (Math.hypot(dx, dy) < CELL * 0.4) return;
+    const [dr, dc] = Math.abs(dx) > Math.abs(dy) ? [0, Math.sign(dx)] : [Math.sign(dy), 0];
+    trySwap(drag.r, drag.c, drag.r + dr, drag.c + dc); picked = null; drag = null;
+  });
+  addEventListener("mouseup", () => { drag = null; });
+
+  // ---------- state ----------
+  let state = "title", paused = false, clock = 0, overT = 0;
+  let score = 0, best = 0, level = 1, movesLeft = MOVES, target = 0, levelScore = 0, chain = 0, busy = 0, swapAnim = null;
+  let awake = false, wakeT = 0, shake = 0, banner = null, parts = [], popups = [], happy = 0, spinT = 0;
+  try { best = +localStorage.getItem("jackpotJamBest") || 0; } catch (e) {}
+
+  function start() {
+    state = "play"; paused = false;
+    score = 0; level = 1; beginLevel();
+  }
+  function beginLevel() {
+    newBoard(); movesLeft = MOVES; levelScore = 0; target = 2600 + (level - 1) * 1000;   // more than half the moves' worth, so the Titan wakes most levels awake = false; wakeT = 0; picked = null; busy = 0.6;
+    banner = { t: 2.4, a: "LEVEL " + level, b: target + " points in " + MOVES + " moves" };
+  }
+
+  function trySwap(r1, c1, r2, c2) {
+    if (busy > 0 || state !== "play") return;
+    const a = at(r1, c1), b = at(r2, c2);
+    if (!a || !b) return;
+    if (a.lock || b.lock) { sfx.nope(); popups.push({ x: BX + c1 * CELL + CELL / 2, y: BY + r1 * CELL, t: 0.8, text: "chained!" }); return; }
+    board[r1][c1] = b; board[r2][c2] = a;
+    // a wild seven swapped onto a kind clears every one of that kind
+    const wild = a.t === KINDS ? [r2, c2, b.t] : b.t === KINDS ? [r1, c1, a.t] : null;
+    if (wild) {
+      const kind = wild[2] === KINDS ? ri(KINDS) : wild[2];
+      const set = new Set([wild[0] * N + wild[1]]);
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (board[r][c].t === kind) set.add(r * N + c);
+      swapAnim = { r1, c1, r2, c2, t: 0.18, back: false };
+      sfx.special(); useMove(); chain = 0;
+      busy = 0.2; pending = () => clearSet(set, null);
+      return;
+    }
+    const runs = findRuns();
+    swapAnim = { r1, c1, r2, c2, t: 0.18, back: runs.length === 0 };
+    if (runs.length === 0) { board[r1][c1] = a; board[r2][c2] = b; sfx.nope(); busy = 0.36; return; }
+    sfx.swap(); useMove(); chain = 0;
+    busy = 0.2; pending = () => resolve(runs, { r: r2, c: c2 });
+  }
+  let pending = null;
+
+  function useMove() {
+    movesLeft--;
+    // THE TWIST: halfway through the level, the Jackpot Titan wakes
+    if (!awake && movesLeft <= MOVES / 2) {
+      awake = true; wakeT = 0; shake = 22; sfx.wake();
+      banner = { t: 2.6, a: "THE TITAN WAKES", b: "it chains a gem every move - but every point now counts double" };
+    } else if (awake) titanLock();
+  }
+  function titanLock() {
+    const free = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!board[r][c].lock && board[r][c].t < KINDS) free.push([r, c]);
+    if (!free.length) return;
+    const [r, c] = free[ri(free.length)];
+    board[r][c].lock = true; sfx.lock(); shake = Math.max(shake, 5);
+    for (let k = 0; k < 14; k++) parts.push({ x: BX + c * CELL + CELL / 2, y: BY + r * CELL + CELL / 2, vx: rand(-120, 120), vy: rand(-120, 120), life: 0.5, max: 0.5, hue: 0, s: 3 });
+  }
+
+  function resolve(runs, swapCell) {
+    chain++;
+    const set = new Set(), born = [];
+    for (const run of runs) {
+      for (const [r, c] of run.cells) set.add(r * N + c);
+      if (run.cells.length >= 4) {
+        // a special is born where the swap landed, or mid-run in a cascade
+        const here = swapCell && run.cells.find(([r, c]) => r === swapCell.r && c === swapCell.c);
+        const [r, c] = here || run.cells[Math.floor(run.cells.length / 2)];
+        born.push({ r, c, t: run.cells.length >= 5 ? KINDS : board[r][c].t, sp: run.cells.length >= 5 ? 0 : run.dir === 0 ? 2 : 1 });
+      }
+    }
+    clearSet(set, born);
+  }
+
+  function clearSet(set, born) {
+    // stripes fire along their row or column, and may set off others
+    const queue = [...set];
+    while (queue.length) {
+      const k = queue.pop(), r = Math.floor(k / N), c = k % N, cell = board[r][c];
+      if (!cell || !cell.sp) continue;
+      const line = cell.sp === 1 ? Array.from({ length: N }, (_, i) => r * N + i) : Array.from({ length: N }, (_, i) => i * N + c);
+      const sp = cell.sp; cell.sp = 0; sfx.special();
+      for (const q of line) if (!set.has(q)) { set.add(q); queue.push(q); }
+      for (let i = 0; i < N; i++) { const x = sp === 1 ? BX + i * CELL + CELL / 2 : BX + c * CELL + CELL / 2, y = sp === 1 ? BY + r * CELL + CELL / 2 : BY + i * CELL + CELL / 2; parts.push({ x, y, vx: rand(-40, 40), vy: rand(-40, 40), life: 0.5, max: 0.5, hue: 50, s: 6 }); }
+    }
+    const mult = (awake ? 2 : 1) * chain;
+    let gained = 0;
+    for (const k of set) {
+      const r = Math.floor(k / N), c = k % N, cell = board[r][c];
+      if (!cell) continue;
+      gained += (cell.lock ? 40 : 20) * mult;
+      const x = BX + c * CELL + CELL / 2, y = BY + r * CELL + CELL / 2, hue = HUES[cell.t];
+      for (let q = 0; q < 8; q++) parts.push({ x, y, vx: rand(-180, 180), vy: rand(-220, 60), life: 0.7, max: 0.7, hue, s: rand(2, 5), g: 500 });
+      board[r][c] = null;
+    }
+    if (born) for (const b of born) board[b.r][b.c] = { t: b.t, sp: b.sp, lock: false, dy: 0, pop: 0.3 };
+    score += gained; levelScore += gained;
+    const [sx, sy] = set.size ? [BX + (([...set][0] % N) + 0.5) * CELL, BY + (Math.floor([...set][0] / N) + 0.5) * CELL] : [0, 0];
+    popups.push({ x: sx, y: sy, t: 1, text: "+" + gained + (chain > 1 ? "  chain x" + chain : "") });
+    sfx.match(chain); if (gained >= 300) sfx.coin();
+    happy = Math.min(3, happy + 0.6 + chain * 0.4); if (chain >= 3 || set.size >= 8) spinT = 1;
+    shake = Math.max(shake, Math.min(10, set.size * 0.6));
+    busy = 0.18; pending = fall;
+  }
+
+  function fall() {
+    for (let c = 0; c < N; c++) {
+      let write = N - 1;
+      for (let r = N - 1; r >= 0; r--) {
+        const cell = board[r][c];
+        if (!cell) continue;
+        if (write !== r) { board[write][c] = cell; board[r][c] = null; cell.dy -= (write - r) * CELL; }
+        write--;
+      }
+      // new symbols drop in from above the board, as a column
+      for (let r = write; r >= 0; r--) { const n = freshCell(); n.dy = -(write + 1) * CELL - rand(0, 20); board[r][c] = n; }
+    }
+    busy = 0.32;
+    pending = () => {
+      const runs = findRuns();
+      if (runs.length) resolve(runs, null);
+      else settle();
+    };
+  }
+
+  function settle() {
+    pending = null; busy = 0;
+    if (levelScore >= target) {
+      sfx.win(); banner = { t: 2.2, a: "JACKPOT!", b: "level " + level + " cleared  ·  +" + movesLeft * 50 + " for moves to spare" };
+      score += movesLeft * 50; level++; busy = 2.2; pending = beginLevel; spinT = 1.5; happy = 3;
+      return;
+    }
+    if (movesLeft <= 0) {
+      state = "over"; overT = 0; sfx.lose();
+      if (score > best) { best = score; try { localStorage.setItem("jackpotJamBest", String(best)); } catch (e) {} }
+      return;
+    }
+    if (!anyMove()) { banner = { t: 1.4, a: "SHUFFLE", b: "no moves left on the board" }; newBoard(); busy = 0.8; }
+  }
+
+  // ---------- update ----------
+  function update(dt) {
+    if (swapAnim) { swapAnim.t -= dt; if (swapAnim.t <= -0.18 || (!swapAnim.back && swapAnim.t <= 0)) swapAnim = null; }
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const cell = board[r][c]; if (!cell) continue;
+      if (cell.dy < 0) cell.dy = Math.min(0, cell.dy + 1400 * dt);
+      cell.pop = Math.max(0, cell.pop - dt);
+    }
+    if (busy > 0) { busy -= dt; if (busy <= 0 && pending) { const p = pending; pending = null; p(); } }
+    if (awake) wakeT += dt;
+  }
+
+  function ambient(dt) {
+    clock += dt; shake *= Math.exp(-7 * dt); happy = Math.max(0, happy - dt * 0.5); spinT = Math.max(0, spinT - dt);
+    if (state === "over") overT += dt;
+    if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.life -= dt;
+      if (p.life <= 0) { parts.splice(i, 1); continue; }
+      p.vy += (p.g || 0) * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    }
+    for (let i = popups.length - 1; i >= 0; i--) { popups[i].t -= dt; popups[i].y -= 34 * dt; if (popups[i].t <= 0) popups.splice(i, 1); }
+  }
+
+  // ---------- drawing ----------
+  const HUES = [355, 45, 0, 190, 280, 130, 50];
+  function drawSymbol(t, x, y, s) {
+    ctx.save(); ctx.translate(x, y);
+    if (t === 0) {          // cherries
+      ctx.strokeStyle = "#5bd16a"; ctx.lineWidth = s * 0.08;
+      ctx.beginPath(); ctx.moveTo(-s * 0.2, s * 0.1); ctx.quadraticCurveTo(0, -s * 0.45, s * 0.15, -s * 0.38); ctx.moveTo(s * 0.2, s * 0.12); ctx.quadraticCurveTo(s * 0.15, -s * 0.2, s * 0.15, -s * 0.38); ctx.stroke();
+      for (const dx of [-0.2, 0.2]) { const g = ctx.createRadialGradient(s * dx - s * 0.06, s * 0.14, 1, s * dx, s * 0.2, s * 0.2); g.addColorStop(0, "#ff9aa6"); g.addColorStop(1, "#d0122e"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s * dx, s * 0.2, s * 0.2, 0, TAU); ctx.fill(); }
+    } else if (t === 1) {   // a bell
+      const g = ctx.createLinearGradient(-s * 0.3, 0, s * 0.3, 0); g.addColorStop(0, "#ffe27a"); g.addColorStop(1, "#c98a16");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-s * 0.34, s * 0.22); ctx.quadraticCurveTo(-s * 0.3, -s * 0.38, 0, -s * 0.38); ctx.quadraticCurveTo(s * 0.3, -s * 0.38, s * 0.34, s * 0.22); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#a86c10"; ctx.beginPath(); ctx.arc(0, s * 0.27, s * 0.08, 0, TAU); ctx.fill();
+    } else if (t === 2) {   // a seven
+      ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(0, 0, s * 0.36, 0, TAU); ctx.fill();
+      ctx.fillStyle = "#e0102c"; ctx.font = `900 ${s * 0.6}px "Segoe UI", sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("7", 0, s * 0.03);
+    } else if (t === 3) {   // a diamond
+      const g = ctx.createLinearGradient(0, -s * 0.38, 0, s * 0.38); g.addColorStop(0, "#c8fbff"); g.addColorStop(1, "#1aa6d0");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, -s * 0.38); ctx.lineTo(s * 0.32, -s * 0.08); ctx.lineTo(0, s * 0.38); ctx.lineTo(-s * 0.32, -s * 0.08); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-s * 0.32, -s * 0.08); ctx.lineTo(s * 0.32, -s * 0.08); ctx.stroke();
+    } else if (t === 4) {   // a star
+      ctx.fillStyle = "#c77dff"; ctx.beginPath();
+      for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, r = k % 2 ? s * 0.16 : s * 0.38; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+      ctx.closePath(); ctx.fill();
+    } else if (t === 5) {   // a clover
+      ctx.fillStyle = "#3fd16a";
+      for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4; ctx.beginPath(); ctx.arc(Math.cos(a) * s * 0.15, Math.sin(a) * s * 0.15 - s * 0.05, s * 0.15, 0, TAU); ctx.fill(); }
+      ctx.strokeStyle = "#2a9a48"; ctx.lineWidth = s * 0.07; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(s * 0.1, s * 0.36); ctx.stroke();
+    } else {                // the wild seven: a rainbow
+      ctx.font = `900 ${s * 0.75}px "Segoe UI", sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const g = ctx.createLinearGradient(-s * 0.3, -s * 0.3, s * 0.3, s * 0.3);
+      for (let k = 0; k <= 6; k++) g.addColorStop(k / 6, `hsl(${(k * 60 + clock * 200) % 360},100%,60%)`);
+      ctx.fillStyle = g; ctx.fillText("7", 0, s * 0.03);
+    }
+    ctx.restore();
+  }
+
+  function drawCasino() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#1c0828"); g.addColorStop(1, "#3a0e2a");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // rows of slot machines beyond the table, their lights chasing
+    ctx.save(); ctx.translate(OX, OY); ctx.scale(S, S);
+    for (let row = 0; row < 2; row++) for (let k = -2; k < 18; k++) {
+      const x = k * 70 + (row ? 35 : 0), y = 20 + row * 40, w = 50;
+      ctx.fillStyle = row ? "rgba(70,20,60,0.8)" : "rgba(50,14,44,0.8)"; ctx.fillRect(x, y, w, 120);
+      for (let l = 0; l < 4; l++) {
+        const on = (Math.floor(clock * 6) + k + l + row) % 4 === 0;
+        ctx.fillStyle = on ? "rgba(255,220,120,0.9)" : "rgba(255,220,120,0.2)"; ctx.beginPath(); ctx.arc(x + 8 + l * 11, y + 8, 3, 0, TAU); ctx.fill();
+      }
+    }
+    // the carpet's pattern
+    ctx.strokeStyle = "rgba(255,180,80,0.06)"; ctx.lineWidth = 2;
+    for (let k = 0; k < 30; k++) { ctx.beginPath(); ctx.arc((k % 6) * 180, 400 + Math.floor(k / 6) * 90, 40, 0, TAU); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  function drawTitan() {
+    // the Jackpot Titan: a slot machine as tall as the ceiling, asleep until halfway
+    const x = 760, y = 120, w = 300;
+    const wake = awake ? Math.min(1, wakeT / 1.2) : 0;
+    ctx.save(); ctx.translate(x, y + Math.sin(clock * 0.8) * 4 * (awake ? 2 : 1));
+    ctx.fillStyle = awake ? "#4a1030" : "#2a0c22";
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-w / 2, -150, w, 260, 40) : ctx.rect(-w / 2, -150, w, 260); ctx.fill();
+    ctx.strokeStyle = awake ? `rgba(255,${120 + 80 * Math.sin(clock * 6) | 0},80,0.9)` : "rgba(255,200,120,0.25)"; ctx.lineWidth = 4; ctx.stroke();
+    for (let k = 0; k < 3; k++) {
+      const ex = -90 + k * 90;
+      ctx.fillStyle = "#12040e"; ctx.fillRect(ex - 34, -100, 68, 70);
+      if (wake < 1) { ctx.strokeStyle = "rgba(255,220,150,0.5)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ex - 22, -65); ctx.lineTo(ex + 22, -65); ctx.stroke(); }
+      if (wake > 0) {
+        ctx.globalAlpha = wake;
+        ctx.fillStyle = "#ff2a4a"; ctx.font = "900 54px 'Segoe UI', sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(wakeT < 1.2 ? String(Math.floor(clock * 20 + k * 3) % 10) : "7", ex, -64);
+        ctx.globalAlpha = 1;
+      }
+    }
+    if (!awake) { ctx.fillStyle = "rgba(255,240,200,0.5)"; ctx.font = "700 26px 'Segoe UI'"; ctx.fillText("z", 120, -170 - (clock * 20) % 40); ctx.fillText("Z", 140, -200 - (clock * 20 + 20) % 40); }
+    ctx.fillStyle = awake ? "#ff5a6e" : "#6a2a4a"; ctx.fillRect(-60, 40, 120, 14);   // its mouth, a coin slot
+    ctx.strokeStyle = "#c9c0c8"; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(w / 2, -20); ctx.lineTo(w / 2 + 40, -20 - (awake ? 40 * Math.abs(Math.sin(clock * 3)) : 0)); ctx.stroke();
+    ctx.fillStyle = "#ff3050"; ctx.beginPath(); ctx.arc(w / 2 + 40, -20 - (awake ? 40 * Math.abs(Math.sin(clock * 3)) : 0), 12, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAlien() {
+    // a small alien who dances when it is happy
+    const x = 760, y = 470, joy = Math.min(1, happy / 2);
+    const beat = clock * (3 + joy * 5);
+    ctx.save(); ctx.translate(x, y - Math.abs(Math.sin(beat)) * (6 + joy * 18));
+    if (spinT > 0) ctx.rotate((1 - spinT) * TAU);
+    ctx.strokeStyle = "#6af07a"; ctx.lineWidth = 6; ctx.lineCap = "round";
+    const arm = Math.sin(beat) * (0.4 + joy * 1.1);
+    ctx.beginPath(); ctx.moveTo(-14, -6); ctx.lineTo(-30, -6 - 22 * Math.cos(arm) - 10 * joy); ctx.moveTo(14, -6); ctx.lineTo(30, -6 - 22 * Math.cos(-arm) - 10 * joy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8, 24); ctx.lineTo(-12 - Math.sin(beat) * 6, 46); ctx.moveTo(8, 24); ctx.lineTo(12 - Math.sin(beat) * 6, 46); ctx.stroke();
+    ctx.fillStyle = "#7dff8a"; ctx.beginPath(); ctx.ellipse(0, 6, 18, 22, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, -32, 26, 22, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = "#0e1a10"; ctx.beginPath(); ctx.ellipse(-10, -32, 7, 10, -0.4, 0, TAU); ctx.ellipse(10, -32, 7, 10, 0.4, 0, TAU); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(-12, -36, 2, 0, TAU); ctx.arc(8, -36, 2, 0, TAU); ctx.fill();
+    if (joy > 0.3) { ctx.strokeStyle = "#0e1a10"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, -20, 6, 0.2, Math.PI - 0.2); ctx.stroke(); }
+    ctx.strokeStyle = "#7dff8a"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -54); ctx.lineTo(Math.sin(beat * 2) * 6, -68); ctx.stroke();
+    ctx.fillStyle = "#ffe66a"; ctx.beginPath(); ctx.arc(Math.sin(beat * 2) * 6, -70, 4, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBoard() {
+    ctx.fillStyle = "rgba(10,2,14,0.75)"; ctx.fillRect(BX - 10, BY - 10, N * CELL + 20, N * CELL + 20);
+    ctx.strokeStyle = awake ? `rgba(255,${100 + 60 * Math.sin(clock * 5) | 0},90,0.9)` : "rgba(255,210,120,0.7)"; ctx.lineWidth = 3;
+    ctx.strokeRect(BX - 10, BY - 10, N * CELL + 20, N * CELL + 20);
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      ctx.fillStyle = (r + c) % 2 ? "rgba(60,20,50,0.6)" : "rgba(80,26,60,0.6)";
+      ctx.fillRect(BX + c * CELL, BY + r * CELL, CELL, CELL);
+    }
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const cell = board[r][c]; if (!cell) continue;
+      let x = BX + c * CELL + CELL / 2, y = BY + r * CELL + CELL / 2 + cell.dy;
+      if (swapAnim) {
+        const k = swapAnim.back ? 1 - Math.abs(swapAnim.t) / 0.18 : Math.max(0, swapAnim.t) / 0.18;
+        const isA = r === swapAnim.r1 && c === swapAnim.c1, isB = r === swapAnim.r2 && c === swapAnim.c2;
+        // a swap that matches slides home from the other's square; one that does not goes over and back
+        if (isA) { x += (swapAnim.c2 - swapAnim.c1) * CELL * k; y += (swapAnim.r2 - swapAnim.r1) * CELL * k; }
+        if (isB) { x += (swapAnim.c1 - swapAnim.c2) * CELL * k; y += (swapAnim.r1 - swapAnim.r2) * CELL * k; }
+      }
+      if (y < BY - CELL) continue;
+      const s = CELL * (0.95 + cell.pop * 0.8 + (picked && picked.r === r && picked.c === c ? 0.08 * Math.sin(clock * 10) : 0));
+      drawSymbol(cell.t, x, y, s);
+      if (cell.sp) {
+        ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 3;
+        for (const off of [-8, 8]) { ctx.beginPath(); if (cell.sp === 1) { ctx.moveTo(x - 26, y + off); ctx.lineTo(x + 26, y + off); } else { ctx.moveTo(x + off, y - 26); ctx.lineTo(x + off, y + 26); } ctx.stroke(); }
+      }
+      if (cell.lock) {
+        ctx.strokeStyle = "rgba(200,200,210,0.95)"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(x - 24, y - 24); ctx.lineTo(x + 24, y + 24); ctx.moveTo(x + 24, y - 24); ctx.lineTo(x - 24, y + 24); ctx.stroke();
+        ctx.fillStyle = "#c9c9d4"; ctx.fillRect(x - 7, y - 5, 14, 12);
+      }
+    }
+    if (state === "play") {
+      ctx.strokeStyle = picked ? "#7dff8a" : "rgba(255,255,255,0.6)"; ctx.lineWidth = 3;
+      ctx.strokeRect(BX + cursor.c * CELL + 3, BY + cursor.r * CELL + 3, CELL - 6, CELL - 6);
+    }
+  }
+
+  function text(t, x, y, size, color, align = "center", weight = 700) {
+    ctx.font = `${weight} ${size}px "Segoe UI", system-ui, sans-serif`;
+    ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillStyle = color; ctx.fillText(t, x, y);
+  }
+  function glow(t, x, y, size, color, shadow) {
+    ctx.save(); ctx.shadowColor = shadow; ctx.shadowBlur = size * 0.5; text(t, x, y, size, color, "center", 800); ctx.restore();
+    text(t, x, y, size, color, "center", 800);
+  }
+
+  function draw() {
+    drawCasino();
+    ctx.save();
+    if (shake > 0.3) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+    ctx.translate(OX, OY); ctx.scale(S, S);
+    drawTitan();
+    if (state !== "title") drawBoard();
+    drawAlien();
+    ctx.globalCompositeOperation = "lighter";
+    for (const p of parts) { const k = p.life / p.max; ctx.fillStyle = `hsla(${p.hue},100%,62%,${k})`; ctx.fillRect(p.x, p.y, p.s, p.s); }
+    ctx.globalCompositeOperation = "source-over";
+    for (const p of popups) text(p.text, p.x, p.y, 18, `rgba(255,240,170,${Math.min(1, p.t * 2)})`, "center", 800);
+
+    if (state === "play") {
+      text("SCORE " + score, 640, 300, 24, "#fff1d6", "left", 800);
+      text("LEVEL " + level + "   " + Math.min(levelScore, target) + " / " + target, 640, 332, 16, "rgba(255,241,214,0.85)", "left", 600);
+      ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fillRect(640, 348, 260, 10);
+      ctx.fillStyle = awake ? "#ff5a6e" : "#ffd25a"; ctx.fillRect(640, 348, 260 * Math.min(1, levelScore / target), 10);
+      text("MOVES " + movesLeft, 640, 380, 22, movesLeft <= 5 ? "#ff8a8a" : "#fff1d6", "left", 800);
+      if (awake) text("TITAN AWAKE · POINTS x2", 640, 406, 14, `rgba(255,120,130,${0.6 + 0.4 * Math.sin(clock * 6)})`, "left", 800);
+      text("BEST " + Math.max(best, score), 900, 300, 14, "rgba(255,241,214,0.6)", "right", 600);
+      if (banner) {
+        ctx.globalAlpha = Math.min(1, banner.t * 2);
+        ctx.fillStyle = "rgba(20,4,20,0.7)"; ctx.fillRect(BX - 10, BY + N * CELL / 2 - 56, N * CELL + 20, 104);
+        glow(banner.a, BX + N * CELL / 2, BY + N * CELL / 2 - 16, 40, "#fff1d6", awake ? "rgba(255,60,90,1)" : "rgba(255,190,80,1)");
+        if (banner.b) text(banner.b, BX + N * CELL / 2, BY + N * CELL / 2 + 24, 14, "rgba(255,241,214,0.9)", "center", 500);
+        ctx.globalAlpha = 1;
+      }
+      if (paused) { ctx.fillStyle = "rgba(10,2,14,0.6)"; ctx.fillRect(0, 0, VW, VH); glow("PAUSED", VW / 2, VH / 2, 50, "#fff", "#f8c"); }
+    } else if (state === "title") {
+      glow("JACKPOT JAM", 330, 190, 74, "#fff1d6", "rgba(255,190,80,1)");
+      text("match three on the casino floor, with a small alien who dances", 330, 246, 18, "rgba(255,241,214,0.9)", "center", 500);
+      text("Halfway through each level, something enormous wakes up.", 330, 276, 17, "rgba(255,140,150,0.95)", "center", 500);
+      text("Click a symbol and its neighbour (or drag) to swap  ·  or arrows + Space", 330, 310, 15, "rgba(255,241,214,0.7)", "center", 500);
+      text("Four in a row makes a stripe, five makes a wild seven.", 330, 334, 15, "rgba(255,241,214,0.7)", "center", 500);
+      text("Press Enter or Space to play", 330, 400, 28, `rgba(255,248,232,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+      if (best) text("Best: " + best, 330, 434, 17, "rgba(255,241,214,0.8)");
+    } else {
+      ctx.fillStyle = `rgba(10,2,14,${Math.min(0.6, overT)})`; ctx.fillRect(0, 0, VW, VH);
+      glow("OUT OF MOVES", VW / 2, VH * 0.4, 56, "#fff1d6", "rgba(255,70,100,1)");
+      text("Score " + score + (score >= best && score > 0 ? "  ·  new best!" : "  ·  best " + best) + "  ·  reached level " + level, VW / 2, VH * 0.4 + 52, 20, "#fff1d6");
+      if (overT > 0.9) text("Press Enter to play again", VW / 2, VH * 0.6, 26, `rgba(255,248,232,${0.55 + 0.45 * Math.sin(clock * 4)})`);
+    }
+    ctx.restore();
+    if (state === "title") text(TAG, W - 14, H - 14, Math.max(11, Math.min(W, H) * 0.018), "rgba(255,241,214,0.55)", "right", 500);
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (state === "play" && !paused) update(dt);
+    ambient(state === "play" && paused ? 0 : dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  newBoard();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
