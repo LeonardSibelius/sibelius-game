@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.3.3 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.4.0 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -42,10 +42,14 @@ game is gone (Walt: "drop all the plot about universe building"), and the seed u
 portal like the agents' homes'. No new chat. **And to 2.3.3 that evening** (Walt: "commit it and
 do the 2.3.3 hotfix"): the attic stairs answer C again - the AI city's portal, 4 m away, had
 been taking it - the flight across the dome is one smooth run, and the portal stands back by
-the wall. No new chat. 2.3.3 is the build that goes to Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261022-v2.3.3\` is the copy the upload script sends.
+the wall. No new chat. **And to 2.4.0 on 2026-10-23** (Walt: "please upload, copy, switch,
+update"): Leonard's Arcade - the TVs in the living room and the bedroom glow with it, and E
+opens it: eight games each made from one prompt, and an assignment that builds a prompt for
+any AI the player likes; a game that comes back plays on the TV, offline. No new chat, and
+the game calls no model for it. 2.4.0 is the build that goes to Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261023-v2.4.0\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.3.3**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.0**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -70,7 +74,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.3.3 from the stick
+### 3. Upload 2.4.0 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -78,7 +82,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.3.3 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple"**. If it
+The banner should read **"v2.4.0 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -190,6 +194,14 @@ machine can pass.
 their jobs and post about what they dream of instead. Write to them. They remember what you
 said, and they gossip about it.
 [/list]
+
+[h2]Leonard's Arcade[/h2]
+
+The televisions in the house hold an arcade of eight games, each one made from a single
+prompt to an AI: a cat in a spacesuit defending a space station, a robot dog racing a sunset
+meadow while the band speeds up, a dragon of light guarding a snowfield. Then make your own.
+Pick a world, a hero, a kind of game and a twist, and the arcade writes the prompt. Paste it
+into any AI you like, save the game it gives you, and it plays on the TV beside mine.
 
 Upstairs, at the end of the hall, a portal opens onto [b]the AI city[/b]: a sphere the
 machines built round a star, a honeycomb of hexagons thick with city. You fly in from among
@@ -349,10 +361,15 @@ Guardrails:
     drawn by ordinary code.
   - 2.3.2: the AI city's dome is a bought pack (cglib team, "Megastructure: Dome 1") marked
     "Generated with AI: No". Its landing platforms, the flights and the star are ordinary code.
+  - 2.4.0: Leonard's Arcade. The game generates nothing for it: the TVs play HTML games from a
+    folder, offline, and call no model. The eight games that come with it are code, written with
+    Claude the way the rest of the game's code is; they draw their own pictures and make their
+    own sounds as they run. The assignment is a prompt the player may take to an AI of their own,
+    and a game that comes back is the player's own file, like a mod.
 
 ### §4. System requirements
 
-The 2.3.3 package measures **8.7 GB** (9,393,659,685 bytes; 2.3.2 was 9,393,656,613; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.4.0 package measures **9.7 GB** (9,749,821,658 bytes; 2.3.3 was 9,393,659,685 - the arcade brought Chromium back; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **10 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
