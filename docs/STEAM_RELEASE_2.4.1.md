@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.4.0 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.4.1 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -46,10 +46,16 @@ the wall. No new chat. **And to 2.4.0 on 2026-10-23** (Walt: "please upload, cop
 update"): Leonard's Arcade - the TVs in the living room and the bedroom glow with it, and E
 opens it: eight games each made from one prompt, and an assignment that builds a prompt for
 any AI the player likes; a game that comes back plays on the TV, offline. No new chat, and
-the game calls no model for it. 2.4.0 is the build that goes to Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261023-v2.4.0\` is the copy the upload script sends.
+the game calls no model for it. **And to 2.4.1 on 2026-10-24** (Walt: "everything is good for
+2.4.1, please do all necessary steps to put it out to the world"): Isla's home is a gilded keep
+now - Meshingun Studio's Fafnir's Keep, two dragons at the foot of a grand staircase - instead
+of the space station; the attic ladder simply stands; [O] in her keep comes back to the attic;
+and the Archaic Temple draws its shadows the old way, without the flickering spots. Its chat
+adds one thing: Isla describes the keep, to a build that says it has it. 2.4.1 is the build
+that goes to Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261024-v2.4.1\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.0**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.1**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -74,7 +80,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.4.0 from the stick
+### 3. Upload 2.4.1 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -82,7 +88,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.4.0 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade"**. If it
+The banner should read **"v2.4.1 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -170,7 +176,7 @@ or what she makes of you. Sooner or later she'll ask your advice about her own l
 remember what you told her.
 
 Four of them have a world of their own beyond a portal: an alien jungle, a windswept
-grassland under ringed planets, a snowfield below the mountains, a space station. And
+grassland under ringed planets, a snowfield below the mountains, a gilded keep. And
 every one of them dances. There are fifty-four dances, from swing to the YMCA, and she
 keeps the one you pick for her. Press [b]R[/b] on her and she's someone else entirely,
 still dancing the same dance.
@@ -248,14 +254,14 @@ PurePolygons[/b] · Office by [b]QuadArt[/b] · Space Port by [b]PackDev[/b] · 
 architecture by [b]DmitriyDryzhak[/b] · Pinball machine by [b]Speedbump Games[/b] · Pool
 table by [b]PijayArt[/b] · Bowling alley by [b]PixelForgeESP[/b] · Chess set by [b]Tomas
 Dvorak[/b] · The agents' worlds by [b]Etherion[/b] · Treasure by [b]Dekogon[/b] and
-[b][GEM VENDOR — confirm on Fab][/b] · Race kart by [b]Polygonal Assets[/b] · The AI city by [b]cglib team[/b] · Space station
-by [b][VENDOR — confirm on Fab][/b]
+[b][GEM VENDOR — confirm on Fab][/b] · Race kart by [b]Polygonal Assets[/b] · The AI city by [b]cglib team[/b] · Isla's keep
+by [b]Meshingun Studio[/b] · Sci-fi kits by [b]Crebotoly[/b]
 ```
 
 **Before pasting, confirm four things in the copy:**
-1. **The space station's vendor.** The sci-fi kit behind Isla's station
-   (`Content/ModularSciFiEnv_K`): its Fab listing names the seller. Put that name in place of
-   `[VENDOR — confirm on Fab]`.
+1. **The sci-fi kits' vendor - done (2026-10-24).** Modular Sci-Fi Environment 1, F, J and K
+   (`Content/ModularSciFiEnv_*`, the Elsewhere and the spaceport; Isla's old station) are all
+   Crebotoly's on Fab, and Isla's keep is Meshingun Studio's: both are now in the credits.
 2. **The gems' vendor** (new in 2.2.1). Refactor's gems are the GemShader pack
    (`Content/GemShader`, probably Fab's *Realistic Gem Shader*): put its seller in place of
    `[GEM VENDOR — confirm on Fab]`, or drop the "and ..." if you'd rather not credit it. Manny,
@@ -366,11 +372,14 @@ Guardrails:
     Claude the way the rest of the game's code is; they draw their own pictures and make their
     own sounds as they run. The assignment is a prompt the player may take to an AI of their own,
     and a game that comes back is the player's own file, like a mod.
+  - 2.4.1: Isla's home is a bought pack (Meshingun Studio, "Fafnir's Keep") marked "Generated
+    with AI: No". Her chat is told what the keep looks like, as each agent is told of her home;
+    nothing else about the chat changes.
 
 ### §4. System requirements
 
-The 2.4.0 package measures **9.7 GB** (9,749,821,658 bytes; 2.3.3 was 9,393,659,685 - the arcade brought Chromium back; 2.2.0 was 8.3 GB), over the 8 GB
-the page says now. Change **Storage** in both rows to **10 GB**, rounded up for patches. Everything else stays as in
+The 2.4.1 package measures **10.4 GB** (10,392,852,913 bytes; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
+the page says now. Change **Storage** in both rows to **12 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
 ### §5. Tags (optional)
