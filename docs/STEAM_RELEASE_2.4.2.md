@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.4.1 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.4.2 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -51,11 +51,17 @@ the game calls no model for it. **And to 2.4.1 on 2026-10-24** (Walt: "everythin
 now - Meshingun Studio's Fafnir's Keep, two dragons at the foot of a grand staircase - instead
 of the space station; the attic ladder simply stands; [O] in her keep comes back to the attic;
 and the Archaic Temple draws its shadows the old way, without the flickering spots. Its chat
-adds one thing: Isla describes the keep, to a build that says it has it. 2.4.1 is the build
-that goes to Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261024-v2.4.1\` is the copy the upload script sends.
+adds one thing: Isla describes the keep, to a build that says it has it. **And to 2.4.2 on
+2026-10-25** (Walt: "let's do all the release steps for 2.4.2"): two games beyond the portals,
+for a transhuman to play - 4D billiards on a marble dais in Aisling's snowfield (the balls
+roll in a fourth direction; the table is seen a slice at a time), and orbital golf over
+Elise's grassland (three holes whose greens are moons, each pulling the ball with its own
+gravity; the third cup is on a moon's underside). No new chat, and the game calls no model
+for either. Grok's level no longer shows an arrival portal. 2.4.2 is the build that goes to
+Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261025-v2.4.2\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.1**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.2**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -80,7 +86,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.4.1 from the stick
+### 3. Upload 2.4.2 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -88,7 +94,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.4.1 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep"**. If it
+The banner should read **"v2.4.2 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -176,7 +182,9 @@ or what she makes of you. Sooner or later she'll ask your advice about her own l
 remember what you told her.
 
 Four of them have a world of their own beyond a portal: an alien jungle, a windswept
-grassland under ringed planets, a snowfield below the mountains, a gilded keep. And
+grassland under ringed planets, a snowfield below the mountains, a gilded keep. Play golf
+on the grassland where the greens are moons hanging in the sky, each pulling your ball with
+its own gravity, or billiards in the snow on a table with a fourth dimension. And
 every one of them dances. There are fifty-four dances, from swing to the YMCA, and she
 keeps the one you pick for her. Press [b]R[/b] on her and she's someone else entirely,
 still dancing the same dance.
@@ -378,7 +386,7 @@ Guardrails:
 
 ### §4. System requirements
 
-The 2.4.1 package measures **10.4 GB** (10,392,852,913 bytes; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.4.2 package measures **10.4 GB** (10,379,879,085 bytes; 2.4.1 was 10,392,852,913 - the two new games are built of engine shapes and add nothing to speak of; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **12 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
