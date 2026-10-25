@@ -236,9 +236,10 @@ FText UTravelTransitionSubsystem::ContextLineForLevel(const FString& LevelName)
 		// Her snowfield (make_virtual_home.py), through the portal beside her in the AI temple.
 		return NSLOCTEXT("Travel", "EnterAislingHome", "Aisling's virtual home, many light years away...");
 	}
-	if (LevelName.Contains(TEXT("IslaHome")))
+	if (LevelName.Contains(TEXT("IslaHome")) || LevelName.Contains(TEXT("IslaKeep")))
 	{
-		// Her space station (make_virtual_home.py), through the portal in the attic.
+		// Her home (make_virtual_home.py), through the portal in the attic: Fafnir's Keep since
+		// 2026-10-24 (L_IslaKeep), a space station before it (L_IslaHome).
 		return NSLOCTEXT("Travel", "EnterIslaHome", "Isla's virtual home, many light years away...");
 	}
 	if (LevelName.Contains(TEXT("Genesis")))

@@ -58,10 +58,10 @@ walk into it and the power is yours, forever. In order:
     Yin herself again. Each new shape costs 10 sauce; turning back is free.
     That works from the start, before Refactor is yours.
 
-  COMPILE (C) — ask Elise in the bedroom. Then stand in the opening where
-    the attic ladder was: a ghost ladder appears, and C builds it if you
-    have the books. The glowing sphere in the library alcove is the attic
-    key: walk into it (or press E). You do not need COMPILE for that orb.
+  COMPILE (C) — ask Elise in the bedroom. The attic needs no COMPILE: its
+    ladder is already there, and the hatch at the top takes the attic key.
+    The glowing sphere in the library alcove is the key: walk into it (or
+    press E) with the books.
 
   TEST-DRIVE (6 / 7 / 8) — branch reality (6), then merge what worked
     (7) or discard what didn't (8). The world greys while you're inside

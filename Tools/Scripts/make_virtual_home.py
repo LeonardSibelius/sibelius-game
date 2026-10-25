@@ -1,5 +1,6 @@
 # make_virtual_home.py — build an agent's virtual home from a pack's demo level (Etherion's
-# planets for Kaia, Elise and Aisling; a sci-fi kit's space station for Isla).
+# planets for Kaia, Elise and Aisling; Meshingun's Fafnir's Keep for Isla, who had a sci-fi kit's
+# space station until 2026-10-24).
 #
 # Kaia's came first (2026-10-03, as make_kaia_home.py): "we put a dancing Kaia in front of him
 # when he enters the level, player presses "E" and gets the virtual world speech and then can
@@ -80,9 +81,10 @@ HOMES = [
         "welcome": "Welcome to my virtual home, Leonard.",
         "scalars": {},   # its blueprint set no look dials either
     },
-    {   # Isla's: a space station, the first home indoors and the first not Etherion's (2026-10-05).
+    {   # Isla's first: a space station, the first home indoors and the first not Etherion's (2026-10-05).
         # Walt: "ModularSciFiEnv_1_Demo is open - it is good enough"; her portal is in the attic.
-        # Content/ModularSciFiEnv_1, gitignored like the other packs.
+        # Content/ModularSciFiEnv_1, gitignored like the other packs. RETIRED 2026-10-24 for the keep
+        # below (Walt: "a terrible space station"); L_IslaHome stays on disk for the builds that have it.
         "agent": "Isla",
         "source": "/Game/ModularSciFiEnv_1/Maps/ModularSciFiEnv_1_Demo",
         "home": "/Game/Maps/L_IslaHome",
@@ -102,6 +104,40 @@ HOMES = [
         # She dances under one of the kit's ceiling downlights. Walt: "is it possible to reduce
         # the light shining on Isla in Isla's home? She looks too bright".
         "dim_overhead": 0.35,
+    },
+    {   # Isla's now: Meshingun Studio's "Fafnir's Keep" (Fab; Content/Fafnir_Keep_Meshingun, gitignored),
+        # 2026-10-24. Walt wanted somewhere "more attractive yet exotic" than the station: a gilded hall
+        # with emerald fires, two dragons at the foot of a grand staircase, a magic mirror at its top.
+        # A NEW MAP, not the station's: builds that have L_IslaHome keep it, and the chat server tells
+        # the two apart by name. The first home that is World Partition - saving it writes its actors.
+        "agent": "Isla",
+        "source": "/Game/Fafnir_Keep_Meshingun/Levels/LV_Main_Night_Light",
+        "home": "/Game/Maps/L_IslaKeep",
+        "arrival": "IslaKeep",
+        "agent_class": "/Game/MetaHumans/MHC_IslaRowan/BP_MHC_IslaRowan.BP_MHC_IslaRowan_C",
+        "dance": DANCES + "Anim_High_Rhythm_Dance_13_MH.Anim_High_Rhythm_Dance_13_MH",
+        "welcome": "Welcome to my virtual home, Leonard.  Nothing stays here unless it has earned it.",
+        "scalars": {},
+        "plants": False,
+        "indoors": True,
+        # The pack's own start is OUTSIDE the entrance, behind a door leaf whose collision closes the
+        # doorway, facing a dark corridor. He arrives in the hall instead, on its axis 7 m in, facing
+        # the staircase - and she dances 4.5 m on, at its foot, between the two dragons.
+        "arrive": (15.0, -700.0, 90.0),   # x, y, yaw - the floor is found below
+        # The seller's showroom machinery: the "enable Niagara Fluids" notes, the shots' cameras,
+        # their rail and the sequences that drive them.
+        "remove_classes": ("BP_Info_Slate_C", "CineCameraActor", "CameraRig_Rail", "LevelSequenceActor"),
+        # Furniture only, as in the station. The hall is built partly of engine shapes and of pieces
+        # whose names Refactor's architecture words miss (arches, platforms, ornaments, the mirror's
+        # portal, the glow volumes): those are tagged NoWildRefactor, so R looks past them.
+        "refactor_max": 350.0,
+        "min_treasure": 0.0,
+        "no_refactor": ("Cube", "Plane", "Cylinder", "Sphere", "SM_Portal_mesh_01", "SM_Main_ornament_piece_01",
+                        "SM_Carpet_bar", "SM_Carpet", "SM_VFX_Phantoms", "SM_Single_stripe_01", "SM_Ornament_01",
+                        "SM_Magic_mirror", "SM_Magic_Mirror_platform_01", "SM_Platform_01", "SM_Platform_02",
+                        "SM_Platform_Corner", "SM_short_arch", "SM_Short_Arch_lower_Level_01", "SM_arch_entrance",
+                        "SM_long_arch_01", "SM_medium_arch_01", "SM_medium_arch_01_destroyed", "SM_chain",
+                        "SM_ornament_structure_platform"),
     },
 ]
 
@@ -199,14 +235,20 @@ def build(spec):
     start_label = "PlayerStart_" + spec["arrival"]
     home_label = "VirtualHome_" + agent
 
-    # The pack's start on the first build; ours (same place) on a re-run.
-    starts = [a for a in actors if a.get_class().get_name() == "PlayerStart"]
-    start = next((a for a in starts if a.get_actor_label() == start_label), None) or next(iter(starts), None)
-    if not start:
-        say("no PlayerStart to arrive at - nothing changed.")
-        return
-    arrive_at = start.get_actor_location()
-    arrive_rot = start.get_actor_rotation()
+    # The pack's start on the first build; ours (same place) on a re-run. Or a spot of our own,
+    # where the pack's start is no place to arrive (the keep's stands outside a closed door).
+    if spec.get("arrive"):
+        x, y, yaw = spec["arrive"]
+        arrive_at = unreal.Vector(x, y, 0.0)
+        arrive_rot = unreal.Rotator(0.0, 0.0, yaw)
+    else:
+        starts = [a for a in actors if a.get_class().get_name() == "PlayerStart"]
+        start = next((a for a in starts if a.get_actor_label() == start_label), None) or next(iter(starts), None)
+        if not start:
+            say("no PlayerStart to arrive at - nothing changed.")
+            return
+        arrive_at = start.get_actor_location()
+        arrive_rot = start.get_actor_rotation()
     if spec.get("indoors"):
         # The station's start stood 42 cm above its floor, his capsule half in it: stand it on the
         # floor at a capsule's half height, as a PlayerStart's own capsule is.
@@ -215,12 +257,25 @@ def build(spec):
             arrive_at = unreal.Vector(arrive_at.x, arrive_at.y, floor.z + 92.0)
 
     removed = []
+    remove_classes = DEMO_CLASSES + tuple(spec.get("remove_classes", ()))
     for actor in actors:
         name = actor.get_class().get_name()
-        if name in DEMO_CLASSES or is_notice(actor) or actor.get_actor_label() in (agent, home_label):
+        if name in remove_classes or is_notice(actor) or actor.get_actor_label() in (agent, home_label):
             removed.append("%s (%s)" % (actor.get_actor_label(), name))
             eas.destroy_actor(actor)
     say("removed %d: %s" % (len(removed), ", ".join(removed)))
+
+    if spec.get("no_refactor"):
+        tagged = 0
+        for actor in eas.get_all_level_actors():
+            if "NoWildRefactor" in [str(t) for t in actor.tags]:
+                continue
+            meshes = [c.get_editor_property("static_mesh") for c in actor.get_components_by_class(unreal.StaticMeshComponent)]
+            if any(m and m.get_name() in spec["no_refactor"] for m in meshes):
+                actor.modify()
+                actor.set_editor_property("tags", list(actor.tags) + ["NoWildRefactor"])
+                tagged += 1
+        say("tagged %d pieces of the building NoWildRefactor (%s)." % (tagged, ", ".join(spec["no_refactor"])))
 
     world.get_world_settings().set_editor_property("default_game_mode", None)
     say("GameMode override cleared - the project's default game mode runs here.")

@@ -30,8 +30,9 @@ export function screenContextFor(storyContext, recentTurns) {
   return asked && asked.length <= 300 ? `a character in the game has just asked him: "${asked}"` : "";
 }
 
-/** The features a client may switch on. Anything else is ignored. */
-export const FEATURES = new Set(["human_questions"]);
+/** The features a client may switch on. Anything else is ignored. isla_keep: Isla's home is
+ *  Fafnir's Keep, not the station (characters.js, homesFor; 2026-10-24). */
+export const FEATURES = new Set(["human_questions", "isla_keep"]);
 
 /** Did this request's game switch the feature on? Allowlisted, case-sensitive. */
 export function hasFeature(storyContext, name) {

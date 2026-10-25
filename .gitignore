@@ -408,6 +408,12 @@ Content/Maps/L_AislingHome_BuiltData.uasset
 # Isla's is a copy of ModularSciFiEnv_1's demo station - the kit's, so the same rule.
 Content/Maps/L_IslaHome.umap
 Content/Maps/L_IslaHome_BuiltData.uasset
+# Since 2026-10-24 hers is a copy of Fafnir's Keep's LV_Main_Night_Light - Meshingun's. It is World
+# Partition, so its actors live in their own folders beside the map, and they are the pack's too.
+Content/Maps/L_IslaKeep.umap
+Content/Maps/L_IslaKeep_BuiltData.uasset
+Content/__ExternalActors__/Maps/L_IslaKeep/
+Content/__ExternalObjects__/Maps/L_IslaKeep/
 
 # --- Adobe Mixamo dances (2026-10-07, Walt: "download your favorite dances to C:\dances") -------
 # 44 FBX, Without Skin, for the agents' F dance menu. Mixamo's terms allow them inside a game but
@@ -451,3 +457,13 @@ SourceArt/Statues/**/*.stl
 # The FBX that build_statues_blender.py makes from them are intermediates too (~37 MB): the imported
 # meshes in Content/Statues are committed, and the script rebuilds the FBX from the scans.
 SourceArt/Statues/**/*.fbx
+
+# --- Meshingun Studio "Fafnir's Keep" (Fab), added 2026-10-24 -------------------------------------
+# Walt is replacing Isla's grey attic station with something "more attractive yet exotic": a gilded
+# palace with emerald fires. A bought pack: not in the public repo. Back up to E:. It also brings
+# CGMA level actors from the seller's own project, without their level - clutter, ignored with it.
+Content/Fafnir_Keep_Meshingun/
+Content/__ExternalActors__/Fafnir_Keep_Meshingun/
+Content/__ExternalObjects__/Fafnir_Keep_Meshingun/
+Content/__ExternalActors__/CGMA/
+Content/__ExternalObjects__/CGMA/

@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Navigation/NavLinkProxy.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/World.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/App.h" // SIB-27: FApp::CanEverRender — headless guard for the reveal (K3)
@@ -19,6 +20,23 @@ namespace BuildSiteReveal
 	static constexpr float RiseHeight   = 60.f;  // cm FinalMesh floats up to its hover peak
 	static constexpr float RiseFraction = 0.35f; // peak reached in the first 35% of the reveal
 	static constexpr float RiseEaseExp  = 2.0f;  // ease-out: quick rise, then settle into the hover
+}
+
+/* THE ATTIC LADDER STANDS FROM THE START (2026-10-24). It was COMPILE's build: Elise's
+   power and 8 books, at the opening in the upstairs hall. Walt, wanting nothing more between
+   the player and Isla's keep in the attic than the key: "Let's not require "C" compile on the
+   attic stairs. It is enough of an obstacle to have to gather those damn books" - and, seeing
+   the ghost: "the stairs are still translucent and i want them completely visible".
+
+   So in play the placed ladder is built, whatever a save from before says, and E never
+   dismantles it: a refund would hand him 8 books he never spent, and take away the way up.
+   The key orb and the hatch are unchanged. A game world only: the smoke tests build and
+   dismantle the office's ladder in an editor world, and sites they spawn have no NavLink. */
+static bool IsStandingLadder(const ABuildSite* Site)
+{
+	const UWorld* World = Site->GetWorld();
+	return World && World->IsGameWorld() && Site->Output == EBuildOutput::Structure
+		&& !Site->bConsumeOnBuild && !Site->IsGenerated() && Site->NavLink != nullptr;
 }
 
 ABuildSite::ABuildSite()
@@ -69,6 +87,10 @@ void ABuildSite::BeginPlay()
 {
 	Super::BeginPlay();
 	GetOrCreateBranchId();     // SIB-29: runtime fallback — only fills an invalid (unbaked) id
+	if (IsStandingLadder(this))
+	{
+		bIsBuilt = true;       // the attic ladder is simply there (IsStandingLadder)
+	}
 	ApplyBuiltState(bIsBuilt); // enforce ghost/final/nav-link coherence from one source of truth
 
 	// SIB-27 art: an unbuilt orb-ghost site restyles its preview to a floating glow orb
@@ -188,7 +210,7 @@ void ABuildSite::Interact_Implementation(AActor* Interactor)
 	{
 		return; // SIB-27 (K2): consumable sites are inert to E — no dismantle, no refund.
 	}
-	if (!bIsBuilt)
+	if (!bIsBuilt || IsStandingLadder(this))
 	{
 		return; // E only dismantles; an unbuilt site has no collision to focus anyway. Build is the B verb.
 	}
@@ -204,9 +226,9 @@ FText ABuildSite::GetInteractionPrompt_Implementation() const
 		return bIsBuilt ? FText::GetEmpty() : FText::FromString(FString::Printf(
 			TEXT("Attic key [E] — %d books"), Cost));
 	}
-	if (bConsumeOnBuild)
+	if (bConsumeOnBuild || IsStandingLadder(this))
 	{
-		return FText::GetEmpty(); // SIB-27 (K2): consumable sites never prompt for E.
+		return FText::GetEmpty(); // SIB-27 (K2): consumable sites never prompt for E; nor does the attic ladder.
 	}
 	return bIsBuilt ? NSLOCTEXT("Sibelius", "BuildSiteDismantlePrompt", "Dismantle — full refund [E]") : FText::GetEmpty();
 }
@@ -364,7 +386,9 @@ void ABuildSite::SetupGhostOrb()
 
 void ABuildSite::RestoreBranchState(uint8 InState)
 {
-	ApplyBuiltState(InState != 0); // RAW: swaps mesh/collision/nav, no inventory
+	// RAW: swaps mesh/collision/nav, no inventory. A save from before 2026-10-24 may say the
+	// attic ladder is unbuilt; it stands anyway (IsStandingLadder).
+	ApplyBuiltState(InState != 0 || IsStandingLadder(this));
 }
 
 void ABuildSite::ApplyBuiltState(bool bBuilt)

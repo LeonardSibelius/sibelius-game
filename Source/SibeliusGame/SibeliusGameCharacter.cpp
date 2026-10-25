@@ -46,7 +46,73 @@
 #include "VirtualHome.h"                // powers lent in an agent's virtual home
 #include "EngineUtils.h"                // TActorIterator (the pot scan)
 #include "NavigationInvokerComponent.h" // forest roads: navmesh bubbles around agents
+#include "HAL/IConsoleManager.h"        // the temple's shadows (TempleShadows)
 #include "SibeliusGame.h"
+
+/* THE ARCHAIC TEMPLE DRAWS ITS SHADOWS THE OLD WAY (2026-10-24). Walt, in L_Archaic_Temple:
+   "there are a million little gray spots appearing and disappearing as if rain is drying
+   immediately. It is everywhere, on the statues too". Not its dust, not its marble: tried one
+   at a time in his Play session, Lumen reflections off changed nothing, and virtual shadow maps
+   off - "spots are gone". Olympus is built of non-Nanite meshes under waving pines, and the
+   engine says so while he stands there ("[VSM] Non-Nanite Marking Job Queue overflow").
+
+   So while the temple is the world, r.Shadow.Virtual.Enable is 0 and its lights cast ordinary
+   shadow maps; every other level keeps virtual shadows. Set from the player's BeginPlay, which
+   runs whether he travels in or Play starts there, and put back when the temple's world is
+   cleaned up, so the editor and the next level get what they had.
+
+   WITH CONSOLE PRIORITY. SetByCode came first, and the engine ignored it in the editor: the
+   test that found the cause had set the same variable from the console, and a console setting
+   outranks code for the rest of the session ("was ignored as it is lower priority"). */
+namespace TempleShadows
+{
+	static int32 SavedVirtualShadows = INDEX_NONE;   // r.Shadow.Virtual.Enable before the temple
+	static FDelegateHandle CleanupHandle;
+
+	static void Restore()
+	{
+		if (SavedVirtualShadows != INDEX_NONE)
+		{
+			if (IConsoleVariable* Virtual = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Shadow.Virtual.Enable")))
+			{
+				Virtual->Set(SavedVirtualShadows, ECVF_SetByConsole);
+			}
+			SavedVirtualShadows = INDEX_NONE;
+		}
+		if (CleanupHandle.IsValid())
+		{
+			FWorldDelegates::OnWorldCleanup.Remove(CleanupHandle);
+			CleanupHandle.Reset();
+		}
+	}
+
+	static void ApplyFor(UWorld* World)
+	{
+		if (!World || !World->GetMapName().Contains(TEXT("L_Archaic_Temple")))
+		{
+			Restore();
+			return;
+		}
+		IConsoleVariable* Virtual = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Shadow.Virtual.Enable"));
+		if (!Virtual || SavedVirtualShadows != INDEX_NONE)
+		{
+			return;   // no such setting, or already off for this visit
+		}
+		SavedVirtualShadows = Virtual->GetInt();
+		Virtual->Set(0, ECVF_SetByConsole);
+		const TWeakObjectPtr<UWorld> Temple = World;
+		CleanupHandle = FWorldDelegates::OnWorldCleanup.AddLambda(
+			[Temple](UWorld* Cleaned, bool /*bSessionEnded*/, bool /*bCleanupResources*/)
+			{
+				if (Cleaned == Temple.Get())
+				{
+					Restore();
+				}
+			});
+		UE_LOG(LogSibeliusGame, Display, TEXT("[TempleShadows] virtual shadow maps off in the temple (were %d)."),
+			SavedVirtualShadows);
+	}
+}
 
 ASibeliusGameCharacter::ASibeliusGameCharacter()
 {
@@ -118,6 +184,8 @@ ASibeliusGameCharacter::ASibeliusGameCharacter()
 void ASibeliusGameCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	TempleShadows::ApplyFor(GetWorld());   // the Archaic Temple without virtual shadow maps
 
 	// FUN-3: purchased upgrades land on the fresh components (which just spawned
 	// with authored defaults, so this is exact — never a double apply).
@@ -521,7 +589,13 @@ void ASibeliusGameCharacter::ReturnToOffice()
 	// the office it's a no-op, so a single press is safe to leave bound everywhere.
 	if (IsAwayFromOffice())
 	{
-		UTravelTransitionSubsystem::Travel(this, OfficeLevelName);
+		/* From Isla's keep it lands in the attic, by her portal (Walt, 2026-10-24: "can you
+		   make the [O] return to office actually return to the attic?"). The attic's
+		   PlayerStart wears the tag (place_home_portal.py); without it the default start. */
+		const UWorld* World = GetWorld();
+		const bool bFromIslasKeep = World && World->GetMapName().Contains(TEXT("L_IslaKeep"));
+		UTravelTransitionSubsystem::Travel(this, OfficeLevelName,
+			bFromIslasKeep ? FName(TEXT("AtticFromIsla")) : NAME_None);
 	}
 }
 

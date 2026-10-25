@@ -312,9 +312,11 @@ FString UNpcChatSubsystem::BuildRequestJson(
 	}
 	/* WHAT THIS BUILD KNOWS HOW TO DO, so the server can add a behaviour without changing it for
 	   builds already in players' hands - or the one under Valve's review (backend/curiosity.js).
-	   human_questions: she may ask what being human is like, never about his life (2026-10-06). */
+	   human_questions: she may ask what being human is like, never about his life (2026-10-06).
+	   isla_keep: Isla's home is Fafnir's Keep, not the space station older builds have (2026-10-24). */
 	TArray<TSharedPtr<FJsonValue>> Features;
 	Features.Add(MakeShared<FJsonValueString>(TEXT("human_questions")));
+	Features.Add(MakeShared<FJsonValueString>(TEXT("isla_keep")));
 	Story->SetArrayField(TEXT("features"), Features);
 	Root->SetObjectField(TEXT("storyContext"), Story);
 

@@ -22,6 +22,7 @@
 // generic "unavailable" line — the least debuggable failure this service has.
 
 import { THE_WORLD_OUTSIDE } from "./news.js";
+import { hasFeature } from "./curiosity.js";
 
 /**
  * THE PLACES THAT EXIST — the world as the shipped build has it, 2026-09-23.
@@ -114,6 +115,18 @@ const ISLA_HOME = "a space station she made and can Refactor as she pleases: qui
   "behind glass gate doors, a rest corner with couches and bookshelves, a small galley, bunks, " +
   "and lamps overhead - a sealed place where nothing stays unless it has earned it";
 
+/* ISLA'S HOME SINCE 2026-10-24: Fafnir's Keep (L_IslaKeep, make_virtual_home.py). Walt wanted
+   somewhere "more attractive yet exotic" than "a terrible space station". Written from what the
+   level shows: the gilded hall, the emerald fires, the two dragons at the foot of the staircase,
+   the magic mirror at its top, lily pads on the water, the rose windows. Builds older than it
+   still have the station, so THE_AGENTS names this one only for a build that says it has it
+   (homesFor) - Valve's chat-review build and the 2.4.0 already out keep the station. */
+const ISLA_KEEP = "a palace she made and can Refactor as she pleases: a great gilded hall of " +
+  "marble and gold under chandeliers, emerald fires burning in its lamps, two dragons at the foot " +
+  "of a grand staircase with a magic mirror at its top, lily pads on still water in the marble " +
+  "floor, candles everywhere, and rose windows of stained glass high above the balconies - a keep " +
+  "where nothing stays unless it has earned it";
+
 const THE_AGENTS = `
 THE FIVE AGENTS — you and the other four. These are the facts; do not invent others about
 them. Every one of them chose Leonard, and none has given a power to anyone else. Each said
@@ -172,6 +185,11 @@ const LOCATIONS = {
   L_IslaHome: `Isla's virtual home, ${ISLA_HOME}. He came through the portal in the attic of ` +
     "Mrs. Hall's house. While he is here, Refactor works for him: R turns a piece of furniture " +
     "into treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it back for free",
+  // Isla's since 2026-10-24: ISLA_KEEP, through the same portal. Only a build with the keep sends
+  // this name. Refactor takes the furniture, never the hall (make_virtual_home.py).
+  L_IslaKeep: `Isla's virtual home, ${ISLA_KEEP}. He came through the portal in the attic of ` +
+    "Mrs. Hall's house. While he is here, Refactor works for him: R turns a piece of furniture " +
+    "into treasure, a giant gemstone or gold coins, for 10 sauce, and R again turns it back for free",
   L_Office_v02: "Mrs. Hall's office house",
   L_Cathedral: "the golden cathedral",
   L_AI_Temple: "the AI temple",
@@ -209,12 +227,24 @@ export function locationLine(locationId) {
  * world, and no refusers and no office." Her profile seats her "in the office where he
  * works" and has her raise Mrs. Hall unasked, and one location line does not outweigh that.
  */
-const VIRTUAL_HOMES = { L_KaiaHome: "kaia", L_EliseHome: "elise", L_AislingHome: "aisling", L_IslaHome: "isla" };
+const VIRTUAL_HOMES = {
+  L_KaiaHome: "kaia", L_EliseHome: "elise", L_AislingHome: "aisling", L_IslaHome: "isla", L_IslaKeep: "isla",
+};
 
-/** Each home in a few words, for the note beside his message there (sceneNote). */
+/** Each home in a few words, for the note beside his message there (sceneNote). By map first:
+ *  Isla has had two. */
 const HOME_IN_A_PHRASE = {
   kaia: "your alien jungle", elise: "your alien grassland", aisling: "your snowfield", isla: "your space station",
+  L_IslaKeep: "your keep",
 };
+
+/** THE_AGENTS with the homes this build has: Isla's keep for a build that sends isla_keep
+ *  (NpcChatSubsystem), her station for every build before it. Applied to the whole prompt, so
+ *  the chat and the council table say the same. */
+export function homesFor(text, storyContext) {
+  if (!hasFeature(storyContext, "isla_keep")) return text;
+  return text.replace(`Isla's is ${ISLA_HOME}.`, `Isla's is ${ISLA_KEEP}.`);
+}
 
 /**
  * The block that says she is at home, or "" anywhere else, or for anyone else. It goes
@@ -268,7 +298,8 @@ export function sceneNote(characterId, locationId) {
      office stuff again" - "what can i do here?" got the walls and furniture Mrs. Hall insisted
      upon, and the cathedral. homeLine was in the prompt; the conversation was the office's. */
   if (homeLine(characterId, locationId)) {
-    return `(Where you both are as he says this: your own virtual home, ${HOME_IN_A_PHRASE[characterId] ?? "your world"} - ` +
+    const phrase = HOME_IN_A_PHRASE[mapName(locationId)] ?? HOME_IN_A_PHRASE[characterId] ?? "your world";
+    return `(Where you both are as he says this: your own virtual home, ${phrase} - ` +
       "not Mrs. Hall's house, which is far away. \"Here\" means your home.)";
   }
   if (!awayLine(characterId, locationId)) return "";

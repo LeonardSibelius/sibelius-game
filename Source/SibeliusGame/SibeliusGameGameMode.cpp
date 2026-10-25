@@ -7,6 +7,37 @@
 #include "EngineUtils.h"                 // TActorIterator
 #include "Engine/GameInstance.h"
 #include "GameFramework/PlayerStart.h"
+#include "HatchLock.h"                   // the attic is never a trap (AtticFromIsla)
+#include "TimerManager.h"
+
+/* [O] FROM ISLA'S KEEP LANDS IN THE ATTIC, by her portal (2026-10-24; ASibeliusGameCharacter::
+   ReturnToOffice, the PlayerStart placed by place_home_portal.py). Walt: "It is a pain in the
+   neck to have to gather those books to get up the ladder". But the hatch re-locks whenever the
+   office loads, unless he has Deployed it, and a locked hatch is a floor: he would stand in the
+   attic with no way down. So arriving there, the hatch opens - after the deployed save has been
+   laid over the level (UBranchPIEComponent, the tick after the pawn begins play), or the save
+   would lock it again. A raw write, as the save's own: no key is spent, and none is needed. */
+static const FName AtticFromIsla(TEXT("AtticFromIsla"));
+
+static void OpenAtticHatchSoon(UWorld* World)
+{
+	FTimerHandle Handle;
+	const TWeakObjectPtr<UWorld> WeakWorld = World;
+	World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([WeakWorld]()
+	{
+		if (UWorld* W = WeakWorld.Get())
+		{
+			for (TActorIterator<AHatchLock> It(W); It; ++It)
+			{
+				if (It->IsLocked())
+				{
+					It->RestoreBranchState(0);
+					UE_LOG(LogTemp, Display, TEXT("[GameMode] arrived in the attic from Isla's keep - %s opened."), *It->GetName());
+				}
+			}
+		}
+	}), 0.5f, false);
+}
 
 ASibeliusGameGameMode::ASibeliusGameGameMode()
 {
@@ -31,6 +62,10 @@ AActor* ASibeliusGameGameMode::ChoosePlayerStart_Implementation(AController* Pla
 				{
 					if (It->PlayerStartTag == Tag)
 					{
+						if (Tag == AtticFromIsla)
+						{
+							OpenAtticHatchSoon(GetWorld());
+						}
 						return *It;
 					}
 				}

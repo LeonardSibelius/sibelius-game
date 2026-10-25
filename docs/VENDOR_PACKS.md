@@ -62,7 +62,8 @@ unless noted. Sizes are what was on disk on 2 Aug 2026.
 | `ModularSciFiEnv_J` | 305 MB | no |
 | `FarmKeepers` | 267 MB | yes — `RefactorComponent.h` |
 | `Paid` | 178 MB | no — the Aput outfit |
-| `ModularSciFiEnv_1` | 168 MB | no |
+| `ModularSciFiEnv_1` | 168 MB | no — Isla's first home, `L_IslaHome` (retired 2026-10-24) |
+| `Fafnir_Keep_Meshingun` | 2.6 GB | no — Isla's home since 2026-10-24: `L_IslaKeep` is its `LV_Main_Night_Light` saved as a new map (`make_virtual_home.py`). World Partition, so the map's actors are in `__ExternalActors__/Maps/L_IslaKeep/`, gitignored with it. The pack also brings `__ExternalActors__/CGMA/` (the seller's leftovers, no level), ignored too |
 | `XenoMocap` | 48 MB | no — free pack, UE4 skeleton, unused |
 | `Audio` | 5 MB | yes — `GenerateComponent.cpp` (`/Game/Audio/MrsHall/`) |
 | `AncientTreasures` | 914 MB | **yes — `RefactorComponent.cpp`**, its two chalices only (Dekogon, "Allows usage with AI: No"). Re-run `Tools/Scripts/prepare_hoard.py` after a re-download: the meshes ship with no simple collision |

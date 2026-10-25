@@ -10,7 +10,7 @@
 import { createServer } from "node:http";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
 import { generate, estimateTokens, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
-import { getCharacter, knownCharacterIds, locationLine, homeLine, awayLine, sceneNote, capSentences } from "./characters.js";
+import { getCharacter, knownCharacterIds, locationLine, homeLine, awayLine, sceneNote, capSentences, homesFor } from "./characters.js";
 import { screenMessage, screenText, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
 import { COUNCIL_SEATS, speakingOrder, councilInstruction, stripOwnName } from "./council.js";
@@ -258,7 +258,8 @@ export function createApp(options = {}) {
     const home = homeLine(body.characterId, body.storyContext?.locationId);
     const roll = Math.random();
     const systemInstruction = [
-      systemInstructionFor(character, body.characterId, config.chatStyle),
+      // Isla's keep for a build that has it, her station for the rest (characters.js, homesFor).
+      homesFor(systemInstructionFor(character, body.characterId, config.chatStyle), body.storyContext),
       locationLine(body.storyContext?.locationId),
       factsLine(body.storyContext?.facts, { objective: !home, leavingOnly: !!home }),
       adviceLine(body.characterId, body.storyContext?.facts),
@@ -458,10 +459,12 @@ export function createApp(options = {}) {
     const locationId = body.storyContext?.locationId;
     const event = body.storyContext?.event;
     const facts = body.storyContext?.facts;
+    // Each seat's prompt, with the homes this build has (characters.js, homesFor).
+    const seatPrompt = (args) => homesFor(councilInstruction(args), body.storyContext);
 
     // Worst case for the budget check: every agent's prompt with the whole turn before her.
     const perCall =
-      Math.max(...order.map((id) => estimateTokens(councilInstruction({ id, style: config.chatStyle, locationId, history, event, facts })))) +
+      Math.max(...order.map((id) => estimateTokens(seatPrompt({ id, style: config.chatStyle, locationId, history, event, facts })))) +
       estimateTokens(body.message) +
       COUNCIL_SEATS.length * Math.ceil(LIMITS.turnChars / 4);
     const screenInput = estimateTokens(SCREEN_INSTRUCTION) + estimateTokens(body.message);
@@ -482,7 +485,7 @@ export function createApp(options = {}) {
       return generate({
         apiKey: config.apiKey,
         model: config.model,
-        systemInstruction: councilInstruction({ id, style: config.chatStyle, locationId, history, soFar, event, facts }),
+        systemInstruction: seatPrompt({ id, style: config.chatStyle, locationId, history, soFar, event, facts }),
         contents: [{ role: "user", parts: [{ text: body.message }] }],
         maxOutputTokens: config.maxOutputTokens,
         thinkingBudget: config.thinkingBudget,

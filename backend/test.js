@@ -6,7 +6,7 @@
 
 import { createApp, LIMITS, CARE_REPLY } from "./server.js";
 import { createBudget } from "./budget.js";
-import { getCharacter, knownCharacterIds, locationLine, homeLine, awayLine, sceneNote, capSentences, MAX_SENTENCES } from "./characters.js";
+import { getCharacter, knownCharacterIds, locationLine, homeLine, awayLine, sceneNote, capSentences, MAX_SENTENCES, homesFor } from "./characters.js";
 import { generate, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
 import { STYLES, FOOLISH_ANGLES, HOPEFUL_ANGLES, systemInstructionFor } from "./styles.js";
 import { councilInstruction, speakingOrder, stripOwnName } from "./council.js";
@@ -186,6 +186,24 @@ console.log("=== NPC chat backend contract ===");
         && /your space station/.test(sceneNote("isla", "L_IslaHome"))
         && /YOU ARE NOT IN YOUR VIRTUAL HOME NOW/.test(awayLine("isla", "L_Office_v02")),
       "Isla's home is a place, she is at home only there, and told she is away in the office");
+    // Isla's keep (2026-10-24), through the same portal: a new map, so a build that has the
+    // station still gets the station.
+    check(/Isla's virtual home, a palace/.test(locationLine("/Game/Maps/L_IslaKeep.L_IslaKeep"))
+        && /two dragons/.test(locationLine("L_IslaKeep")) && /portal in the attic/.test(locationLine("L_IslaKeep"))
+        && /R turns a piece of furniture\s+into treasure/.test(locationLine("L_IslaKeep"))
+        && /YOU ARE AT HOME/.test(homeLine("isla", "L_IslaKeep")) && homeLine("kaia", "L_IslaKeep") === ""
+        && /your keep/.test(sceneNote("isla", "L_IslaKeep")) && /your space station/.test(sceneNote("isla", "L_IslaHome"))
+        && /YOU ARE NOT IN YOUR VIRTUAL HOME NOW/.test(awayLine("isla", "L_Office_v02"))
+        && awayLine("isla", "L_IslaKeep") === "",
+      "Isla's keep is a place, she is at home there, and the note names it");
+    {
+      const shared = systemInstructionFor(getCharacter("kaia"), "kaia", "foolish");
+      const keep = homesFor(shared, { features: ["human_questions", "isla_keep"] });
+      check(/Isla's is a palace she made/.test(keep) && !/Isla's is a space station/.test(keep)
+          && /Isla's is a space station she made/.test(homesFor(shared, { features: ["human_questions"] }))
+          && homesFor(shared, undefined) === shared && homesFor(shared, { features: ["isla_kept"] }) === shared,
+        "only a build that says isla_keep hears of the keep in the shared text; every other keeps the station");
+    }
     check(!/understand Mrs\. Hall|same person/.test(homeLine("elise", "L_EliseHome")),
       "the at-home block names no one agent's own subjects");
     // At home she talks about home (Walt, 2026-10-03: "There is no Mrs. Hall in her home

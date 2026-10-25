@@ -200,8 +200,11 @@ $checks = [ordered]@{
   # cooked only by the /Game/Freakbook DirectoriesToAlwaysCook line. A profile picture and a post.
   "Freakbook's faces"     = "$cooked\Freakbook\T_FB_dee_avatar.uasset"
   "Freakbook's photos"    = "$cooked\Freakbook\T_FB_jaxx_banner.uasset"
-  # --- ISLA'S HOME (2026-10-05): the sci-fi kit's station, the same way in.
-  "Isla's home"         = "$cooked\Maps\L_IslaHome.umap"
+  # --- ISLA'S HOME (2026-10-05): the same way in - Fafnir's Keep since 2026-10-24, the sci-fi
+  # kit's station before it. World Partition: the cook folds its actors into the map's cells.
+  "Isla's home"         = "$cooked\Maps\L_IslaKeep.umap"
+  # The keep's own pieces (Fafnir_Keep_Meshingun, gitignored): a missing pack cooks an empty map.
+  "the keep's dragons"  = "$cooked\Fafnir_Keep_Meshingun\Meshes\SM_Dragon_a_01.uasset"
   "Isla herself"        = "$cooked\MetaHumans\MHC_IslaRowan\BP_MHC_IslaRowan.uasset"
   "Isla's dance"        = "$cooked\Characters\Retargeting\Anim_High_Rhythm_Dance_13_MH.uasset"
   # Which plants come alive: found by an asset-registry scan, cooked by the EDFoliageMap
