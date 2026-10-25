@@ -280,6 +280,14 @@ void ABilliardsTable::StartPlaying(APlayerController* PC)
 
 	PC->SetIgnoreMoveInput(true);
 	PC->SetIgnoreLookInput(true);
+	// HIS BODY STEPS ASIDE, as at the 4D table (HyperBilliardsTable.cpp): the pawn's Enhanced
+	// Input actions are not consumed by our bindings, so SPACE also made him jump, and seen from
+	// the table's camera his body could stand in the shot.
+	if (APawn* Pawn = PC->GetPawn())
+	{
+		Pawn->DisableInput(PC);
+		Pawn->SetActorHiddenInGame(true);
+	}
 	SyncCamera(0.0f, true);
 	PC->SetViewTargetWithBlend(this, CameraBlendSeconds, VTBlend_Cubic);
 
@@ -309,6 +317,8 @@ void ABilliardsTable::StopPlaying()
 		PC->SetIgnoreLookInput(false);
 		if (APawn* Pawn = PC->GetPawn())
 		{
+			Pawn->EnableInput(PC);
+			Pawn->SetActorHiddenInGame(false);
 			PC->SetViewTargetWithBlend(Pawn, 0.4f, VTBlend_Cubic);
 		}
 		DisableInput(PC);

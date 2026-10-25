@@ -55,6 +55,14 @@ namespace
 	static TAutoConsoleVariable<float> CVarWormholeAhead(
 		TEXT("sib.WormholeFXAhead"), -1.0f,
 		TEXT("How many cm in FRONT of the player the arrival FX sits. Negative = the actor's own."), ECVF_Cheat);
+
+	/* OFF SINCE 2026-10-25. Walt: "can we get rid of the arrival portal in L_Grok? going through
+	   all other portals does not produce a portal effect on the other side". He arrives on Grok
+	   as through every other portal - the travel cover's own fade, then the planet - with no
+	   effect and no held controls. Left switchable rather than torn out: 1 brings it back. */
+	static TAutoConsoleVariable<int32> CVarWormholeArrival(
+		TEXT("sib.WormholeArrival"), 0,
+		TEXT("1: the passage effect plays on arriving at Grok. 0 (default): he simply arrives."), ECVF_Default);
 }
 
 AWormholeArrival::AWormholeArrival()
@@ -100,6 +108,14 @@ UNiagaraSystem* AWormholeArrival::ResolveFX() const
 void AWormholeArrival::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (CVarWormholeArrival.GetValueOnGameThread() == 0)
+	{
+		// No effect, no fade, no held controls (CVarWormholeArrival).
+		bFinished = true;
+		SetActorTickEnabled(false);
+		return;
+	}
 
 	/* HE ARRIVES BLIND, AND THAT IS THE POINT. Black first, then the effect out of it,
 	   then the planet out of the effect. Fading up over a good part of the passage rather
