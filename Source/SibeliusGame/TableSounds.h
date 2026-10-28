@@ -62,6 +62,15 @@ enum class ETableSound : uint8
 	GoPlace,       // a slate stone snapped down on a kaya board: a bright click and the wood's ring
 	GoCapture,     // the taken stones lifted off, clicking together in the hand
 
+	// Lantern Burst (Kaia's jungle)
+	LanternShoot,  // the orb let go: a soft rising whoosh
+	LanternStick,  // glass set against glass: a small high tink
+	LanternPop,    // a glass bubble bursting: a quick falling bloop and a bright ring
+	LanternFall,   // orbs tumbling down: a scatter of tinks
+	LanternLower,  // the crown let down a link: chain rattle, then a thud
+	LanternSpark,  // the spark going off: a crackle
+	LanternOver,   // the lantern on the embers: four notes falling
+
 	Count
 };
 

@@ -259,6 +259,86 @@ namespace TableSoundsDetail
 				return S;
 			});
 			break;
+		case ETableSound::LanternShoot:
+			// Air past glass: filtered noise swelling and gone, a tone climbing under it.
+			Pcm = Build(0.22f, 81, 3000.0f, [](float T, float N)
+			{
+				const float Swell = FMath::Min(T / 0.03f, 1.0f) * FMath::Clamp((0.22f - T) / 0.15f, 0.0f, 1.0f);
+				return Swell * (0.35f * N + 0.20f * Sine(320.0f + 2600.0f * T, T));
+			});
+			break;
+		case ETableSound::LanternStick:
+			Pcm = Build(0.16f, 82, 8000.0f, [](float T, float N)
+			{
+				return 0.26f * Sine(2480.0f, T) * Decay(38.0f, T) + 0.14f * Sine(3910.0f, T) * Decay(60.0f, T)
+					+ 0.20f * N * Decay(500.0f, T);
+			});
+			break;
+		case ETableSound::LanternPop:
+			// The bloop falls an octave in a few hundredths; the glass rings on above it.
+			Pcm = Build(0.55f, 83, 8000.0f, [](float T, float N)
+			{
+				const float Bloop = 0.42f * FMath::Sin(2.0f * PI * (1500.0f * T - 4200.0f * T * T)) * Decay(30.0f, T);
+				return (T < 0.16f ? Bloop : 0.0f)
+					+ 0.16f * Sine(1760.0f, T) * Decay(7.0f, T) + 0.07f * Sine(1760.0f * 2.76f, T) * Decay(12.0f, T)
+					+ 0.18f * N * Decay(300.0f, T);
+			});
+			break;
+		case ETableSound::LanternFall:
+			Pcm = Build(0.90f, 84, 8000.0f, [](float T, float)
+			{
+				float S = 0.0f;
+				const float Tinks[8][2] = { { 0.00f, 2093.0f }, { 0.07f, 2637.0f }, { 0.15f, 1760.0f }, { 0.22f, 3136.0f },
+					{ 0.31f, 2349.0f }, { 0.40f, 1976.0f }, { 0.52f, 2794.0f }, { 0.63f, 2217.0f } };
+				for (int32 K = 0; K < 8; ++K)
+				{
+					const float U = T - Tinks[K][0];
+					if (U >= 0.0f)
+					{
+						S += (0.20f - 0.015f * K) * Sine(Tinks[K][1], U) * Decay(28.0f, U);
+					}
+				}
+				return S;
+			});
+			break;
+		case ETableSound::LanternLower:
+			Pcm = Build(0.60f, 85, 4000.0f, [](float T, float N)
+			{
+				float S = 0.0f;
+				const float Links[3] = { 0.0f, 0.06f, 0.13f };
+				for (int32 K = 0; K < 3; ++K)
+				{
+					const float U = T - Links[K];
+					if (U >= 0.0f)
+					{
+						S += 0.30f * N * Decay(90.0f, U) + 0.14f * Sine(1250.0f + 180.0f * K, U) * Decay(70.0f, U);
+					}
+				}
+				const float Thud = T - 0.20f;
+				return S + (Thud >= 0.0f ? 0.6f * Sine(62.0f, Thud) * Decay(9.0f, Thud) : 0.0f);
+			});
+			break;
+		case ETableSound::LanternSpark:
+			// Crackle: noise let through in short random gates, under a falling whoosh.
+			Pcm = Build(0.70f, 86, 6000.0f, [](float T, float N)
+			{
+				const float Gate = FMath::Frac(FMath::Sin(T * 913.0f) * 43758.5453f) > 0.62f ? 1.0f : 0.15f;
+				return 0.55f * N * Gate * Decay(4.5f, T) + 0.18f * Sine(900.0f - 700.0f * T, T) * Decay(5.0f, T);
+			});
+			break;
+		case ETableSound::LanternOver:
+			Pcm = Build(1.90f, 87, 6000.0f, [](float T, float N)
+			{
+				float S = 0.0f;
+				const float Notes[4] = { 784.0f, 622.3f, 493.9f, 392.0f };
+				for (int32 K = 0; K < 4; ++K)
+				{
+					const float U = T - 0.22f * K;
+					S += U >= 0.0f ? 0.20f * (Sine(Notes[K], U) + 0.25f * Sine(Notes[K] * 2.0f, U)) * Decay(K == 3 ? 1.8f : 5.0f, U) : 0.0f;
+				}
+				return S + 0.10f * N * Decay(3.0f, T);
+			});
+			break;
 		default:
 			break;
 		}

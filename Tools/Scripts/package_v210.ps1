@@ -213,6 +213,10 @@ $checks = [ordered]@{
   # F on her placed plants (AVirtualHome::MushroomSound / PlantSound).
   "the boing"           = "$cooked\AlienPhysicsWorld\Sounds\Foliage\Balloon\SC_Balloon.uasset"
   "the rustle"          = "$cooked\AlienPhysicsWorld\Sounds\Foliage\Rustling\SC_Foliage_Rustle.uasset"
+  # --- LANTERN BURST IN KAIA'S JUNGLE (2026-10-27): every orb, spark and ember is one sphere in
+  # M_LanternOrb, coloured per instance - named only by ALanternBurst's constructor and the placed
+  # lantern. Missing, the lantern draws grey balls.
+  "Lantern Burst's glass" = "$cooked\LanternBurst\M_LanternOrb.uasset"
 }
 # --- 2.1.0: THE TREASURE - every piece URefactorComponent names -----------
 # Since 2026-10-13 the gems are GemShader's, each in one of six colours, and all that is left
