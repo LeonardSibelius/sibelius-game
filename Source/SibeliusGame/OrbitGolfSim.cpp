@@ -320,41 +320,33 @@ void FOrbitGolfSim::Penalty(EOrbitEvent Why)
 	Emit(Why, Strokes);
 }
 
-std::vector<FSpaceVec> FOrbitGolfSim::PredictPath(double Yaw, double Pitch, double Power, double Seconds, int Points) const
+std::vector<FSpaceVec> FOrbitGolfSim::PredictPath(double Yaw, double Pitch, double Power, double Seconds, int Points, EOrbitEvent* Outcome) const
 {
 	std::vector<FSpaceVec> Out;
-	if (Points < 2)
+	if (Outcome) *Outcome = EOrbitEvent::ShotTaken;
+	if (Points < 2 || !std::isfinite(Seconds) || Seconds <= 0.0) return Out;
+	FOrbitGolfSim Copy = *this;
+	Copy.TakeEvents();
+	if (!Copy.Shoot(Yaw, Pitch, Power)) return Out;
+	Copy.TakeEvents();
+	Out.push_back(Copy.BallPosition());
+	const double Duration = std::fmin(Seconds, MaxFlightSeconds + SubstepSeconds * 2.0);
+	const double Every = Duration / (Points - 1);
+	double Next = Every;
+	for (double T = SubstepSeconds; T <= Duration + 1e-9; T += SubstepSeconds)
 	{
-		return Out;
-	}
-	FSpaceState S{ Ball.Position, ShotDirection(Yaw, Pitch) * LaunchSpeed(Power) };
-	FSpaceIntegrator Local;
-	Local.Settings = Integrator.Settings;
-	const FSpaceAccelFn Accel = [this](double, const FSpaceVec& P) { return Gravity(P); };
-	double T = 0.0;
-	const double Every = Seconds / (Points - 1);
-	double NextMark = 0.0;
-	const double Rb = CourseData.BallRadius;
-	while (T <= Seconds + 1e-9 && static_cast<int>(Out.size()) < Points)
-	{
-		if (T >= NextMark - 1e-9)
+		const FSpaceVec Previous = Copy.BallPosition();
+		Copy.Substep();
+		bool Failed = false;
+		for (const auto& Event : Copy.TakeEvents())
 		{
-			Out.push_back(S.Position);
-			NextMark += Every;
+			if (Event.Type == EOrbitEvent::OutOfBounds || Event.Type == EOrbitEvent::LostInOrbit || Event.Type == EOrbitEvent::Holed || Event.Type == EOrbitEvent::CameToRest)
+			{ if (Outcome) *Outcome = Event.Type; }
+			Failed = Failed || Event.Type == EOrbitEvent::OutOfBounds || Event.Type == EOrbitEvent::LostInOrbit;
 		}
-		Local.AdvanceTo(S, T, T + SubstepSeconds, Accel);
-		bool bHit = false;
-		for (const FOrbitMoon& Moon : CurrentHole().Moons)
-		{
-			bHit = bHit || OrbitMath::Length(S.Position - Moon.Center) < Moon.Radius + Rb;
-		}
-		const double Sideways = std::sqrt(S.Position.X * S.Position.X + S.Position.Y * S.Position.Y);
-		bHit = bHit || (Sideways <= CourseData.PlatformRadius && S.Position.Z < Rb && T > 0.05);
-		if (bHit)
-		{
-			Out.push_back(S.Position);
-			break;
-		}
+		if (Copy.Phase() != EOrbitPhase::Flying)
+		{ Out.push_back(Failed ? Previous : Copy.BallPosition()); break; }
+		if (T + 1e-9 >= Next) { Out.push_back(Copy.BallPosition()); Next += Every; }
 	}
 	return Out;
 }
@@ -380,4 +372,53 @@ void FOrbitGolfSim::PlaceBall(FSpaceVec Position, FSpaceVec Velocity)
 void FOrbitGolfSim::Emit(EOrbitEvent Type, int Index, double Value)
 {
 	PendingEvents.push_back(FOrbitEvent{ Type, Index, Value });
+}
+
+FOrbitCourse FOrbitCourse::MakePractice()
+{
+	FOrbitCourse C = MakeDefault();
+	C.CupRadius = 140.0;
+	C.Holes[0].Name = "Lesson 1 - Land on a moon";
+	C.Holes[1].Name = "Lesson 2 - Bend with gravity";
+	C.Holes[2].Name = "Lesson 3 - The underside";
+	return C;
+}
+
+FSpaceVec FOrbitGolfSim::SurfaceUp() const
+{
+	// Use the supporting geometry, not net gravity: world gravity can tilt the latter.
+	double BestGap = CourseData.BallRadius + 3.0;
+	FSpaceVec Up(0.0, 0.0, 1.0);
+	for (const auto& Moon : CurrentHole().Moons)
+	{
+		const FSpaceVec Offset = Ball.Position - Moon.Center;
+		const double Gap = SpaceMath::Length(Offset) - Moon.Radius;
+		if (std::abs(Gap - CourseData.BallRadius) < 3.0 && Gap < BestGap)
+		{ Up = SpaceMath::Normalized(Offset); BestGap = Gap; }
+	}
+	return Up;
+}
+
+FSpaceVec FOrbitGolfSim::SurfaceDirection(double Heading, double Loft) const
+{
+	const FSpaceVec Up = SurfaceUp();
+	const FSpaceVec Reference = std::abs(Up.X) < 0.9 ? FSpaceVec(1, 0, 0) : FSpaceVec(0, 1, 0);
+	const FSpaceVec Forward = SpaceMath::Normalized(Reference - Up * SpaceMath::Dot(Reference, Up));
+	const FSpaceVec Right = SpaceMath::Cross(Up, Forward);
+	return (Forward * std::cos(Heading) + Right * std::sin(Heading)) * std::cos(Loft) + Up * std::sin(Loft);
+}
+
+double FOrbitGolfSim::SurfaceHeadingTo(FSpaceVec Target) const
+{
+	const FSpaceVec D = Target - Ball.Position;
+	const FSpaceVec Forward = SurfaceDirection(0.0, 0.0);
+	const FSpaceVec Right = SurfaceDirection(1.5707963267948966, 0.0);
+	return std::atan2(SpaceMath::Dot(D, Right), SpaceMath::Dot(D, Forward));
+}
+
+double FOrbitGolfSim::ClubPower(double Power, bool bPutt)
+{
+	const double P = OrbitMath::Clamp(Power, 0.0, 1.0);
+	// Putter has a linear, gentle speed range; convert to the existing launch curve.
+	return bPutt ? std::sqrt(P * (650.0 - MinLaunchSpeed) / (MaxLaunchSpeed - MinLaunchSpeed)) : P;
 }

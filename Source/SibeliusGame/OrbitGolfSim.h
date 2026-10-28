@@ -71,6 +71,7 @@ struct FOrbitCourse
 
 	// The three holes of Elise's course: First Light, Slingshot, Underside.
 	static FOrbitCourse MakeDefault();
+	static FOrbitCourse MakePractice();
 };
 
 enum class EOrbitPhase : uint8_t
@@ -141,9 +142,14 @@ public:
 	// The acceleration on a ball at P: the world's gravity and every moon of the current hole.
 	FSpaceVec Gravity(const FSpaceVec& P) const;
 
-	// Where a shot would go for its first Seconds, before it touches anything: the dotted guide.
-	std::vector<FSpaceVec> PredictPath(double Yaw, double Pitch, double Power, double Seconds, int Points) const;
+	// Predict the actual shot including bounces; optional outcome describes its end.
+	std::vector<FSpaceVec> PredictPath(double Yaw, double Pitch, double Power, double Seconds, int Points, EOrbitEvent* Outcome = nullptr) const;
 
+	// Local surface frame: loft always points away from the supporting moon (or tee).
+	FSpaceVec SurfaceUp() const;
+	FSpaceVec SurfaceDirection(double Heading, double Loft) const;
+	double SurfaceHeadingTo(FSpaceVec Target) const;
+	static double ClubPower(double Power, bool bPutt);
 	static FSpaceVec ShotDirection(double Yaw, double Pitch);
 	static double LaunchSpeed(double Power);
 

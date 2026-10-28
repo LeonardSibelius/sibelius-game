@@ -31,6 +31,13 @@ namespace SibeliusToast
 	inline const FLinearColor Info (0.80f, 0.86f, 0.92f, 1.0f);   // neutral statement
 }
 
+struct FTableWorldMarker
+{
+	FVector Position;
+	FString Label;
+	FLinearColor Color = FLinearColor(1.0f, 0.85f, 0.25f);
+};
+
 UCLASS()
 class SIBELIUSGAME_API ASibeliusHUD : public AHUD
 {
@@ -95,7 +102,8 @@ public:
 	 * Note, when given, goes just under the status in smaller type and its own colour:
 	 * the chess coach's voice, kept apart from the game's.
 	 */
-	void ShowTablePanel(const FString& Status, const FString& Controls, float Seconds = 0.25f, const FString& Note = FString());
+	void ShowTableMarkers(const TArray<FTableWorldMarker>& Markers);
+	void ShowTablePanel(const FString& Status, const FString& Controls, float Seconds = 0.25f, const FString& Note = FString(), float Power = -1.0f);
 
 	/**
 	 * Lines to show just above "[O] Back to Office" while he is on foot in another world - the
@@ -280,6 +288,9 @@ private:
 	FString TableStatus;
 	FString TableControls;
 	FString TableNote;
+	float TablePower = -1.0f;
+	TArray<FTableWorldMarker> TableMarkers;
+	double TableMarkersUntil = 0.0;
 	double TablePanelUntil = 0.0;
 	FString AwayHint;
 	double AwayHintUntil = 0.0;

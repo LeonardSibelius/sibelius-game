@@ -5,10 +5,10 @@
 // is what he sees and plays: a marble tee platform on the grass, the hole's moons hanging in the
 // sky with rings like the planets over Elise's world, a flag on the cup wherever it sits on its
 // moon - on the crown, round the far side, underneath - the ball with a glowing trail, and while
-// he aims a dotted guide for the first second of the shot.
+// he aims a dotted guide through bounces to the predicted resting point.
 //
 // Controls, the pool tables' where they can be: A D / mouse aim, W S raise and lower the shot,
-// SHIFT fine, hold SPACE and let go to swing, V the whole course, R start the round again,
+// SHIFT fine, [ ] set power; tap SPACE to swing, V the whole course, R start the round again,
 // ESC walk away. When a hole is holed, SPACE goes on to the next.
 //
 // The house lessons (HyperBilliardsTable.h): the model decides, this actor shows; his body steps
@@ -133,6 +133,14 @@ private:
 	void OnRestart();
 	void OnToggleView();
 	void OnLeave();
+	void OnPowerUp();
+	void OnPowerDown();
+	void OnUndo();
+	void OnCancel();
+	void OnPractice();
+	void OnToggleClub();
+	void OnToggleHelp();
+	void ResolveShot(double& WorldYaw, double& WorldPitch, double& Power) const;
 
 	void UpdateAim(float DeltaSeconds);
 	void AimAtCup();
@@ -149,6 +157,18 @@ private:
 	ASibeliusHUD* GetHud() const;
 
 	FOrbitGolfSim Sim;
+	FOrbitGolfSim BeforeShot;
+	bool bCanUndo = false;
+	bool bPractice = false;
+	bool bPutt = false;
+	bool bSavedPutt = false;
+	bool bShowHelp = false;
+	FVector FlightForward = FVector::ForwardVector;
+	FVector FlightUp = FVector::UpVector;
+	bool bUsedUndo = false;
+	float SelectedPower = 0.5f;
+	float SavedPower = 0.5f;
+	double SavedYaw = 0.0, SavedPitch = 0.0;
 	TWeakObjectPtr<APlayerController> PlayingPC;
 	bool bPlaying = false;
 	bool bKeysBound = false;
@@ -164,7 +184,11 @@ private:
 	float PendingMouse = 0.0f;
 	bool bCharging = false;
 	float ChargeSeconds = 0.0f;
-	bool bOverview = false;
+	bool bOverview = true;
+	double PreviewYaw = 999.0, PreviewPitch = 999.0;
+	float PreviewPower = -1.0f;
+	FVector PreviewOrigin = FVector::ZeroVector;
+	FString PreviewNote;
 	float TrailClock = 0.0f;
 	TArray<FVector> TrailPoints;   // course space, oldest first
 	int32 BestRound = 0;           // this session, strokes over the three holes

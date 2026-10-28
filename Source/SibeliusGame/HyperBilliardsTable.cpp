@@ -371,10 +371,6 @@ void AHyperBilliardsTable::Tick(float DeltaSeconds)
 	if (bPlaying)
 	{
 		UpdateAim(DeltaSeconds);
-		if (bCharging)
-		{
-			ChargeSeconds += DeltaSeconds;
-		}
 		Sim.Advance(DeltaSeconds);
 		HandleEvents();
 		if (ASibeliusHUD* Hud = GetHud())
@@ -427,6 +423,12 @@ void AHyperBilliardsTable::StartPlaying(APlayerController* PC)
 	bAimLeftHeld = bAimRightHeld = bTiltUpHeld = bTiltDownHeld = bSliceUpHeld = bSliceDownHeld = bFineHeld = false;
 	PendingMouseAim = 0.0f;
 
+	bPreviousCursor = PC->bShowMouseCursor;
+	PC->bShowMouseCursor = true;
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(false);
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture);
+	PC->SetInputMode(InputMode);
 	PC->SetIgnoreMoveInput(true);
 	PC->SetIgnoreLookInput(true);
 	// HIS BODY STEPS ASIDE. The pawn's own actions are Enhanced Input, which our key bindings do
@@ -460,6 +462,8 @@ void AHyperBilliardsTable::StopPlaying()
 
 	if (APlayerController* PC = PlayingPC.Get())
 	{
+		PC->bShowMouseCursor = bPreviousCursor;
+		PC->SetInputMode(FInputModeGameOnly());
 		PC->SetIgnoreMoveInput(false);
 		PC->SetIgnoreLookInput(false);
 		if (APawn* Pawn = PC->GetPawn())
@@ -513,17 +517,17 @@ void AHyperBilliardsTable::BindTableKeys()
 	{
 		Bind(Key, &AHyperBilliardsTable::OnTiltDownPressed, &AHyperBilliardsTable::OnTiltDownReleased);
 	}
-	for (const FKey& Key : { EKeys::Q, EKeys::PageUp, EKeys::Gamepad_RightShoulder })
+	for (const FKey& Key : { EKeys::Q, EKeys::PageUp })
 	{
 		Bind(Key, &AHyperBilliardsTable::OnSliceUpPressed, &AHyperBilliardsTable::OnSliceUpReleased);
 	}
-	for (const FKey& Key : { EKeys::C, EKeys::PageDown, EKeys::Gamepad_LeftTrigger })
+	for (const FKey& Key : { EKeys::C, EKeys::PageDown })
 	{
 		Bind(Key, &AHyperBilliardsTable::OnSliceDownPressed, &AHyperBilliardsTable::OnSliceDownReleased);
 	}
 	Bind(EKeys::MouseScrollUp, &AHyperBilliardsTable::OnWheelUp, nullptr);
 	Bind(EKeys::MouseScrollDown, &AHyperBilliardsTable::OnWheelDown, nullptr);
-	for (const FKey& Key : { EKeys::F, EKeys::Gamepad_FaceButton_Left })
+	for (const FKey& Key : { EKeys::F })
 	{
 		Bind(Key, &AHyperBilliardsTable::OnSliceToCue, nullptr);
 	}
@@ -534,7 +538,7 @@ void AHyperBilliardsTable::BindTableKeys()
 	}
 	Bind(EKeys::W, &AHyperBilliardsTable::OnSpinUp, nullptr);
 	Bind(EKeys::S, &AHyperBilliardsTable::OnSpinDown, nullptr);
-	for (const FKey& Key : { EKeys::SpaceBar, EKeys::LeftMouseButton, EKeys::Gamepad_FaceButton_Bottom, EKeys::Gamepad_RightTrigger })
+	for (const FKey& Key : { EKeys::SpaceBar, EKeys::Gamepad_FaceButton_Bottom, EKeys::Gamepad_RightTrigger })
 	{
 		Bind(Key, &AHyperBilliardsTable::OnShotPressed, &AHyperBilliardsTable::OnShotReleased);
 	}
@@ -550,6 +554,20 @@ void AHyperBilliardsTable::BindTableKeys()
 	{
 		Bind(Key, &AHyperBilliardsTable::OnLeave, nullptr);
 	}
+	Bind(EKeys::LeftBracket, &AHyperBilliardsTable::OnPowerDown, nullptr);
+	Bind(EKeys::RightBracket, &AHyperBilliardsTable::OnPowerUp, nullptr);
+	Bind(EKeys::Gamepad_LeftThumbstick, &AHyperBilliardsTable::OnPowerDown, nullptr);
+	Bind(EKeys::Gamepad_RightThumbstick, &AHyperBilliardsTable::OnPowerUp, nullptr);
+	Bind(EKeys::BackSpace, &AHyperBilliardsTable::OnUndo, nullptr);
+	Bind(EKeys::P, &AHyperBilliardsTable::OnPractice, nullptr);
+	InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &AHyperBilliardsTable::OnCancel);
+	Bind(EKeys::LeftMouseButton, &AHyperBilliardsTable::OnPickTarget, nullptr);
+	Bind(EKeys::Gamepad_FaceButton_Left, &AHyperBilliardsTable::OnNextBall, nullptr);
+	Bind(EKeys::Gamepad_LeftTrigger, &AHyperBilliardsTable::OnUndo, nullptr);
+	Bind(EKeys::Gamepad_Special_Left, &AHyperBilliardsTable::OnPractice, nullptr);
+	Bind(EKeys::Gamepad_RightShoulder, &AHyperBilliardsTable::OnToggleAssist, nullptr);
+	Bind(EKeys::G, &AHyperBilliardsTable::OnToggleAssist, nullptr);
+	Bind(EKeys::H, &AHyperBilliardsTable::OnToggleHelp, nullptr);
 	InputComponent->BindAxisKey(EKeys::MouseX, this, &AHyperBilliardsTable::OnMouseX);
 }
 
@@ -567,7 +585,9 @@ void AHyperBilliardsTable::OnSliceDownPressed()   { bSliceDownHeld = true; }
 void AHyperBilliardsTable::OnSliceDownReleased()  { bSliceDownHeld = false; }
 void AHyperBilliardsTable::OnFinePressed()        { bFineHeld = true; }
 void AHyperBilliardsTable::OnFineReleased()       { bFineHeld = false; }
-void AHyperBilliardsTable::OnMouseX(float Value)  { PendingMouseAim += Value; }
+void AHyperBilliardsTable::OnMouseX(float Value)  {
+	if (PlayingPC.IsValid() && PlayingPC->IsInputKeyDown(EKeys::RightMouseButton)) PendingMouseAim += Value;
+}
 
 void AHyperBilliardsTable::OnWheelUp()
 {
@@ -613,7 +633,9 @@ void AHyperBilliardsTable::OnNextBall()
 	}
 	ByDistance.Sort([](const TPair<double, int32>& A, const TPair<double, int32>& B) { return A.Key < B.Key; });
 	NextBallPick = NextBallPick % ByDistance.Num();
-	AimAtBall(ByDistance[NextBallPick].Value);
+	SelectedBall = ByDistance[NextBallPick].Value;
+	AimAtBall(SelectedBall);
+	OnSliceToCue();
 	++NextBallPick;
 }
 
@@ -632,7 +654,8 @@ void AHyperBilliardsTable::OnShotPressed()
 	const EHyperPhase Phase = Sim.Phase();
 	if (Phase == EHyperPhase::Idle || Phase == EHyperPhase::Cleared)
 	{
-		OnRack();   // the same key racks a new game; its release must not also shoot, so no charge
+		if (bPractice && Phase == EHyperPhase::Cleared) PracticeLesson = (PracticeLesson + 1) % 3;
+		OnRack();   // releasing the advance button must not fire
 		return;
 	}
 	if (Phase == EHyperPhase::Aiming)
@@ -648,7 +671,15 @@ void AHyperBilliardsTable::OnShotReleased()
 	{
 		return;
 	}
-	const float Power = CurrentPower();   // before ending the charge: it is 0 when not charging
+	SavedSelectedBall = SelectedBall;
+	LastShotFeedback = AimFeedback();
+	bShotHitObject = false;
+	bExpectedContact = Sim.PredictShot(Heading, Tilt).bHitsBall;
+	SavedPower = SelectedPower;
+	SavedHeading = Heading; SavedTilt = Tilt; SavedSpin = Spin;
+	BeforeShot = Sim;
+	bCanUndo = true;
+	const float Power = CurrentPower();
 	bCharging = false;
 	Sim.Shoot(Heading, Tilt, Power, Spin);
 }
@@ -660,7 +691,10 @@ void AHyperBilliardsTable::OnRack()
 		return;   // a rerack mid-stroke would throw away a stroke he is watching
 	}
 	bCharging = false;
+	bCanUndo = false;
+	bUsedUndo = false;
 	Sim.StartGame();
+	if (bPractice) Sim.StartLesson(PracticeLesson);
 	Sim.TakeEvents();
 	BallRotations.Init(FQuat::Identity, FHyperBilliardsSim::BallCount);
 	Heading = 0.0;   // straight up the table at the apex
@@ -669,6 +703,16 @@ void AHyperBilliardsTable::OnRack()
 	SliceTarget = 0.0;
 	NextBallPick = 0;
 	LastClearedStrokes = 0;
+	LastShotFeedback.Empty();
+	SelectedBall = -1;
+	if (bPractice)
+	{
+		SelectedBall = 1;
+		bDepthAssist = true;
+		AimAtBall(1);
+		OnSliceToCue();
+		SelectedPower = PracticeLesson == 0 ? 0.25f : PracticeLesson == 1 ? 0.35f : 0.7f;
+	}
 	UE_LOG(LogSibeliusGame, Display, TEXT("[HyperBilliards] racked."));
 }
 
@@ -679,18 +723,12 @@ void AHyperBilliardsTable::OnToggleView()
 
 void AHyperBilliardsTable::OnLeave()
 {
-	StopPlaying();
+	if (bCharging) OnCancel(); else StopPlaying();
 }
 
 float AHyperBilliardsTable::CurrentPower() const
 {
-	if (!bCharging)
-	{
-		return 0.0f;
-	}
-	// Up and back down again, as at the living-room table.
-	const float Phase = FMath::Fmod(ChargeSeconds / PowerChargeSeconds, 2.0f);
-	return Phase <= 1.0f ? Phase : 2.0f - Phase;
+	return SelectedPower;
 }
 
 void AHyperBilliardsTable::UpdateAim(float DeltaSeconds)
@@ -727,7 +765,7 @@ void AHyperBilliardsTable::AimAtBall(int32 Ball)
 {
 	const FHyperVec3 D = Sim.BallPosition(Ball) - Sim.BallPosition(FHyperBilliardsSim::CueBall);
 	Heading = FMath::Atan2(D.Y, D.X);
-	Tilt = FMath::Atan2(D.W, FMath::Sqrt(D.X * D.X + D.Y * D.Y));
+	if (bDepthAssist) Tilt = FMath::Atan2(D.W, FMath::Sqrt(D.X * D.X + D.Y * D.Y));
 }
 
 void AHyperBilliardsTable::SyncBalls(float DeltaSeconds)
@@ -743,9 +781,13 @@ void AHyperBilliardsTable::SyncBalls(float DeltaSeconds)
 		}
 		const FHyperVec3 P = Sim.BallPosition(I);
 		const double Slice = Sim.IsOnTable(I) ? FHyperBilliardsSim::SliceRadius(R, P.W, SliceW) : 0.0;
-		BallMesh->SetVisibility(Slice > HiddenSlice);
+		BallMesh->SetVisibility(Sim.IsOnTable(I));
+		if (!Sim.IsOnTable(I)) continue;
 		if (Slice <= HiddenSlice)
 		{
+			// A flattened numbered marker is a projection, not a hittable cross-section.
+			BallMesh->SetRelativeLocationAndRotation(SimToCloth(P, 0.6), FQuat::Identity);
+			BallMesh->SetRelativeScale3D(FVector(R / MeshBallRadius, R / MeshBallRadius, 0.08));
 			continue;
 		}
 
@@ -791,8 +833,8 @@ void AHyperBilliardsTable::SyncCueAndGuides()
 	const bool bAiming = bPlaying && Sim.Phase() == EHyperPhase::Aiming && Sim.IsOnTable(FHyperBilliardsSim::CueBall);
 	const FHyperVec3 CuePos = Sim.BallPosition(FHyperBilliardsSim::CueBall);
 	const double CueSlice = FHyperBilliardsSim::SliceRadius(R, CuePos.W, SliceW);
-	// The cue lies in his slice; it can only be shown when the cue ball is in it too.
-	const bool bCueSeen = bAiming && CueSlice > HiddenSlice;
+	// Keep the projected cue and guides available while inspecting another depth.
+	const bool bCueSeen = bAiming;
 
 	for (UStaticMeshComponent* Part : { Cue.Get(), AimLine.Get(), ObjectLine.Get() })
 	{
@@ -944,12 +986,18 @@ void AHyperBilliardsTable::HandleEvents()
 			TableSounds::Play(this, ETableSound::CueStrike, FMath::Clamp(0.25f + static_cast<float>(Event.Value) / 900.0f, 0.25f, 1.0f));
 			break;
 		case EHyperEvent::BallHitBall:
+			if (Event.Index == 0 || Event.Other == 0) bShotHitObject = true;
+			if (Event.Index == 0 || Event.Other == 0) LastShotFeedback = FString::Printf(TEXT("Contact: ball %d. Use the gold line to steer it toward a pocket."), Event.Index == 0 ? Event.Other : Event.Index);
 			Clicks.Add(FMath::Clamp(static_cast<float>(Event.Value) / 350.0f, 0.04f, 1.0f));
 			break;
 		case EHyperEvent::BallHitCushion:
 			Thuds.Add(FMath::Clamp(static_cast<float>(Event.Value) / 300.0f, 0.05f, 0.9f));
 			break;
 		case EHyperEvent::BallPocketed:
+			LastShotFeedback = FString::Printf(TEXT("Ball %d potted!"), Event.Index);
+			TableSounds::Play(this, ETableSound::Chime100, 0.35f);
+			TableSounds::Play(this, ETableSound::PocketDrop, 0.8f);
+			break;
 		case EHyperEvent::CueBallScratched:
 			TableSounds::Play(this, ETableSound::PocketDrop, 0.8f, Event.Type == EHyperEvent::CueBallScratched ? 0.9f : FMath::FRandRange(0.95f, 1.05f));
 			break;
@@ -961,13 +1009,14 @@ void AHyperBilliardsTable::HandleEvents()
 			break;
 		}
 		case EHyperEvent::ShotEnded:
+			if (!bShotHitObject && bExpectedContact) LastShotFeedback = TEXT("Stopped before contact. Try more power, or pick a closer ball.");
 			// Every stroke starts with the cue ball seen.
 			OnSliceToCue();
 			NextBallPick = 0;
 			break;
 		case EHyperEvent::TableCleared:
 			LastClearedStrokes = Event.Index;
-			if (BestStrokes == 0 || Event.Index < BestStrokes)
+			if (!bPractice && !bUsedUndo && (BestStrokes == 0 || Event.Index < BestStrokes))
 			{
 				BestStrokes = Event.Index;
 			}
@@ -993,48 +1042,122 @@ void AHyperBilliardsTable::HandleEvents()
 void AHyperBilliardsTable::RefreshPanel()
 {
 	ASibeliusHUD* Hud = bPlaying ? GetHud() : nullptr;
-	if (!Hud)
+	if (!Hud) return;
+	const bool bAiming = Sim.Phase() == EHyperPhase::Aiming;
+	FString Text = FString::Printf(TEXT("4D BILLIARDS   %d LEFT   %d STROKES"), Sim.BallsLeft(), Sim.Strokes());
+	FString Note = bAiming ? AimFeedback() : LastShotFeedback;
+	if (bAiming && !LastShotFeedback.IsEmpty()) Note += TEXT("\nLAST SHOT: ") + LastShotFeedback;
+	FString Controls = TEXT("Click ball / X target   A D / hold RMB aim   [ ] / L3 R3 power   SPACE / A shoot\nP / View lessons   LT / Backspace retry   V / Y camera   H help   ESC / B leave");
+	if (Sim.Phase() == EHyperPhase::Idle)
 	{
-		return;
+		Text = TEXT("4D BILLIARDS - choose a ball, see its depth, make the shot");
+		Note = TEXT("Start with three short lessons, or rack a full table.");
+		Controls = TEXT("P / View lessons   SPACE / A full table   ESC / B leave");
 	}
-	FString Text;
-	FString Controls;
-	const FString Best = BestStrokes > 0 ? FString::Printf(TEXT("   BEST %d"), BestStrokes) : FString();
-	switch (Sim.Phase())
+	else if (Sim.Phase() == EHyperPhase::Cleared)
 	{
-	case EHyperPhase::Idle:
-		Text = TEXT("4D BILLIARDS\nThe cloth has a third direction, W, and you see one slice of it. Pot all ten.");
-		Controls = TEXT("SPACE to rack      ESC to walk away");
-		break;
-	case EHyperPhase::Cleared:
-		Text = FString::Printf(TEXT("CLEARED IN %d STROKES%s"),
-			LastClearedStrokes, LastClearedStrokes == BestStrokes ? TEXT("  -  YOUR BEST") : *Best);
-		Controls = TEXT("SPACE to rack again      ESC to walk away");
-		break;
-	default:
+		Text = bPractice ? FString::Printf(TEXT("LESSON %d COMPLETE - %d STROKES"), PracticeLesson + 1, Sim.Strokes()) : FString::Printf(TEXT("TABLE CLEARED - %d STROKES"), Sim.Strokes());
+		Note = bPractice ? (PracticeLesson == 2 ? TEXT("All three lessons complete! Try the full table, or replay the lessons.") : TEXT("Lesson complete. Strokes include scratch penalties.")) : TEXT("Well played!");
+		Controls = bPractice ? TEXT("SPACE / A next lesson   P / View full table   Backspace / LT retry   ESC / B leave") : TEXT("SPACE / A play again   P / View lessons   ESC / B leave");
+	}
+	else if (Sim.Phase() == EHyperPhase::Rolling)
+		Controls = TEXT("Backspace / LT retry   V / Y camera   ESC / B leave");
+	if (bAiming)
 	{
-		const FString SpinName = FMath::IsNearlyZero(Spin) ? FString(TEXT("centre"))
-			: Spin > 0.0 ? FString::Printf(TEXT("follow %d"), FMath::RoundToInt(Spin * 4.0))
-			: FString::Printf(TEXT("draw %d"), FMath::RoundToInt(-Spin * 4.0));
-		FString Power;
-		if (bCharging)
+		Text += FString::Printf(TEXT("\nPOWER %d%%   DEPTH %+d deg   ASSIST %s"), FMath::RoundToInt(SelectedPower * 100), FMath::RoundToInt(FMath::RadiansToDegrees(Tilt)), bDepthAssist ? TEXT("ON") : TEXT("OFF"));
+		if (bPractice)
 		{
-			const int32 Bars = FMath::RoundToInt(CurrentPower() * 20.0f);
-			Power = TEXT("   POWER ") + FString::ChrN(Bars, TEXT('|')) + FString::ChrN(20 - Bars, TEXT('.'));
+			const TCHAR* Lessons[] = { TEXT("1/3: A simple pot - follow the gold object-ball line."), TEXT("2/3: Across depths - the target is in another slice. G / RB toggles assistance."), TEXT("3/3: Bank shot - send the ball to the end cushion, then the side pocket.") };
+			Text = FString(Lessons[PracticeLesson]) + TEXT("\n") + Text;
 		}
-		Text = FString::Printf(TEXT("STROKES %d     LEFT %d%s\nINTO W %+d deg     SLICE W %+d cm     SPIN %s%s"),
-			Sim.Strokes(), Sim.BallsLeft(), *Best, FMath::RoundToInt(FMath::RadiansToDegrees(Tilt)),
-			FMath::RoundToInt(SliceW), *SpinName, *Power);
-		Controls = TEXT("AIM  A D or mouse   INTO W  UP DOWN   SLICE  wheel or Q C   F  back to the cue ball   T  next ball\n"
-			"SPIN  W S      SHOOT  hold SPACE, let go      V  view down the cue      R  rerack      ESC  walk away");
-		break;
+		if (bShowHelp) Controls = TEXT("UP DOWN / D-pad tilt depth   G / RB depth assist   T / X select target\nWheel / Q C inspect slices   F cue slice   W S spin   SHIFT / LB fine aim\nR / Menu restart   RMB cancels armed shot   H close help");
 	}
+	TArray<FTableWorldMarker> Markers;
+	if (bAiming && SelectedBall > 0 && Sim.IsOnTable(SelectedBall))
+	{
+		const auto P = Sim.BallPosition(SelectedBall);
+		const double DW = P.W - Sim.BallPosition(0).W;
+		const FString Label = FString::Printf(TEXT("BALL %d   DEPTH %+.0f"), SelectedBall, DW);
+		Markers.Add({ Cloth->GetComponentTransform().TransformPosition(SimToCloth(P, Sim.Layout().BallRadius)), Label });
+		Markers.Add({ Board->GetComponentTransform().TransformPosition(SimToBoard(P)), FString::Printf(TEXT("%d IN DEPTH VIEW"), SelectedBall) });
 	}
-	Hud->ShowTablePanel(Text, Controls);
+	Hud->ShowTableMarkers(Markers);
+	Hud->ShowTablePanel(Text, Controls, 0.25f, Note, bAiming ? SelectedPower : -1.0f);
 }
 
 ASibeliusHUD* AHyperBilliardsTable::GetHud() const
 {
 	const APlayerController* PC = PlayingPC.Get();
 	return PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr;
+}
+
+void AHyperBilliardsTable::OnCancel() { bCharging = false; }
+void AHyperBilliardsTable::OnPowerUp() { if (Sim.Phase() == EHyperPhase::Aiming) SelectedPower = FMath::Min(1.0f, SelectedPower + (bFineHeld ? 0.01f : 0.05f)); }
+void AHyperBilliardsTable::OnPowerDown() { if (Sim.Phase() == EHyperPhase::Aiming) SelectedPower = FMath::Max(0.05f, SelectedPower - (bFineHeld ? 0.01f : 0.05f)); }
+void AHyperBilliardsTable::OnUndo()
+{
+	if (!bCanUndo) return;
+	SelectedBall = SavedSelectedBall;
+	LastShotFeedback = TEXT("Shot restored - try another angle or power.");
+	SelectedPower = SavedPower;
+	Heading = SavedHeading; Tilt = SavedTilt; Spin = SavedSpin;
+	Sim = BeforeShot;
+	Sim.TakeEvents();
+	bCanUndo = false;
+	bUsedUndo = true;
+	bCharging = false;
+	OnSliceToCue();
+}
+void AHyperBilliardsTable::OnPractice() {
+	bPractice = !bPractice;
+	PracticeLesson = 0;
+	bCharging = false;
+	Sim = FHyperBilliardsSim();
+	OnRack();
+}
+
+void AHyperBilliardsTable::OnToggleAssist()
+{
+	bDepthAssist = !bDepthAssist;
+	if (bDepthAssist && SelectedBall > 0 && Sim.IsOnTable(SelectedBall) && Sim.Phase() == EHyperPhase::Aiming) AimAtBall(SelectedBall);
+}
+void AHyperBilliardsTable::OnToggleHelp() { bShowHelp = !bShowHelp; }
+
+void AHyperBilliardsTable::OnPickTarget()
+{
+	APlayerController* PC = PlayingPC.Get();
+	if (!PC || Sim.Phase() != EHyperPhase::Aiming) return;
+	float MX, MY;
+	if (!PC->GetMousePosition(MX, MY)) return;
+	int32 Pick = -1;
+	float Best = 32.0f * 32.0f;
+	for (int32 I = 1; I < FHyperBilliardsSim::BallCount; ++I)
+	{
+		if (!Sim.IsOnTable(I)) continue;
+		for (const FVector& World : { BallMeshes[I]->GetComponentLocation(), BoardDots[I]->GetComponentLocation() })
+		{
+			FVector2D Screen;
+			if (!PC->ProjectWorldLocationToScreen(World, Screen, true)) continue;
+			const float Distance = FVector2D::DistSquared(Screen, FVector2D(MX, MY));
+			if (Distance < Best) { Best = Distance; Pick = I; }
+		}
+	}
+	if (Pick > 0) { SelectedBall = Pick; AimAtBall(Pick); OnSliceToCue(); }
+}
+
+FString AHyperBilliardsTable::AimFeedback() const
+{
+	const auto Hit = Sim.PredictShot(Heading, Tilt);
+	if (Hit.bHitsBall)
+		return FString::Printf(TEXT("FIRST CONTACT: ball %d%s"), Hit.Ball, Hit.Ball == SelectedBall ? TEXT(" - target aligned") : TEXT(" - select it to inspect depth"));
+	if (SelectedBall <= 0 || !Sim.IsOnTable(SelectedBall)) return TEXT("Click a ball or press T / X to select a target. Flat discs mark other depths.");
+	const auto D = Sim.BallPosition(SelectedBall) - Sim.BallPosition(0);
+	const double Along = D.X * FMath::Cos(Heading) + D.Y * FMath::Sin(Heading);
+	const double Across = FMath::Abs(D.X * FMath::Sin(Heading) - D.Y * FMath::Cos(Heading));
+	if (Along > 0 && Across < 2.0 * Sim.Layout().BallRadius)
+	{
+		const double Gap = Along * FMath::Tan(Tilt) - D.W;
+		return FString::Printf(TEXT("MISSES BALL %d: depth %s by %.0f cm. Adjust UP / DOWN, or enable G / RB assist."), SelectedBall, Gap > 0 ? TEXT("too far") : TEXT("too near"), FMath::Abs(Gap));
+	}
+	return TEXT("Aim left or right toward the selected ball. Depth alone will not make contact.");
 }

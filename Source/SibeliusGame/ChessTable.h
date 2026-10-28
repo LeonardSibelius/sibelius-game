@@ -198,6 +198,8 @@ private:
 	void OnLeave();
 	void OnHint();
 	void OnCoachToggle();
+	void OnTurnBoard();
+	EChessColor ViewColor() const;   // whose side the camera sits on: his own, or the ghost's when turned
 	void MoveCursor(int32 DFile, int32 DRank);
 	void SelectOrMove(int32 Square);
 
@@ -219,6 +221,12 @@ private:
 	TWeakObjectPtr<APlayerController> PlayingPC;
 	bool bPlaying = false;
 	bool bKeysBound = false;
+
+	// [F] turns the board to the ghost's side and back (Walt, 2026-10-27: "rotate the board so I
+	// can switch to the opponent view and back"). The camera swings round over BoardTurnSeconds.
+	bool bBoardTurned = false;
+	float BoardTurn = 0.0f;                // 0 his side .. 1 the ghost's
+	static constexpr float BoardTurnSeconds = 0.7f;
 
 	// The ghost.
 	TFuture<FChessSearchResult> GhostFuture;

@@ -23,7 +23,7 @@
 //     is in W, the rings at its corners are the pockets, and while he aims a bar shows the shot.
 //
 // WHAT HE DOES - the living room's controls, and three for the fourth dimension:
-//   A D / mouse aim, SHIFT fine; W S spin; hold SPACE and let go to shoot; R rerack; V view down
+//   A D / mouse aim, SHIFT fine; W S spin; [ ] set power; tap SPACE to shoot; R rerack; V view down
 //   the cue; ESC walk away - as at the living-room table. And: UP / DOWN tilt the shot into W;
 //   the mouse wheel (or Q / C) moves his slice through W; F brings his slice back to the cue ball;
 //   T aims at the next ball, straight at its centre in all three directions.
@@ -207,6 +207,15 @@ private:
 	void OnRack();
 	void OnToggleView();
 	void OnLeave();
+	void OnPowerUp();
+	void OnPowerDown();
+	void OnUndo();
+	void OnCancel();
+	void OnPractice();
+	void OnPickTarget();
+	void OnToggleAssist();
+	void OnToggleHelp();
+	FString AimFeedback() const;
 
 	void UpdateAim(float DeltaSeconds);
 	void UpdateSlice(float DeltaSeconds);
@@ -228,6 +237,22 @@ private:
 	ASibeliusHUD* GetHud() const;
 
 	FHyperBilliardsSim Sim;
+	FHyperBilliardsSim BeforeShot;
+	bool bCanUndo = false;
+	bool bPractice = false;
+	int32 PracticeLesson = 0;
+	int32 SelectedBall = -1;
+	int32 SavedSelectedBall = -1;
+	bool bDepthAssist = true;
+	bool bShowHelp = false;
+	bool bPreviousCursor = false;
+	FString LastShotFeedback;
+	bool bShotHitObject = false;
+	bool bExpectedContact = false;
+	bool bUsedUndo = false;
+	float SelectedPower = 0.5f;
+	float SavedPower = 0.5f;
+	double SavedHeading = 0.0, SavedTilt = 0.0, SavedSpin = 0.0;
 
 	TWeakObjectPtr<APlayerController> PlayingPC;
 	bool bPlaying = false;

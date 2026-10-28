@@ -26,13 +26,13 @@ namespace OrbitCourseDetail
 {
 	constexpr int32 MaxMoons = 3;          // the most any hole of the course has
 	constexpr double ShapeSize = 100.0;    // the engine's basic shapes are 100 cm across
-	constexpr double PoleHeight = 250.0;
+	constexpr double PoleHeight = 400.0;
 	constexpr int32 TrailLength = 60;
 	constexpr float TrailEvery = 0.04f;
-	constexpr int32 GuidePoints = 12;
-	constexpr double GuideSeconds = 1.0;
+	constexpr int32 GuidePoints = 160;
+	constexpr double GuideSeconds = 20.1;
 	constexpr double MaxPitchDegrees = 85.0;
-	constexpr double MinPitchDegrees = -60.0;   // down, for a putt off a moon's underside
+	constexpr double MinPitchDegrees = 0.0;   // loft is measured away from the local surface
 
 	struct FPaint
 	{
@@ -76,7 +76,7 @@ namespace OrbitCourseDetail
 		{ TEXT("PutterHead"), EShape::Cube,     FVector(4.0, 12.0, 4.0),   FVector(-7.0, 10.0, 114.0), { FLinearColor(0.08f, 0.08f, 0.09f), 0.0f }, false },
 	};
 	const FPaint CupPaint{ FLinearColor(1.0f, 1.0f, 1.0f), 4.0f };
-	const FPaint PolePaint{ FLinearColor(0.9f, 0.9f, 0.9f), 0.0f };
+	const FPaint PolePaint{ FLinearColor(0.3f, 1.0f, 0.75f), 2.0f };
 	const FPaint FlagPaint{ FLinearColor(1.0f, 0.15f, 0.12f), 3.0f };
 	const FPaint BallPaint{ FLinearColor(1.0f, 1.0f, 0.95f), 2.0f };
 	const FPaint TrailPaint{ FLinearColor(0.4f, 0.85f, 1.0f), 3.0f };
@@ -162,7 +162,7 @@ AOrbitGolfCourse::AOrbitGolfCourse()
 	Cup->SetupAttachment(SceneRoot);
 	Cup->SetMobility(EComponentMobility::Movable);
 	CupRing = MakeShape(TEXT("CupRing"), Cup, CylinderMesh, Glow, FVector(2.0 * Course.CupRadius, 2.0 * Course.CupRadius, 1.0), FVector(0.0, 0.0, 0.5));
-	FlagPole = MakeShape(TEXT("FlagPole"), Cup, CylinderMesh, Plain, FVector(3.0, 3.0, PoleHeight), FVector(0.0, 0.0, PoleHeight * 0.5));
+	FlagPole = MakeShape(TEXT("FlagPole"), Cup, CylinderMesh, Glow, FVector(6.0, 6.0, PoleHeight), FVector(0.0, 0.0, PoleHeight * 0.5));
 	Flag = MakeShape(TEXT("Flag"), Cup, CubeMesh, Glow, FVector(60.0, 2.0, 40.0), FVector(31.5, 0.0, PoleHeight - 20.0));
 
 	const double Rb = Course.BallRadius;
@@ -270,11 +270,11 @@ void AOrbitGolfCourse::Tick(float DeltaSeconds)
 	if (bPlaying)
 	{
 		UpdateAim(DeltaSeconds);
-		if (bCharging)
-		{
-			ChargeSeconds += DeltaSeconds;
-		}
 		Sim.Advance(DeltaSeconds);
+		if (bFineHeld && Sim.Phase() == EOrbitPhase::Flying)
+		{
+			for (int32 I = 0; I < 3; ++I) Sim.Advance(DeltaSeconds);
+		}
 		HandleEvents();
 		if (ASibeliusHUD* Hud = GetHud())
 		{
@@ -330,6 +330,8 @@ void AOrbitGolfCourse::StartPlaying(APlayerController* PC)
 	}
 	if (Sim.Phase() == EOrbitPhase::Idle || Sim.Phase() == EOrbitPhase::Finished)
 	{
+		bCanUndo = false;
+		bUsedUndo = false;
 		Sim.StartRound();
 		HandleEvents();
 	}
@@ -421,6 +423,19 @@ void AOrbitGolfCourse::BindKeys()
 	{
 		Bind(Key, &AOrbitGolfCourse::OnLeave, nullptr);
 	}
+	Bind(EKeys::LeftBracket, &AOrbitGolfCourse::OnPowerDown, nullptr);
+	Bind(EKeys::RightBracket, &AOrbitGolfCourse::OnPowerUp, nullptr);
+	Bind(EKeys::Gamepad_LeftThumbstick, &AOrbitGolfCourse::OnPowerDown, nullptr);
+	Bind(EKeys::Gamepad_RightThumbstick, &AOrbitGolfCourse::OnPowerUp, nullptr);
+	Bind(EKeys::BackSpace, &AOrbitGolfCourse::OnUndo, nullptr);
+	Bind(EKeys::P, &AOrbitGolfCourse::OnPractice, nullptr);
+	InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &AOrbitGolfCourse::OnCancel);
+	Bind(EKeys::C, &AOrbitGolfCourse::OnToggleClub, nullptr);
+	Bind(EKeys::Gamepad_FaceButton_Left, &AOrbitGolfCourse::OnToggleClub, nullptr);
+	Bind(EKeys::Gamepad_LeftTrigger, &AOrbitGolfCourse::OnUndo, nullptr);
+	Bind(EKeys::Gamepad_Special_Left, &AOrbitGolfCourse::OnPractice, nullptr);
+	Bind(EKeys::H, &AOrbitGolfCourse::OnToggleHelp, nullptr);
+	Bind(EKeys::Gamepad_RightShoulder, &AOrbitGolfCourse::OnToggleHelp, nullptr);
 	InputComponent->BindAxisKey(EKeys::MouseX, this, &AOrbitGolfCourse::OnMouseX);
 }
 
@@ -441,11 +456,14 @@ void AOrbitGolfCourse::OnSwingPressed()
 	switch (Sim.Phase())
 	{
 	case EOrbitPhase::Holed:
+		bCanUndo = false;
 		Sim.NextHole();   // the same key goes on; its release must not also swing, so no charge
 		HandleEvents();
 		break;
 	case EOrbitPhase::Idle:
 	case EOrbitPhase::Finished:
+		bCanUndo = false;
+		bUsedUndo = false;
 		Sim.StartRound();
 		HandleEvents();
 		break;
@@ -464,9 +482,17 @@ void AOrbitGolfCourse::OnSwingReleased()
 	{
 		return;
 	}
-	const float Power = CurrentPower();   // before ending the charge: 0 when not charging
+	bSavedPutt = bPutt;
+	SavedPower = SelectedPower;
+	SavedYaw = Yaw; SavedPitch = Pitch;
+	BeforeShot = Sim;
+	bCanUndo = true;
+	double WorldYaw, WorldPitch, Power;
+	ResolveShot(WorldYaw, WorldPitch, Power);
+	FlightForward = ToLocal(Sim.SurfaceDirection(Yaw, 0.0));
+	FlightUp = ToLocal(Sim.SurfaceUp());
 	bCharging = false;
-	Sim.Shoot(Yaw, Pitch, Power);
+	Sim.Shoot(WorldYaw, WorldPitch, Power);
 }
 
 void AOrbitGolfCourse::OnRestart()
@@ -476,21 +502,20 @@ void AOrbitGolfCourse::OnRestart()
 		return;
 	}
 	bCharging = false;
+	bCanUndo = false;
+	bUsedUndo = false;
 	Sim.StartRound();
 	HandleEvents();
 }
 
 void AOrbitGolfCourse::OnToggleView() { bOverview = !bOverview; }
-void AOrbitGolfCourse::OnLeave()      { StopPlaying(); }
+void AOrbitGolfCourse::OnLeave()      {
+	if (bCharging) OnCancel(); else StopPlaying();
+}
 
 float AOrbitGolfCourse::CurrentPower() const
 {
-	if (!bCharging)
-	{
-		return 0.0f;
-	}
-	const float Phase = FMath::Fmod(ChargeSeconds / PowerChargeSeconds, 2.0f);
-	return Phase <= 1.0f ? Phase : 2.0f - Phase;
+	return SelectedPower;
 }
 
 void AOrbitGolfCourse::UpdateAim(float DeltaSeconds)
@@ -514,9 +539,7 @@ void AOrbitGolfCourse::UpdateAim(float DeltaSeconds)
 // From wherever the ball lies, turned toward the cup and lofted: a start, not an answer.
 void AOrbitGolfCourse::AimAtCup()
 {
-	const FSpaceVec From = Sim.BallPosition();
-	const FSpaceVec To = Sim.CurrentHole().CupPoint();
-	Yaw = FMath::Atan2(To.Y - From.Y, To.X - From.X);
+	Yaw = Sim.SurfaceHeadingTo(Sim.CurrentHole().CupPoint());
 	Pitch = FMath::DegreesToRadians(35.0);
 }
 
@@ -546,7 +569,13 @@ void AOrbitGolfCourse::ShowHole()
 		// scaled space, so 1.0 is the moon's diameter.
 		MoonRings[I]->SetRelativeScale3D(FVector(1.6, 1.6, 0.004));
 		MoonRings[I]->SetRelativeRotation(FRotator(8.0, 30.0 * I, 24.0 - 12.0 * I));
+		if (UMaterialInstanceDynamic* MID = Cast<UMaterialInstanceDynamic>(MoonRings[I]->GetMaterial(0)))
+		{
+			MID->SetVectorParameterValue(TEXT("Emissive"), I == H.CupMoon ? FLinearColor(0.25f, 1.0f, 0.7f) : RingPaint.Color);
+			MID->SetScalarParameterValue(TEXT("Intens"), I == H.CupMoon ? 2.0f : 0.4f);
+		}
 	}
+	CupRing->SetRelativeScale3D(FVector(2.0 * Sim.Course().CupRadius / ShapeSize, 2.0 * Sim.Course().CupRadius / ShapeSize, 1.0 / ShapeSize));
 	const FSpaceVec CupPoint = H.CupPoint();
 	const FVector Up = ToLocal(H.CupDirection).GetSafeNormal();
 	Cup->SetRelativeLocationAndRotation(ToLocal(CupPoint), FRotationMatrix::MakeFromZ(Up).Rotator());
@@ -558,6 +587,8 @@ void AOrbitGolfCourse::SyncBall(float DeltaSeconds)
 	const bool bShowBall = Sim.Phase() != EOrbitPhase::Idle;
 	Ball->SetVisibility(bShowBall || !bPlaying);
 	Ball->SetRelativeLocation(ToLocal(Sim.BallPosition()));
+	// Enlarge the ball marker in the wide view so it remains readable.
+	Ball->SetRelativeScale3D(FVector(2.0 * Sim.Course().BallRadius / ShapeSize * (bOverview ? 2.5 : 1.0)));
 
 	if (Sim.Phase() == EOrbitPhase::Flying)
 	{
@@ -583,18 +614,21 @@ void AOrbitGolfCourse::SyncBall(float DeltaSeconds)
 void AOrbitGolfCourse::SyncGuide()
 {
 	using namespace OrbitCourseDetail;
+	if (!bPlaying || Sim.Phase() != EOrbitPhase::Aiming) { Guide->ClearInstances(); PreviewPower = -1.0f; PreviewNote.Empty(); return; }
+	const FVector Origin = ToLocal(Sim.BallPosition());
+	if (PreviewYaw == Yaw && PreviewPitch == Pitch && PreviewPower == SelectedPower && PreviewOrigin.Equals(Origin)) return;
+	PreviewYaw = Yaw; PreviewPitch = Pitch; PreviewPower = SelectedPower; PreviewOrigin = Origin;
 	Guide->ClearInstances();
-	if (!bPlaying || Sim.Phase() != EOrbitPhase::Aiming)
-	{
-		return;
-	}
-	// While he charges, the guide is the shot he is about to play; before, a middling one.
-	const double Power = bCharging ? CurrentPower() : 0.5;
-	const std::vector<FSpaceVec> Path = Sim.PredictPath(Yaw, Pitch, Power, GuideSeconds, GuidePoints);
+	EOrbitEvent Outcome = EOrbitEvent::ShotTaken;
+	double WorldYaw, WorldPitch, Power;
+	ResolveShot(WorldYaw, WorldPitch, Power);
+	const auto Path = Sim.PredictPath(WorldYaw, WorldPitch, Power, GuideSeconds, GuidePoints, &Outcome);
 	for (size_t I = 1; I < Path.size(); ++I)
-	{
-		Guide->AddInstance(FTransform(FRotator::ZeroRotator, ToLocal(Path[I]), FVector(0.07)));
-	}
+		Guide->AddInstance(FTransform(FRotator::ZeroRotator, ToLocal(Path[I]), FVector(I + 1 == Path.size() ? 0.48 : 0.16)));
+	PreviewNote = Outcome == EOrbitEvent::Holed ? TEXT("PREVIEW: IN THE CUP") :
+		Outcome == EOrbitEvent::OutOfBounds ? TEXT("PREVIEW: OUT OF BOUNDS - adjust power or loft") :
+		Outcome == EOrbitEvent::LostInOrbit ? TEXT("PREVIEW: LOST IN ORBIT - try less power") :
+		Outcome == EOrbitEvent::CameToRest ? TEXT("PREVIEW: large dot marks the resting point") : TEXT("PREVIEW: still in flight");
 }
 
 void AOrbitGolfCourse::SyncCamera(float DeltaSeconds, bool bSnap)
@@ -606,19 +640,26 @@ void AOrbitGolfCourse::SyncCamera(float DeltaSeconds, bool bSnap)
 	const FVector B = ToLocal(Sim.BallPosition());
 	FVector Loc;
 	FVector LookAt;
+	FVector CameraUp = FVector::UpVector;
 	const EOrbitPhase Phase = Sim.Phase();
 	if (bOverview || Phase == EOrbitPhase::Idle || Phase == EOrbitPhase::Finished)
 	{
 		// The whole course from behind and above the tee.
-		Loc = FVector(-1500.0, 0.0, 1400.0);
-		LookAt = FVector(2400.0, 0.0, 800.0);
+		FBox Bounds(ForceInit);
+		Bounds += FVector::ZeroVector;
+		Bounds += B;
+		for (const auto& Moon : Sim.CurrentHole().Moons)
+		{ Bounds += ToLocal(Moon.Center) - FVector(Moon.Radius); Bounds += ToLocal(Moon.Center) + FVector(Moon.Radius); }
+		LookAt = Bounds.GetCenter();
+		const double Distance = FMath::Max(2000.0, Bounds.GetExtent().Size() * 2.8);
+		Loc = LookAt + FVector(-0.55, -0.72, 0.65).GetSafeNormal() * Distance;
 	}
 	else if (Phase == EOrbitPhase::Flying)
 	{
 		// Chasing it, from behind its flight and a little above.
-		const FVector V = ToLocal(Sim.BallVelocity());
-		const FVector Back = V.SizeSquared() > 1.0 ? -V.GetSafeNormal() : FVector(-1.0, 0.0, 0.0);
-		Loc = B + Back * 650.0 + FVector(0.0, 0.0, 180.0);
+		const FVector Back = -FlightForward;
+		CameraUp = FlightUp;
+		Loc = B + Back * 650.0 + CameraUp * 180.0;
 		LookAt = B;
 	}
 	else if (Phase == EOrbitPhase::Holed)
@@ -630,12 +671,13 @@ void AOrbitGolfCourse::SyncCamera(float DeltaSeconds, bool bSnap)
 	else
 	{
 		// Aiming: behind the ball along the shot, looking the way it will go.
-		const FVector Flat(FMath::Cos(Yaw), FMath::Sin(Yaw), 0.0);
-		const FVector Dir = ToLocal(FOrbitGolfSim::ShotDirection(Yaw, Pitch));
-		Loc = B - Flat * 450.0 + FVector(0.0, 0.0, 160.0);
+		const FVector Flat = ToLocal(Sim.SurfaceDirection(Yaw, 0.0));
+		const FVector Dir = ToLocal(Sim.SurfaceDirection(Yaw, bPutt ? 0.0 : Pitch));
+		CameraUp = ToLocal(Sim.SurfaceUp());
+		Loc = B - Flat * 450.0 + CameraUp * 160.0;
 		LookAt = B + Dir * 900.0;
 	}
-	const FRotator Rot = (LookAt - Loc).Rotation();
+	const FRotator Rot = FRotationMatrix::MakeFromXZ((LookAt - Loc).GetSafeNormal(), CameraUp).Rotator();
 	if (bSnap || DeltaSeconds <= 0.0f)
 	{
 		CourseCamera->SetRelativeLocationAndRotation(Loc, Rot);
@@ -652,8 +694,12 @@ void AOrbitGolfCourse::HandleEvents()
 		switch (Event.Type)
 		{
 		case EOrbitEvent::HoleStarted:
+			PreviewPower = -1.0f;
 			ShowHole();
 			AimAtCup();
+			bPutt = false;
+			if (Sim.HoleNumber() == 0) { Pitch = FMath::DegreesToRadians(57.0); SelectedPower = 0.73f; }
+			else { Pitch = FMath::DegreesToRadians(35.0); SelectedPower = 0.75f; }
 			TrailPoints.Reset();
 			break;
 		case EOrbitEvent::ShotTaken:
@@ -665,6 +711,8 @@ void AOrbitGolfCourse::HandleEvents()
 			break;
 		case EOrbitEvent::CameToRest:
 			AimAtCup();
+			bPutt = Event.Index == Sim.CurrentHole().CupMoon && SpaceMath::Length(Sim.BallPosition() - Sim.CurrentHole().CupPoint()) < 800.0;
+			if (bPutt) SelectedPower = 0.4f;
 			break;
 		case EOrbitEvent::Holed:
 			TableSounds::Play(this, ETableSound::PocketDrop, 0.9f);
@@ -679,7 +727,7 @@ void AOrbitGolfCourse::HandleEvents()
 			ASibeliusHUD::Toast(this, TEXT("LOST IN ORBIT  -  a penalty stroke"), 3.0f, SibeliusToast::Bad);
 			break;
 		case EOrbitEvent::RoundFinished:
-			if (BestRound == 0 || Event.Index < BestRound)
+			if (!bPractice && !bUsedUndo && (BestRound == 0 || Event.Index < BestRound))
 			{
 				BestRound = Event.Index;
 			}
@@ -694,44 +742,40 @@ void AOrbitGolfCourse::HandleEvents()
 void AOrbitGolfCourse::RefreshPanel()
 {
 	ASibeliusHUD* Hud = bPlaying ? GetHud() : nullptr;
-	if (!Hud)
+	if (!Hud) return;
+	const auto& H = Sim.CurrentHole();
+	const auto Phase = Sim.Phase();
+	const bool bAiming = Phase == EOrbitPhase::Aiming;
+	FString Text = FString::Printf(TEXT("%s   %d SHOTS   PAR %d"), UTF8_TO_TCHAR(H.Name.c_str()), Sim.HoleStrokes(), H.Par);
+	FString Note = PreviewNote;
+	FString Controls = TEXT("A D / D-pad aim   W S loft   [ ] / L3 R3 power   SPACE / A shoot\nC / X putt or launch   Backspace / LT retry   P / View lessons   H / RB help   ESC / B leave");
+	if (bAiming)
 	{
-		return;
-	}
-	const FOrbitHole& H = Sim.CurrentHole();
-	const int32 ToPar = Sim.TotalStrokes() - Sim.TotalPar();
-	const FString Round = Sim.Card().empty() ? FString(TEXT("")) : FString::Printf(TEXT("     ROUND %s"),
-		ToPar == 0 ? TEXT("E") : *FString::Printf(TEXT("%+d"), ToPar));
-	FString Text;
-	FString Controls;
-	switch (Sim.Phase())
-	{
-	case EOrbitPhase::Finished:
-		Text = FString::Printf(TEXT("ROUND DONE  -  %d STROKES, PAR %d%s"), Sim.TotalStrokes(), Sim.TotalPar(),
-			BestRound > 0 ? *FString::Printf(TEXT("     BEST %d"), BestRound) : TEXT(""));
-		Controls = TEXT("SPACE  play again      ESC  walk away");
-		break;
-	case EOrbitPhase::Holed:
-		Text = FString::Printf(TEXT("HOLE %d  %s  -  IN %d, PAR %d%s"), Sim.HoleNumber() + 1, UTF8_TO_TCHAR(H.Name.c_str()),
-			Sim.HoleStrokes(), H.Par, *Round);
-		Controls = TEXT("SPACE  next hole      ESC  walk away");
-		break;
-	default:
-	{
-		FString Power;
-		if (bCharging)
+		Text += FString::Printf(TEXT("\n%s   POWER %d%%   LOFT %d deg FROM SURFACE"), bPutt ? TEXT("PUTTER") : TEXT("LAUNCH"), FMath::RoundToInt(SelectedPower * 100), bPutt ? 0 : FMath::RoundToInt(FMath::RadiansToDegrees(Pitch)));
+		if (bPractice)
 		{
-			const int32 Bars = FMath::RoundToInt(CurrentPower() * 20.0f);
-			Power = TEXT("     POWER ") + FString::ChrN(Bars, TEXT('|')) + FString::ChrN(20 - Bars, TEXT('.'));
+			const TCHAR* Tips[] = { TEXT("Land on the glowing target moon. Try the opening shot, then experiment with power."), TEXT("Gravity bends your flight. Adjust aim and watch the curved preview."), TEXT("The cup is underneath. On a moon, loft always points away from its surface.") };
+			Note = FString(Tips[Sim.HoleNumber()]) + TEXT("\n") + PreviewNote;
 		}
-		Text = FString::Printf(TEXT("HOLE %d  %s  PAR %d     STROKES %d%s\nLOFT %d deg%s"), Sim.HoleNumber() + 1,
-			UTF8_TO_TCHAR(H.Name.c_str()), H.Par, Sim.HoleStrokes(), *Round, FMath::RoundToInt(FMath::RadiansToDegrees(Pitch)), *Power);
-		Controls = TEXT("AIM  A D or mouse  (SHIFT fine)     LOFT  W S     SWING  hold SPACE, let go\n"
-			"V  the whole course      R  start the round again      ESC  walk away");
-		break;
+		if (bShowHelp) Controls = TEXT("D-pad / A D turn   W S / D-pad up down loft   SHIFT / LB fine aim\nC / X switches club   Putter is gentle and follows the local surface\nV / Y camera   R / Menu restart   RMB / armed B cancel   ESC / B leave");
 	}
+	else if (Phase == EOrbitPhase::Flying)
+	{ Note = TEXT("Follow the ball toward the green target marker."); Controls = TEXT("SHIFT / LB fast-forward   Backspace / LT retry   V / Y camera   ESC / B leave"); }
+	else if (Phase == EOrbitPhase::Holed)
+	{ Text = FString::Printf(TEXT("IN THE CUP!   %d SHOTS   PAR %d"), Sim.HoleStrokes(), H.Par); Note = Sim.HoleStrokes() <= H.Par ? TEXT("PAR OR BETTER - nicely played!") : TEXT("Hole complete. Try a different route next time."); Controls = TEXT("SPACE / A next hole   Backspace / LT retry   P / View switch course   ESC / B leave"); }
+	else if (Phase == EOrbitPhase::Finished)
+	{ Text = FString::Printf(TEXT("%s COMPLETE   %d SHOTS   PAR %d"), bPractice ? TEXT("LESSONS") : TEXT("ROUND"), Sim.TotalStrokes(), Sim.TotalPar()); Note = bPractice ? TEXT("You have played landing, gravity bends, and the underside. Try the full course!") : TEXT("Round complete!"); Controls = TEXT("SPACE / A again   P / View switch course   ESC / B leave"); }
+	if (bUsedUndo && !bPractice) Note = TEXT("PRACTICE RUN | ") + Note;
+	TArray<FTableWorldMarker> Markers;
+	if (Phase != EOrbitPhase::Finished)
+	{
+		const FVector CupPoint = ToLocal(H.CupPoint());
+		const bool bFarSide = FVector::DotProduct(CourseCamera->GetRelativeLocation() - CupPoint, ToLocal(H.CupDirection)) < 0;
+		Markers.Add({ GetActorTransform().TransformPosition(CupPoint), bFarSide ? TEXT("CUP - FAR SIDE") : TEXT("TARGET CUP"), FLinearColor(0.3f, 1.0f, 0.7f) });
+		if (Phase != EOrbitPhase::Holed) Markers.Add({ GetActorTransform().TransformPosition(ToLocal(Sim.BallPosition())), TEXT("BALL"), FLinearColor::White });
 	}
-	Hud->ShowTablePanel(Text, Controls);
+	Hud->ShowTableMarkers(Markers);
+	Hud->ShowTablePanel(Text, Controls, 0.25f, Note, bAiming ? SelectedPower : -1.0f);
 }
 
 ASibeliusHUD* AOrbitGolfCourse::GetHud() const
@@ -739,3 +783,50 @@ ASibeliusHUD* AOrbitGolfCourse::GetHud() const
 	const APlayerController* PC = PlayingPC.Get();
 	return PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr;
 }
+
+void AOrbitGolfCourse::OnCancel() { bCharging = false; }
+void AOrbitGolfCourse::OnPowerUp() { if (Sim.Phase() == EOrbitPhase::Aiming) SelectedPower = FMath::Min(1.0f, SelectedPower + (bFineHeld ? 0.01f : 0.05f)); }
+void AOrbitGolfCourse::OnPowerDown() { if (Sim.Phase() == EOrbitPhase::Aiming) SelectedPower = FMath::Max(0.05f, SelectedPower - (bFineHeld ? 0.01f : 0.05f)); }
+void AOrbitGolfCourse::OnUndo()
+{
+	if (!bCanUndo) return;
+	bPutt = bSavedPutt;
+	SelectedPower = SavedPower;
+	Yaw = SavedYaw; Pitch = SavedPitch;
+	Sim = BeforeShot;
+	Sim.TakeEvents();
+	bCanUndo = false;
+	bUsedUndo = true;
+	bCharging = false;
+	TrailPoints.Reset();
+	PreviewPower = -1.0f;
+}
+void AOrbitGolfCourse::OnPractice()
+{
+	bPractice = !bPractice;
+	bCanUndo = false;
+	bUsedUndo = false;
+	bCharging = false;
+	FOrbitCourse Course = bPractice ? FOrbitCourse::MakePractice() : FOrbitCourse::MakeDefault();
+	Sim = FOrbitGolfSim(Course);
+	ShownHole = -1;
+	Sim.StartRound();
+	HandleEvents();
+}
+
+void AOrbitGolfCourse::ResolveShot(double& WorldYaw, double& WorldPitch, double& Power) const
+{
+	const auto D = Sim.SurfaceDirection(Yaw, bPutt ? 0.0 : Pitch);
+	WorldYaw = FMath::Atan2(D.Y, D.X);
+	WorldPitch = FMath::Atan2(D.Z, FMath::Sqrt(D.X * D.X + D.Y * D.Y));
+	Power = FOrbitGolfSim::ClubPower(SelectedPower, bPutt);
+}
+void AOrbitGolfCourse::OnToggleClub()
+{
+	if (Sim.Phase() != EOrbitPhase::Aiming) return;
+	bPutt = !bPutt;
+	SelectedPower = bPutt ? 0.4f : 0.73f;
+	PreviewPower = -1.0f;
+	bCharging = false;
+}
+void AOrbitGolfCourse::OnToggleHelp() { bShowHelp = !bShowHelp; }

@@ -284,6 +284,7 @@ static void TestRobotGolfer()
 					}
 				}
 			}
+			if (Hole == 0 && Stroke == 0) std::printf("First Light opening: yaw %.3f, loft %.1f degrees, power %.3f\n", BestYaw, BestPitch * 180.0 / Pi, BestPower);
 			Sim.Shoot(BestYaw, BestPitch, BestPower);
 			Fly(Sim);
 		}
@@ -299,6 +300,145 @@ static void TestRobotGolfer()
 	Check(bAllDone && Sim.Phase() == EOrbitPhase::Finished, "a robot golfer aiming by brute force finishes every hole", Card);
 }
 
+
+static void TestPracticeOpening()
+{
+    auto Course = FOrbitCourse::MakeDefault();
+    Course.Holes.resize(1);
+    Course.CupRadius = 140.0;
+    FOrbitGolfSim Sim(Course);
+    Sim.StartRound();
+    Sim.Shoot(0.0, 57.0 * Pi / 180.0, 0.73);
+    Fly(Sim);
+    Check(Sim.Phase() == EOrbitPhase::Holed, "the practice opening reaches the generous cup at its suggested settings");
+}
+
+static void TestFullPrediction()
+{
+    FOrbitGolfSim Sim;
+    Sim.StartRound();
+    Sim.TakeEvents();
+    const FSpaceVec Start = Sim.BallPosition();
+    EOrbitEvent Outcome;
+    const auto Path = Sim.PredictPath(0.0, 1.2, 0.18, 20.1, 160, &Outcome);
+    FOrbitGolfSim Actual = Sim;
+    Actual.Shoot(0.0, 1.2, 0.18);
+    const auto Events = Fly(Actual);
+    Check(!Path.empty() && Outcome == EOrbitEvent::CameToRest && Has(Events, EOrbitEvent::Bounced)
+        && Len(Path.back() - Actual.BallPosition()) < 0.001,
+        "full preview follows bounces to the actual resting point");
+    Check(Sim.Phase() == EOrbitPhase::Aiming && Sim.HoleStrokes() == 0
+        && Len(Sim.BallPosition() - Start) == 0.0 && Sim.TakeEvents().empty(),
+        "preview does not change the live ball, score, phase or events");
+    const auto Lost = Sim.PredictPath(0.0, -0.8, 1.0, 20.1, 160, &Outcome);
+    Check(Outcome == EOrbitEvent::OutOfBounds && !Lost.empty() && Len(Lost.back() - Start) > 100.0,
+        "failed preview identifies out of bounds without drawing a return to the tee");
+    Check(Sim.PredictPath(0, 0, 0.5, 0, 160).empty() && Sim.PredictPath(0, 0, 0.5, 1, 1).empty(),
+        "invalid preview duration and sample count produce no path");
+}
+
+
+static void TestSurfaceControls()
+{
+    FOrbitGolfSim Sim;
+    Sim.StartRound();
+    const auto Moon = Sim.CurrentHole().Moons[0];
+    for (FSpaceVec Up : {FSpaceVec(0,0,1), FSpaceVec(0,0,-1), FSpaceVec(1,0,0), FSpaceVec(0,1,0)})
+    {
+        Sim.PlaceBall(Moon.Center + Up * (Moon.Radius + Sim.Course().BallRadius), FSpaceVec());
+        const auto Flat = Sim.SurfaceDirection(0.7, 0);
+        const auto Lofted = Sim.SurfaceDirection(0.7, Pi/4);
+        Check(Len(Sim.SurfaceUp() - Up) < 1e-8 && std::abs(Dot(Flat, Up)) < 1e-8
+            && std::abs(Len(Flat) - 1.0) < 1e-8 && std::abs(Dot(Lofted, Up) - std::sqrt(0.5)) < 1e-8,
+            "surface controls stay tangent and loft outward on every side of a moon");
+        const auto Target = Sim.BallPosition() + Flat * 100;
+        Check(Len(Sim.SurfaceDirection(Sim.SurfaceHeadingTo(Target), 0) - Flat) < 1e-8,
+            "target heading resolves in the local surface frame");
+    }
+    const double Soft = FOrbitGolfSim::LaunchSpeed(FOrbitGolfSim::ClubPower(0.5, true));
+    Check(std::abs(Soft - 355.0) < 1e-8 && FOrbitGolfSim::LaunchSpeed(FOrbitGolfSim::ClubPower(1.0, true)) <= 650.001,
+        "putter has a predictable linear speed range capped below launch strength");
+    Check(FOrbitGolfSim::ClubPower(0.7, false) == 0.7, "launch club preserves existing power physics");
+    const auto Practice = FOrbitCourse::MakePractice();
+    Check(Practice.Holes.size() == 3 && Practice.CupRadius == 140.0 && Practice.Holes[2].CupDirection.Z < 0,
+        "practice progresses through landing, gravity bending, and underside holes");
+}
+
+static void TestSurfaceGolfer()
+{
+	FOrbitGolfSim Sim;
+	Sim.StartRound();
+	bool bAllDone = true;
+	std::string Card;
+	for (int Hole = 0; Hole < static_cast<int>(Sim.Course().Holes.size()); ++Hole)
+	{
+		const int Par = Sim.CurrentHole().Par;
+		for (int Stroke = 0; Stroke < 2 * Par + 2 && Sim.Phase() == EOrbitPhase::Aiming; ++Stroke)
+		{
+			const FSpaceVec Cup = Sim.CurrentHole().CupPoint();
+			
+			const double Toward = Sim.SurfaceHeadingTo(Cup);
+			double BestScore = 1e30;
+			double BestYaw = Toward, BestPitch = 0.5, BestPower = 0.5;
+			for (int Pass = 0; Pass < 2; ++Pass)
+			{
+				const double YawSpan = Pass == 0 ? 0.7 : 0.09;
+				const double PitchLo = Pass == 0 ? 0.0 : std::fmax(0.0, BestPitch - 0.09);
+				const double PitchSpan = Pass == 0 ? 1.48 : 0.18;
+				const double PowerLo = Pass == 0 ? 0.05 : BestPower - 0.06;
+				const double PowerSpan = Pass == 0 ? 0.95 : 0.12;
+				const double CenterYaw = Pass == 0 ? Toward : BestYaw;
+				const int N = Pass == 0 ? 9 : 5;
+				for (int A = 0; A < N; ++A)
+				{
+					for (int B = 0; B < (Pass == 0 ? 14 : 5); ++B)
+					{
+						for (int C = 0; C < (Pass == 0 ? 8 : 5); ++C)
+						{
+							const double Yaw = CenterYaw - YawSpan + 2.0 * YawSpan * A / (N - 1);
+							const double Pitch = PitchLo + PitchSpan * B / ((Pass == 0 ? 14 : 5) - 1);
+							const double Power = PowerLo + PowerSpan * C / ((Pass == 0 ? 8 : 5) - 1);
+							FOrbitGolfSim Try = Sim;
+							const auto Direction = Try.SurfaceDirection(Yaw, Pitch);
+							if (!Try.Shoot(std::atan2(Direction.Y, Direction.X), std::atan2(Direction.Z, std::hypot(Direction.X, Direction.Y)), Power))
+							{
+								continue;
+							}
+							const std::vector<FOrbitEvent> Events = Fly(Try);
+							double Score = Try.Phase() == EOrbitPhase::Holed ? -1.0 : Len(Try.BallPosition() - Cup);
+							if (Has(Events, EOrbitEvent::OutOfBounds) || Has(Events, EOrbitEvent::LostInOrbit))
+							{
+								Score += 1e6;
+							}
+							if (Score < BestScore)
+							{
+								BestScore = Score;
+								BestYaw = Yaw;
+								BestPitch = Pitch;
+								BestPower = Power;
+							}
+						}
+					}
+				}
+			}
+			if (Hole == 0 && Stroke == 0) std::printf("First Light opening: yaw %.3f, loft %.1f degrees, power %.3f\n", BestYaw, BestPitch * 180.0 / Pi, BestPower);
+			const auto Direction = Sim.SurfaceDirection(BestYaw, BestPitch);
+			Sim.Shoot(std::atan2(Direction.Y, Direction.X), std::atan2(Direction.Z, std::hypot(Direction.X, Direction.Y)), BestPower);
+			Fly(Sim);
+		}
+		const bool bDone = Sim.Phase() == EOrbitPhase::Holed;
+		bAllDone = bAllDone && bDone;
+		Card += Fmt("%s %s (par %d)  ", Sim.CurrentHole().Name.c_str(), bDone ? std::to_string(Sim.HoleStrokes()).c_str() : "--", Par);
+		if (!bDone)
+		{
+			break;
+		}
+		Sim.NextHole();
+	}
+	Check(bAllDone && Sim.Phase() == EOrbitPhase::Finished, "surface-relative launch controls can finish every normal hole", Card);
+}
+
+
 int main()
 {
 	TestGravity();
@@ -309,6 +449,10 @@ int main()
 	TestPenalties();
 	TestCupAndPrediction();
 	TestRobotGolfer();
+	TestFullPrediction();
+	TestPracticeOpening();
+	TestSurfaceControls();
+	TestSurfaceGolfer();
 	std::printf("\n%d passed, %d failed\n", GPasses, GFailures);
 	return GFailures == 0 ? 0 : 1;
 }

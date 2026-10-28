@@ -159,12 +159,19 @@ void ASibeliusHUD::DrawHUD()
 	}
 }
 
-void ASibeliusHUD::ShowTablePanel(const FString& Status, const FString& Controls, float Seconds, const FString& Note)
+void ASibeliusHUD::ShowTablePanel(const FString& Status, const FString& Controls, float Seconds, const FString& Note, float Power)
 {
 	TableStatus = Status;
 	TableControls = Controls;
 	TableNote = Note;
+	TablePower = Power;
 	TablePanelUntil = (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0) + Seconds;
+}
+
+void ASibeliusHUD::ShowTableMarkers(const TArray<FTableWorldMarker>& Markers)
+{
+	TableMarkers = Markers;
+	TableMarkersUntil = (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0) + 0.25;
 }
 
 void ASibeliusHUD::DrawTablePanel()
@@ -197,6 +204,14 @@ void ASibeliusHUD::DrawTablePanel()
 			MaxW = FMath::Max(MaxW, W);
 			LineH = FMath::Max(LineH, H);
 		}
+		// Keep instructional lines inside narrow/PIE viewports as well as full screen.
+		if (MaxW > Canvas->ClipX * 0.94f)
+		{
+			const float Fit = Canvas->ClipX * 0.94f / MaxW;
+			Scale *= Fit;
+			MaxW *= Fit;
+			LineH *= Fit;
+		}
 		const float Pad = 12.0f * Scale;
 		const float TotalH = LineH * Lines.Num();
 		const float Y0 = bFromBottom ? Edge - TotalH : Edge;
@@ -212,6 +227,28 @@ void ASibeliusHUD::DrawTablePanel()
 		return Y0 + TotalH + Pad * 0.5f;
 	};
 
+	if (Now < TableMarkersUntil)
+	{
+		for (const FTableWorldMarker& Marker : TableMarkers)
+		{
+			const FVector P = Project(Marker.Position);
+			const bool bBehind = P.Z <= 0.0;
+			const float X = FMath::Clamp(static_cast<float>(bBehind ? Canvas->ClipX - P.X : P.X), Canvas->ClipX * 0.1f, Canvas->ClipX * 0.9f);
+			const float Y = FMath::Clamp(static_cast<float>(bBehind ? Canvas->ClipY - P.Y : P.Y), Canvas->ClipY * 0.24f, Canvas->ClipY * 0.78f);
+			const FString Label = bBehind ? Marker.Label + TEXT(" (behind view)") : Marker.Label;
+			const float Size = 7.0f * Unit;
+			DrawLine(X - Size, Y, X, Y - Size, Marker.Color, 2.0f * Unit);
+			DrawLine(X, Y - Size, X + Size, Y, Marker.Color, 2.0f * Unit);
+			DrawLine(X + Size, Y, X, Y + Size, Marker.Color, 2.0f * Unit);
+			DrawLine(X, Y + Size, X - Size, Y, Marker.Color, 2.0f * Unit);
+			float W = 0.0f, H = 0.0f;
+			GetTextSize(Label, W, H, Font, 1.4f * Unit);
+			const float Left = FMath::Clamp(X - W * 0.5f, 8.0f * Unit, FMath::Max(8.0f * Unit, Canvas->ClipX - W - 8.0f * Unit));
+			DrawRect(FLinearColor(0, 0, 0, 0.8f), Left - 3 * Unit, Y + 10 * Unit, W + 6 * Unit, H + 4 * Unit);
+			DrawText(Label, Marker.Color, Left, Y + 12 * Unit, Font, 1.4f * Unit);
+		}
+	}
+
 	float StatusBottom = Canvas->ClipY * 0.035f;
 	if (!TableStatus.IsEmpty())
 	{
@@ -220,6 +257,13 @@ void ASibeliusHUD::DrawTablePanel()
 	if (!TableNote.IsEmpty())
 	{
 		DrawBlock(TableNote, 1.8f * Unit, StatusBottom + 14.0f * Unit, false, FLinearColor(0.70f, 1.0f, 0.80f));
+	}
+	if (TablePower >= 0.0f)
+	{
+		const float W = 240.0f * Unit, H = 12.0f * Unit;
+		const float X = Canvas->ClipX * 0.04f, Y = Canvas->ClipY * 0.86f;
+		DrawRect(FLinearColor(0.03f, 0.05f, 0.08f, 0.9f), X - 3 * Unit, Y - 3 * Unit, W + 6 * Unit, H + 6 * Unit);
+		DrawRect(FLinearColor(0.2f, 0.85f, 1.0f), X, Y, W * FMath::Clamp(TablePower, 0.0f, 1.0f), H);
 	}
 	if (!TableControls.IsEmpty())
 	{

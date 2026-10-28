@@ -602,3 +602,26 @@ void FHyperBilliardsSim::Emit(EHyperEvent Type, int Index, int Other, double Val
 {
 	PendingEvents.push_back(FHyperEvent{ Type, Index, Other, Value });
 }
+
+void FHyperBilliardsSim::StartLesson(int Lesson)
+{
+	StartGame();
+	for (int I = 2; I < BallCount; ++I) RemoveBall(I);
+	const double W = TableLayout.HalfDepth - TableLayout.BallRadius;
+	if (Lesson == 0)
+	{
+		PlaceBall(0, FHyperVec3(0, -25, W), FHyperVec3(), true);
+		PlaceBall(1, FHyperVec3(0, TableLayout.HalfWidth - 30, W), FHyperVec3(), true);
+	}
+	else if (Lesson == 1)
+	{
+		PlaceBall(0, FHyperVec3(0, -25, -10), FHyperVec3(), true);
+		PlaceBall(1, FHyperVec3(0, TableLayout.HalfWidth - 30, 15), FHyperVec3(), true);
+	}
+	else
+	{
+		// Align object ball toward a side-pocket image reflected in the end cushion.
+		PlaceBall(0, FHyperVec3(-58, -12, W), FHyperVec3(), true);
+		PlaceBall(1, FHyperVec3(0, 0, W), FHyperVec3(), true);
+	}
+}

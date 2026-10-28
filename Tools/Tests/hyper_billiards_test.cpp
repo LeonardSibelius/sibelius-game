@@ -465,6 +465,40 @@ static void TestWholeGames()
 	Check(bSame, "the same break always gives the same table");
 }
 
+
+static void TestPracticeShot()
+{
+    FHyperBilliardsSim Sim;
+    Sim.StartGame();
+    for (int I = 2; I < FHyperBilliardsSim::BallCount; ++I) Sim.RemoveBall(I);
+    const auto& L = Sim.Layout();
+    Sim.PlaceBall(0, FHyperVec3(0, -25, L.HalfDepth - L.BallRadius), FHyperVec3(), true);
+    Sim.PlaceBall(1, FHyperVec3(0, L.HalfWidth - 30, L.HalfDepth - L.BallRadius), FHyperVec3(), true);
+    Sim.Shoot(Pi / 2, 0, 0.25, 0);
+    RunShot(Sim);
+    Check(Sim.Phase() == EHyperPhase::Cleared, "the introductory single-ball shot clears at the suggested power");
+}
+
+
+static void TestLessons()
+{
+    for (int Lesson = 0; Lesson < 3; ++Lesson)
+    {
+        FHyperBilliardsSim Sim;
+        Sim.StartLesson(Lesson);
+        const auto D = Sim.BallPosition(1) - Sim.BallPosition(0);
+        const double Heading = std::atan2(D.Y, D.X);
+        const double Tilt = std::atan2(D.W, std::sqrt(D.X*D.X + D.Y*D.Y));
+        Sim.TakeEvents();
+        Sim.Shoot(Heading, Tilt, Lesson == 0 ? 0.25 : Lesson == 1 ? 0.35 : 0.7, 0);
+        RunShot(Sim);
+        bool Banked = false;
+        for (const auto& E : Sim.TakeEvents()) Banked = Banked || (E.Type == EHyperEvent::BallHitCushion && E.Index == 1);
+        Check(Sim.Phase() == EHyperPhase::Cleared, "lesson opening is completable", Fmt("lesson %d, ball end %.1f %.1f %.1f", Lesson + 1, Sim.BallPosition(1).X, Sim.BallPosition(1).Y, Sim.BallPosition(1).W));
+        if (Lesson == 2) Check(Banked, "bank lesson object ball uses a cushion");
+    }
+}
+
 int main()
 {
 	TestRack();
@@ -478,6 +512,8 @@ int main()
 	TestPrediction();
 	TestScratch();
 	TestWholeGames();
+	TestPracticeShot();
+	TestLessons();
 	(void)Pi;
 	std::printf("\n%d passed, %d failed\n", GPasses, GFailures);
 	return GFailures == 0 ? 0 : 1;

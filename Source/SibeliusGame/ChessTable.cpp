@@ -881,6 +881,8 @@ void AChessTable::StartPlaying(APlayerController* PC)
 
 	PC->SetIgnoreMoveInput(true);
 	PC->SetIgnoreLookInput(true);
+	bBoardTurned = false;   // he sits down on his own side
+	BoardTurn = 0.0f;
 	SyncCamera();
 	PC->SetViewTargetWithBlend(this, CameraBlendSeconds, VTBlend_Cubic);
 
@@ -965,6 +967,7 @@ void AChessTable::BindTableKeys()
 	// H is the dev overlay on foot; seated, the table hears it first and it is the hint.
 	Bind({ EKeys::H, EKeys::Gamepad_LeftShoulder }, &AChessTable::OnHint);
 	Bind({ EKeys::K }, &AChessTable::OnCoachToggle);
+	Bind({ EKeys::F, EKeys::Gamepad_RightShoulder }, &AChessTable::OnTurnBoard);
 }
 
 void AChessTable::OnClick()
@@ -990,10 +993,21 @@ void AChessTable::OnLevel2()      { GhostLevel = EChessGhostLevel::Hustler; }
 void AChessTable::OnLevel3()      { GhostLevel = EChessGhostLevel::Master; }
 
 // The arrows move the cursor as he sees the board, whichever side he sits on.
-void AChessTable::OnCursorLeft()  { MoveCursor(PlayerColor == EChessColor::White ? -1 : 1, 0); }
-void AChessTable::OnCursorRight() { MoveCursor(PlayerColor == EChessColor::White ? 1 : -1, 0); }
-void AChessTable::OnCursorUp()    { MoveCursor(0, PlayerColor == EChessColor::White ? 1 : -1); }
-void AChessTable::OnCursorDown()  { MoveCursor(0, PlayerColor == EChessColor::White ? -1 : 1); }
+// The arrows follow the screen, so they follow whichever side the camera is on.
+void AChessTable::OnCursorLeft()  { MoveCursor(ViewColor() == EChessColor::White ? -1 : 1, 0); }
+void AChessTable::OnCursorRight() { MoveCursor(ViewColor() == EChessColor::White ? 1 : -1, 0); }
+void AChessTable::OnCursorUp()    { MoveCursor(0, ViewColor() == EChessColor::White ? 1 : -1); }
+void AChessTable::OnCursorDown()  { MoveCursor(0, ViewColor() == EChessColor::White ? -1 : 1); }
+
+EChessColor AChessTable::ViewColor() const
+{
+	return bBoardTurned ? ChessOpponent(PlayerColor) : PlayerColor;
+}
+
+void AChessTable::OnTurnBoard()
+{
+	bBoardTurned = !bBoardTurned;
+}
 
 void AChessTable::MoveCursor(int32 DFile, int32 DRank)
 {
@@ -1053,6 +1067,8 @@ void AChessTable::OnSwapSides()
 {
 	PlayerColor = ChessOpponent(PlayerColor);
 	Cursor = PlayerColor == EChessColor::White ? 12 : 52;   // e2 or e7
+	bBoardTurned = false;   // a new side to play: sit behind it
+	BoardTurn = 0.0f;
 	SyncCamera();
 	if (APlayerController* PC = PlayingPC.Get())
 	{
@@ -1077,6 +1093,13 @@ void AChessTable::Tick(float DeltaSeconds)
 	PollCoach();
 	CoachToggleShown = FMath::Max(0.0f, CoachToggleShown - DeltaSeconds);
 	UpdatePieces(DeltaSeconds);
+
+	const float TurnGoal = bBoardTurned ? 1.0f : 0.0f;
+	if (BoardTurn != TurnGoal)
+	{
+		BoardTurn = FMath::FInterpConstantTo(BoardTurn, TurnGoal, DeltaSeconds, 1.0f / BoardTurnSeconds);
+		SyncCamera();
+	}
 
 	if (bPlaying)
 	{
@@ -1213,10 +1236,12 @@ void AChessTable::SyncCamera()
 	{
 		return;
 	}
-	// Seated behind his own pieces, looking down the board.
+	// Seated behind his own pieces, looking down the board - or swung round the table to the
+	// ghost's chair while the board is turned.
 	const double Side = PlayerColor == EChessColor::White ? -1.0 : 1.0;
-	const FVector Eye(Side * CameraBack, 0.0, CameraHeight);
-	const FVector Look(Side * SquarePitch * 0.6, 0.0, 0.0);
+	const FRotator Swing(0.0, 180.0 * FMath::SmoothStep(0.0f, 1.0f, BoardTurn), 0.0);
+	const FVector Eye = Swing.RotateVector(FVector(Side * CameraBack, 0.0, CameraHeight));
+	const FVector Look = Swing.RotateVector(FVector(Side * SquarePitch * 0.6, 0.0, 0.0));
 	TableCamera->SetRelativeLocationAndRotation(Eye, (Look - Eye).Rotation());
 	TableCamera->SetFieldOfView(CameraFov);
 }
@@ -1299,7 +1324,8 @@ void AChessTable::RefreshPanel()
 	const FString Controls = FString(TEXT("Click a piece, then its square   (or arrows and Enter)\n"))
 		+ FString::Printf(TEXT("[H] a hint from the coach   [K] coach warnings: %s   [U] take back\n"), bCoachWarnings ? TEXT("on") : TEXT("off"))
 		+ TEXT("[R] new game   [C] swap sides   [1] [2] [3] the ghost's strength   hold [V] to read its mind\n")
-		+ TEXT("[ESC] walk away   [O] back to the office");
+		+ (bBoardTurned ? TEXT("[F] turn the board back to your side") : TEXT("[F] turn the board to the ghost's side"))
+		+ TEXT("   [ESC] walk away   [O] back to the office");
 	Hud->ShowTablePanel(Status, Controls, 0.25f, CoachNote());
 }
 

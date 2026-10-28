@@ -160,6 +160,7 @@ public:
 
 	// Controls.
 	void StartGame();
+	void StartLesson(int Lesson);
 	// Heading in X-Y, Tilt into W (both radians), Power 0..1, Spin -1 (draw) .. +1 (follow).
 	// Only while Aiming. The natural-roll spin here is 2/3 (0.8 at the living-room table).
 	bool Shoot(double Heading, double Tilt, double Power, double Spin);
