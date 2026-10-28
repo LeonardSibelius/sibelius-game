@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.4.2 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.4.3 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -57,11 +57,15 @@ for a transhuman to play - 4D billiards on a marble dais in Aisling's snowfield 
 roll in a fourth direction; the table is seen a slice at a time), and orbital golf over
 Elise's grassland (three holes whose greens are moons, each pulling the ball with its own
 gravity; the third cup is on a moon's underside). No new chat, and the game calls no model
-for either. Grok's level no longer shows an arrival portal. 2.4.2 is the build that goes to
-Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261025-v2.4.2\` is the copy the upload script sends.
+for either. Grok's level no longer shows an arrival portal. **And to 2.4.3 on 2026-10-27**
+(Walt: "let's do the whole 2.4.3 deploy routine"): Lantern Burst in Kaia's jungle - a lantern
+of glass orbs hanging from a crown on chains; three of a colour burst, and whatever no longer
+hangs falls - and simpler shots at the golf course and the 4D table, and a chess board that
+turns to the ghost's side. No new chat, and the game calls no model for any of it. 2.4.3 is the
+build that goes to Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261027-v2.4.3\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.2**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.3**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -86,7 +90,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.4.2 from the stick
+### 3. Upload 2.4.3 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -94,7 +98,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.4.2 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf"**. If it
+The banner should read **"v2.4.3 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -184,8 +188,9 @@ remember what you told her.
 Four of them have a world of their own beyond a portal: an alien jungle, a windswept
 grassland under ringed planets, a snowfield below the mountains, a gilded keep. Play golf
 on the grassland where the greens are moons hanging in the sky, each pulling your ball with
-its own gravity, or billiards in the snow on a table with a fourth dimension. And
-every one of them dances. There are fifty-four dances, from swing to the YMCA, and she
+its own gravity, or billiards in the snow on a table with a fourth dimension, or in the
+jungle burst a lantern of glowing glass orbs, three of a colour at a time, until whole rings
+of it come tumbling down. And every one of them dances. There are fifty-four dances, from swing to the YMCA, and she
 keeps the one you pick for her. Press [b]R[/b] on her and she's someone else entirely,
 still dancing the same dance.
 
@@ -383,10 +388,13 @@ Guardrails:
   - 2.4.1: Isla's home is a bought pack (Meshingun Studio, "Fafnir's Keep") marked "Generated
     with AI: No". Her chat is told what the keep looks like, as each agent is told of her home;
     nothing else about the chat changes.
+  - 2.4.2 and 2.4.3: 4D billiards, orbital golf and Lantern Burst are the game's own code,
+    built of the engine's shapes; the lantern's glass is a material made in the editor. Nothing
+    in them is generated while you play, and they call no model.
 
 ### §4. System requirements
 
-The 2.4.2 package measures **10.4 GB** (10,379,879,085 bytes; 2.4.1 was 10,392,852,913 - the two new games are built of engine shapes and add nothing to speak of; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.4.3 package measures **10.4 GB** (10,380,727,834 bytes; 2.4.2 was 10,379,879,085 - Lantern Burst is built of engine shapes too and adds under a megabyte; 2.4.1 was 10,392,852,913 - 2.4.2's two new games are built of engine shapes and add nothing to speak of; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **12 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
