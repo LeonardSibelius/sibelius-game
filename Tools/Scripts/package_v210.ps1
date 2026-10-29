@@ -225,6 +225,9 @@ $checks = [ordered]@{
   "the wager's gold"     = "$cooked\DragonsWager\M_WagerGold.uasset"
   "the jewels' colours"  = "$cooked\DragonsWager\M_WagerGem.uasset"
   "the wager's pedestal" = "$cooked\Fafnir_Keep_Meshingun\Meshes\SM_pedestal.uasset"
+  # --- THE GIST (2026-10-29): named only by AGistSite's constructor. Missing, every gist is
+  # drawn in the engine's grey checker instead of coloured clay.
+  "the gist's clay"      = "$cooked\Gist\M_GistClay.uasset"
 }
 # --- 2.1.0: THE TREASURE - every piece URefactorComponent names -----------
 # Since 2026-10-13 the gems are GemShader's, each in one of six colours, and all that is left

@@ -25,7 +25,10 @@ enum class EGenerateOutcome : uint8
 	RefusedNoMatch,
 	RefusedAmbiguous,
 	RefusedOverBudget,
-	RefusedUnsafe
+	RefusedUnsafe,
+	// Not the matcher's: no match or a tie, so Mrs. Hall built THE GIST of it instead
+	// (GistRules.h). Her lines for it are Reason "Gist" in MrsHallLines.csv.
+	Gist
 };
 
 // One catalog entry — a DataTable row (DECISION DA: CSV-backed UDataTable). The only

@@ -8,3 +8,8 @@ overbudget_1,OverBudget,"That's enough of that. What am I paying you for, Progra
 overbudget_2,OverBudget,"You've spent your allowance. We don't throw resources around here.",mrshall_overbudget_2
 unsafe_1,Unsafe,"Absolutely not. I won't have that in my shop.",mrshall_unsafe_1
 unsafe_2,Unsafe,"You. Programmer. We do not make such things. Not under my roof.",mrshall_unsafe_2
+gist_1,Gist,"Fine. This is what we had in the back.",mrshall_gist_1
+gist_2,Gist,"We don't keep that. I made do. You're welcome, Programmer.",mrshall_gist_2
+gist_3,Gist,"Close enough. Don't make a habit of it.",mrshall_gist_3
+gist_4,Gist,"That came out of the supply room. Do not ask me how.",mrshall_gist_4
+gist_5,Gist,"It has your eyes, Programmer.",mrshall_gist_5

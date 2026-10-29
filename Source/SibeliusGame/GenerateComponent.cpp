@@ -9,6 +9,8 @@
 #include "MrsHallSubsystem.h"       // SPINE Move 2: the one channel she speaks through
 
 #include "BuildSite.h"
+#include "GistSite.h"                // THE GIST: what no-match and a tie build now
+#include "GistRules.h"
 #include "Spaceport.h"               // the one catalog entry with a prerequisite
 #include "ProteinMachine.h"          // IsEnhanced - that prerequisite
 #include "HintVolume.h"              // the lawn: where a spaceport may be built
@@ -29,6 +31,7 @@
 #include "Sound/SoundBase.h"        // P2.5: USoundBase
 #include "Misc/App.h"               // P2.5: FApp::CanEverRenderAudio (headless guard)
 #include "UObject/UObjectGlobals.h" // P2.5: LoadObject (soft-load the clip by path)
+#include "HAL/IConsoleManager.h"    // sib.Generate.Request
 
 /* WHICH CLASS THIS ROW SPAWNS — one answer, used by BOTH spawn paths.
 
@@ -310,9 +313,50 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 		return R.Outcome;
 	}
 
+	/* THE GIST (docs/GIST_GENERATOR_PLAN.md; Walt, 2026-10-29: "an entertaining generator
+	   ... quick but silly"). The catalog holds six things, so nearly every wish ended in "We
+	   don't keep that here." Now no match - and a tie, which a hybrid answers better than a
+	   refusal - builds the gist of the words instead, for one from the same budget. Unsafe
+	   words never reach it (the matcher refused them above, and the rules refuse them again);
+	   nothing typed, or no budget left, still gets her refusal. */
+	EGenerateOutcome Outcome = R.Outcome;
+	if (Outcome == EGenerateOutcome::RefusedNoMatch || Outcome == EGenerateOutcome::RefusedAmbiguous)
+	{
+		if (const TUniquePtr<Gist::FRecipe> Recipe = AGistSite::Plan(RawText, Blocklist))
+		{
+			if (RemainingBudget < 1)
+			{
+				Outcome = EGenerateOutcome::RefusedOverBudget;
+			}
+			else if (SpawnGist(RawText, *Recipe))
+			{
+				RemainingBudget -= 1;
+				bHasSpawnedThisSession = true;
+				Toast(FString::Printf(TEXT("THE GIST of \"%s\" appears.   (budget %d)"),
+					UTF8_TO_TCHAR(Recipe->Echo.c_str()), RemainingBudget), FColor::Green);
+				const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, EGenerateOutcome::Gist, GistCount++);
+				const FString Line = Picked.Line.IsEmpty() ? FString(TEXT("Fine. This is what we had in the back.")) : Picked.Line;
+				if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+				{
+					Hall->SayLine(Line, Picked.AudioKey);
+				}
+				else
+				{
+					ShowMrsHall(Line);
+				}
+				return EGenerateOutcome::Gist;
+			}
+			else
+			{
+				Toast(TEXT("...nothing came (could not place it)."), FColor::Red);
+				return Outcome;
+			}
+		}
+	}
+
 	// Refusal (no-match / ambiguous / over-budget / unsafe): Mrs. Hall, in her own voice,
 	// from data — rotated deterministically. The styled memo replaces the P1 placeholder text.
-	const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, R.Outcome, RefusalCount++);
+	const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, Outcome, RefusalCount++);
 	FString Line = Picked.Line;
 	if (Line.IsEmpty())
 	{
@@ -330,7 +374,7 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 	{
 		ShowMrsHall(Line);   // no world subsystem (headless): the local fallback still works
 	}
-	return R.Outcome;
+	return Outcome;
 }
 
 bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
@@ -342,77 +386,14 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 		return false;
 	}
 
-	// Horizontal facing only (pitch zeroed) so the object lands ahead on the floor,
-	// not underfoot or up in the air.
-	const FVector PlayerLoc = Pawn->GetActorLocation();
-	const float YawDeg = Pawn->GetControlRotation().Yaw;
-	const FVector Fwd = FRotator(0.0f, YawDeg, 0.0f).Vector();
-
 	/* HOW FAR AHEAD THIS PARTICULAR THING WANTS TO BE. A lamp is happy at 250 cm; a
 	   launch complex is not, and putting one there trapped Walt inside it. */
 	const float RequestedAhead = (Entry.SpawnAhead > 0.0f) ? Entry.SpawnAhead : SpawnAheadDistance;
-
-	/* THE WALL CLAMP IS FOR SMALL THINGS ONLY, and finding that out cost two playtests.
-
-	   The clamp exists so a lamp asked for indoors does not appear through the wall in
-	   the next room. It line-traces forward and stops just short of the first hit, which
-	   is exactly right at 250 cm inside a house.
-
-	   It is exactly wrong at 45 metres outdoors. Walt stood on the pavement facing the
-	   lawn and was refused, because the trace hit the KNEE-HIGH FENCE four metres away
-	   and concluded there was no room — beyond which lay the empty field he was pointing
-	   at. A fence between you and a meadow does not make the meadow smaller.
-
-	   So an entry that names its own distance gets it verbatim: no clamp, no refusal.
-	   The trapping hazard that made the clamp look necessary was never about walls — it
-	   was about the structure landing ON him at 250 cm, and 4500 cm cannot do that. The
-	   remaining risk is a spaceport that intersects a building if he aims at one, which
-	   is ugly, obvious, and undone with a Test-Drive discard. That is a fair trade for a
-	   feature that otherwise cannot be used at all. */
-	float EffectiveAhead = RequestedAhead;
-	if (Entry.SpawnAhead <= 0.0f)
+	FVector SpawnLoc;
+	if (!FindSpawnPoint(RequestedAhead, Entry.SpawnAhead > 0.0f, SpawnLoc))
 	{
-		const FVector WallStart = PlayerLoc;
-		const FVector WallEnd = WallStart + Fwd * RequestedAhead;
-		FHitResult WallHit;
-		FCollisionQueryParams WallParams(SCENE_QUERY_STAT(GenerateWallTrace), false, Pawn);
-		WallParams.AddIgnoredActor(Pawn);
-		if (World->LineTraceSingleByChannel(WallHit, WallStart, WallEnd, ECC_WorldStatic, WallParams))
-		{
-			EffectiveAhead = FMath::Max(0.0f, WallHit.Distance - 50.0f); // just IN FRONT of the wall
-		}
+		return false;
 	}
-	const FVector ForwardPoint = PlayerLoc + Fwd * EffectiveAhead;
-
-	/* Downward floor trace. Start BELOW the ceiling but above the floor (player head
-	   height ~= player.Z + 100), then trace straight DOWN a long way so the FIRST hit is
-	   the floor — NOT the ceiling. (Starting above the ceiling made the first hit the
-	   ceiling, dropping the object overhead.)
-
-	   THAT CEILING RULE IS AN INDOOR RULE, and 45 metres away there is no ceiling. The
-	   lawn outside Jacob's RISES away from the road: start the trace a metre above the
-	   player's head and, by the time it is out over the field, the ground can be above
-	   the start point entirely. The trace then hits nothing, falls back to the player's
-	   own foot height, and buries the spaceport in a hillside.
-
-	   So a long throw starts high — above any slope it could reasonably reach — and a
-	   short one keeps the ceiling-safe height it has always had. Same shape as the wall
-	   clamp above: the indoor behaviour was never wrong, it was just never outdoors. */
-	const float TraceTop = (Entry.SpawnAhead > 0.0f)
-		? PlayerLoc.Z + FMath::Max(100.0f, EffectiveAhead * 0.5f)
-		: PlayerLoc.Z + 100.0f;
-	const FVector TraceStart(ForwardPoint.X, ForwardPoint.Y, TraceTop);
-	// End 30 m below the PLAYER, not below the start — otherwise raising the start point
-	// above a hill also raises where the trace gives up, and a downhill throw stops in
-	// mid-air short of the ground it was aimed at.
-	const FVector TraceEnd(TraceStart.X, TraceStart.Y, PlayerLoc.Z - 3000.0f);
-	FHitResult Hit;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(GenerateSpawnTrace), false, Pawn);
-	Params.AddIgnoredActor(Pawn);
-	const bool bHit = World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_WorldStatic, Params);
-
-	const float FeetZ = PlayerLoc.Z - 90.0f; // ~capsule bottom, fallback Z on a trace miss
-	FVector SpawnLoc = bHit ? Hit.ImpactPoint : FVector(ForwardPoint.X, ForwardPoint.Y, FeetZ);
 
 	// Force-load the mesh from the soft pointer.
 	UStaticMesh* Mesh = Entry.Mesh.LoadSynchronous();
@@ -447,6 +428,125 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	RememberSite(Site, Entry);
 
 	// Budget charges only because we reached here with a real, created actor.
+	return true;
+}
+
+bool UGenerateComponent::SpawnGist(const FString& RawText, const Gist::FRecipe& Recipe)
+{
+	const APawn* Pawn = Cast<APawn>(GetOwner());
+	UWorld* World = Pawn ? Pawn->GetWorld() : nullptr;
+	if (!Pawn || !World)
+	{
+		return false;
+	}
+
+	// Far enough ahead that a big gist does not land on him: its centre goes half its own
+	// footprint plus a stride away, and never nearer than a catalog item would.
+	Gist::FVec Min, Max;
+	Gist::Bounds(Recipe.Parts, Min, Max);
+	const float Footprint = FMath::Max(Max.X - Min.X, Max.Y - Min.Y);
+	FVector SpawnLoc;
+	if (!FindSpawnPoint(FMath::Max(SpawnAheadDistance, Footprint * 0.5f + 150.0f), /*bNamedDistance=*/false, SpawnLoc))
+	{
+		return false;
+	}
+
+	// A recipe faces +X; turn it round to face him.
+	const FRotator Facing(0.0f, Pawn->GetControlRotation().Yaw + 180.0f, 0.0f);
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AGistSite* Site = World->SpawnActor<AGistSite>(AGistSite::StaticClass(), SpawnLoc, Facing, SpawnParams);
+	if (!Site)
+	{
+		return false;
+	}
+	Site->Author(RawText, Recipe, /*bFreshlyGenerated=*/true);
+
+	// Not remembered across a level change yet: phase 3 saves the words and rebuilds from them.
+	const FString What = Recipe.bContraption ? FString(TEXT("a contraption")) : FString(UTF8_TO_TCHAR(Recipe.Archetype.c_str()));
+	UE_LOG(LogTemp, Display, TEXT("[Generate] THE GIST of \"%s\": %s, %d part(s), %d cop(ies), scale %.2f, behaviours %u."),
+		*RawText, *What, static_cast<int32>(Recipe.Parts.size()), Recipe.Copies, Recipe.Scale, Recipe.Behaviours);
+	return true;
+}
+
+/* WHERE A GENERATED THING LANDS - one answer for catalog rows and gists alike. Moved out of
+   SpawnEntry unchanged when THE GIST needed the same floor; the comments are its history. */
+bool UGenerateComponent::FindSpawnPoint(float RequestedAhead, bool bNamedDistance, FVector& OutLocation) const
+{
+	const APawn* Pawn = Cast<APawn>(GetOwner());
+	UWorld* World = Pawn ? Pawn->GetWorld() : nullptr;
+	if (!Pawn || !World)
+	{
+		return false;
+	}
+
+	// Horizontal facing only (pitch zeroed) so the object lands ahead on the floor,
+	// not underfoot or up in the air.
+	const FVector PlayerLoc = Pawn->GetActorLocation();
+	const float YawDeg = Pawn->GetControlRotation().Yaw;
+	const FVector Fwd = FRotator(0.0f, YawDeg, 0.0f).Vector();
+
+	/* THE WALL CLAMP IS FOR SMALL THINGS ONLY, and finding that out cost two playtests.
+
+	   The clamp exists so a lamp asked for indoors does not appear through the wall in
+	   the next room. It line-traces forward and stops just short of the first hit, which
+	   is exactly right at 250 cm inside a house.
+
+	   It is exactly wrong at 45 metres outdoors. Walt stood on the pavement facing the
+	   lawn and was refused, because the trace hit the KNEE-HIGH FENCE four metres away
+	   and concluded there was no room — beyond which lay the empty field he was pointing
+	   at. A fence between you and a meadow does not make the meadow smaller.
+
+	   So an entry that names its own distance gets it verbatim: no clamp, no refusal.
+	   The trapping hazard that made the clamp look necessary was never about walls — it
+	   was about the structure landing ON him at 250 cm, and 4500 cm cannot do that. The
+	   remaining risk is a spaceport that intersects a building if he aims at one, which
+	   is ugly, obvious, and undone with a Test-Drive discard. That is a fair trade for a
+	   feature that otherwise cannot be used at all. */
+	float EffectiveAhead = RequestedAhead;
+	if (!bNamedDistance)
+	{
+		const FVector WallStart = PlayerLoc;
+		const FVector WallEnd = WallStart + Fwd * RequestedAhead;
+		FHitResult WallHit;
+		FCollisionQueryParams WallParams(SCENE_QUERY_STAT(GenerateWallTrace), false, Pawn);
+		WallParams.AddIgnoredActor(Pawn);
+		if (World->LineTraceSingleByChannel(WallHit, WallStart, WallEnd, ECC_WorldStatic, WallParams))
+		{
+			EffectiveAhead = FMath::Max(0.0f, WallHit.Distance - 50.0f); // just IN FRONT of the wall
+		}
+	}
+	const FVector ForwardPoint = PlayerLoc + Fwd * EffectiveAhead;
+
+	/* Downward floor trace. Start BELOW the ceiling but above the floor (player head
+	   height ~= player.Z + 100), then trace straight DOWN a long way so the FIRST hit is
+	   the floor — NOT the ceiling. (Starting above the ceiling made the first hit the
+	   ceiling, dropping the object overhead.)
+
+	   THAT CEILING RULE IS AN INDOOR RULE, and 45 metres away there is no ceiling. The
+	   lawn outside Jacob's RISES away from the road: start the trace a metre above the
+	   player's head and, by the time it is out over the field, the ground can be above
+	   the start point entirely. The trace then hits nothing, falls back to the player's
+	   own foot height, and buries the spaceport in a hillside.
+
+	   So a long throw starts high — above any slope it could reasonably reach — and a
+	   short one keeps the ceiling-safe height it has always had. Same shape as the wall
+	   clamp above: the indoor behaviour was never wrong, it was just never outdoors. */
+	const float TraceTop = bNamedDistance
+		? PlayerLoc.Z + FMath::Max(100.0f, EffectiveAhead * 0.5f)
+		: PlayerLoc.Z + 100.0f;
+	const FVector TraceStart(ForwardPoint.X, ForwardPoint.Y, TraceTop);
+	// End 30 m below the PLAYER, not below the start — otherwise raising the start point
+	// above a hill also raises where the trace gives up, and a downhill throw stops in
+	// mid-air short of the ground it was aimed at.
+	const FVector TraceEnd(TraceStart.X, TraceStart.Y, PlayerLoc.Z - 3000.0f);
+	FHitResult Hit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GenerateSpawnTrace), false, Pawn);
+	Params.AddIgnoredActor(Pawn);
+	const bool bHit = World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_WorldStatic, Params);
+
+	const float FeetZ = PlayerLoc.Z - 90.0f; // ~capsule bottom, fallback Z on a trace miss
+	OutLocation = bHit ? Hit.ImpactPoint : FVector(ForwardPoint.X, ForwardPoint.Y, FeetZ);
 	return true;
 }
 
@@ -668,3 +768,31 @@ void UGenerateComponent::PlayMrsHallClip(const FString& AudioKey)
 		UGameplayStatics::PlaySound2D(World, Clip);
 	}
 }
+
+/* Type a Generate request without the panel - the same SubmitRequest the G panel calls, so the
+   matcher, the budget, THE GIST and Mrs. Hall all run. For editor tests of what words build;
+   the power gate is the panel's, so this skips it. */
+static FAutoConsoleCommandWithWorldAndArgs GGenerateRequest(
+	TEXT("sib.Generate.Request"),
+	TEXT("Submits the rest of the line as a Generate request for the first player."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		// From the editor console the given world is the editor's; the player lives in PIE.
+		if (!(World && World->IsGameWorld()) && GEngine)
+		{
+			for (const FWorldContext& Context : GEngine->GetWorldContexts())
+			{
+				if (Context.World() && Context.World()->IsGameWorld())
+				{
+					World = Context.World();
+					break;
+				}
+			}
+		}
+		const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+		if (UGenerateComponent* Generate = Pawn ? Pawn->FindComponentByClass<UGenerateComponent>() : nullptr)
+		{
+			Generate->SubmitRequest(FString::Join(Args, TEXT(" ")));
+		}
+	}));

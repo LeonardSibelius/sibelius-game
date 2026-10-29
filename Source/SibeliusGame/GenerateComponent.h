@@ -18,6 +18,7 @@ class UMrsHallMessageWidget;
 class ABuildSite;
 class UWorld;
 struct FGenerateCatalogEntry;
+namespace Gist { struct FRecipe; }
 
 // SIB-30 P3 — shared generated-site spawn helpers, used by BOTH live generation
 // (UGenerateComponent::SpawnEntry) and re-spawn-on-load (UBranchSubsystem::ApplyDeployedSave)
@@ -47,9 +48,9 @@ class SIBELIUSGAME_API UGenerateComponent : public UActorComponent
 public:
 	UGenerateComponent();
 
-	// Resolve a typed request: spawn on Resolved (decrementing the budget) or show a
-	// distinct refusal line per reason (the P1 seed of the Mrs. Hall refusal). Returns
-	// the matcher outcome.
+	// Resolve a typed request: spawn on Resolved (decrementing the budget), build THE GIST
+	// when the catalog has no match or a tie (EGenerateOutcome::Gist), or show a distinct
+	// refusal line per reason (the P1 seed of the Mrs. Hall refusal).
 	EGenerateOutcome SubmitRequest(const FString& RawText);
 
 	int32 GetRemainingBudget() const { return RemainingBudget; }
@@ -83,6 +84,14 @@ private:
 	bool SpawnEntry(const FGenerateCatalogEntry& Entry);
 	const FGenerateCatalogEntry* FindEntry(const FName& Id) const;
 
+	/** Where a generated thing lands: RequestedAhead in front of the player, on the floor.
+	    bNamedDistance (a row that names its own SpawnAhead) skips the indoor wall clamp. */
+	bool FindSpawnPoint(float RequestedAhead, bool bNamedDistance, FVector& OutLocation) const;
+
+	/** THE GIST (docs/GIST_GENERATOR_PLAN.md): build what the rules made of the words,
+	    facing the player. False if it could not be placed; the caller charges the budget. */
+	bool SpawnGist(const FString& RawText, const Gist::FRecipe& Recipe);
+
 	/* PERSISTENCE ACROSS A LEVEL CHANGE. UBranchSubsystem is a WORLD subsystem and dies
 	   with the world, so before this a generated object survived only a manual Deploy —
 	   walk out of L_City and your lamp was gone. Walt found it with the spaceport, which
@@ -112,6 +121,7 @@ private:
 
 	// Rotates Mrs. Hall's lines deterministically across refusals (NOT RNG/clock).
 	int32 RefusalCount = 0;
+	int32 GistCount = 0;   // the same, for her lines when she makes do with a gist
 
 	// SIB-31: set on the first successful live SpawnEntry; see HasSpawnedThisSession().
 	bool bHasSpawnedThisSession = false;

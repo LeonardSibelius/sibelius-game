@@ -59,6 +59,7 @@ EGenerateOutcome MrsHallReasonToOutcome(const FString& Reason)
 	if (Reason.Equals(TEXT("Ambiguous"), ESearchCase::IgnoreCase))  { return EGenerateOutcome::RefusedAmbiguous; }
 	if (Reason.Equals(TEXT("OverBudget"), ESearchCase::IgnoreCase)) { return EGenerateOutcome::RefusedOverBudget; }
 	if (Reason.Equals(TEXT("Unsafe"), ESearchCase::IgnoreCase))     { return EGenerateOutcome::RefusedUnsafe; }
+	if (Reason.Equals(TEXT("Gist"), ESearchCase::IgnoreCase))       { return EGenerateOutcome::Gist; }
 	return EGenerateOutcome::RefusedNoMatch; // "NoMatch" + anything unrecognized
 }
 
@@ -218,7 +219,7 @@ void LogMrsHallAudioManifest(const TMap<EGenerateOutcome, TArray<FMrsHallLine>>&
 	// Fixed reason order so the manifest reads the same every run (record-list friendly).
 	static const EGenerateOutcome Order[] = {
 		EGenerateOutcome::RefusedNoMatch, EGenerateOutcome::RefusedAmbiguous,
-		EGenerateOutcome::RefusedOverBudget, EGenerateOutcome::RefusedUnsafe
+		EGenerateOutcome::RefusedOverBudget, EGenerateOutcome::RefusedUnsafe, EGenerateOutcome::Gist
 	};
 
 	UE_LOG(LogTemp, Display, TEXT("[MrsHall] === Voice clip manifest: record one WAV per AudioKey, import to /Game/Audio/MrsHall/ (asset name = key) ==="));

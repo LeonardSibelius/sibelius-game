@@ -5,7 +5,31 @@ like a placeholder for later when everybody is using AI and Steam has to relent.
 generation takes 10-60 s a model and is live-generated AI content, which the pending Steam chat
 review makes awkward. This plan is the opposite: instant, deterministic, no network, no model.
 
-Status: **phase 1 done (2026-10-29)** — the rules, the word lists and their tests. Phases 2-5 to go.
+Status: **phases 1 and 2 done (2026-10-29)** — the rules, and THE GIST in the game. Phases 3-5 to go.
+
+## Phase 2 — what exists
+
+- `AGistSite : ABuildSite` (GistSite.h/.cpp): draws a recipe as one instanced mesh per (engine shape,
+  finish) — M_GistClay / M_WagerGold / M_LanternOrb, colour and glow in per-instance custom data —
+  plus one box for bumping into and for E, and a brass plaque in front, leaning back. Pops in with a
+  chime, then hovers / spins / dances / bounces / wobbles / sways. E says "Send it back to the
+  supply room" and hides it (no refund). It ticks whenever shown: ABuildSite starts with Tick off,
+  which at first left every gist frozen at the 1% scale its pop-in starts from.
+- `UGenerateComponent::SubmitRequest`: no match or a tie -> `AGistSite::Plan` -> `SpawnGist`, one from
+  the budget, outcome `EGenerateOutcome::Gist`, a Mrs. Hall line (reason `Gist`, five rows in both
+  MrsHallLines.csv copies, DataTable `/Game/Data/MrsHallLines` re-imported). Unsafe words, nothing
+  typed, or no budget still get her refusals. Placement is shared: SpawnEntry's floor/wall code
+  moved verbatim into `FindSpawnPoint`; a gist lands half its footprint + 150 cm ahead, facing him.
+- `Tools/Scripts/make_gist_assets.py` made `/Game/Gist/M_GistClay`; the package script checks it.
+- `sib.Generate.Request <words>` submits a request without the panel (skips the power gate).
+- Tried in PIE in Isla's keep, all through SubmitRequest: giant flying toaster, a dragon made of
+  cake, cat with a hat, three angry robots, chair lamp (a tie -> hybrid), my mother-in-law
+  (contraption), invisible dancing horse, royal fancy duck — all built; "tree" still built the
+  catalog tree; "golden spinning rocket" matched the catalog's spaceport (rocket is its keyword) and
+  was refused over budget; "fire" refused unsafe; a wish at budget 0 refused over budget; E on the
+  duck sent it back. Screenshots 00195-00198.
+- Not yet: saving (a gist is gone after a level change — phase 3), pupils that follow him and
+  colour tuning (phase 4; angry robots read pink), a packaged build (phase 5).
 
 ## Phase 1 — what exists
 
