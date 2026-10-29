@@ -152,6 +152,7 @@ void ASibeliusHUD::DrawHUD()
 	DrawWorldName();          // APPEAL extra: which world am I in
 	DrawInteractPrompt();     // "[E] ..." — was a screen debug message, invisible in Shipping
 	DrawToasts();             // pickups, refusals, chapter ends — likewise
+	DrawTablePanel();         // on-foot games (Dragon's Wager) also lease a status panel
 
 	if (bOverlayVisible)
 	{

@@ -1,6 +1,7 @@
 // VirtualHome.cpp — see header.
 
 #include "VirtualHome.h"
+#include "DragonsWager.h"
 
 #include "BattleFormComponent.h"
 #include "RefactorComponent.h"
@@ -58,6 +59,7 @@ const AVirtualHome* AVirtualHome::FindFor(const UObject* WorldContext, const FSt
 void AVirtualHome::BeginPlay()
 {
 	Super::BeginPlay();
+	ADragonsWager::EnsureInKeep(GetWorld());
 
 	if (bHairOutOfRayTracing)
 	{
