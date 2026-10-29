@@ -294,6 +294,17 @@ if ($want -gt 0 -and $samples.Count -eq $want) {
 $tvMat = "$cooked\ArcadeTV\M_ArcadeTVScreen.uasset"
 if (Test-Path $tvMat) { Write-Output "OK      the TVs' screen material" }
 else { Write-Output "MISSING the TVs' screen material -> $tvMat"; exit 1 }
+# THE GIST's words (2026-10-29): read as loose files from Content\Data, staged by the "Data"
+# DirectoriesToAlwaysStageAsNonUFS rule. Missing, every wish builds a nameless contraption.
+foreach ($words in "GistNouns.csv", "GistModifiers.csv") {
+  $staged = "$outDir\Windows\SibeliusGame\Content\Data\$words"
+  if ((Test-Path $staged) -and ((Get-Item $staged).Length -eq (Get-Item "$root\Content\Data\$words").Length)) {
+    Write-Output "OK      the gist's $words, loose"
+  } else {
+    Write-Output "MISSING the gist's words -> $staged"
+    exit 1
+  }
+}
 
 # ---- what did Kaia's planet cost? -------------------------------------------
 function PakGB($path) {
