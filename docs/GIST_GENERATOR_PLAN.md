@@ -5,8 +5,17 @@ like a placeholder for later when everybody is using AI and Steam has to relent.
 generation takes 10-60 s a model and is live-generated AI content, which the pending Steam chat
 review makes awkward. This plan is the opposite: instant, deterministic, no network, no model.
 
-Status: **phases 1-3 done (2026-10-29)** — the rules, THE GIST in the game, and gists that keep.
-Generate is paid in sauce (see decision 3). Phases 4-5 to go.
+Status: **phases 1-4 done (2026-10-29)** — the rules, THE GIST in the game, gists that keep, and
+polish. Generate is paid in sauce (see decision 3). Phase 5 (release) to go.
+
+## Phase 4 — polish
+
+- Colour space: the rules' colours are sRGB (as a painter picks them) but materials read custom data
+  as linear, so every toy rendered pale — angry silver robots came out salmon-pink. AGistSite now
+  converts (power 2.2) before handing colours over; the angry tint went from 0.45 to 0.75 red.
+- Googly eyes watch the player: each pupil is paired with the eye before it in the recipe and eased
+  (6/s) round that eye toward the camera every tick, within 40 m, so a spin or a hop sets them
+  rolling. Screenshots 00201-00202 (left and right of five gists) show them turned each way.
 
 ## Phase 3 — what exists
 

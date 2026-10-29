@@ -27,7 +27,7 @@ enum class EFinish : uint8_t { Clay, Gold, Glass };              // M_GistClay, 
 enum class ERole : uint8_t { Body, Eye, Pupil, Feature };        // only Body takes colour modifiers
 
 struct FVec { float X = 0, Y = 0, Z = 0; };
-struct FColour { float R = 1, G = 1, B = 1; };
+struct FColour { float R = 1, G = 1, B = 1; };   // as a painter picks it (sRGB); AGistSite converts to linear
 
 struct FPart
 {

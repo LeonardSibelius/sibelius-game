@@ -1178,7 +1178,8 @@ FRecipe Build(const FVocab& Vocab, const std::string& Prompt)
 		const FColour F = SignatureOf(P.Flavour);
 		for (FPart& Part : K.Parts) if (Part.Role == ERole::Body) Part.Colour = Mix(Part.Colour, F, 0.5f);
 	}
-	if (Has(P.Mods, "angry")) for (FPart& Part : K.Parts) if (Part.Role == ERole::Body) Part.Colour = Mix(Part.Colour, Red, 0.45f);
+	// 0.45 left a silver robot salmon-pink in PIE; angry should read red.
+	if (Has(P.Mods, "angry")) for (FPart& Part : K.Parts) if (Part.Role == ERole::Body) Part.Colour = Mix(Part.Colour, Red, 0.75f);
 	if (Has(P.Mods, "sad")) for (FPart& Part : K.Parts) if (Part.Role == ERole::Body) Part.Colour = Mix(Part.Colour, Blue, 0.3f);
 	if (Has(P.Mods, "scary")) for (FPart& Part : K.Parts) if (Part.Role == ERole::Body) Part.Colour = Mix(Darker(Part.Colour), Purple, 0.2f);
 	ApplyLooks(K.Parts, P.Mods);

@@ -151,16 +151,34 @@ void AGistSite::Author(const FString& InPrompt, const Gist::FRecipe& Recipe, boo
 	{
 		Piece->ClearInstances();
 	}
+	Pupils.Reset();
+	FVector LastEye = FVector::ZeroVector;
+	float LastEyeSize = 0.0f;
+	// The rules pick colours as a painter would (sRGB); materials read custom data as linear
+	// light. Passed straight through, every toy came out pale - angry robots read pink.
+	auto Linear = [](float C) { return FMath::Pow(FMath::Clamp(C, 0.0f, 1.0f), 2.2f); };
 	for (const Gist::FPart& Part : Recipe.Parts)
 	{
-		UInstancedStaticMeshComponent* Piece = Pieces[static_cast<int32>(Part.Shape) * 3 + static_cast<int32>(Part.Finish)];
+		const int32 PieceIndex = static_cast<int32>(Part.Shape) * 3 + static_cast<int32>(Part.Finish);
+		UInstancedStaticMeshComponent* Piece = Pieces[PieceIndex];
 		// The engine's basic shapes are 100 cm, centred, so a part's size is its scale x 100.
-		const FTransform Where(FRotator(Part.Rotation.X, Part.Rotation.Y, Part.Rotation.Z),
-			FVector(Part.Location.X, Part.Location.Y, Part.Location.Z),
-			FVector(Part.Size.X, Part.Size.Y, Part.Size.Z) / 100.0f);
+		const FVector At(Part.Location.X, Part.Location.Y, Part.Location.Z);
+		const FVector Scale = FVector(Part.Size.X, Part.Size.Y, Part.Size.Z) / 100.0f;
+		const FTransform Where(FRotator(Part.Rotation.X, Part.Rotation.Y, Part.Rotation.Z), At, Scale);
 		const int32 Index = Piece->AddInstance(Where, /*bWorldSpace=*/false);
 		const float Glow = Part.Finish == Gist::EFinish::Glass ? 1.0f : 0.0f;
-		Piece->SetCustomData(Index, TArray<float>{Part.Colour.R, Part.Colour.G, Part.Colour.B, Glow}, true);
+		Piece->SetCustomData(Index, TArray<float>{Linear(Part.Colour.R), Linear(Part.Colour.G), Linear(Part.Colour.B), Glow}, true);
+
+		// Each pupil follows the eye the rules put just before it; Tick turns it to the player.
+		if (Part.Role == Gist::ERole::Eye)
+		{
+			LastEye = At;
+			LastEyeSize = Part.Size.X;
+		}
+		else if (Part.Role == Gist::ERole::Pupil && LastEyeSize > 0.0f)
+		{
+			Pupils.Add({PieceIndex, Index, LastEye, LastEyeSize * 0.36f, At - LastEye, Scale});
+		}
 	}
 
 	Gist::FVec Min, Max;
@@ -265,6 +283,26 @@ void AGistSite::Tick(float DeltaSeconds)
 	}
 	Toy->SetRelativeLocationAndRotation(Offset, Turn);
 	Toy->SetRelativeScale3D(Squash * Pop);
+
+	// Googly eyes watch him: each pupil eases round its eye toward the camera, lagging a
+	// little so a spin or a hop sets them rolling. Not beyond 40 m - nobody can see them there.
+	const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	if (Pupils.Num() > 0 && PC && PC->PlayerCameraManager)
+	{
+		const FVector Camera = PC->PlayerCameraManager->GetCameraLocation();
+		if (FVector::DistSquared(Camera, GetActorLocation()) < FMath::Square(4000.0f))
+		{
+			const FVector Watching = Toy->GetComponentTransform().InverseTransformPosition(Camera);
+			for (FGistPupil& Pupil : Pupils)
+			{
+				const FVector Target = (Watching - Pupil.Eye).GetSafeNormal() * Pupil.Reach;
+				Pupil.Offset = FMath::VInterpTo(Pupil.Offset, Target, DeltaSeconds, 6.0f);
+				Pieces[Pupil.Piece]->UpdateInstanceTransform(Pupil.Instance,
+					FTransform(FRotator::ZeroRotator, Pupil.Eye + Pupil.Offset, Pupil.Scale),
+					/*bWorldSpace=*/false, /*bMarkRenderStateDirty=*/true, /*bTeleport=*/true);
+			}
+		}
+	}
 }
 
 void AGistSite::RestoreBranchState(uint8 InState)

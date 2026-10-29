@@ -17,6 +17,17 @@ class UMaterialInterface;
 class UStaticMesh;
 namespace Gist { struct FRecipe; }
 
+/** A googly pupil: which instance it is, the eye it rolls around in, and where it looks now. */
+struct FGistPupil
+{
+	int32 Piece = 0;
+	int32 Instance = 0;
+	FVector Eye = FVector::ZeroVector;     // toy space
+	float Reach = 0.0f;                    // how far from the eye's centre it sits
+	FVector Offset = FVector::ZeroVector;  // where it is now, eased toward the player
+	FVector Scale = FVector::OneVector;
+};
+
 UCLASS()
 class SIBELIUSGAME_API AGistSite : public ABuildSite
 {
@@ -69,6 +80,7 @@ private:
 
 	FString Prompt;
 	FString Title, Echo, Tagline;
+	TArray<FGistPupil> Pupils;
 	uint32 Behaviours = 0;
 	float Clock = 0.0f;
 	float RevealAge = -1.0f;   // < 0: no pop-in running
