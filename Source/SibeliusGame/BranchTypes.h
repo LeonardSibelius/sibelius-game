@@ -42,6 +42,10 @@ struct FBranchObjectState
 	UPROPERTY() bool bGenerated = false;
 	UPROPERTY() FName GenerateEntryId;          // catalog EntryId to re-spawn from (valid iff bGenerated)
 	UPROPERTY() FTransform GenerateTransform;   // saved spawn transform — applied VERBATIM on re-spawn (P3-3)
+	// THE GIST (2026-10-29): a gist (GenerateEntryId "gist") has no catalog row; its words
+	// rebuild it, since its rules are deterministic. Empty for catalog rows and older saves
+	// (a tagged field defaults on load, as the v2->v3 note in SibeliusSaveGame.cpp relies on).
+	UPROPERTY() FString GistPrompt;
 };
 
 // The inventory ledger captured whole (2 entries today: Book, Key). The Resource

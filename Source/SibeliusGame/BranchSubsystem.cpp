@@ -10,6 +10,7 @@
 // shared spawn helpers). Ch5 deploy/apply is the orchestrator, so it owns this stitch.
 #include "BuildSite.h"
 #include "GenerateComponent.h"   // UGenerateComponent (budget) + AuthorGeneratedSite/RespawnGeneratedSite
+#include "GistSite.h"            // THE GIST: saved by its words, rebuilt by AGistSite::Respawn
 #include "GenerateCatalog.h"     // LoadGenerateCatalog
 #include "GenerateTypes.h"       // FGenerateCatalogEntry
 
@@ -318,6 +319,10 @@ USibeliusSaveGame* UBranchSubsystem::BuildDeploySave() const
 				S.bGenerated = true;
 				S.GenerateEntryId = Site->GetGenerateEntryId();
 				S.GenerateTransform = Site->GetActorTransform(); // saved verbatim (P3-3)
+				if (const AGistSite* Gist = Cast<AGistSite>(Site))
+				{
+					S.GistPrompt = Gist->GetPrompt();   // THE GIST: its words rebuild it
+				}
 				Save->ObjectDeltas.Add(S);
 				continue;
 			}
@@ -676,6 +681,20 @@ bool UBranchSubsystem::RespawnGeneratedObject(const FBranchObjectState& Saved, c
 	if (!World || Saved.GenerateEntryId.IsNone())
 	{
 		return false;
+	}
+
+	// THE GIST: no catalog row - its words rebuild it. Its saved state is restored too, so a
+	// gist sent back to the supply room before the Deploy stays gone after the load.
+	if (Saved.GenerateEntryId == AGistSite::EntryId)
+	{
+		AGistSite* Gist = AGistSite::Respawn(World, Saved.GistPrompt, Saved.GenerateTransform, Saved.ObjectId);
+		if (!Gist)
+		{
+			return false;
+		}
+		Gist->RestoreBranchState(Saved.State);
+		BranchablesById.Add(Saved.ObjectId, Gist);
+		return true;
 	}
 
 	const FGenerateCatalogEntry* Entry = Catalog.FindByPredicate(

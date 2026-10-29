@@ -58,7 +58,7 @@ public:
 	   exist at all. Both of these SAVE, because the moment worth surviving is the one
 	   where he walks out of the level - and that is not a moment we get told about. */
 	void RememberGeneratedSite(FName LevelName, FName EntryId,
-		const FTransform& Transform, const FGuid& ObjectId);
+		const FTransform& Transform, const FGuid& ObjectId, const FString& Prompt = FString());
 	void ForgetGeneratedSite(const FGuid& ObjectId);
 
 	/* Write back the states of many remembered objects at once, saving ONCE if anything

@@ -136,6 +136,12 @@ struct SIBELIUSGAME_API FGeneratedSiteRecord
 	   would have done anyway. */
 	UPROPERTY(SaveGame)
 	uint8 State = 1;
+
+	/* THE GIST'S WORDS (2026-10-29). A gist has no catalog row to rebuild from (EntryId
+	   "gist"), but its rules are deterministic, so the words ARE the object: replaying them
+	   builds the same toy. Empty for catalog rows, and in every save older than this. */
+	UPROPERTY(SaveGame)
+	FString Prompt;
 };
 
 USTRUCT(BlueprintType)
@@ -192,7 +198,7 @@ struct SIBELIUSGAME_API FProgressionState
 	   updates it rather than growing a duplicate - which matters because a Test-Drive
 	   branch can re-author a site that is already remembered. */
 	void RememberGeneratedSite(FName LevelName, FName EntryId,
-		const FTransform& Transform, const FGuid& ObjectId);
+		const FTransform& Transform, const FGuid& ObjectId, const FString& Prompt = FString());
 
 	/** Forget one, by the id the world knows it by. True if something was removed. */
 	bool ForgetGeneratedSite(const FGuid& ObjectId);

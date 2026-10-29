@@ -451,7 +451,7 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 
 	/* AND REMEMBER IT, so it is still standing when he comes back to this level.
 	   AuthorGeneratedSite has run, so the IBranchable id exists to key the record on. */
-	RememberSite(Site, Entry);
+	RememberSite(Site, Entry.EntryId);
 
 	// Budget charges only because we reached here with a real, created actor.
 	return true;
@@ -488,7 +488,8 @@ bool UGenerateComponent::SpawnGist(const FString& RawText, const Gist::FRecipe& 
 	}
 	Site->Author(RawText, Recipe, /*bFreshlyGenerated=*/true);
 
-	// Not remembered across a level change yet: phase 3 saves the words and rebuilds from them.
+	// Remembered by its words: they rebuild the same toy when he comes back (RestoreGeneratedSites).
+	RememberSite(Site, AGistSite::EntryId, RawText);
 	const FString What = Recipe.bContraption ? FString(TEXT("a contraption")) : FString(UTF8_TO_TCHAR(Recipe.Archetype.c_str()));
 	UE_LOG(LogTemp, Display, TEXT("[Generate] THE GIST of \"%s\": %s, %d part(s), %d cop(ies), scale %.2f, behaviours %u."),
 		*RawText, *What, static_cast<int32>(Recipe.Parts.size()), Recipe.Copies, Recipe.Scale, Recipe.Behaviours);
@@ -576,7 +577,7 @@ bool UGenerateComponent::FindSpawnPoint(float RequestedAhead, bool bNamedDistanc
 	return true;
 }
 
-void UGenerateComponent::RememberSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry)
+void UGenerateComponent::RememberSite(ABuildSite* Site, FName EntryId, const FString& Prompt)
 {
 	UWorld* World = Site ? Site->GetWorld() : nullptr;
 	if (!World)
@@ -596,12 +597,12 @@ void UGenerateComponent::RememberSite(ABuildSite* Site, const FGenerateCatalogEn
 		   A site with no stable id cannot be remembered OR forgotten. */
 		UE_LOG(LogSibeliusGame, Warning,
 			TEXT("[Generate] '%s' has no branch id - it will NOT survive a level change."),
-			*Entry.EntryId.ToString());
+			*EntryId.ToString());
 		return;
 	}
 
-	Progression->RememberGeneratedSite(CurrentLevelName(World), Entry.EntryId,
-		Site->GetActorTransform(), Id);
+	Progression->RememberGeneratedSite(CurrentLevelName(World), EntryId,
+		Site->GetActorTransform(), Id, Prompt);
 }
 
 void UGenerateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -682,6 +683,16 @@ void UGenerateComponent::RestoreGeneratedSites()
 	{
 		if (Present.Contains(R.ObjectId))
 		{
+			continue;
+		}
+		// A gist has no catalog row: its words rebuild it, in the state he left it in.
+		if (R.EntryId == AGistSite::EntryId)
+		{
+			if (AGistSite* Gist = AGistSite::Respawn(World, R.Prompt, R.Transform, R.ObjectId))
+			{
+				Gist->RestoreBranchState(R.State);
+				++Restored;
+			}
 			continue;
 		}
 		const FGenerateCatalogEntry* Entry = FindEntry(R.EntryId);
@@ -795,30 +806,76 @@ void UGenerateComponent::PlayMrsHallClip(const FString& AudioKey)
 	}
 }
 
+// From the editor console the given world is the editor's; the player lives in PIE.
+static UWorld* GeneratePlayWorld(UWorld* Given)
+{
+	if (!(Given && Given->IsGameWorld()) && GEngine)
+	{
+		for (const FWorldContext& Context : GEngine->GetWorldContexts())
+		{
+			if (Context.World() && Context.World()->IsGameWorld())
+			{
+				return Context.World();
+			}
+		}
+	}
+	return Given;
+}
+
 /* Type a Generate request without the panel - the same SubmitRequest the G panel calls, so the
-   matcher, the budget, THE GIST and Mrs. Hall all run. For editor tests of what words build;
+   matcher, the sauce, THE GIST and Mrs. Hall all run. For editor tests of what words build;
    the power gate is the panel's, so this skips it. */
 static FAutoConsoleCommandWithWorldAndArgs GGenerateRequest(
 	TEXT("sib.Generate.Request"),
 	TEXT("Submits the rest of the line as a Generate request for the first player."),
 	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
 	{
-		// From the editor console the given world is the editor's; the player lives in PIE.
-		if (!(World && World->IsGameWorld()) && GEngine)
-		{
-			for (const FWorldContext& Context : GEngine->GetWorldContexts())
-			{
-				if (Context.World() && Context.World()->IsGameWorld())
-				{
-					World = Context.World();
-					break;
-				}
-			}
-		}
+		World = GeneratePlayWorld(World);
 		const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
 		const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
 		if (UGenerateComponent* Generate = Pawn ? Pawn->FindComponentByClass<UGenerateComponent>() : nullptr)
 		{
 			Generate->SubmitRequest(FString::Join(Args, TEXT(" ")));
 		}
+	}));
+
+/* Forget every generated object of one kind (an EntryId: "tree", "gist") in the open level, in
+   the world AND in the save, with no refund - for clearing up after a test. Dismantling would
+   refund Books for something nobody paid Books for; this only forgets. */
+static FAutoConsoleCommandWithWorldAndArgs GGenerateForget(
+	TEXT("sib.Generate.Forget"),
+	TEXT("Forgets every generated object with this EntryId in the open level, save included, without a refund."),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+	{
+		World = GeneratePlayWorld(World);
+		UProgressionSubsystem* Progression = World ? UProgressionSubsystem::Get(World) : nullptr;
+		if (!Progression || Args.Num() == 0)
+		{
+			return;
+		}
+		const FName EntryId(*Args[0]);
+		const FName Level(*UWorld::RemovePIEPrefix(World->GetMapName()));
+		int32 Forgotten = 0;
+		for (const FGeneratedSiteRecord& R : Progression->GeneratedSitesForLevel(Level))
+		{
+			if (R.EntryId == EntryId)
+			{
+				Progression->ForgetGeneratedSite(R.ObjectId);
+				++Forgotten;
+			}
+		}
+		TArray<ABuildSite*> Doomed;
+		for (TActorIterator<ABuildSite> It(World); It; ++It)
+		{
+			if (It->IsGenerated() && It->GetGenerateEntryId() == EntryId)
+			{
+				Doomed.Add(*It);
+			}
+		}
+		for (ABuildSite* Site : Doomed)
+		{
+			Site->Destroy();
+		}
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Generate] forgot %d '%s' record(s) and removed %d object(s) in %s."),
+			Forgotten, *EntryId.ToString(), Doomed.Num(), *Level.ToString());
 	}));

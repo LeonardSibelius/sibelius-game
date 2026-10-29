@@ -5,7 +5,26 @@ like a placeholder for later when everybody is using AI and Steam has to relent.
 generation takes 10-60 s a model and is live-generated AI content, which the pending Steam chat
 review makes awkward. This plan is the opposite: instant, deterministic, no network, no model.
 
-Status: **phases 1 and 2 done (2026-10-29)** — the rules, and THE GIST in the game. Phases 3-5 to go.
+Status: **phases 1-3 done (2026-10-29)** — the rules, THE GIST in the game, and gists that keep.
+Generate is paid in sauce (see decision 3). Phases 4-5 to go.
+
+## Phase 3 — what exists
+
+- The words are the save. `FGeneratedSiteRecord.Prompt` (progression, level changes) and
+  `FBranchObjectState.GistPrompt` (Deploy) hold them; both default empty, so older saves load
+  unchanged. `AGistSite::Respawn` rebuilds from them at the saved pose and id — one helper for both
+  paths — and the saved state is restored, so a gist sent back stays gone.
+- `SpawnGist` remembers each gist (`RememberSite(Site, "gist", words)`); `RestoreGeneratedSites`
+  and `UBranchSubsystem::RespawnGeneratedObject` rebuild EntryId "gist" from the words.
+- Tried in PIE: three gists in Isla's keep, the duck sent back with E, `open L_Office_v02` (no gists
+  there), `open L_IslaKeep` — all three back at the same places, the duck still gone.
+- Gates: Generate and Progression pass; Branch fails only its known P1 ("found a level
+  URefactorableComponent to refactor"), as before this work.
+- Not tried in PIE: a Deploy (0) save and load of a gist — the code mirrors the level-change path.
+- If the word lists change, an old gist is rebuilt by the new rules and may look different.
+- `sib.Generate.Forget <EntryId>` forgets that kind of generated object in the open level, save
+  included, without the Books refund dismantling gives. It removed a catalog tree that the
+  phase 2 test had left in the keep's progression save.
 
 ## Phase 2 — what exists
 

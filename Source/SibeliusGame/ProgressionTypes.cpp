@@ -160,7 +160,7 @@ bool FProgressionState::Claim(FName GrantKey)
 }
 
 void FProgressionState::RememberGeneratedSite(FName LevelName, FName EntryId,
-	const FTransform& Transform, const FGuid& ObjectId)
+	const FTransform& Transform, const FGuid& ObjectId, const FString& Prompt)
 {
 	if (LevelName.IsNone() || EntryId.IsNone() || !ObjectId.IsValid())
 	{
@@ -174,6 +174,7 @@ void FProgressionState::RememberGeneratedSite(FName LevelName, FName EntryId,
 			R.LevelName = LevelName;
 			R.EntryId = EntryId;
 			R.Transform = Transform;
+			R.Prompt = Prompt;
 			return;
 		}
 	}
@@ -183,6 +184,7 @@ void FProgressionState::RememberGeneratedSite(FName LevelName, FName EntryId,
 	R.EntryId = EntryId;
 	R.Transform = Transform;
 	R.ObjectId = ObjectId;
+	R.Prompt = Prompt;
 	GeneratedSites.Add(R);
 }
 

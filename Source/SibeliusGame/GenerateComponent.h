@@ -102,7 +102,7 @@ private:
 	   with the world, so before this a generated object survived only a manual Deploy —
 	   walk out of L_City and your lamp was gone. Walt found it with the spaceport, which
 	   is the first generated thing the story has to leave and return to. */
-	void RememberSite(ABuildSite* Site, const FGenerateCatalogEntry& Entry);
+	void RememberSite(ABuildSite* Site, FName EntryId, const FString& Prompt = FString());   // Prompt: a gist's words
 
 	/** Called from BeginPlay: put back everything recorded for the level we just entered. */
 	void RestoreGeneratedSites();

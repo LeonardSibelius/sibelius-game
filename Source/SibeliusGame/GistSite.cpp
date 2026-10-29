@@ -111,6 +111,33 @@ TUniquePtr<Gist::FRecipe> AGistSite::Plan(const FString& InPrompt, const TArray<
 	return Recipe;
 }
 
+AGistSite* AGistSite::Respawn(UWorld* World, const FString& InPrompt, const FTransform& Where, const FGuid& Id)
+{
+	// The words were vetted when it was first made, so no blocklist here: a recreate.
+	TUniquePtr<Gist::FRecipe> Recipe;
+	if (World)
+	{
+		Recipe = Plan(InPrompt, TArray<FString>());
+	}
+	if (!Recipe)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Gist] saved gist \"%s\" (%s) no longer builds anything - not restored."),
+			*InPrompt, *Id.ToString());
+		return nullptr;
+	}
+	// AlwaysSpawn, so the saved pose is honoured verbatim, as RespawnGeneratedSite does.
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AGistSite* Site = World->SpawnActor<AGistSite>(StaticClass(), Where, SpawnParams);
+	if (!Site)
+	{
+		return nullptr;
+	}
+	Site->RestoreBranchId(Id);
+	Site->Author(InPrompt, *Recipe, /*bFreshlyGenerated=*/false);
+	return Site;
+}
+
 void AGistSite::Author(const FString& InPrompt, const Gist::FRecipe& Recipe, bool bFreshlyGenerated)
 {
 	using namespace GistSiteDetail;

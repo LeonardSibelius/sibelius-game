@@ -198,9 +198,9 @@ bool UProgressionSubsystem::ClaimOneTimeGrant(FName GrantKey)
 }
 
 void UProgressionSubsystem::RememberGeneratedSite(FName LevelName, FName EntryId,
-	const FTransform& Transform, const FGuid& ObjectId)
+	const FTransform& Transform, const FGuid& ObjectId, const FString& Prompt)
 {
-	State.RememberGeneratedSite(LevelName, EntryId, Transform, ObjectId);
+	State.RememberGeneratedSite(LevelName, EntryId, Transform, ObjectId, Prompt);
 	/* SAVE IMMEDIATELY. The moment this has to survive is the player walking out of the
 	   level, and nothing tells us that is about to happen - he presses [O], or opens a
 	   door, and the world is gone. Saving on the build is the only point we are certain

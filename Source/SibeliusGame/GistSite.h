@@ -35,6 +35,11 @@ public:
 	/** Draw a planned gist and present it built; bFreshlyGenerated plays the pop-in. */
 	void Author(const FString& InPrompt, const Gist::FRecipe& Recipe, bool bFreshlyGenerated);
 
+	/** Re-create a remembered or deployed gist: its words rebuild the same recipe (the rules
+	    are deterministic), at the saved pose verbatim, under the saved id. Null if the words
+	    no longer build anything. Used by both save paths, so they cannot drift. */
+	static AGistSite* Respawn(UWorld* World, const FString& Prompt, const FTransform& Where, const FGuid& Id);
+
 	const FString& GetPrompt() const { return Prompt; }
 	FString GetPlaqueText() const;
 
