@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.4.4 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.4.5 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -65,10 +65,14 @@ turns to the ghost's side. No new chat, and the game calls no model for any of i
 2.4.4 on 2026-10-28** (Walt: "let's do the 2.4.4 deploy routine"): the Dragon's Wager in Isla's
 keep - steal the crown above the stairs while two dragons sweep their gaze across the hall, then
 bank the treasure or wager it all on a harder round. No new chat, and no model for it either.
-2.4.4 is the build that goes to Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261028-v2.4.4\` is the copy the upload script sends.
+**And to 2.4.5 on 2026-10-29** (Walt: "Tested, ship it"): THE GIST - when Generate's catalog has
+no match, Mrs. Hall builds the gist of the words from simple shapes (a giant flying toaster,
+three angry robots), by fixed rules in the game's code; and Generate is paid in sauce, like
+Refactor. No new chat, and no model: the same words always build the same toy.
+2.4.5 is the build that goes to Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261029-v2.4.5\` is the copy the upload script sends.
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.4**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.5**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -93,7 +97,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.4.4 from the stick
+### 3. Upload 2.4.5 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -101,7 +105,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.4.4 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager"**. If it
+The banner should read **"v2.4.5 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager, THE GIST"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -245,7 +249,9 @@ the air in front of you — pad, gantry, fuel tanks, and a rocket a hundred and 
 metres tall. That is the Generate power. You typed a word and the city grew a
 cosmodrome.
 
-And then you can launch it.
+And then you can launch it. Type something the shop doesn't stock and Mrs. Hall builds the
+gist of it anyway: a giant flying toaster, three angry robots, a dragon made of cake, googly
+eyes and all.
 
 [b]And there are the Architects.[/b]
 
@@ -398,10 +404,13 @@ Guardrails:
   - 2.4.4: the Dragon's Wager is the game's own code too; its crown and jewels are simple
     meshes built by an editor script from fixed numbers, its gold and jewel colours materials
     made in the editor. Nothing in it is generated while you play, and it calls no model.
+  - 2.4.5: THE GIST is ordinary code, not generative AI. Fixed rules turn the words a player
+    types into a toy built from the engine's basic shapes - the same toy for the same words -
+    with no model, no network and nothing learned; its clay is a material made in the editor.
 
 ### §4. System requirements
 
-The 2.4.4 package measures **10.4 GB** (10,381,159,558 bytes; 2.4.3 was 10,380,727,834 - the Dragon's Wager adds under half a megabyte; 2.4.2 was 10,379,879,085 - Lantern Burst is built of engine shapes too and adds under a megabyte; 2.4.1 was 10,392,852,913 - 2.4.2's two new games are built of engine shapes and add nothing to speak of; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.4.5 package measures **10.4 GB** (10,381,980,107 bytes; 2.4.4 was 10,381,159,558 - THE GIST adds under a megabyte; 2.4.3 was 10,380,727,834 - the Dragon's Wager adds under half a megabyte; 2.4.2 was 10,379,879,085 - Lantern Burst is built of engine shapes too and adds under a megabyte; 2.4.1 was 10,392,852,913 - 2.4.2's two new games are built of engine shapes and add nothing to speak of; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **12 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 
