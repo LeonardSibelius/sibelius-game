@@ -14,7 +14,7 @@
 #   - On the recovery stick, E:\builds\steam-upload\  - the defaults find the chat build
 #     one folder up. No path arguments needed.
 #   - In the repo, Tools\Steam\recovery-kit\  - pass -ContentRoot, e.g.
-#     -ContentRoot C:\Users\wpark\builds\sibelius-shipping-chat-20261027-v2.4.3\Windows
+#     -ContentRoot C:\Users\wpark\builds\sibelius-shipping-chat-20261028-v2.4.4\Windows
 #
 # ---------------------------------------------------------------------------
 # DO NOT RUN THIS UNTIL VALVE HAS ACCEPTED THE 2.0 CONTENT-SURVEY AMENDMENT.
@@ -56,8 +56,9 @@ param(
     # Folder containing sdk\tools\ContentBuilder\builder\steamcmd.exe
     [string] $SdkPath = 'C:\steamworks_sdk',
 
-    # The packaged build's Windows folder. Default: the 2.4.3 chat build beside this kit (switched
-    # from 2.4.2 on 2026-10-27 for Lantern Burst in Kaia's jungle and simpler shots at the golf
+    # The packaged build's Windows folder. Default: the 2.4.4 chat build beside this kit (switched
+    # from 2.4.3 on 2026-10-28 for the Dragon's Wager in Isla's keep, which adds no chat;
+    # 2.4.3 from 2.4.2 on 2026-10-27 for Lantern Burst in Kaia's jungle and simpler shots at the golf
     # course and the 4D table, which add no chat; 2.4.2 from 2.4.1 on 2026-10-25 for 4D billiards
     # in Aisling's snowfield and orbital golf over Elise's grassland, which add no chat either;
     # 2.4.1 from 2.4.0 on 2026-10-24 for Isla's keep, the attic ladder standing and the temple's
@@ -99,7 +100,7 @@ if (-not $AmendmentAccepted) {
 $Kit      = $PSScriptRoot
 $AppVdf   = Join-Path $Kit 'app_build_5249380.vdf'
 $DepotVdf = Join-Path $Kit 'depot_build_5249381.vdf'
-if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-chat-20261027-v2.4.3\Windows' }
+if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-chat-20261028-v2.4.4\Windows' }
 if (-not $BuildOutput) { $BuildOutput = Join-Path $Kit 'buildoutput' }
 
 # ---------------------------------------------------------------------------
@@ -161,7 +162,7 @@ Write-Host  '  app       5249380  Leonard Sibelius'
 Write-Host  '  depot     5249381  Leonard Sibelius Content'
 Write-Host ("  content   {0}" -f $ContentRoot)
 Write-Host ("  on disk   {0:N2} GB, less {1:N2} GB of .pdb excluded = ~{2:N2} GB uploading" -f $sizeGB, $pdbGB, ($sizeGB - $pdbGB))
-Write-Host  '  build     v2.4.3 - AI CHAT COMPILED IN, four agents'' homes, their advice, the dance menu, the chess coach, the Grand Prix, Go, the not-human laptop, Freakbook, R on the agents, the three-point contest, the AI city''s dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard''s Arcade, Isla''s keep, 4D billiards, orbital golf, Lantern Burst'
+Write-Host  '  build     v2.4.4 - AI CHAT COMPILED IN, four agents'' homes, their advice, the dance menu, the chess coach, the Grand Prix, Go, the not-human laptop, Freakbook, R on the agents, the three-point contest, the AI city''s dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard''s Arcade, Isla''s keep, 4D billiards, orbital golf, Lantern Burst, the Dragon''s Wager'
 Write-Host  '  setlive   (none - you set the branch yourself in Steamworks afterwards)'
 if ($Preview) {
     Write-Host '  MODE      PREVIEW - nothing will be uploaded' -ForegroundColor Yellow
