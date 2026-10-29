@@ -217,6 +217,14 @@ $checks = [ordered]@{
   # M_LanternOrb, coloured per instance - named only by ALanternBurst's constructor and the placed
   # lantern. Missing, the lantern draws grey balls.
   "Lantern Burst's glass" = "$cooked\LanternBurst\M_LanternOrb.uasset"
+  # --- THE DRAGON'S WAGER IN ISLA'S KEEP (2026-10-28): named only by ADragonsWager's constructor.
+  # Missing, the crown and jewels fall back to engine cones and spheres, the caught player stays
+  # unglazed, and the pedestal becomes a grey cylinder.
+  "the wager's crown"    = "$cooked\DragonsWager\SM_WagerCrown.uasset"
+  "the wager's jewels"   = "$cooked\DragonsWager\SM_WagerGem.uasset"
+  "the wager's gold"     = "$cooked\DragonsWager\M_WagerGold.uasset"
+  "the jewels' colours"  = "$cooked\DragonsWager\M_WagerGem.uasset"
+  "the wager's pedestal" = "$cooked\Fafnir_Keep_Meshingun\Meshes\SM_pedestal.uasset"
 }
 # --- 2.1.0: THE TREASURE - every piece URefactorComponent names -----------
 # Since 2026-10-13 the gems are GemShader's, each in one of six colours, and all that is left
