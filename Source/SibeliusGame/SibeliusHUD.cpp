@@ -1408,12 +1408,12 @@ void ASibeliusHUD::DrawDevOverlay()
 			Progression->NumUnlocked(), static_cast<int32>(EPowerVerb::Count), *Powers), White);
 	}
 
-	// --- GENERATE: live budget + catalog size (Ch6) ---
+	// --- GENERATE: price + catalog size (Ch6; paid in sauce since 2026-10-29) ---
 	Line(TEXT("GENERATE"), Head);
 	UGenerateComponent* Gen = Pawn ? Pawn->FindComponentByClass<UGenerateComponent>() : nullptr;
 	if (Gen)
 	{
-		Line(FString::Printf(TEXT("  budget: %d    catalog: %d"), Gen->GetRemainingBudget(), Gen->GetCatalogNum()), White);
+		Line(FString::Printf(TEXT("  %d sauce per unit    catalog: %d"), UGenerateComponent::SaucePerCost, Gen->GetCatalogNum()), White);
 	}
 	else
 	{

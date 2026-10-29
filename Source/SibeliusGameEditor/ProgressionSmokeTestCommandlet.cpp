@@ -75,9 +75,13 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		FProgressionState ShopState;
 		TArray<FSauceOffer> Offers;
 
-		// Fresh state: 5 locked powers (Code Vision is pre-owned) + 2 upgrades.
+		// Fresh state: 5 locked powers (Code Vision is pre-owned) + 1 upgrade. The Generate
+		// budget offer was retired on 2026-10-29: Generate is paid in sauce directly.
 		FSauceShop::BuildOffers(ShopState, Offers);
-		R.Check(Offers.Num() == 7, FString::Printf(TEXT("fresh catalog has 7 offers (got %d)"), Offers.Num()));
+		R.Check(Offers.Num() == 6, FString::Printf(TEXT("fresh catalog has 6 offers (got %d)"), Offers.Num()));
+		const bool bNoBudgetOffer = !Offers.ContainsByPredicate([](const FSauceOffer& O)
+			{ return O.Key == FName(TEXT("Budget.Generate")); });
+		R.Check(bNoBudgetOffer, TEXT("the Generate budget is no longer sold"));
 		const bool bNoCodeVisionOffer = !Offers.ContainsByPredicate([](const FSauceOffer& O)
 			{ return O.bIsPowerUnlock && O.Power == EPowerVerb::CodeVision; });
 		R.Check(bNoCodeVisionOffer, TEXT("pre-owned Code Vision is never on sale"));
@@ -85,7 +89,7 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		// Unlocking a power removes its offer.
 		ShopState.Unlock(EPowerVerb::Refactor);
 		FSauceShop::BuildOffers(ShopState, Offers);
-		R.Check(Offers.Num() == 6, TEXT("unlocked power leaves the catalog"));
+		R.Check(Offers.Num() == 5, TEXT("unlocked power leaves the catalog"));
 
 		// A maxed-out upgrade leaves the catalog.
 		for (int32 i = 0; i < FSauceShop::SlapMaxPurchases; ++i)

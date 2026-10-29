@@ -224,7 +224,7 @@ void UGameMenuWidget::BuildStatusTab(TSharedRef<SVerticalBox> Box)
 		const UProgressionSubsystem* P = Progression;
 		if (P && P->IsUnlocked(EPowerVerb::Generate))
 		{
-			Row(FString::Printf(TEXT("  Generate budget: %d"), Gen->GetRemainingBudget()), Body);
+			Row(FString::Printf(TEXT("  Generate: %d sauce a wish"), UGenerateComponent::SaucePerCost), Body);
 		}
 	}
 }

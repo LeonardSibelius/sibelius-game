@@ -61,19 +61,9 @@ void FSauceShop::BuildOffers(const FProgressionState& State, TArray<FSauceOffer>
 		OutOffers.Add(Offer);
 	}
 
-	// Upgrades with remaining stock.
-	const int32 BudgetBought = State.GetPurchaseCount(BudgetOfferKey);
-	if (BudgetBought < BudgetMaxPurchases)
-	{
-		FSauceOffer Offer;
-		Offer.Key = BudgetOfferKey;
-		Offer.Title = TEXT("Deeper Generate budget");
-		Offer.Desc = FString::Printf(TEXT("+%d generation budget, every session. (%d/%d bought)"),
-			BudgetPerPurchase, BudgetBought, BudgetMaxPurchases);
-		Offer.Cost = BudgetCost;
-		Offer.MaxCount = BudgetMaxPurchases;
-		OutOffers.Add(Offer);
-	}
+	// Upgrades with remaining stock. "Deeper Generate budget" is no longer offered (2026-10-29):
+	// Generate is paid in sauce directly, so buying budget with sauce bought nothing. Its key
+	// and ApplyUpgradeStep stay, because past purchases are recorded in saves.
 
 	const int32 SlapBought = State.GetPurchaseCount(SlapOfferKey);
 	if (SlapBought < SlapMaxPurchases)

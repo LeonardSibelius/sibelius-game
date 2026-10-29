@@ -177,7 +177,9 @@ Estimate: phases 1-2 one session, 3-4 a second, 5 is the usual release routine.
 1. Voice: **Mrs. Hall, grudging** — "Fine. This is what we had in the back."
 2. **Ambiguous requests become gists too** (a hybrid of the tied entries, e.g. "chair lamp"),
    instead of the RefusedAmbiguous line.
-3. **Keep the 10-per-session budget**; a gist costs 1, like a catalog item.
+3. ~~Keep the 10-per-session budget; a gist costs 1.~~ **Changed 2026-10-29 (Walt: "let's switch
+   to sauce"): Generate is paid in sauce.** A gist is 10 sauce, like Refactor's treasure; a catalog
+   row costs its Cost x 10 (tree 20, spaceport 60). Too little sauce gets a "GENERATE NEEDS N SAUCE
+   - YOU HAVE M" toast and Mrs. Hall's over-budget line ("You're out of sauce, Programmer..."). The
+   cauldron no longer sells "Deeper Generate budget"; the budget field stays in Deploy saves only.
 4. Name on the plaque: **THE GIST**.
-
-Next: phase 1 in a new session.

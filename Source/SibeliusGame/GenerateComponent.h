@@ -53,6 +53,10 @@ public:
 	// refusal line per reason (the P1 seed of the Mrs. Hall refusal).
 	EGenerateOutcome SubmitRequest(const FString& RawText);
 
+	/** Generate is paid in sauce: a catalog row's Cost is in these units (a tree, cost 2, is
+	    20 sauce) and THE GIST is one unit - the same 10 Refactor's treasure costs. */
+	static constexpr int32 SaucePerCost = 10;
+
 	int32 GetRemainingBudget() const { return RemainingBudget; }
 	int32 GetCatalogNum() const { return Catalog.Num(); }
 
@@ -72,7 +76,9 @@ protected:
 	    so a Test-Drive discard survives leaving and returning. */
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	// Per-session generation budget (the in-fiction economy). Tunable; Walt curates.
+	// LEGACY since 2026-10-29: Generate is paid in sauce (SaucePerCost) and nothing spends this.
+	// It is still written to and read from Deploy saves, so old saves and the Generate smoke
+	// test's save round-trip stay valid; it no longer limits anything.
 	UPROPERTY(EditAnywhere, Category = "Generate")
 	int32 RemainingBudget = 10;
 

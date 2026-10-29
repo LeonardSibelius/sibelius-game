@@ -70,8 +70,8 @@ walk into it and the power is yours, forever. In order:
   DEPLOY (0) — make your edits permanent. Deployed changes survive
     even quitting the game.
 
-  GENERATE (G) — type a request, and if it's in the catalog, it appears.
-    Your budget is limited; the cauldron sells more.
+  GENERATE (G) — type a request. If it's in the catalog, it appears; if not,
+    Mrs. Hall builds the gist of it. Each wish costs sauce (a gist is 10).
 
 If a key does nothing and a message says the power is not yet yours,
 that's Mrs. Hall's truth: go find the shrine, or buy the power at the

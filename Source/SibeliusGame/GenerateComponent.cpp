@@ -139,7 +139,7 @@ void UGenerateComponent::BeginPlay()
 	FString Err;
 	if (LoadGenerateCatalog(Catalog, Err))
 	{
-		UE_LOG(LogTemp, Display, TEXT("[Generate] catalog loaded: %d entries, budget %d."), Catalog.Num(), RemainingBudget);
+		UE_LOG(LogTemp, Display, TEXT("[Generate] catalog loaded: %d entries, %d sauce per unit of cost."), Catalog.Num(), SaucePerCost);
 	}
 	else
 	{
@@ -183,7 +183,15 @@ const FGenerateCatalogEntry* UGenerateComponent::FindEntry(const FName& Id) cons
 
 EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 {
-	const FGenerateResolution R = ClassifyGenerateRequest(RawText, Catalog, RemainingBudget, Blocklist);
+	/* GENERATE IS PAID IN SAUCE (Walt, 2026-10-29: "why do we have the generate budget instead
+	   of just paying with 10 sauce like refactor?" - "let's switch to sauce"). The budget was
+	   Generate's own currency from before sauce existed; the cauldron then sold it for sauce,
+	   so sauce bought budget and budget bought things. Now a row's Cost is in units of
+	   SaucePerCost (a tree, cost 2, is 20 sauce) and a gist is one unit. The matcher still
+	   decides "too dear", given how many units his sauce covers. No wallet (headless): free. */
+	UProgressionSubsystem* Wallet = UProgressionSubsystem::Get(this);
+	const int32 Sauce = Wallet ? Wallet->GetSauce() : MAX_int32;
+	const FGenerateResolution R = ClassifyGenerateRequest(RawText, Catalog, Sauce / SaucePerCost, Blocklist);
 
 	/* SAY WHAT WAS ASKED AND WHAT WAS DECIDED — every time, refusal or not.
 
@@ -194,10 +202,10 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 	   simply never written down. One line, and the next "why did Generate say no" is a
 	   log search instead of an argument. */
 	UE_LOG(LogTemp, Display,
-		TEXT("[Generate] request \"%s\" -> outcome %d (%s), entry '%s', cost %d, budget %d."),
+		TEXT("[Generate] request \"%s\" -> outcome %d (%s), entry '%s', cost %d (%d sauce), sauce %d."),
 		*RawText, static_cast<int32>(R.Outcome),
 		R.RefusalReason.IsEmpty() ? TEXT("resolved") : *R.RefusalReason,
-		*R.EntryId.ToString(), R.Cost, RemainingBudget);
+		*R.EntryId.ToString(), R.Cost, R.Cost * SaucePerCost, Sauce);
 
 	// Success path is unchanged: the object appears + a small neutral confirm. Don't over-style.
 	if (R.Outcome == EGenerateOutcome::Resolved)
@@ -301,9 +309,14 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 
 			if (SpawnEntry(*E))
 			{
-				RemainingBudget -= R.Cost;
+				// Paid once it stands, as the budget was; the matcher already knew he could.
+				const int32 Price = R.Cost * SaucePerCost;
+				if (Wallet && Price > 0)
+				{
+					Wallet->TrySpendSauce(Price);
+				}
 				bHasSpawnedThisSession = true; // SIB-31: the cathedral door's generate gate
-				Toast(FString::Printf(TEXT("%s appears.   (budget %d)"), *E->DisplayName.ToString(), RemainingBudget), FColor::Green);
+				Toast(FString::Printf(TEXT("%s appears.   (%d sauce)"), *E->DisplayName.ToString(), Price), FColor::Green);
 			}
 			else
 			{
@@ -316,24 +329,29 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 	/* THE GIST (docs/GIST_GENERATOR_PLAN.md; Walt, 2026-10-29: "an entertaining generator
 	   ... quick but silly"). The catalog holds six things, so nearly every wish ended in "We
 	   don't keep that here." Now no match - and a tie, which a hybrid answers better than a
-	   refusal - builds the gist of the words instead, for one from the same budget. Unsafe
-	   words never reach it (the matcher refused them above, and the rules refuse them again);
-	   nothing typed, or no budget left, still gets her refusal. */
+	   refusal - builds the gist of the words instead, for one unit of sauce. Unsafe words
+	   never reach it (the matcher refused them above, and the rules refuse them again);
+	   nothing typed, or too little sauce, still gets her refusal. */
 	EGenerateOutcome Outcome = R.Outcome;
+	int32 Needed = R.Cost * SaucePerCost;   // what an over-budget refusal says he lacked
 	if (Outcome == EGenerateOutcome::RefusedNoMatch || Outcome == EGenerateOutcome::RefusedAmbiguous)
 	{
 		if (const TUniquePtr<Gist::FRecipe> Recipe = AGistSite::Plan(RawText, Blocklist))
 		{
-			if (RemainingBudget < 1)
+			if (Sauce < SaucePerCost)
 			{
 				Outcome = EGenerateOutcome::RefusedOverBudget;
+				Needed = SaucePerCost;
 			}
 			else if (SpawnGist(RawText, *Recipe))
 			{
-				RemainingBudget -= 1;
+				if (Wallet)
+				{
+					Wallet->TrySpendSauce(SaucePerCost);
+				}
 				bHasSpawnedThisSession = true;
-				Toast(FString::Printf(TEXT("THE GIST of \"%s\" appears.   (budget %d)"),
-					UTF8_TO_TCHAR(Recipe->Echo.c_str()), RemainingBudget), FColor::Green);
+				Toast(FString::Printf(TEXT("THE GIST of \"%s\" appears.   (%d sauce)"),
+					UTF8_TO_TCHAR(Recipe->Echo.c_str()), SaucePerCost), FColor::Green);
 				const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, EGenerateOutcome::Gist, GistCount++);
 				const FString Line = Picked.Line.IsEmpty() ? FString(TEXT("Fine. This is what we had in the back.")) : Picked.Line;
 				if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
@@ -352,6 +370,14 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 				return Outcome;
 			}
 		}
+	}
+
+	// Too little sauce: the price and the purse in plain numbers, as Refactor says it; her line
+	// below stays in character.
+	if (Outcome == EGenerateOutcome::RefusedOverBudget)
+	{
+		ASibeliusHUD::Toast(this, FString::Printf(TEXT("GENERATE NEEDS %d SAUCE — YOU HAVE %d"), Needed, Sauce),
+			3.5f, SibeliusToast::Warn);
 	}
 
 	// Refusal (no-match / ambiguous / over-budget / unsafe): Mrs. Hall, in her own voice,

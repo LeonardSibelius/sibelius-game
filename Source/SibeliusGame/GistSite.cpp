@@ -257,7 +257,7 @@ void AGistSite::SetShown(bool bShown)
 
 void AGistSite::Interact_Implementation(AActor* Interactor)
 {
-	// No refund and no Books: it cost Generate budget, and it goes back where it came from.
+	// No refund and no Books: it cost sauce, and it goes back where it came from.
 	if (IsBuilt())
 	{
 		RestoreBranchState(0);
