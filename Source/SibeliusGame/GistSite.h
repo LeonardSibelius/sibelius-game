@@ -14,8 +14,10 @@ class UInstancedStaticMeshComponent;
 class UBoxComponent;
 class UTextRenderComponent;
 class UMaterialInterface;
+class UMaterialInstanceDynamic;
 class UStaticMesh;
-namespace Gist { struct FRecipe; }
+class UTexture2D;
+namespace Gist { struct FRecipe; struct FVec; }
 
 /** A googly pupil: which instance it is, the eye it rolls around in, and where it looks now. */
 struct FGistPupil
@@ -39,6 +41,11 @@ public:
 	/** The EntryId a gist carries in place of a catalog row. */
 	static const FName EntryId;
 
+	/** The EntryId of a painting on its own (THE GIST, illustrated): the easel and the artist's
+	    picture, no clay toy. Walt, 2026-11-01: "can we please not have the clay things? pictures
+	    only please". Saved by its words like a gist; restored from the painting kept on disk. */
+	static const FName PaintingEntryId;
+
 	/** The rules' answer for these words, or null when they refuse or nothing was typed.
 	    Words load once from Content/Data; Blocklist is the one the matcher already uses. */
 	static TUniquePtr<Gist::FRecipe> Plan(const FString& Prompt, const TArray<FString>& Blocklist);
@@ -46,13 +53,25 @@ public:
 	/** Draw a planned gist and present it built; bFreshlyGenerated plays the pop-in. */
 	void Author(const FString& InPrompt, const Gist::FRecipe& Recipe, bool bFreshlyGenerated);
 
+	/** A painting on its own: no toy and no plaque, the easel where the toy would stand. The
+	    picture is asked for separately (UGistPictureSubsystem) and shown with ShowPicture. */
+	void AuthorPainting(const FString& InPrompt);
+
 	/** Re-create a remembered or deployed gist: its words rebuild the same recipe (the rules
 	    are deterministic), at the saved pose verbatim, under the saved id. Null if the words
-	    no longer build anything. Used by both save paths, so they cannot drift. */
-	static AGistSite* Respawn(UWorld* World, const FString& Prompt, const FTransform& Where, const FGuid& Id);
+	    no longer build anything. Used by both save paths, so they cannot drift.
+	    For PaintingEntryId, an easel with the painting kept on disk - null if it is gone. */
+	static AGistSite* Respawn(UWorld* World, const FString& Prompt, const FTransform& Where, const FGuid& Id,
+		FName Kind = EntryId);
 
 	const FString& GetPrompt() const { return Prompt; }
 	FString GetPlaqueText() const;
+
+	/** THE GIST, illustrated (UGistPictureSubsystem): the easel beside the toy. A blank canvas
+	    while the artist paints, the painting when it arrives (fading in when fresh), or nothing. */
+	void ShowEasel();
+	void ShowPicture(UTexture2D* Picture, bool bFresh);
+	void HideEasel();
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnGeneratedFresh() override;
@@ -78,6 +97,24 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Gist")
 	TObjectPtr<UTextRenderComponent> Plaque;
 
+	/** The easel stands beside the toy, not on it: it does not hover, spin or dance with it. */
+	UPROPERTY(VisibleAnywhere, Category = "Gist")
+	TObjectPtr<USceneComponent> Easel;
+
+	/** Legs, ledge and clamp: engine cubes in clay, like the toy - no new meshes to download. */
+	UPROPERTY(VisibleAnywhere, Category = "Gist")
+	TObjectPtr<UInstancedStaticMeshComponent> EaselFrame;
+
+	UPROPERTY(VisibleAnywhere, Category = "Gist")
+	TObjectPtr<UStaticMeshComponent> Canvas;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInstanceDynamic> CanvasMaterial;
+
+	/** The painting itself, held so it lives as long as the easel shows it. */
+	UPROPERTY(Transient)
+	TObjectPtr<UTexture2D> Painting;
+
 	FString Prompt;
 	FString Title, Echo, Tagline;
 	TArray<FGistPupil> Pupils;
@@ -85,6 +122,11 @@ private:
 	float Clock = 0.0f;
 	float RevealAge = -1.0f;   // < 0: no pop-in running
 	float ToyHeight = 100.0f;
+	bool bEaselShown = false;
+	bool bPaintingOnly = false;  // AuthorPainting: no toy, no plaque
+	float PaintReveal = -1.0f;   // < 0: no fade running
 
 	void SetShown(bool bShown);
+	void PlaceEasel(const FVector& At, float Yaw);
+	UMaterialInstanceDynamic* CanvasMid();
 };

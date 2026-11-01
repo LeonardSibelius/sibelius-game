@@ -24,6 +24,7 @@
 #include "SibeliusGameCharacter.h"  // the facts: where the travel keys can take him now
 #include "ChatDilemmas.h"           // the facts: what he advised each agent
 #include "ChatDeeds.h"              // the facts: what she remembers him doing, and how long he was away
+#include "GistPictureSubsystem.h"   // the facts: what he had painted
 
 namespace
 {
@@ -317,6 +318,12 @@ FString UNpcChatSubsystem::BuildRequestJson(
 	TArray<TSharedPtr<FJsonValue>> Features;
 	Features.Add(MakeShared<FJsonValueString>(TEXT("human_questions")));
 	Features.Add(MakeShared<FJsonValueString>(TEXT("isla_keep")));
+	// gist_paintings: she may hear what he had painted (backend/paintings.js, 2026-11-01) - not from
+	// a Steam copy, which never paints until Valve has seen it (UGistPictureSubsystem::IsEnabled).
+	if (UGistPictureSubsystem::IsEnabled())
+	{
+		Features.Add(MakeShared<FJsonValueString>(TEXT("gist_paintings")));
+	}
 	Story->SetArrayField(TEXT("features"), Features);
 	Root->SetObjectField(TEXT("storyContext"), Story);
 
@@ -642,6 +649,24 @@ void UNpcChatSubsystem::WriteStoryFacts(const TSharedRef<FJsonObject>& Story, co
 	{
 		Out->SetNumberField(TEXT("hoursAway"), Facts.HoursAway);
 	}
+	// His paintings (backend/paintings.js), only when there are some: three at most, his words cut short.
+	if (Facts.Paintings.Num() > 0)
+	{
+		TArray<TSharedPtr<FJsonValue>> Paintings;
+		for (const FNpcStoryFacts::FPainting& Painting : Facts.Paintings)
+		{
+			if (Paintings.Num() >= 3)
+			{
+				break;
+			}
+			const TSharedRef<FJsonObject> Entry = MakeShared<FJsonObject>();
+			Entry->SetStringField(TEXT("words"), Painting.Words.Left(60));
+			Entry->SetStringField(TEXT("locationId"), Painting.LocationId);
+			Entry->SetNumberField(TEXT("hoursAgo"), Painting.HoursAgo);
+			Paintings.Add(MakeShared<FJsonValueObject>(Entry));
+		}
+		Out->SetArrayField(TEXT("paintings"), Paintings);
+	}
 	Story->SetObjectField(TEXT("facts"), Out);
 }
 
@@ -745,6 +770,16 @@ bool UNpcChatSubsystem::SendOverHttp(int32 RequestId, const FString& CharacterId
 		PendingDeeds = ChatDeeds::FromState(Progression->GetStateForRead());
 		FillMemoryFacts(Facts, Histories.Find(FName(*CharacterId)), PendingDeeds, FDateTime::UtcNow());
 		bNoteOnAnswer = true;
+	}
+	/* WHAT HE HAD PAINTED (THE GIST, illustrated): one-to-one chat only, like the deeds - and only
+	   in a copy that paints at all, so a Steam copy sends nothing new (IsEnabled). */
+	if (const UGistPictureSubsystem* Pictures = GI && UGistPictureSubsystem::IsEnabled() ? GI->GetSubsystem<UGistPictureSubsystem>() : nullptr)
+	{
+		const FDateTime Now = FDateTime::UtcNow();
+		for (const FGistPaintingNote& Note : Pictures->RecentPaintings(3))
+		{
+			Facts.Paintings.Add({Note.Words, Note.LocationId, FMath::Max(0, static_cast<int32>((Now - Note.MadeUtc).GetTotalHours()))});
+		}
 	}
 
 	const FString Body = BuildRequestJson(PendingUuid, CharacterId, Message,
@@ -1326,4 +1361,28 @@ namespace
 				Chat->ForgetAll();
 			}
 		}));
+
+#if !UE_BUILD_SHIPPING
+	/** For editor tests: say something to one agent as if typed in her panel, and log her reply -
+	    the whole request, facts and features included, without driving the UI. Not in Shipping. */
+	FAutoConsoleCommandWithWorldAndArgs ChatSayCommand(
+		TEXT("sib.Chat.Say"),
+		TEXT("Dev: sib.Chat.Say <kaia|nyra|isla|elise|aisling> <message...> - logs her reply as [Chat] SAY."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			UGameInstance* GI = World ? World->GetGameInstance() : nullptr;
+			UNpcChatSubsystem* Chat = GI ? GI->GetSubsystem<UNpcChatSubsystem>() : nullptr;
+			if (!Chat || Args.Num() < 2)
+			{
+				return;
+			}
+			const FString Who = Args[0];
+			const FString Message = FString::Join(TArrayView<const FString>(Args).RightChop(1), TEXT(" "));
+			const int32 Id = Chat->Send(Who, Message, FOnNpcChatReply::CreateLambda([Who](const FString& Reply, ENpcChatFailure Failure)
+			{
+				UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] SAY %s (failure %d): %s"), *Who, static_cast<int32>(Failure), *Reply);
+			}));
+			UE_LOG(LogSibeliusGame, Display, TEXT("[Chat] SAY to %s: \"%s\" (request %d)"), *Who, *Message, Id);
+		}));
+#endif
 }

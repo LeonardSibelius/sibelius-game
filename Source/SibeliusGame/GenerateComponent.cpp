@@ -9,8 +9,9 @@
 #include "MrsHallSubsystem.h"       // SPINE Move 2: the one channel she speaks through
 
 #include "BuildSite.h"
-#include "GistSite.h"                // THE GIST: what no-match and a tie build now
-#include "GistRules.h"
+#include "GistSite.h"                // THE GIST: the easel no-match and a tie put up now
+#include "GistRules.h"               // Plan's recipe: its words must pass the rules first
+#include "GistPictureSubsystem.h"    // THE GIST, illustrated: the painting on it
 #include "Spaceport.h"               // the one catalog entry with a prerequisite
 #include "ProteinMachine.h"          // IsEnhanced - that prerequisite
 #include "HintVolume.h"              // the lawn: where a spaceport may be built
@@ -328,47 +329,70 @@ EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 
 	/* THE GIST (docs/GIST_GENERATOR_PLAN.md; Walt, 2026-10-29: "an entertaining generator
 	   ... quick but silly"). The catalog holds six things, so nearly every wish ended in "We
-	   don't keep that here." Now no match - and a tie, which a hybrid answers better than a
-	   refusal - builds the gist of the words instead, for one unit of sauce. Unsafe words
-	   never reach it (the matcher refused them above, and the rules refuse them again);
-	   nothing typed, or too little sauce, still gets her refusal. */
+	   don't keep that here." From 2.4.5, no match - and a tie - built a clay gist of the words.
+
+	   PICTURES ONLY (Walt, 2026-11-01: "can we please not have the clay things? pictures only
+	   please"). Now an easel with a blank canvas goes up at once, and the artist's painting of
+	   the words fills it a few seconds later (docs/GIST_PICTURES_PLAN.md). Paid and remembered
+	   only when it arrives: refused, or the artist gone home, and the easel goes away and
+	   nothing is charged. A copy that cannot paint (a Steam copy, pictures off, no chat server)
+	   gets her refusal, as before THE GIST - Walt chose that over keeping the clay toy there.
+	   The gist's rules must still accept the words, so their blocklist guards the painting as it
+	   guarded the toy; nothing typed, or too little sauce, still gets her refusal. */
 	EGenerateOutcome Outcome = R.Outcome;
 	int32 Needed = R.Cost * SaucePerCost;   // what an over-budget refusal says he lacked
-	if (Outcome == EGenerateOutcome::RefusedNoMatch || Outcome == EGenerateOutcome::RefusedAmbiguous)
+	UGistPictureSubsystem* Pictures = UGistPictureSubsystem::Get(this);
+	if ((Outcome == EGenerateOutcome::RefusedNoMatch || Outcome == EGenerateOutcome::RefusedAmbiguous)
+		&& Pictures && UGistPictureSubsystem::CanPaint() && AGistSite::Plan(RawText, Blocklist).IsValid())
 	{
-		if (const TUniquePtr<Gist::FRecipe> Recipe = AGistSite::Plan(RawText, Blocklist))
+		if (Sauce < SaucePerCost)
 		{
-			if (Sauce < SaucePerCost)
+			Outcome = EGenerateOutcome::RefusedOverBudget;
+			Needed = SaucePerCost;
+		}
+		else
+		{
+			if (Pictures->IsBusy())
 			{
-				Outcome = EGenerateOutcome::RefusedOverBudget;
-				Needed = SaucePerCost;
-			}
-			else if (SpawnGist(RawText, *Recipe))
-			{
-				if (Wallet)
-				{
-					Wallet->TrySpendSauce(SaucePerCost);
-				}
-				bHasSpawnedThisSession = true;
-				Toast(FString::Printf(TEXT("THE GIST of \"%s\" appears.   (%d sauce)"),
-					UTF8_TO_TCHAR(Recipe->Echo.c_str()), SaucePerCost), FColor::Green);
-				const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, EGenerateOutcome::Gist, GistCount++);
-				const FString Line = Picked.Line.IsEmpty() ? FString(TEXT("Fine. This is what we had in the back.")) : Picked.Line;
-				if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
-				{
-					Hall->SayLine(Line, Picked.AudioKey);
-				}
-				else
-				{
-					ShowMrsHall(Line);
-				}
+				ASibeliusHUD::Toast(this, TEXT("THE ARTIST IS STILL ON THE LAST ONE — WAIT FOR IT"), 3.0f, SibeliusToast::Warn);
 				return EGenerateOutcome::Gist;
 			}
-			else
+			AGistSite* Easel = SpawnPainting(RawText);
+			if (!Easel)
 			{
 				Toast(TEXT("...nothing came (could not place it)."), FColor::Red);
 				return Outcome;
 			}
+			Toast(FString::Printf(TEXT("The artist is painting \"%s\"..."), *RawText.Left(60)), FColor::Green);
+			TWeakObjectPtr<UGenerateComponent> WeakThis(this);
+			TWeakObjectPtr<AGistSite> WeakEasel(Easel);
+			const bool bAsked = Pictures->Request(RawText, Easel, [WeakThis, WeakEasel, RawText](bool bPainted)
+			{
+				UGenerateComponent* Self = WeakThis.Get();
+				AGistSite* Painted = WeakEasel.Get();
+				if (!Painted)
+				{
+					return;   // he left before it arrived: nothing stood, nothing to pay for
+				}
+				if (!bPainted || !Self)
+				{
+					Painted->Destroy();
+					return;
+				}
+				if (UProgressionSubsystem* Purse = UProgressionSubsystem::Get(Self))
+				{
+					Purse->TrySpendSauce(SaucePerCost);
+				}
+				Self->bHasSpawnedThisSession = true;
+				Self->RememberSite(Painted, AGistSite::PaintingEntryId, RawText);
+				Self->Toast(FString::Printf(TEXT("A painting of \"%s\".   (%d sauce)"), *RawText.Left(60), SaucePerCost), FColor::Green);
+			});
+			if (!bAsked)
+			{
+				Easel->Destroy();
+				Toast(TEXT("...the artist could not start (try again)."), FColor::Red);
+			}
+			return EGenerateOutcome::Gist;
 		}
 	}
 
@@ -457,43 +481,31 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	return true;
 }
 
-bool UGenerateComponent::SpawnGist(const FString& RawText, const Gist::FRecipe& Recipe)
+AGistSite* UGenerateComponent::SpawnPainting(const FString& RawText)
 {
 	const APawn* Pawn = Cast<APawn>(GetOwner());
 	UWorld* World = Pawn ? Pawn->GetWorld() : nullptr;
 	if (!Pawn || !World)
 	{
-		return false;
+		return nullptr;
 	}
-
-	// Far enough ahead that a big gist does not land on him: its centre goes half its own
-	// footprint plus a stride away, and never nearer than a catalog item would.
-	Gist::FVec Min, Max;
-	Gist::Bounds(Recipe.Parts, Min, Max);
-	const float Footprint = FMath::Max(Max.X - Min.X, Max.Y - Min.Y);
 	FVector SpawnLoc;
-	if (!FindSpawnPoint(FMath::Max(SpawnAheadDistance, Footprint * 0.5f + 150.0f), /*bNamedDistance=*/false, SpawnLoc))
+	if (!FindSpawnPoint(SpawnAheadDistance, /*bNamedDistance=*/false, SpawnLoc))
 	{
-		return false;
+		return nullptr;
 	}
-
-	// A recipe faces +X; turn it round to face him.
+	// The canvas faces the easel's +X; turn it round to face him.
 	const FRotator Facing(0.0f, Pawn->GetControlRotation().Yaw + 180.0f, 0.0f);
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	AGistSite* Site = World->SpawnActor<AGistSite>(AGistSite::StaticClass(), SpawnLoc, Facing, SpawnParams);
-	if (!Site)
+	AGistSite* Easel = World->SpawnActor<AGistSite>(AGistSite::StaticClass(), SpawnLoc, Facing, SpawnParams);
+	if (!Easel)
 	{
-		return false;
+		return nullptr;
 	}
-	Site->Author(RawText, Recipe, /*bFreshlyGenerated=*/true);
-
-	// Remembered by its words: they rebuild the same toy when he comes back (RestoreGeneratedSites).
-	RememberSite(Site, AGistSite::EntryId, RawText);
-	const FString What = Recipe.bContraption ? FString(TEXT("a contraption")) : FString(UTF8_TO_TCHAR(Recipe.Archetype.c_str()));
-	UE_LOG(LogTemp, Display, TEXT("[Generate] THE GIST of \"%s\": %s, %d part(s), %d cop(ies), scale %.2f, behaviours %u."),
-		*RawText, *What, static_cast<int32>(Recipe.Parts.size()), Recipe.Copies, Recipe.Scale, Recipe.Behaviours);
-	return true;
+	Easel->AuthorPainting(RawText);
+	UE_LOG(LogTemp, Display, TEXT("[Generate] THE GIST, painted: an easel for \"%s\"."), *RawText);
+	return Easel;
 }
 
 /* WHERE A GENERATED THING LANDS - one answer for catalog rows and gists alike. Moved out of
@@ -685,10 +697,11 @@ void UGenerateComponent::RestoreGeneratedSites()
 		{
 			continue;
 		}
-		// A gist has no catalog row: its words rebuild it, in the state he left it in.
-		if (R.EntryId == AGistSite::EntryId)
+		// A gist has no catalog row: its words rebuild it, in the state he left it in. A painting
+		// comes back from the copy kept on disk.
+		if (R.EntryId == AGistSite::EntryId || R.EntryId == AGistSite::PaintingEntryId)
 		{
-			if (AGistSite* Gist = AGistSite::Respawn(World, R.Prompt, R.Transform, R.ObjectId))
+			if (AGistSite* Gist = AGistSite::Respawn(World, R.Prompt, R.Transform, R.ObjectId, R.EntryId))
 			{
 				Gist->RestoreBranchState(R.State);
 				++Restored;
