@@ -32,7 +32,7 @@ export function screenContextFor(storyContext, recentTurns) {
 
 /** The features a client may switch on. Anything else is ignored. isla_keep: Isla's home is
  *  Fafnir's Keep, not the station (characters.js, homesFor; 2026-10-24). */
-export const FEATURES = new Set(["human_questions", "isla_keep"]);
+export const FEATURES = new Set(["human_questions", "isla_keep", "gist_paintings"]);
 
 /** Did this request's game switch the feature on? Allowlisted, case-sensitive. */
 export function hasFeature(storyContext, name) {

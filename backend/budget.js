@@ -96,7 +96,28 @@ export function createBudget({
     },
 
     /**
-     * Replace the reservation with the real cost once the usage metadata arrives.
+     * The same two questions by price, for a ledger whose calls are not priced by one pair of
+     * token rates: a picture's image tokens cost twenty times its text tokens (pictures.js).
+     */
+    checkAmount(usd) {
+      roll();
+      if (state.monthSpent + usd > monthlyCapUsd) return "month";
+      if (state.daySpent + usd > dailyCapUsd) return "day";
+      return null;
+    },
+
+    reserveAmount(usd) {
+      roll();
+      state.monthSpent += usd;
+      state.daySpent += usd;
+      state.calls += 1;
+      persist();
+      return { amount: usd };
+    },
+
+    /**
+     * Replace the reservation with the real cost once the usage metadata arrives. A usage
+     * that carries its own costUsd (a picture, priced in pictures.js) is taken as given.
      *
      * A failed call still costs whatever the provider charged, which for a blocked or
      * empty response is usually the input tokens. Settling with zero on failure would
@@ -104,7 +125,7 @@ export function createBudget({
      */
     settle(handle, usage) {
       roll();
-      const actual = usage ? cost(usage.inputTokens ?? 0, usage.outputTokens ?? 0) : 0;
+      const actual = !usage ? 0 : Number.isFinite(usage.costUsd) ? usage.costUsd : cost(usage.inputTokens ?? 0, usage.outputTokens ?? 0);
       const delta = actual - handle.amount;
       state.monthSpent = Math.max(0, state.monthSpent + delta);
       state.daySpent = Math.max(0, state.daySpent + delta);

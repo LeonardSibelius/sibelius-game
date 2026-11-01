@@ -1,4 +1,5 @@
-// server.js — POST /v1/npc-chat, the only endpoint the game knows.
+// server.js — POST /v1/npc-chat, the endpoint the game knows best; /v1/npc-council for the
+// council table, and /v1/gist-picture for THE GIST's paintings (pictures.js).
 //
 // It owns the API key, the model, the character instructions, the budget and the error
 // vocabulary. The game owns presentation and local memory, and nothing the model says
@@ -8,8 +9,14 @@
 // and a backend holding an API key is the last place to want a supply chain.
 
 import { createServer } from "node:http";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { createBudget, DEFAULT_PRICING } from "./budget.js";
-import { generate, estimateTokens, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
+import { generate, generateImage, estimateTokens, SAFETY_SETTINGS, SEXUAL_ONLY_SETTINGS } from "./gemini.js";
+import {
+  screenWish, checkPicture, pictureBrief, cleanWords, pictureCost, screenCost,
+  PICTURE_RESERVE_USD, MOCK_PICTURE,
+} from "./pictures.js";
 import { getCharacter, knownCharacterIds, locationLine, homeLine, awayLine, sceneNote, capSentences, homesFor } from "./characters.js";
 import { screenMessage, screenText, SCREEN_INSTRUCTION } from "./distress.js";
 import { STYLES, systemInstructionFor } from "./styles.js";
@@ -20,6 +27,7 @@ import { dilemmaLine, adviceLine, extractAdvice, screenContext } from "./dilemma
 import { curiosityLine, screenContextFor } from "./curiosity.js";
 import { boastLine } from "./boasts.js";
 import { memoryLine, welcomeLine } from "./memory.js";
+import { paintingsLine } from "./paintings.js";
 
 /**
  * WHAT A PLAYER IN TROUBLE IS TOLD. AUTHORED, NEVER GENERATED.
@@ -147,6 +155,16 @@ export function createApp(options = {}) {
     perIpPerMinute: num("PER_IP_PER_MINUTE", 12),
     upstreamTimeoutMs: num("UPSTREAM_TIMEOUT_MS", 20000),
     stateFile: env("BUDGET_FILE", "./.state/budget.json"),
+    /* THE GIST, ILLUSTRATED (pictures.js, docs/GIST_PICTURES_PLAN.md). OFF UNLESS SAID: the
+       route answers "unavailable" until PICTURES_DISABLED is "0". Its own ledger and its own
+       caps (Walt, 2026-11-01: "nano banana with the daily cap"), so pictures can never spend
+       chat's money and chat can never starve them. */
+    picturesKilled: env("PICTURES_DISABLED", "1") !== "0",
+    pictureModel: env("PICTURE_MODEL", "gemini-3.1-flash-lite-image"),
+    pictureDailyCapUsd: num("PICTURE_DAILY_CAP_USD", 1),
+    pictureMonthlyCapUsd: num("PICTURE_MONTHLY_CAP_USD", 20),
+    picturesPerPlayerPerDay: num("PICTURES_PER_PLAYER_PER_DAY", 5),
+    pictureStateFile: env("PICTURE_BUDGET_FILE", "./.state/pictures.json"),
     ...options,
   };
 
@@ -165,6 +183,35 @@ export function createApp(options = {}) {
       pricing: DEFAULT_PRICING,
       maxOutputTokens: config.maxOutputTokens,
     });
+
+  const pictureBudget =
+    options.pictureBudget ??
+    createBudget({
+      file: config.pictureStateFile,
+      monthlyCapUsd: config.pictureMonthlyCapUsd,
+      dailyCapUsd: config.pictureDailyCapUsd,
+      maxOutputTokens: 0,
+    });
+
+  /* WHAT THE PICTURES DID, COUNTED - the evidence Valve will want ("how many were made, how
+     many were stopped, and where"). Words and verdicts are never written together: these are
+     counts, kept beside the ledger, and the words themselves stay on the player's machine. */
+  const statsFile = config.pictureStateFile.replace(/\.json$/, "") + "-stats.json";
+  let pictureStats = { painted: 0, refusedWish: 0, refusedPicture: 0, blockedByGoogle: 0, capped: 0, playerLimit: 0, failed: 0 };
+  try {
+    pictureStats = { ...pictureStats, ...JSON.parse(readFileSync(statsFile, "utf8")) };
+  } catch {
+    // A fresh count, like a fresh ledger.
+  }
+  const tally = (key) => {
+    pictureStats[key] = (pictureStats[key] ?? 0) + 1;
+    try {
+      mkdirSync(dirname(statsFile), { recursive: true });
+      writeFileSync(statsFile, JSON.stringify(pictureStats), "utf8");
+    } catch (err) {
+      console.error(`[picture] could not persist stats: ${err.message}`);
+    }
+  };
 
   /** requestId -> { fingerprint, response, at }. Bounded by TTL sweeps. */
   const seen = new Map();
@@ -265,6 +312,8 @@ export function createApp(options = {}) {
       adviceLine(body.characterId, body.storyContext?.facts),
       // New builds only (memory.js): his deeds, which outlast the conversation she keeps.
       memoryLine(body.characterId, body.storyContext, roll),
+      // New builds only (paintings.js): what he had the supply room paint, his words quoted, never obeyed.
+      paintingsLine(body.characterId, body.storyContext, roll, { welcomed: !!welcomeLine(body.characterId, body.storyContext) }),
       // New builds only (curiosity.js): she may ask what being human is like, never about his life.
       curiosityLine(body.characterId, body.storyContext),
       // New builds only (boasts.js): the Grand Prix, her pride in her racing and dancing, and now
@@ -400,6 +449,136 @@ export function createApp(options = {}) {
     } finally {
       caller.inFlight = Math.max(0, caller.inFlight - 1);
     }
+  }
+
+  /** requestId -> { words, response, at }: a retried picture is replayed, never paid twice. */
+  const seenPictures = new Map();
+  /** ip -> { day, count, inFlight }: pictures per player per day, one at a time. */
+  const pictureCallers = new Map();
+
+  const pictureCaller = (ip) => {
+    const day = new Date().toISOString().slice(0, 10);
+    const caller = pictureCallers.get(ip);
+    if (!caller || caller.day !== day) {
+      const fresh = { day, count: 0, inFlight: 0 };
+      pictureCallers.set(ip, fresh);
+      return fresh;
+    }
+    return caller;
+  };
+
+  /**
+   * One painting of the player's words (pictures.js, docs/GIST_PICTURES_PLAN.md).
+   *
+   * Off switch, then the request's shape, then a replay, then the player's daily allowance,
+   * then the ledger - all before anything is called, so a refusal for any of them costs
+   * nothing. Then the wish screen, the picture, and the look at the picture, each of which
+   * must say yes. A refused or failed picture costs what Google charged for it, settled
+   * against the picture ledger, never chat's.
+   */
+  async function handlePicture(body, ip) {
+    if (config.picturesKilled) return { http: 200, payload: unavailable("service"), detail: "pictures off" };
+    if (!body || typeof body !== "object" || typeof body.requestId !== "string" || body.requestId.length < 8) {
+      return { http: 400, payload: unavailable("service"), detail: "requestId" };
+    }
+    const words = cleanWords(body.words);
+    if (!words) return { http: 400, payload: unavailable("service"), detail: "words" };
+
+    const cutoff = Date.now() - DEDUP_TTL_MS;
+    for (const [id, entry] of seenPictures) if (entry.at < cutoff) seenPictures.delete(id);
+    const previous = seenPictures.get(body.requestId);
+    if (previous) {
+      if (previous.words !== words) return { http: 409, payload: unavailable("service"), detail: "requestId reuse" };
+      return { http: 200, payload: previous.response, replayed: true };
+    }
+
+    const caller = pictureCaller(ip);
+    if (caller.inFlight > 0) return { http: 429, payload: unavailable("quota"), detail: "picture in flight" };
+    if (caller.count >= config.picturesPerPlayerPerDay) {
+      tally("playerLimit");
+      return { http: 200, payload: unavailable("quota", { limit: "player" }), detail: "player daily limit" };
+    }
+    const overspent = pictureBudget.checkAmount(PICTURE_RESERVE_USD);
+    if (overspent) {
+      tally("capped");
+      console.log(`[picture] refused, ${overspent} cap reached`);
+      return { http: 200, payload: unavailable("quota", { limit: overspent }) };
+    }
+
+    caller.inFlight += 1;
+    caller.count += 1;
+    const reservation = pictureBudget.reserveAmount(PICTURE_RESERVE_USD);
+    const started = Date.now();
+    let spent = 0;
+    try {
+      const screen = config.mock ? mockWish(words) : await screenWish({ apiKey: config.apiKey, model: config.screenModel, words });
+      spent += screenCost(screen.usage);
+      let outcome, payload;
+      if (screen.verdict !== "ok") {
+        // A failed screen is a refusal too: pictures fail closed (pictures.js).
+        outcome = screen.verdict === null ? "screen-failed" : "refused-wish";
+        tally("refusedWish");
+        payload = unavailable("blocked");
+      } else {
+        const image = config.mock
+          ? mockImage(words)
+          : await generateImage({
+              apiKey: config.apiKey,
+              model: config.pictureModel,
+              prompt: pictureBrief(words),
+              safetySettings: SEXUAL_ONLY_SETTINGS,
+            });
+        spent += pictureCost(config.pictureModel, image.usage);
+        if (!image.ok) {
+          outcome = image.failure === "blocked" ? "blocked-by-google" : image.failure;
+          tally(image.failure === "blocked" ? "blockedByGoogle" : "failed");
+          payload = unavailable(image.failure);
+        } else {
+          const look = config.mock
+            ? mockCheck(words)
+            : await checkPicture({ apiKey: config.apiKey, model: config.screenModel, mime: image.mime, data: image.data });
+          spent += screenCost(look.usage);
+          if (look.verdict !== "ok") {
+            outcome = look.verdict === null ? "check-failed" : "refused-picture";
+            tally("refusedPicture");
+            payload = unavailable("blocked");
+          } else {
+            outcome = "painted";
+            tally("painted");
+            payload = { status: "ok", requestId: body.requestId, mime: image.mime, imageBase64: image.data };
+          }
+        }
+      }
+      pictureBudget.settle(reservation, { costUsd: spent });
+      // METRICS, NEVER BODIES, as chat: the outcome and the cost, never the words.
+      console.log(`[picture] ${outcome} usd=${spent.toFixed(6)} ${Date.now() - started}ms`);
+      seenPictures.set(body.requestId, { words, response: payload, at: Date.now() });
+      return { http: 200, payload };
+    } catch (err) {
+      pictureBudget.settle(reservation, { costUsd: spent });
+      tally("failed");
+      console.error(`[picture] unhandled: ${err.message}`);
+      return { http: 200, payload: unavailable("service") };
+    } finally {
+      caller.inFlight = Math.max(0, caller.inFlight - 1);
+    }
+  }
+
+  /* The picture mocks: __refuse__ is refused at the screen, __screenfail__ has no verdict,
+     __blocked__ is refused by Google, __badpic__ fails the look at the picture; the rest paint
+     MOCK_PICTURE. Usage is small and fixed so the ledger arithmetic is testable. */
+  function mockWish(words) {
+    const usage = { inputTokens: 300, outputTokens: 2 };
+    if (/__screenfail__/.test(words)) return { verdict: null, usage: null, failure: "network" };
+    return { verdict: /__refuse__/.test(words) ? "refuse" : "ok", usage };
+  }
+  function mockImage(words) {
+    const usage = { inputTokens: 40, textTokens: 300, imageTokens: 1120 };
+    if (/__blocked__/.test(words)) return { ok: false, failure: "blocked", usage };
+    return { ok: true, mime: MOCK_PICTURE.mime, data: MOCK_PICTURE.data, usage };
+  }
+  function mockCheck(words) {
+    return { verdict: /__badpic__/.test(words) ? "refuse" : "ok", usage: { inputTokens: 1300, outputTokens: 2 } };
   }
 
   /** A council request: the player's line, and the table's conversation so far. */
@@ -626,12 +805,20 @@ export function createApp(options = {}) {
         style: config.chatStyle,
         screen: config.distressScreen ? "on" : "off",
         budget: budget.status(),
+        pictures: {
+          killed: config.picturesKilled,
+          model: config.pictureModel,
+          perPlayerPerDay: config.picturesPerPlayerPerDay,
+          budget: pictureBudget.status(),
+          counts: pictureStats,
+        },
       });
     }
 
     const route = req.method !== "POST" ? null
       : req.url.startsWith("/v1/npc-council") ? "council"
       : req.url.startsWith("/v1/npc-chat") ? "chat"
+      : req.url.startsWith("/v1/gist-picture") ? "picture"
       : null;
     if (!route) {
       return send(404, unavailable("service"));
@@ -658,13 +845,15 @@ export function createApp(options = {}) {
         return send(400, unavailable("service"));
       }
       const ip = callerKey(req);
-      const result = route === "council" ? await handleCouncil(body, ip) : await handleChat(body, ip);
+      const result = route === "council" ? await handleCouncil(body, ip)
+        : route === "picture" ? await handlePicture(body, ip)
+        : await handleChat(body, ip);
       if (result.detail) console.log(`[${route}] rejected: ${result.detail}`);
       send(result.http ?? 200, result.payload);
     });
   });
 
-  return { server, config, budget, handleChat, handleCouncil };
+  return { server, config, budget, pictureBudget, handleChat, handleCouncil, handlePicture };
 }
 
 // Started directly rather than imported by a test.
@@ -676,6 +865,10 @@ if (process.argv[1] && process.argv[1].endsWith("server.js")) {
       `[chat] listening on ${port}, model=${config.model}, ` +
         `mock=${config.mock}, caps=$${config.dailyCapUsd}/day $${config.monthlyCapUsd}/month, ` +
         `characters=${knownCharacterIds().join(",")}`
+    );
+    console.log(
+      `[picture] ${config.picturesKilled ? "OFF" : "on"}, model=${config.pictureModel}, ` +
+        `caps=$${config.pictureDailyCapUsd}/day $${config.pictureMonthlyCapUsd}/month, ${config.picturesPerPlayerPerDay}/player/day`
     );
     if (!config.mock && !config.apiKey) {
       console.error("[chat] no GEMINI_API_KEY set — every live call will fail");

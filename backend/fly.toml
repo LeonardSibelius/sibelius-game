@@ -20,7 +20,12 @@
 #   A DISK (the /data mount). A restart that reset the month's spend to zero would
 #   remove the only control that stops at OUR number rather than Google's.
 #
-# See docs/NPC_CHAT_REVIEW.md and backend/README.md.
+#   PICTURES ARE OFF (2026-11-01). THE GIST's paintings (backend/pictures.js) have their own
+#   ledger on the disk and their own caps - Walt: "nano banana with the daily cap". Turning them
+#   on is PICTURES_DISABLED = '0' and a deploy, with Walt's OK. $0.034 a picture, so $1/day is
+#   ~29 pictures across all players; 5 per player per day.
+#
+# See docs/NPC_CHAT_REVIEW.md, docs/GIST_PICTURES_PLAN.md and backend/README.md.
 
 app = 'sibelius-npc-chat'
 primary_region = 'sjc'
@@ -34,6 +39,12 @@ primary_region = 'sjc'
   MAX_OUTPUT_TOKENS = '512'
   MONTHLY_CAP_USD = '50'
   PER_IP_PER_MINUTE = '12'
+  PICTURES_DISABLED = '1'
+  PICTURE_BUDGET_FILE = '/data/pictures.json'
+  PICTURE_DAILY_CAP_USD = '1'
+  PICTURE_MODEL = 'gemini-3.1-flash-lite-image'
+  PICTURE_MONTHLY_CAP_USD = '20'
+  PICTURES_PER_PLAYER_PER_DAY = '5'
   PORT = '8787'
   UPSTREAM_TIMEOUT_MS = '20000'
 
