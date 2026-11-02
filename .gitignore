@@ -467,3 +467,21 @@ Content/__ExternalActors__/Fafnir_Keep_Meshingun/
 Content/__ExternalObjects__/Fafnir_Keep_Meshingun/
 Content/__ExternalActors__/CGMA/
 Content/__ExternalObjects__/CGMA/
+
+# --- Packs Walt added from Fab on 2026-10-31 for THE GIST's shelves --------------------------------
+# Dekogon Retro 80's VOL.5 + VOL.6 (EIGHTIES), Stores VOL.3 (SHOPPING), Jobsite VOL.15 (JOBSITE), the
+# Matrix apartment demo, Meshingun's Creepwood carnival, Food Pack 01, the Megascans Medieval Banquet,
+# and Ultimate Farm Animals (Fab: "Generated with AI: Yes"). Bought or claimed packs: not in the
+# public repo. The shelves were discarded the same day (Walt: "9gb is too big already"); he kept the
+# packs on disk. Nothing in the game references them. Back up to E:.
+Content/EIGHTIES/
+Content/SHOPPING/
+Content/JOBSITE/
+Content/Deko_MatrixDemo/
+Content/Creepwood_Carnival_Meshingun/
+Content/Food_Pack_01/
+Content/Scene_Banquet/
+Content/UltimateFarmAnimalsCollection/
+Content/__ExternalActors__/Scene_Banquet/
+Content/__ExternalObjects__/Scene_Banquet/
+Content/5_10_scaleman.uasset
