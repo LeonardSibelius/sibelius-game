@@ -251,6 +251,8 @@ One package goes to itch and to the E: kit, so the game must know where it is ru
 1. **Where the picture appears:** a framed painting on an easel beside the clay toy.
    Alternative: a life-size cardboard cutout of the thing itself, replacing the toy (harder: the
    background has to be cut out).
-2. **The caps:** $1/day, $20/month, 5 pictures per player per day.
+2. **The caps:** $1/day, $20/month, 5 pictures per player per day. **Raised 2026-11-02** (Walt ran
+   out "after just a few" - a refused wish and my live test had used two of his five: "i want to
+   make three times more"): 15 per player per day and $3/day; $20/month unchanged.
 3. **The model:** Nano Banana 2 Lite, with 2.1 as the fallback.
 4. **The price to the player:** unchanged — the picture comes with the 10-sauce gist.

@@ -23,7 +23,10 @@
 #   PICTURES ARE ON (2026-11-01, Walt: "Yes, deploy it"). THE GIST's paintings
 #   (backend/pictures.js) have their own ledger on the disk and their own caps - Walt: "nano
 #   banana with the daily cap". The kill switch is PICTURES_DISABLED = '1' and a deploy.
-#   $0.034 a picture, so $1/day is ~29 pictures across all players; 5 per player per day.
+#   $0.034 a picture. THREE TIMES MORE (2026-11-02, Walt, after running out "after just a few"):
+#   15 per player per day (was 5), and $3/day (~87 pictures across all players, was $1) so the
+#   shared day is not the new limit. The monthly brake stays $20 (~580 pictures). A refused wish
+#   uses up one of the fifteen too: the count is taken before the screen.
 #   Steam copies never ask - a local switch in the game, not this one (plan §6).
 #
 # See docs/NPC_CHAT_REVIEW.md, docs/GIST_PICTURES_PLAN.md and backend/README.md.
@@ -42,10 +45,10 @@ primary_region = 'sjc'
   PER_IP_PER_MINUTE = '12'
   PICTURES_DISABLED = '0'
   PICTURE_BUDGET_FILE = '/data/pictures.json'
-  PICTURE_DAILY_CAP_USD = '1'
+  PICTURE_DAILY_CAP_USD = '3'
   PICTURE_MODEL = 'gemini-3.1-flash-lite-image'
   PICTURE_MONTHLY_CAP_USD = '20'
-  PICTURES_PER_PLAYER_PER_DAY = '5'
+  PICTURES_PER_PLAYER_PER_DAY = '15'
   PORT = '8787'
   UPSTREAM_TIMEOUT_MS = '20000'
 
