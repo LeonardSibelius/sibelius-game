@@ -1,7 +1,6 @@
 // GistSite.cpp — see the header.
 
 #include "GistSite.h"
-#include "GistPictureSubsystem.h"
 #include "GistRules.h"
 #include "TableSounds.h"
 
@@ -10,27 +9,17 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/StaticMesh.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
-#include "Engine/Texture2D.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UObject/ConstructorHelpers.h"
 
 const FName AGistSite::EntryId(TEXT("gist"));
-const FName AGistSite::PaintingEntryId(TEXT("painting"));
 
 namespace GistSiteDetail
 {
 	constexpr float PlaqueTextSize = 4.0f;
 	constexpr float HoverHeight = 60.0f;
-	constexpr float CanvasSize = 110.0f;      // cm, square: the server paints 1:1
-	constexpr float CanvasCentreZ = 150.0f;   // about eye height for him
-	constexpr float CanvasLean = 10.0f;       // degrees back, like a real easel
-	/* The painting is unlit (M_GistPicture), so its brightness is set here, against the keep's
-	   exposure: 1.0 and 0.5 washed it nearly white, 0.25 still pale; at 0.15 it matched the picture
-	   the server sent (screenshots 00297-00304, 2026-11-01). */
-	constexpr float CanvasBrightness = 0.15f;
 
 	std::string ToStd(const FString& S) { return std::string(TCHAR_TO_UTF8(*S)); }
 	FString FromStd(const std::string& S) { return FString(UTF8_TO_TCHAR(S.c_str())); }
@@ -64,8 +53,6 @@ AGistSite::AGistSite()
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Clay(TEXT("/Game/Gist/M_GistClay.M_GistClay"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Gold(TEXT("/Game/DragonsWager/M_WagerGold.M_WagerGold"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Glass(TEXT("/Game/LanternBurst/M_LanternOrb.M_LanternOrb"));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneMesh(TEXT("/Engine/BasicShapes/Plane.Plane"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PictureMat(TEXT("/Game/Gist/M_GistPicture.M_GistPicture"));
 	auto OrPlain = [](UMaterialInterface* M) { return M ? M : Plain.Object.Get(); };   // Plain is static: no capture
 
 	Toy = CreateDefaultSubobject<USceneComponent>(TEXT("Toy"));
@@ -104,101 +91,6 @@ AGistSite::AGistSite()
 	Plaque->SetVerticalAlignment(EVRTA_TextCenter);
 	Plaque->SetWorldSize(GistSiteDetail::PlaqueTextSize);
 	Plaque->SetTextRenderColor(FColor(45, 28, 10));   // engraved brown on brass
-
-	// THE GIST, illustrated: an easel of clay cubes and a canvas, hidden until a painting is asked for.
-	Easel = CreateDefaultSubobject<USceneComponent>(TEXT("Easel"));
-	Easel->SetupAttachment(RootComponent);
-	EaselFrame = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("EaselFrame"));
-	EaselFrame->SetupAttachment(Easel);
-	EaselFrame->SetStaticMesh(Cube.Object);
-	EaselFrame->SetMaterial(0, Finishes[0]);
-	EaselFrame->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	EaselFrame->NumCustomDataFloats = 4;
-	Canvas = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Canvas"));
-	Canvas->SetupAttachment(Easel);
-	Canvas->SetStaticMesh(PlaneMesh.Object);
-	Canvas->SetMaterial(0, OrPlain(PictureMat.Object));
-	Canvas->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	Easel->SetVisibility(false, /*bPropagateToChildren=*/true);
-}
-
-void AGistSite::PlaceEasel(const FVector& At, float Yaw)
-{
-	using namespace GistSiteDetail;
-	Easel->SetRelativeLocationAndRotation(At, FRotator(0.0f, Yaw, 0.0f));
-
-	if (EaselFrame->GetInstanceCount() == 0)
-	{
-		const float Ledge = CanvasCentreZ - CanvasSize * 0.5f - 4.0f;
-		auto Bar = [this](const FVector& At, const FVector& SizeCm, const FRotator& Turn)
-		{
-			const int32 I = EaselFrame->AddInstance(FTransform(Turn, At, SizeCm / 100.0f), /*bWorldSpace=*/false);
-			EaselFrame->SetCustomData(I, TArray<float>{0.22f, 0.10f, 0.035f, 0.0f}, true);   // walnut, linear
-		};
-		// Front legs outside the canvas's edges and behind it: at +-42 they crossed the painting.
-		Bar(FVector(-16.0f, -(CanvasSize * 0.5f + 6.0f), 100.0f), FVector(5.0f, 5.0f, 205.0f), FRotator(-6.0f, 0.0f, 3.0f));
-		Bar(FVector(-16.0f, CanvasSize * 0.5f + 6.0f, 100.0f), FVector(5.0f, 5.0f, 205.0f), FRotator(-6.0f, 0.0f, -3.0f));
-		Bar(FVector(-55.0f, 0.0f, 92.0f), FVector(5.0f, 5.0f, 195.0f), FRotator(28.0f, 0.0f, 0.0f));    // back leg
-		Bar(FVector(4.0f, 0.0f, Ledge), FVector(16.0f, CanvasSize + 14.0f, 4.0f), FRotator::ZeroRotator); // ledge
-		Bar(FVector(-6.0f, 0.0f, CanvasCentreZ + CanvasSize * 0.5f + 4.0f), FVector(6.0f, 30.0f, 7.0f), FRotator::ZeroRotator); // clamp
-	}
-	/* The engine plane faces +Z with its texture's U along X and V along Y. Turned so the normal faces
-	   +X (the front), U runs to the viewer's right and V runs down, then leaning back a little.
-	   Pitched to face the front instead, the first painting hung on its side (2026-11-01). */
-	Canvas->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, CanvasCentreZ), FRotator(0.0f, -90.0f, 90.0f - CanvasLean));
-	Canvas->SetRelativeScale3D(FVector(CanvasSize / 100.0f, CanvasSize / 100.0f, 1.0f));
-}
-
-UMaterialInstanceDynamic* AGistSite::CanvasMid()
-{
-	if (!CanvasMaterial)
-	{
-		CanvasMaterial = Canvas->CreateDynamicMaterialInstance(0);
-		if (CanvasMaterial)
-		{
-			CanvasMaterial->SetScalarParameterValue(TEXT("Brightness"), GistSiteDetail::CanvasBrightness);
-		}
-	}
-	return CanvasMaterial;
-}
-
-void AGistSite::ShowEasel()
-{
-	// A blank canvas: the artist is at work.
-	if (UMaterialInstanceDynamic* Mid = CanvasMid())
-	{
-		Mid->SetScalarParameterValue(TEXT("Reveal"), 0.0f);
-	}
-	bEaselShown = true;
-	Easel->SetVisibility(IsBuilt(), /*bPropagateToChildren=*/true);
-}
-
-void AGistSite::ShowPicture(UTexture2D* Picture, bool bFresh)
-{
-	if (!Picture)
-	{
-		return;
-	}
-	Painting = Picture;
-	if (UMaterialInstanceDynamic* Mid = CanvasMid())
-	{
-		Mid->SetTextureParameterValue(TEXT("Picture"), Picture);
-		Mid->SetScalarParameterValue(TEXT("Reveal"), bFresh ? 0.0f : 1.0f);
-	}
-	PaintReveal = bFresh ? 0.0f : -1.0f;
-	bEaselShown = true;
-	Easel->SetVisibility(IsBuilt(), /*bPropagateToChildren=*/true);
-	if (bFresh)
-	{
-		TableSounds::Play(this, ETableSound::Chime1000, 0.45f, 1.4f);
-	}
-}
-
-void AGistSite::HideEasel()
-{
-	bEaselShown = false;
-	PaintReveal = -1.0f;
-	Easel->SetVisibility(false, /*bPropagateToChildren=*/true);
 }
 
 TUniquePtr<Gist::FRecipe> AGistSite::Plan(const FString& InPrompt, const TArray<FString>& Blocklist)
@@ -219,51 +111,8 @@ TUniquePtr<Gist::FRecipe> AGistSite::Plan(const FString& InPrompt, const TArray<
 	return Recipe;
 }
 
-void AGistSite::AuthorPainting(const FString& InPrompt)
+AGistSite* AGistSite::Respawn(UWorld* World, const FString& InPrompt, const FTransform& Where, const FGuid& Id)
 {
-	using namespace GistSiteDetail;
-	Prompt = InPrompt;
-	bPaintingOnly = true;
-	for (UInstancedStaticMeshComponent* Piece : Pieces)
-	{
-		Piece->ClearInstances();
-	}
-	Pupils.Reset();
-	Behaviours = 0;
-	// The easel stands where a toy would, facing him; the box is the easel, for bumping and for E.
-	PlaceEasel(FVector::ZeroVector, 0.0f);
-	Hitbox->SetBoxExtent(FVector(40.0f, CanvasSize * 0.5f + 12.0f, (CanvasCentreZ + CanvasSize * 0.5f) * 0.5f));
-	Hitbox->SetRelativeLocation(FVector(-15.0f, 0.0f, (CanvasCentreZ + CanvasSize * 0.5f) * 0.5f));
-	MarkGenerated(PaintingEntryId);
-	RestoreBranchState(1);
-}
-
-AGistSite* AGistSite::Respawn(UWorld* World, const FString& InPrompt, const FTransform& Where, const FGuid& Id, FName Kind)
-{
-	if (Kind == PaintingEntryId)
-	{
-		// A painting comes back from the copy kept on disk when it arrived - never asked for twice.
-		// Without it there is nothing to show, so nothing is restored.
-		const UGistPictureSubsystem* Pictures = World ? UGistPictureSubsystem::Get(World) : nullptr;
-		UTexture2D* Picture = Pictures ? Pictures->LoadCached(InPrompt) : nullptr;
-		if (!Picture)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[Gist] the painting of \"%s\" (%s) is not on disk - not restored."), *InPrompt, *Id.ToString());
-			return nullptr;
-		}
-		FActorSpawnParameters PaintingParams;
-		PaintingParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		AGistSite* Painted = World->SpawnActor<AGistSite>(StaticClass(), Where, PaintingParams);
-		if (!Painted)
-		{
-			return nullptr;
-		}
-		Painted->RestoreBranchId(Id);
-		Painted->AuthorPainting(InPrompt);
-		Painted->ShowPicture(Picture, /*bFresh=*/false);
-		return Painted;
-	}
-
 	// The words were vetted when it was first made, so no blocklist here: a recreate.
 	TUniquePtr<Gist::FRecipe> Recipe;
 	if (World)
@@ -338,6 +187,7 @@ void AGistSite::Author(const FString& InPrompt, const Gist::FRecipe& Recipe, boo
 	const float Lift = (Behaviours & Gist::Behaviour::Hover) ? HoverHeight : 0.0f;
 	Hitbox->SetBoxExtent(FVector((Max.X - Min.X) * 0.5f, (Max.Y - Min.Y) * 0.5f, (Max.Z - Min.Z) * 0.5f).ComponentMax(FVector(10.0f)));
 	Hitbox->SetRelativeLocation(FVector((Min.X + Max.X) * 0.5f, (Min.Y + Max.Y) * 0.5f, (Min.Z + Max.Z) * 0.5f + Lift));
+
 	// A brass label on the floor in front, leaning back like one in a museum.
 	const FString Text = GetPlaqueText();
 	Plaque->SetText(FText::FromString(Text));
@@ -434,17 +284,6 @@ void AGistSite::Tick(float DeltaSeconds)
 	Toy->SetRelativeLocationAndRotation(Offset, Turn);
 	Toy->SetRelativeScale3D(Squash * Pop);
 
-	// A fresh painting fades in over the blank canvas, as if the paint were still going on.
-	if (PaintReveal >= 0.0f && CanvasMaterial)
-	{
-		PaintReveal = FMath::Min(PaintReveal + DeltaSeconds / 1.2f, 1.0f);
-		CanvasMaterial->SetScalarParameterValue(TEXT("Reveal"), FMath::SmoothStep(0.0f, 1.0f, PaintReveal));
-		if (PaintReveal >= 1.0f)
-		{
-			PaintReveal = -1.0f;
-		}
-	}
-
 	// Googly eyes watch him: each pupil eases round its eye toward the camera, lagging a
 	// little so a spin or a hop sets them rolling. Not beyond 40 m - nobody can see them there.
 	const APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
@@ -475,11 +314,9 @@ void AGistSite::RestoreBranchState(uint8 InState)
 
 void AGistSite::SetShown(bool bShown)
 {
-	const bool bToyShown = bShown && !bPaintingOnly;
-	Toy->SetVisibility(bToyShown, /*bPropagateToChildren=*/true);
-	PlaquePlate->SetVisibility(bToyShown);
-	Plaque->SetVisibility(bToyShown);
-	Easel->SetVisibility(bShown && bEaselShown, /*bPropagateToChildren=*/true);
+	Toy->SetVisibility(bShown, /*bPropagateToChildren=*/true);
+	PlaquePlate->SetVisibility(bShown);
+	Plaque->SetVisibility(bShown);
 	Hitbox->SetCollisionEnabled(bShown ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
 }
 
@@ -495,10 +332,5 @@ void AGistSite::Interact_Implementation(AActor* Interactor)
 
 FText AGistSite::GetInteractionPrompt_Implementation() const
 {
-	if (!IsBuilt())
-	{
-		return FText::GetEmpty();
-	}
-	return bPaintingOnly ? NSLOCTEXT("Sibelius", "GistTakeDown", "Take the painting down [E]")
-		: NSLOCTEXT("Sibelius", "GistPutBack", "Send it back to the supply room [E]");
+	return IsBuilt() ? NSLOCTEXT("Sibelius", "GistPutBack", "Send it back to the supply room [E]") : FText::GetEmpty();
 }

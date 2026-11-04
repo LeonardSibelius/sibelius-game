@@ -124,14 +124,6 @@ if ($UcasGB -lt 6.5) {
     throw ("SibeliusGame-Windows.ucas is only {0:N2} GB. A full cook is ~7.2 GB - content is missing." -f $UcasGB)
 }
 
-# THE GIST'S PAINTINGS STAY OFF ON STEAM (docs/GIST_PICTURES_PLAN.md section 6). Valve has not
-# reviewed them, so every Steam copy carries this marker beside the exe and never asks for one
-# (UGistPictureSubsystem::IsSteamCopy). It goes into the build before the upload, every time:
-# an itch build copied here without it would otherwise ship pictures to Steam unreviewed.
-$Marker = Join-Path $ContentRoot 'SteamBuild.txt'
-Set-Content -Path $Marker -Encoding ASCII -Value 'Steam copy: THE GIST paintings are off until Valve has reviewed them.'
-if (-not (Test-Path $Marker)) { throw "Could not write $Marker - refusing to upload a build that could ask for paintings." }
-
 $SteamCmd = Join-Path $SdkPath 'sdk\tools\ContentBuilder\builder\steamcmd.exe'
 if (-not (Test-Path $SteamCmd)) {
     throw "No steamcmd.exe at $SteamCmd`nDownload steamworks_sdk.zip from partner.steamgames.com and pass -SdkPath."

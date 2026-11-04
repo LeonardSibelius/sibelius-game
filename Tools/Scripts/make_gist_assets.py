@@ -49,47 +49,4 @@ def clay():
     return "created"
 
 
-def picture():
-    """M_GistPicture: the easel's canvas (THE GIST, illustrated - docs/GIST_PICTURES_PLAN.md).
-    Texture parameter "Picture" is the painting the server sent; scalar "Reveal" fades from a blank
-    cream canvas (0, the artist is painting) to the painting (1); scalar "Brightness", which
-    AGistSite sets (CanvasBrightness), scales the result.
-
-    UNLIT, the painting's own colours as emissive times Brightness. Lit with a little glow added (the
-    clay's recipe), the first painting in the keep's bright hall came out washed nearly white, and
-    unlit at full strength too; 0.15 matched the picture (2026-11-01). The 2026-11-01 asset was
-    turned into this in place, not recreated: never delete its expressions in a running editor -
-    AGistSite's constructor holds the material, and delete_all_material_expressions crashed the
-    editor on "!IsRooted()"."""
-    path = FOLDER + "/M_GistPicture"
-    if eal.does_asset_exist(path):
-        return "exists"
-    mat = tools.create_asset("M_GistPicture", FOLDER, unreal.Material, unreal.MaterialFactoryNew())
-    mat.set_editor_property("shading_model", unreal.MaterialShadingModel.MSM_UNLIT)
-    tex = mel.create_material_expression(mat, unreal.MaterialExpressionTextureSampleParameter2D, -700, 0)
-    tex.set_editor_property("parameter_name", "Picture")
-    blank = unreal.load_asset("/Engine/EngineResources/WhiteSquareTexture")
-    if blank:
-        tex.set_editor_property("texture", blank)
-    cream = mel.create_material_expression(mat, unreal.MaterialExpressionConstant3Vector, -700, 250)
-    cream.set_editor_property("constant", unreal.LinearColor(0.82, 0.76, 0.62, 1.0))
-    reveal = mel.create_material_expression(mat, unreal.MaterialExpressionScalarParameter, -700, 400)
-    reveal.set_editor_property("parameter_name", "Reveal")
-    reveal.set_editor_property("default_value", 1.0)
-    mix = mel.create_material_expression(mat, unreal.MaterialExpressionLinearInterpolate, -400, 100)
-    mel.connect_material_expressions(cream, "", mix, "A")
-    mel.connect_material_expressions(tex, "RGB", mix, "B")
-    mel.connect_material_expressions(reveal, "", mix, "Alpha")
-    bright = mel.create_material_expression(mat, unreal.MaterialExpressionScalarParameter, -400, 350)
-    bright.set_editor_property("parameter_name", "Brightness")
-    bright.set_editor_property("default_value", 0.15)
-    shown = mel.create_material_expression(mat, unreal.MaterialExpressionMultiply, -150, 150)
-    mel.connect_material_expressions(mix, "", shown, "A")
-    mel.connect_material_expressions(bright, "", shown, "B")
-    mel.connect_material_property(shown, "", unreal.MaterialProperty.MP_EMISSIVE_COLOR)
-    mel.recompile_material(mat)
-    eal.save_asset(path, only_if_is_dirty=False)
-    return "created"
-
-
-print("THE GIST: M_GistClay " + clay() + ", M_GistPicture " + picture() + ".")
+print("THE GIST: M_GistClay " + clay() + ".")

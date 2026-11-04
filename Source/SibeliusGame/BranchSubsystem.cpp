@@ -684,12 +684,10 @@ bool UBranchSubsystem::RespawnGeneratedObject(const FBranchObjectState& Saved, c
 	}
 
 	// THE GIST: no catalog row - its words rebuild it. Its saved state is restored too, so a
-	// gist sent back to the supply room before the Deploy stays gone after the load. A painting
-	// comes back the same way, from the copy kept on disk.
-	if (Saved.GenerateEntryId == AGistSite::EntryId || Saved.GenerateEntryId == AGistSite::PaintingEntryId)
+	// gist sent back to the supply room before the Deploy stays gone after the load.
+	if (Saved.GenerateEntryId == AGistSite::EntryId)
 	{
-		AGistSite* Gist = AGistSite::Respawn(World, Saved.GistPrompt, Saved.GenerateTransform, Saved.ObjectId,
-			Saved.GenerateEntryId);
+		AGistSite* Gist = AGistSite::Respawn(World, Saved.GistPrompt, Saved.GenerateTransform, Saved.ObjectId);
 		if (!Gist)
 		{
 			return false;

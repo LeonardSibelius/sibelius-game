@@ -18,6 +18,7 @@ class UMrsHallMessageWidget;
 class ABuildSite;
 class UWorld;
 struct FGenerateCatalogEntry;
+namespace Gist { struct FRecipe; }
 
 // SIB-30 P3 — shared generated-site spawn helpers, used by BOTH live generation
 // (UGenerateComponent::SpawnEntry) and re-spawn-on-load (UBranchSubsystem::ApplyDeployedSave)
@@ -93,10 +94,9 @@ private:
 	    bNamedDistance (a row that names its own SpawnAhead) skips the indoor wall clamp. */
 	bool FindSpawnPoint(float RequestedAhead, bool bNamedDistance, FVector& OutLocation) const;
 
-	/** THE GIST, illustrated (docs/GIST_PICTURES_PLAN.md): an easel facing the player, its
-	    canvas blank until the artist's painting of the words arrives. Not remembered or paid
-	    for until then - the caller does both when it comes. Null if it could not be placed. */
-	class AGistSite* SpawnPainting(const FString& RawText);
+	/** THE GIST (docs/GIST_GENERATOR_PLAN.md): build what the rules made of the words,
+	    facing the player. False if it could not be placed; the caller charges the budget. */
+	bool SpawnGist(const FString& RawText, const Gist::FRecipe& Recipe);
 
 	/* PERSISTENCE ACROSS A LEVEL CHANGE. UBranchSubsystem is a WORLD subsystem and dies
 	   with the world, so before this a generated object survived only a manual Deploy —
@@ -127,6 +127,7 @@ private:
 
 	// Rotates Mrs. Hall's lines deterministically across refusals (NOT RNG/clock).
 	int32 RefusalCount = 0;
+	int32 GistCount = 0;   // the same, for her lines when she makes do with a gist
 
 	// SIB-31: set on the first successful live SpawnEntry; see HasSpawnedThisSession().
 	bool bHasSpawnedThisSession = false;

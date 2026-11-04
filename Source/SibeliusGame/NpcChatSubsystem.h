@@ -77,11 +77,6 @@ struct FNpcStoryFacts
 	TArray<FString> Deeds;         // everything he has done, "chess_wins:3"
 	TArray<FString> NewDeeds;      // the ones she has not heard of since she last answered him
 	int32 HoursAway = -1;          // since she last answered him; -1 unknown (never, or a pre-v2 save)
-
-	/* WHAT HE HAD PAINTED (UGistPictureSubsystem; backend/paintings.js). His own words, so the
-	   server quotes them and never obeys them. Empty sends nothing. */
-	struct FPainting { FString Words; FString LocationId; int32 HoursAgo = -1; };
-	TArray<FPainting> Paintings;
 };
 
 /**

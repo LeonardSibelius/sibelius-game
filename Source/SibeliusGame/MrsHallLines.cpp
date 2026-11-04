@@ -60,9 +60,6 @@ EGenerateOutcome MrsHallReasonToOutcome(const FString& Reason)
 	if (Reason.Equals(TEXT("OverBudget"), ESearchCase::IgnoreCase)) { return EGenerateOutcome::RefusedOverBudget; }
 	if (Reason.Equals(TEXT("Unsafe"), ESearchCase::IgnoreCase))     { return EGenerateOutcome::RefusedUnsafe; }
 	if (Reason.Equals(TEXT("Gist"), ESearchCase::IgnoreCase))       { return EGenerateOutcome::Gist; }
-	if (Reason.Equals(TEXT("Picture"), ESearchCase::IgnoreCase))        { return EGenerateOutcome::PicturePainted; }
-	if (Reason.Equals(TEXT("PictureRefused"), ESearchCase::IgnoreCase)) { return EGenerateOutcome::PictureRefused; }
-	if (Reason.Equals(TEXT("PictureClosed"), ESearchCase::IgnoreCase))  { return EGenerateOutcome::PictureClosed; }
 	return EGenerateOutcome::RefusedNoMatch; // "NoMatch" + anything unrecognized
 }
 
@@ -222,8 +219,7 @@ void LogMrsHallAudioManifest(const TMap<EGenerateOutcome, TArray<FMrsHallLine>>&
 	// Fixed reason order so the manifest reads the same every run (record-list friendly).
 	static const EGenerateOutcome Order[] = {
 		EGenerateOutcome::RefusedNoMatch, EGenerateOutcome::RefusedAmbiguous,
-		EGenerateOutcome::RefusedOverBudget, EGenerateOutcome::RefusedUnsafe, EGenerateOutcome::Gist,
-		EGenerateOutcome::PicturePainted, EGenerateOutcome::PictureRefused, EGenerateOutcome::PictureClosed
+		EGenerateOutcome::RefusedOverBudget, EGenerateOutcome::RefusedUnsafe, EGenerateOutcome::Gist
 	};
 
 	UE_LOG(LogTemp, Display, TEXT("[MrsHall] === Voice clip manifest: record one WAV per AudioKey, import to /Game/Audio/MrsHall/ (asset name = key) ==="));
