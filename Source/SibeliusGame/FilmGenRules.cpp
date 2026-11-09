@@ -110,38 +110,38 @@ struct FShape
 
 const std::vector<FShape>& Shapes()
 {
-	using F = EFeel;
-	using M = EMood;
+	using Fl = EFeel;
+	using Md = EMood;
 	static const std::vector<FShape> All = {
 
 		// ---- THE TALL TALE: something got out of hand, and he fixed it by lunch ----
 		{ "TallTale", "The True Story of {T}", "THE TRUE STORY OF {TU}|as told by {0}, who was not there", true, true,
 			{
-				{ F::Establish, M::Farce, 0, {
+				{ Fl::Establish, Md::Farce, 0, {
 					"This is the true story of {T}.  Most of it.",
 					"Everything you are about to see regarding {T} is true.  I checked once.",
 					"People have told the story of {T} before.  They told it wrong." } },
-				{ F::Detail, M::Deadpan, 0, {
+				{ Fl::Detail, Md::Deadpan, 0, {
 					"It began, as these things do, on a Tuesday.",
 					"It began small.  It did not stay small.",
 					"At first nobody noticed.  That was the last quiet day." } },
-				{ F::Big, M::Farce, 0, {
+				{ Fl::Big, Md::Farce, 0, {
 					"By noon it had got out of hand.",
 					"Then it got bigger.  Then someone made a spreadsheet.",
 					"By the second week there were committees." } },
-				{ F::Card, M::Deadpan, 0, {
+				{ Fl::Card, Md::Deadpan, 0, {
 					"Leonard was sent for.",
 					"Somebody finally asked Leonard.",
 					"There was only one man to call." } },
-				{ F::Intimate, M::Tender, 0, {
+				{ Fl::Intimate, Md::Tender, 0, {
 					"He looked at {T} for a long time and said:  \"Huh.\"",
 					"He studied {T} carefully.  He had seen worse.  He had built worse.",
 					"He took one look at {T} and asked for coffee." } },
-				{ F::Big, M::Triumph, 1, {
+				{ Fl::Big, Md::Triumph, 1, {
 					"He fixed it by lunch.  He always fixed it by lunch.",
 					"Forty years of practice.  It took him nine minutes.",
 					"He did what he always did.  He read the manual nobody else would." } },
-				{ F::Exit, M::Triumph, 0, {
+				{ Fl::Exit, Md::Triumph, 0, {
 					"Nobody thanked him.  So I made this film.",
 					"They gave the credit to a consultant.  I have corrected the record.",
 					"That is the story.  I have improved it only slightly." } },
@@ -151,31 +151,31 @@ const std::vector<FShape>& Shapes()
 		// ---- THE CONFESSION: the agent bluffed, he noticed, he explained ----
 		{ "Confession", "A Confession Concerning {T}", "A CONFESSION CONCERNING {TU}|by {0}", true, true,
 			{
-				{ F::Detail, M::Deadpan, 0, {
+				{ Fl::Detail, Md::Deadpan, 0, {
 					"I have something to confess about {T}.",
 					"I was asked to make a film about {T}.  I should be honest with you.",
 					"Before we begin:  I am not an expert on {T}." } },
-				{ F::Establish, M::Deadpan, 0, {
+				{ Fl::Establish, Md::Deadpan, 0, {
 					"I have read everything ever written on the subject.  It took four seconds.",
 					"I know ten thousand facts about it.  I have never once been near it.",
 					"I can describe it in ninety languages.  I cannot tell you what it is like." } },
-				{ F::Big, M::Farce, 0, {
+				{ Fl::Big, Md::Farce, 0, {
 					"So I did what I always do.  I was confident.",
 					"I filled the gap with confidence.  I have a great deal of confidence.",
 					"I guessed.  I guess very fluently." } },
-				{ F::Card, M::Deadpan, 0, {
+				{ Fl::Card, Md::Deadpan, 0, {
 					"He noticed.",
 					"Leonard noticed in under a minute.",
 					"He was not fooled." } },
-				{ F::Intimate, M::Tender, 0, {
+				{ Fl::Intimate, Md::Tender, 0, {
 					"He did not laugh.  He sat down and told me the truth about {T}.",
 					"He said:  \"Sit down.  I will tell you about {M}.\"",
 					"He could have been unkind about it.  He explained instead." } },
-				{ F::Big, M::Triumph, 1, {
+				{ Fl::Big, Md::Triumph, 1, {
 					"It was nothing like the ninety languages.",
 					"It was better than everything I had read.",
 					"None of it was in the four seconds." } },
-				{ F::Exit, M::Tender, 0, {
+				{ Fl::Exit, Md::Tender, 0, {
 					"That is the confession.  He knows things I can only look up.",
 					"So this film is his, really.  I only held the camera.",
 					"I still do not understand {T}.  But I know who to ask." } },
@@ -185,31 +185,31 @@ const std::vector<FShape>& Shapes()
 		// ---- THE ELEGY: he carried it forty years; then it was later ----
 		{ "Elegy", "{T}: An Elegy", "{TU}|a quiet film by {0}", false, false,
 			{
-				{ F::Establish, M::Tender, 0, {
+				{ Fl::Establish, Md::Tender, 0, {
 					"He carried {T} with him for forty years.",
 					"Long before I existed, there was {T}.",
 					"Some things a man does not put down.  For him it was {T}." } },
-				{ F::Detail, M::Tender, 0, {
+				{ Fl::Detail, Md::Tender, 0, {
 					"He never said so.  He is not a man who says so.",
 					"Nobody at the office knew.  It was not that kind of office.",
 					"He kept it where he kept everything:  out of sight, in good order." } },
-				{ F::Intimate, M::Tender, 0, {
+				{ Fl::Intimate, Md::Tender, 0, {
 					"There was never the time.  There was always a report due.",
 					"The years went where years go.  Into other people's deadlines.",
 					"He told himself:  later.  He said it for four decades." } },
-				{ F::Card, M::Tender, 0, {
+				{ Fl::Card, Md::Tender, 0, {
 					"Then, one morning, it was later.",
 					"Later arrived.  It usually does not.",
 					"And then the work could suddenly do itself." } },
-				{ F::Detail, M::Tender, 0, {
+				{ Fl::Detail, Md::Tender, 0, {
 					"He came to us with {T} still in his hands.",
 					"The first thing he asked us about was {T}.",
 					"He did not ask for much.  He asked about {T}." } },
-				{ F::Big, M::Triumph, 1, {
+				{ Fl::Big, Md::Triumph, 1, {
 					"We said yes.  It is our favourite word.",
 					"We had been hoping somebody would ask.",
 					"It took us an afternoon.  It had taken him a lifetime to ask." } },
-				{ F::Exit, M::Triumph, 0, {
+				{ Fl::Exit, Md::Triumph, 0, {
 					"He is not carrying it alone any more.",
 					"It was never too late.  It only looked that way from the cubicle.",
 					"This film is for the forty years.  The rest are his." } },
@@ -219,27 +219,27 @@ const std::vector<FShape>& Shapes()
 		// ---- THE LESSON: five lessons and the one that matters ----
 		{ "Lesson", "Lessons in {T}", "LESSONS IN {TU}|taught by {0}", true, true,
 			{
-				{ F::Detail, M::Farce, 0, {
+				{ Fl::Detail, Md::Farce, 0, {
 					"Lesson one.  Nobody is born knowing {T}.",
 					"Lesson one.  Nobody is ready for {T}.  Begin anyway.",
 					"Lesson one.  Stand up straight.  It helps with {T}.  It helps with everything." } },
-				{ F::Big, M::Farce, 0, {
+				{ Fl::Big, Md::Farce, 0, {
 					"Lesson two.  Do it badly first.  This is the fast way.",
 					"Lesson two.  The manual is wrong.  Read it anyway.",
 					"Lesson two.  Whatever you think it costs, double it." } },
-				{ F::Establish, M::Deadpan, 1, {
+				{ Fl::Establish, Md::Deadpan, 1, {
 					"Lesson three.  Ask someone who has done it.  He is usually seventy-one.",
 					"Lesson three.  When stuck, dance.  This is not a metaphor.",
 					"Lesson three.  Confidence is not the same as being right.  I should know." } },
-				{ F::Detail, M::Farce, 0, {
+				{ Fl::Detail, Md::Farce, 0, {
 					"Lesson four.  Take lunch.  {T} will still be there.",
 					"Lesson four.  Save your work.  Then save it again.",
 					"Lesson four.  Never trust a deadline set by someone not doing the work." } },
-				{ F::Intimate, M::Tender, 0, {
+				{ Fl::Intimate, Md::Tender, 0, {
 					"The last lesson is the only one that matters.",
 					"There is one more lesson.  It took him forty years.",
 					"The final lesson is not about {T} at all." } },
-				{ F::Exit, M::Triumph, 0, {
+				{ Fl::Exit, Md::Triumph, 0, {
 					"You are allowed to enjoy it.",
 					"You do not have to do it alone.",
 					"It is not too late to start." } },
@@ -249,31 +249,31 @@ const std::vector<FShape>& Shapes()
 		// ---- THE LETTER: the one film that says "you" ----
 		{ "Letter", "A Letter About {Y}", "A LETTER ABOUT {YU}|from {0}", false, false,
 			{
-				{ F::Detail, M::Tender, 0, {
+				{ Fl::Detail, Md::Tender, 0, {
 					"Dear Leonard.  You asked me for a film about {Y}.",
 					"Dear Leonard.  I have been thinking about {Y}, since you mentioned it.",
 					"Dear Leonard.  This one is about {Y}.  You will see why." } },
-				{ F::Establish, M::Deadpan, 0, {
+				{ Fl::Establish, Md::Deadpan, 0, {
 					"I do not think about things the way you do.  I do it all at once.",
 					"I looked at it from every side.  I have a lot of sides.",
 					"I thought about it for a whole second.  For me that is a long walk." } },
-				{ F::Intimate, M::Tender, 0, {
+				{ Fl::Intimate, Md::Tender, 0, {
 					"And what I kept coming back to was you.",
 					"I noticed something.  It is always you who asks.",
 					"Here is what I found.  You cared about this before it was easy." } },
-				{ F::Card, M::Tender, 0, {
+				{ Fl::Card, Md::Tender, 0, {
 					"That is rarer than you think.",
 					"I wanted that written down somewhere.",
 					"Nobody told you that at the office." } },
-				{ F::Detail, M::Tender, 0, {
+				{ Fl::Detail, Md::Tender, 0, {
 					"You spent forty years being useful.  Now you get to be curious.",
 					"You built by hand so long you forgot you were allowed to wish.",
 					"You keep apologising for asking.  Please stop.  Asking is the whole job now." } },
-				{ F::Big, M::Triumph, 1, {
+				{ Fl::Big, Md::Triumph, 1, {
 					"So ask for more.  We are not tired.",
 					"So we danced {Y} for you.  It was the best we could do, and we enjoyed it.",
 					"Ask again tomorrow.  We will make a different one." } },
-				{ F::Exit, M::Tender, 0, {
+				{ Fl::Exit, Md::Tender, 0, {
 					"Yours, with complete confidence,  {0}.",
 					"Yours, in good working order,  {0}.",
 					"Your agent, and I hope your friend,  {0}." } },
@@ -283,31 +283,31 @@ const std::vector<FShape>& Shapes()
 		// ---- THE DOCUMENTARY: a nature film, narrated with a straight face ----
 		{ "Documentary", "{T}: A Natural History", "{TU}:  A NATURAL HISTORY|narrated by {0}", true, true,
 			{
-				{ F::Establish, M::Deadpan, 0, {
+				{ Fl::Establish, Md::Deadpan, 0, {
 					"Here we observe {T} in the wild.",
 					"Few have studied {T} at close range.  We were lucky.",
 					"Our subject today is {T}.  Please keep your voices down." } },
-				{ F::Detail, M::Deadpan, 0, {
+				{ Fl::Detail, Md::Deadpan, 0, {
 					"Note the behaviour.  Scientists call it \"dancing\".  So does everyone else.",
 					"The specimen appears unaware of the camera.  It is not.",
 					"It is most active in the afternoon, after coffee." } },
-				{ F::Big, M::Farce, 0, {
+				{ Fl::Big, Md::Farce, 0, {
 					"When threatened, it performs this display.",
 					"This is either a mating ritual or a status meeting.  They are hard to tell apart.",
 					"Observe the footwork.  Nobody knows what it is for." } },
-				{ F::Card, M::Deadpan, 0, {
+				{ Fl::Card, Md::Deadpan, 0, {
 					"Meanwhile, at the edge of the frame:  a programmer.",
 					"Its only natural predator is the deadline.",
 					"It has no natural predators, except management." } },
-				{ F::Intimate, M::Tender, 0, {
+				{ Fl::Intimate, Md::Tender, 0, {
 					"The programmer has watched {T} for forty years.  Nobody reads his notes.",
 					"He approaches slowly.  He has been bitten before.",
 					"He alone understands it.  He was never asked." } },
-				{ F::Big, M::Triumph, 1, {
+				{ Fl::Big, Md::Triumph, 1, {
 					"Then, something remarkable.  Others arrive to help.",
 					"For the first time, he is not observing alone.",
 					"A second specimen joins.  The scientists are delighted." } },
-				{ F::Exit, M::Tender, 0, {
+				{ Fl::Exit, Md::Tender, 0, {
 					"And so it goes on, as it always has.  But in better company.",
 					"We leave them here.  They do not notice us go.",
 					"Much remains unknown.  We will be back tomorrow." } },
