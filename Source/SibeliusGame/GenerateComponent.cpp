@@ -11,6 +11,8 @@
 #include "BuildSite.h"
 #include "GistSite.h"                // THE GIST: what no-match and a tie build now
 #include "GistRules.h"
+#include "FilmGenerator.h"           // "a film about..." makes a film
+#include "FilmDirectorSubsystem.h"
 #include "Spaceport.h"               // the one catalog entry with a prerequisite
 #include "ProteinMachine.h"          // IsEnhanced - that prerequisite
 #include "HintVolume.h"              // the lawn: where a spaceport may be built
@@ -18,6 +20,7 @@
 #include "ProgressionSubsystem.h"    // where generated objects are remembered
 #include "SibeliusGame.h"            // LogSibeliusGame
 #include "EngineUtils.h"             // TActorIterator - what is already here
+#include "GameFramework/PlayerStart.h" // the lawn marker the spaceport is built from
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Pawn.h"
@@ -174,6 +177,16 @@ void UGenerateComponent::BeginPlay()
 	   to author it from, so this cannot move above the load without silently restoring
 	   nothing. Order is the whole safety here. */
 	RestoreGeneratedSites();
+
+	/* AND THE SPACEPORT, IF HE IS OWED ONE. It builds itself the moment he is enhanced
+	   (AProteinMachine), but a save from before 2026-11-09 can be enhanced with no spaceport
+	   and, now that G no longer builds one, no way to get it. After the restore above, so a
+	   spaceport he already has is found standing and nothing is built twice. A level with
+	   no lawn returns false at once. */
+	if (AProteinMachine::IsEnhanced(this))
+	{
+		BuildSpaceportOnLawn();
+	}
 }
 
 const FGenerateCatalogEntry* UGenerateComponent::FindEntry(const FName& Id) const
@@ -183,224 +196,185 @@ const FGenerateCatalogEntry* UGenerateComponent::FindEntry(const FName& Id) cons
 
 EGenerateOutcome UGenerateComponent::SubmitRequest(const FString& RawText)
 {
-	/* GENERATE IS PAID IN SAUCE (Walt, 2026-10-29: "why do we have the generate budget instead
-	   of just paying with 10 sauce like refactor?" - "let's switch to sauce"). The budget was
-	   Generate's own currency from before sauce existed; the cauldron then sold it for sauce,
-	   so sauce bought budget and budget bought things. Now a row's Cost is in units of
-	   SaucePerCost (a tree, cost 2, is 20 sauce) and a gist is one unit. The matcher still
-	   decides "too dear", given how many units his sauce covers. No wallet (headless): free. */
+	/* [G] MAKES FILMS, AND ONLY FILMS (Walt, 2026-11-09: "the G option still makes the silly
+	   objects out of cones, cubes etc. let us get rid of that feature. let us make it clear
+	   that G is only for films").
+
+	   Whatever he types is what the film is about: "my old boss" and "a film about my old
+	   boss" are the same wish. The film generator (FilmGenRules.h) writes a short film
+	   around his words and the agents in the level perform it. Ten sauce, charged once it
+	   is actually playing.
+
+	   WHAT THIS REPLACED. G used to resolve the words against a closed catalog (a tree, a
+	   lamp, a crate, a chair, a key, a plant, the spaceport) and, when nothing matched,
+	   build THE GIST of them out of cones and cubes. Neither is reachable from G any more.
+	   The spaceport now builds itself when he is enhanced (BuildSpaceportOnLawn) and the
+	   Sibelius Hotel when he lands on Grok (UGrokEndingSubsystem). The catalog, the gist
+	   rules and the restore path all stay, because things he generated in an older save are
+	   still standing in his levels and still have to come back when he returns to them.
+
+	   A word on Mrs. Hall's blocklist is still refused, by her, in her voice.
+
+	   IT STARTS A MOMENT LATER, NOT NOW. This runs inside the G panel's Enter, and the
+	   character closes the panel straight afterwards (HandleGenerateSubmit), handing the
+	   keyboard back to the game. A film started here would have its screen take the
+	   keyboard and then lose it to that close, leaving a film he cannot skip. */
 	UProgressionSubsystem* Wallet = UProgressionSubsystem::Get(this);
 	const int32 Sauce = Wallet ? Wallet->GetSauce() : MAX_int32;
-	const FGenerateResolution R = ClassifyGenerateRequest(RawText, Catalog, Sauce / SaucePerCost, Blocklist);
 
-	/* SAY WHAT WAS ASKED AND WHAT WAS DECIDED — every time, refusal or not.
-
-	   Mrs. Hall is deliberately in-fiction: she says "we don't keep that here" and never
-	   which of four reasons that was, which is right for the player and useless for
-	   anyone debugging. Twice now a refusal has had to be diagnosed by inference, once
-	   from a screenshot of her memo. The resolution already carries RefusalReason; it was
-	   simply never written down. One line, and the next "why did Generate say no" is a
-	   log search instead of an argument. */
-	UE_LOG(LogTemp, Display,
-		TEXT("[Generate] request \"%s\" -> outcome %d (%s), entry '%s', cost %d (%d sauce), sauce %d."),
-		*RawText, static_cast<int32>(R.Outcome),
-		R.RefusalReason.IsEmpty() ? TEXT("resolved") : *R.RefusalReason,
-		*R.EntryId.ToString(), R.Cost, R.Cost * SaucePerCost, Sauce);
-
-	// Success path is unchanged: the object appears + a small neutral confirm. Don't over-style.
-	if (R.Outcome == EGenerateOutcome::Resolved)
+	FFilm Film;
+	const uint32 Take = static_cast<uint32>(FMath::Rand());
+	if (!FilmGenerator::Make(RawText, Take, Blocklist, Film))
 	{
-		if (const FGenerateCatalogEntry* E = FindEntry(R.EntryId))
+		UE_LOG(LogTemp, Display, TEXT("[Generate] request \"%s\" -> refused (a blocked word)."), *RawText);
+		const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, EGenerateOutcome::RefusedUnsafe, RefusalCount++);
+		const FString Line = Picked.Line.IsEmpty() ? FString(TEXT("Absolutely not.")) : Picked.Line;
+		if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
 		{
-			/* THE LAUNCH COMPLEX WAITS FOR THE BODY THAT CAN USE IT (Walt, 2026-09-26).
-
-			   Walt built a spaceport before the protein treatment, and it landed across
-			   the entrance to Protein Machines Inc. — so the structure that needs the
-			   enhancement was standing on the only place to get it. Unwinnable, from one
-			   keystroke, with no warning.
-
-			   IsEnhanced already gated three things: the pre-flight (Spaceport.cpp), the
-			   launch, and the lawn hint that says to build here at all (HintVolume.cpp:78).
-			   Building was the one door left open, so the hint said "enhance first" and the
-			   game said nothing. This closes it, and the order the hint always described is
-			   now the order the game enforces.
-
-			   Asked of the RESOLVED CLASS, not the EntryId, for the same reason
-			   ResolveSiteClass exists: a row and the class it spawns are the pair that can
-			   drift, and a string match would miss a second launch-complex row or break on
-			   a rename.
-
-			   Refused BEFORE SpawnEntry, so the budget is not charged - the caller only
-			   deducts on a successful spawn. Not routed through Mrs. Hall: her lines are a
-			   data table keyed on EGenerateOutcome, and this is not one of her four
-			   reasons. It is the same refusal the powers use, in the same banner, naming
-			   the place to go - which is what CheckPowerUnlocked learned to do after a
-			   small top-left line read as a bug. */
-			const UClass* SiteClass = ResolveSiteClass(*E).Get();
-			if (SiteClass
-				&& SiteClass->IsChildOf(ASpaceport::StaticClass())
-				&& !AProteinMachine::IsEnhanced(this))
-			{
-				const FString Refusal =
-					TEXT("NOT UNTIL YOU CAN SURVIVE IT — PROTEIN MACHINES INC., BESIDE THE DELI PLAZA");
-
-				const APawn* Pawn = Cast<APawn>(GetOwner());
-				const APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
-				if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
-				{
-					HUD->ShowBanner(Refusal, 4.0f);
-				}
-				else
-				{
-					Toast(Refusal, FColor::Orange);   // headless / no HUD: still say it
-				}
-
-				UE_LOG(LogTemp, Display,
-					TEXT("[Generate] '%s' refused: not enhanced yet (Protein Machines)."),
-					*R.EntryId.ToString());
-				return EGenerateOutcome::RefusedUnsafe;
-			}
-
-			/* ON THE LAWN, NOT WHEREVER HE HAPPENS TO BE (Walt, 2026-10-15: "if you "G" a
-			   spaceport from Jacob's deli, the spaceport covers the whole city and there is no
-			   way to get to uFoods").
-
-			   A launch complex lands SpawnAhead (45 m) in front of him, which was designed and
-			   tried from the lawn: standing on the grass, facing the field. From the deli the
-			   same 45 m is across the street, on top of the block uFoods is in, and the city
-			   cannot be finished. The lawn is already in the level - the AHintVolume whose
-			   hint ends when a spaceport stands, sized by Walt to cover the grass - so the
-			   rule is asked of it: off that ground, no spaceport, and the banner says where.
-			   Refused before SpawnEntry, so the budget is not charged. A level with no such
-			   volume keeps the old behaviour. */
-			if (SiteClass && SiteClass->IsChildOf(ASpaceport::StaticClass()))
-			{
-				const APawn* Pawn = Cast<APawn>(GetOwner());
-				const AHintVolume* Lawn = nullptr;
-				for (TActorIterator<AHintVolume> It(GetWorld()); It; ++It)
-				{
-					if (It->SatisfiedWhenPresent && It->SatisfiedWhenPresent->IsChildOf(ASpaceport::StaticClass()))
-					{
-						Lawn = *It;
-						break;
-					}
-				}
-				if (Pawn && Lawn && FVector::Dist2D(Pawn->GetActorLocation(), Lawn->GetActorLocation()) > Lawn->Radius)
-				{
-					const FString Refusal =
-						TEXT("A SPACEPORT NEEDS OPEN GROUND — STAND ON THE EMPTY LAWN ACROSS THE STREET FROM JACOB'S");
-					const APlayerController* PC = Cast<APlayerController>(Pawn->GetController());
-					if (ASibeliusHUD* HUD = PC ? Cast<ASibeliusHUD>(PC->GetHUD()) : nullptr)
-					{
-						HUD->ShowBanner(Refusal, 4.0f);
-					}
-					else
-					{
-						Toast(Refusal, FColor::Orange);
-					}
-					UE_LOG(LogTemp, Display,
-						TEXT("[Generate] '%s' refused: %.0f m from the lawn (radius %.0f m)."),
-						*R.EntryId.ToString(),
-						FVector::Dist2D(Pawn->GetActorLocation(), Lawn->GetActorLocation()) / 100.0,
-						Lawn->Radius / 100.0);
-					return EGenerateOutcome::RefusedUnsafe;
-				}
-			}
-
-			if (SpawnEntry(*E))
-			{
-				// Paid once it stands, as the budget was; the matcher already knew he could.
-				const int32 Price = R.Cost * SaucePerCost;
-				if (Wallet && Price > 0)
-				{
-					Wallet->TrySpendSauce(Price);
-				}
-				bHasSpawnedThisSession = true; // SIB-31: the cathedral door's generate gate
-				Toast(FString::Printf(TEXT("%s appears.   (%d sauce)"), *E->DisplayName.ToString(), Price), FColor::Green);
-			}
-			else
-			{
-				Toast(TEXT("...nothing came (could not place it)."), FColor::Red);
-			}
+			Hall->SayLine(Line, Picked.AudioKey);
 		}
-		return R.Outcome;
+		else
+		{
+			ShowMrsHall(Line);   // no world subsystem (headless): the local fallback still works
+		}
+		return EGenerateOutcome::RefusedUnsafe;
 	}
 
-	/* THE GIST (docs/GIST_GENERATOR_PLAN.md; Walt, 2026-10-29: "an entertaining generator
-	   ... quick but silly"). The catalog holds six things, so nearly every wish ended in "We
-	   don't keep that here." Now no match - and a tie, which a hybrid answers better than a
-	   refusal - builds the gist of the words instead, for one unit of sauce. Unsafe words
-	   never reach it (the matcher refused them above, and the rules refuse them again);
-	   nothing typed, or too little sauce, still gets her refusal. */
-	EGenerateOutcome Outcome = R.Outcome;
-	int32 Needed = R.Cost * SaucePerCost;   // what an over-budget refusal says he lacked
-	if (Outcome == EGenerateOutcome::RefusedNoMatch || Outcome == EGenerateOutcome::RefusedAmbiguous)
+	UE_LOG(LogTemp, Display, TEXT("[Generate] request \"%s\" -> a film, \"%s\" (take %u), sauce %d."),
+		*RawText, *Film.Title, Take, Sauce);
+	if (Sauce < SaucePerCost)
 	{
-		if (const TUniquePtr<Gist::FRecipe> Recipe = AGistSite::Plan(RawText, Blocklist))
-		{
-			if (Sauce < SaucePerCost)
-			{
-				Outcome = EGenerateOutcome::RefusedOverBudget;
-				Needed = SaucePerCost;
-			}
-			else if (SpawnGist(RawText, *Recipe))
-			{
-				if (Wallet)
-				{
-					Wallet->TrySpendSauce(SaucePerCost);
-				}
-				bHasSpawnedThisSession = true;
-				Toast(FString::Printf(TEXT("THE GIST of \"%s\" appears.   (%d sauce)"),
-					UTF8_TO_TCHAR(Recipe->Echo.c_str()), SaucePerCost), FColor::Green);
-				const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, EGenerateOutcome::Gist, GistCount++);
-				const FString Line = Picked.Line.IsEmpty() ? FString(TEXT("Fine. This is what we had in the back.")) : Picked.Line;
-				if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
-				{
-					Hall->SayLine(Line, Picked.AudioKey);
-				}
-				else
-				{
-					ShowMrsHall(Line);
-				}
-				return EGenerateOutcome::Gist;
-			}
-			else
-			{
-				Toast(TEXT("...nothing came (could not place it)."), FColor::Red);
-				return Outcome;
-			}
-		}
-	}
-
-	// Too little sauce: the price and the purse in plain numbers, as Refactor says it; her line
-	// below stays in character.
-	if (Outcome == EGenerateOutcome::RefusedOverBudget)
-	{
-		ASibeliusHUD::Toast(this, FString::Printf(TEXT("GENERATE NEEDS %d SAUCE — YOU HAVE %d"), Needed, Sauce),
+		ASibeliusHUD::Toast(this, FString::Printf(TEXT("A FILM NEEDS %d SAUCE — YOU HAVE %d"), SaucePerCost, Sauce),
 			3.5f, SibeliusToast::Warn);
+		return EGenerateOutcome::RefusedOverBudget;
 	}
 
-	// Refusal (no-match / ambiguous / over-budget / unsafe): Mrs. Hall, in her own voice,
-	// from data — rotated deterministically. The styled memo replaces the P1 placeholder text.
-	const FMrsHallLine Picked = PickMrsHallLine(RefusalLines, Outcome, RefusalCount++);
-	FString Line = Picked.Line;
-	if (Line.IsEmpty())
+	if (UWorld* World = GetWorld())
 	{
-		Line = TEXT("Absolutely not."); // last-ditch fallback if the lines table is missing
+		TWeakObjectPtr<UGenerateComponent> WeakThis(this);
+		FTimerHandle Unused;
+		World->GetTimerManager().SetTimer(Unused, FTimerDelegate::CreateLambda([WeakThis, Film]()
+		{
+			UGenerateComponent* Self = WeakThis.Get();
+			UWorld* Now = Self ? Self->GetWorld() : nullptr;
+			UFilmDirectorSubsystem* Director = Now ? Now->GetSubsystem<UFilmDirectorSubsystem>() : nullptr;
+			if (Director && Director->PlayFilm(Film))
+			{
+				// Paid once it is playing, as a generated object was paid for once it stood.
+				if (UProgressionSubsystem* Purse = UProgressionSubsystem::Get(Self))
+				{
+					Purse->TrySpendSauce(SaucePerCost);
+				}
+				Self->bHasSpawnedThisSession = true;   // SIB-31: the cathedral door's generate gate
+			}
+			else if (Self)
+			{
+				ASibeliusHUD::Toast(Self, TEXT("A FILM NEEDS AN AGENT TO BE IN IT — FIND ONE AND PRESS G AGAIN"),
+					4.0f, SibeliusToast::Warn);
+			}
+		}), 0.15f, /*bLoop=*/false);
 	}
-	/* Presentation now goes through UMrsHallSubsystem (docs/SPINE.md Move 2) — the same
-	   memo, timer and clip path every other beat in the game uses, so there is exactly one
-	   copy of "Mrs. Hall says something". The LINE SELECTION stays here: Chapter 6 picks
-	   from its own EGenerateOutcome-keyed refusal table, which is untouched. */
-	if (UMrsHallSubsystem* Hall = UMrsHallSubsystem::Get(this))
+	return EGenerateOutcome::Resolved;
+}
+
+/* THE SPACEPORT BUILDS ITSELF (Walt, 2026-11-09: "let us have the spaceport happen instantly
+   in the lawn after you get your proteins").
+
+   It was the one catalog row the story needed, and it had gathered three refusals of its
+   own: not before the protein treatment, not from anywhere but the lawn, not without the
+   sauce. All three existed because he had to stand in the right place, in the right state,
+   and type the right word. Now the game does it for him at the moment the last condition
+   comes true, and none of the three can be got wrong.
+
+   WHERE. The catalog row plants it 160 m ahead of the player, and the place that was
+   designed and playtested from is the edge of the lawn, looking across it. That is exactly
+   what this reproduces without him: from the SpaceportLawn marker (the PlayerStart Nyra
+   waits beside at stage 2, which sits on the lawn's near edge), through the centre of the
+   lawn (the AHintVolume whose hint a spaceport satisfies), the row's own distance on. Both
+   are found in the level, so moving either in the editor moves the spaceport with it.
+
+   False, and nothing built, when this level has no lawn, when a spaceport already stands
+   (or stood: a launched or discarded one is still an actor), or the catalog has no row. */
+bool UGenerateComponent::BuildSpaceportOnLawn()
+{
+	UWorld* World = GetWorld();
+	if (!World)
 	{
-		Hall->SayLine(Line, Picked.AudioKey);   // silent until the clip is recorded
+		return false;
 	}
-	else
+	for (TActorIterator<ASpaceport> It(World); It; ++It)
 	{
-		ShowMrsHall(Line);   // no world subsystem (headless): the local fallback still works
+		return false;
 	}
-	return Outcome;
+
+	const AHintVolume* Lawn = nullptr;
+	for (TActorIterator<AHintVolume> It(World); It; ++It)
+	{
+		if (It->SatisfiedWhenPresent && It->SatisfiedWhenPresent->IsChildOf(ASpaceport::StaticClass()))
+		{
+			Lawn = *It;
+			break;
+		}
+	}
+	const FGenerateCatalogEntry* Row = Catalog.FindByPredicate([](const FGenerateCatalogEntry& E)
+	{
+		const UClass* SiteClass = ResolveSiteClass(E).Get();
+		return SiteClass && SiteClass->IsChildOf(ASpaceport::StaticClass());
+	});
+	if (!Lawn || !Row)
+	{
+		return false;
+	}
+
+	// The near edge of the lawn. Without the marker, the side of the lawn he is on.
+	static const FName LawnMarkerTag(TEXT("SpaceportLawn"));   // UDancerAgentComponent::GuideStage2StartTag
+	const FVector LawnCentre = Lawn->GetActorLocation();
+	FVector Approach = LawnCentre;
+	bool bHaveApproach = false;
+	for (TActorIterator<APlayerStart> It(World); It; ++It)
+	{
+		if (It->PlayerStartTag == LawnMarkerTag)
+		{
+			Approach = It->GetActorLocation();
+			bHaveApproach = true;
+			break;
+		}
+	}
+	if (!bHaveApproach)
+	{
+		if (const AActor* Owner = GetOwner())
+		{
+			Approach = Owner->GetActorLocation();
+		}
+	}
+	const FVector Across = (LawnCentre - Approach).GetSafeNormal2D();
+	if (Across.IsNearlyZero())
+	{
+		UE_LOG(LogSibeliusGame, Warning, TEXT("[Generate] spaceport not built: no way to tell which side of the lawn is the far one."));
+		return false;
+	}
+
+	const float Ahead = Row->SpawnAhead > 0.0f ? Row->SpawnAhead : 16000.0f;
+	const FVector Spot = Approach + Across * Ahead;
+
+	// The ground there, by the same long-throw trace FindSpawnPoint uses: start high, because
+	// the land beyond the lawn rises, and stop 30 m below where he would have been standing.
+	FHitResult Hit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GenerateLawnTrace), false);
+	if (const AActor* Owner = GetOwner())
+	{
+		Params.AddIgnoredActor(Owner);
+	}
+	const bool bHit = World->LineTraceSingleByChannel(Hit,
+		FVector(Spot.X, Spot.Y, Approach.Z + Ahead * 0.5f), FVector(Spot.X, Spot.Y, Approach.Z - 3000.0f),
+		ECC_WorldStatic, Params);
+	const FVector SpawnLoc = bHit ? Hit.ImpactPoint : FVector(Spot.X, Spot.Y, Approach.Z - 90.0f);
+
+	const bool bBuilt = SpawnEntryAt(*Row, SpawnLoc);
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Generate] the spaceport builds itself at %s (%s the ground, marker %s): %s."),
+		*SpawnLoc.ToCompactString(), bHit ? TEXT("on") : TEXT("NO TRACE HIT, guessed"),
+		bHaveApproach ? TEXT("found") : TEXT("missing"), bBuilt ? TEXT("built") : TEXT("FAILED"));
+	return bBuilt;
 }
 
 bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
@@ -417,6 +391,18 @@ bool UGenerateComponent::SpawnEntry(const FGenerateCatalogEntry& Entry)
 	const float RequestedAhead = (Entry.SpawnAhead > 0.0f) ? Entry.SpawnAhead : SpawnAheadDistance;
 	FVector SpawnLoc;
 	if (!FindSpawnPoint(RequestedAhead, Entry.SpawnAhead > 0.0f, SpawnLoc))
+	{
+		return false;
+	}
+	return SpawnEntryAt(Entry, SpawnLoc);
+}
+
+/** The second half of SpawnEntry: stand this row's thing at a point already chosen. Split
+    out so the spaceport can be built somewhere he is not looking (BuildSpaceportOnLawn). */
+bool UGenerateComponent::SpawnEntryAt(const FGenerateCatalogEntry& Entry, FVector SpawnLoc)
+{
+	UWorld* World = GetWorld();
+	if (!World)
 	{
 		return false;
 	}

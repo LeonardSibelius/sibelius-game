@@ -746,14 +746,14 @@ FString ASibeliusHUD::CityObjective() const
 			{
 				return TEXT("Explore the Sibelius Hotel ahead of Nyra.     [O] office");
 			}
-			if (Ending->IsHotelGenerating()) { return TEXT("Generating the Sibelius Hotel..."); }
+			if (Ending->IsHotelGenerating()) { return TEXT("The Sibelius Hotel is rising..."); }
 			if (Ending->IsRunning())
 			{
 				return FString();
 			}
 			if (Ending->HasFinished())
 			{
-				return TEXT("[G] Generate the Sibelius Hotel     [O] office     [N] [N] begin again");
+				return TEXT("[O] office     [N] [N] begin again");
 			}
 		}
 
@@ -761,7 +761,7 @@ FString ASibeliusHUD::CityObjective() const
 		   came back, so the roll is not going to happen again (the grant is saved and the
 		   subsystem is session state). Give him the doors rather than nothing — arriving
 		   into silence is the bug this whole item exists to fix. */
-		return TEXT("[G] Generate the Sibelius Hotel     [O] office     [N] [N] begin again");
+		return TEXT("[O] office     [N] [N] begin again");
 	}
 
 	// uFOODS. 1,956 meshes, 286 price tags and exactly one counter. Say which.
@@ -836,7 +836,7 @@ FString ASibeliusHUD::CityObjective() const
 				? TEXT("Protein Machines Inc. beside the deli plaza. [E] to enhance for space travel.")
 				: TEXT("Have your burger AND coffee at Jacob's Downtown Deli. [E] at each item.");
 		}
-		return TEXT("The empty lawn across the street. Press [G] and ask for a SPACEPORT.");
+		return TEXT("Your spaceport is rising on the empty lawn across the street.");
 	}
 	return TEXT("Nyra is in the plaza. [E] to talk — the deli is behind her.");
 }
@@ -1423,7 +1423,7 @@ void ASibeliusHUD::DrawDevOverlay()
 	// --- CONTROLS: every binding, for reference ---
 	Line(TEXT("CONTROLS"), Head);
 	Line(TEXT("  F fight   E interact    V vision"), White);
-	Line(TEXT("  R refactor    C compile    G generate / ask"), White);
+	Line(TEXT("  R refactor    C compile    G make a film"), White);
 	Line(TEXT("  6 enter  7 merge  8 discard  9 clear-deploy(dev)  0 deploy"), White);
 	Line(TEXT("  M menu    J how to play    H hide/show overlay    Q quit (press twice)"), White);
 	Line(TEXT("  O back to office (in a wander world)"), White);

@@ -34,12 +34,12 @@ TSharedRef<SWidget> UGenerateRequestWidget::RebuildWidget()
 		UVerticalBox* Box = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("GenBox"));
 
 		UTextBlock* Prompt = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("GenPrompt"));
-		Prompt->SetText(FText::FromString(TEXT("Ask the room for...    (Enter to ask  -  Esc to cancel)")));
+		Prompt->SetText(FText::FromString(TEXT("Make a film about...    (Enter to make it  -  Esc to cancel)")));
 		Prompt->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 22));
 		Prompt->SetColorAndOpacity(FSlateColor(FLinearColor(0.15f, 0.10f, 0.05f, 1.0f)));
 
 		InputBox = WidgetTree->ConstructWidget<UEditableTextBox>(UEditableTextBox::StaticClass(), TEXT("GenInput"));
-		InputBox->SetHintText(FText::FromString(TEXT("e.g. a lamp")));
+		InputBox->SetHintText(FText::FromString(TEXT("e.g. my old boss")));
 
 		// Big, dark, readable text on a light field so it's unmistakable on the parchment.
 		FEditableTextBoxStyle TBStyle = InputBox->WidgetStyle;

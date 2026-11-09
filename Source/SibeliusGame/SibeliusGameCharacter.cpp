@@ -792,10 +792,8 @@ void ASibeliusGameCharacter::OpenCouncil()
 
 void ASibeliusGameCharacter::ToggleGenerate()
 {
-	if (UGrokEndingSubsystem* Ending = GetWorld()->GetSubsystem<UGrokEndingSubsystem>())
-	{
-		if (Ending->TryGenerateHotel()) { return; }
-	}
+	// G on Grok used to build the Sibelius Hotel. It builds itself on arrival now
+	// (UGrokEndingSubsystem::OnWorldBeginPlay), and G is the same film key there as anywhere.
 	/* THE KEY ARRIVED — say so before anything can swallow it.
 
 	   "now G does nothing no matter how many times I press it" has two completely

@@ -48,10 +48,15 @@ class SIBELIUSGAME_API UGenerateComponent : public UActorComponent
 public:
 	UGenerateComponent();
 
-	// Resolve a typed request: spawn on Resolved (decrementing the budget), build THE GIST
-	// when the catalog has no match or a tie (EGenerateOutcome::Gist), or show a distinct
-	// refusal line per reason (the P1 seed of the Mrs. Hall refusal).
+	// [G]: make a film about what he typed (2026-11-09; FilmGenRules.h). Resolved when a
+	// film was written and is about to play, RefusedUnsafe for a blocklisted word (Mrs. Hall
+	// says so), RefusedOverBudget without the sauce. It no longer builds objects: see the
+	// .cpp for what it replaced.
 	EGenerateOutcome SubmitRequest(const FString& RawText);
+
+	// Build the spaceport on the lawn, where it has always gone, without being asked.
+	// Called when he is enhanced. False if there is no lawn here or one already stands.
+	bool BuildSpaceportOnLawn();
 
 	/** Generate is paid in sauce: a catalog row's Cost is in these units (a tree, cost 2, is
 	    20 sauce) and THE GIST is one unit - the same 10 Refactor's treasure costs. */
@@ -88,6 +93,7 @@ protected:
 
 private:
 	bool SpawnEntry(const FGenerateCatalogEntry& Entry);
+	bool SpawnEntryAt(const FGenerateCatalogEntry& Entry, FVector SpawnLoc);
 	const FGenerateCatalogEntry* FindEntry(const FName& Id) const;
 
 	/** Where a generated thing lands: RequestedAhead in front of the player, on the floor.

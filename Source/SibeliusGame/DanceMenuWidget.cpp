@@ -2,7 +2,9 @@
 
 #include "DanceMenuWidget.h"
 #include "DancerAgentComponent.h"
+#include "FilmDirectorSubsystem.h"         // the film rows
 #include "Animation/AnimSequence.h"
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SBoxPanel.h"
@@ -37,7 +39,8 @@ void UDanceMenuWidget::Open(UDancerAgentComponent* InAgent)
 	}
 
 	// Start on the dance she is doing, so the first arrow press moves away from it.
-	Selected = InAgent->GetCurrentDanceIndex() + 1;
+	const int32 Current = InAgent->GetCurrentDanceIndex();
+	Selected = Current == INDEX_NONE ? 0 : Current + 1 + NumFilms();
 	if (!IsInViewport())
 	{
 		AddToViewport(60);   // with the panels, under the chat's 70
@@ -82,12 +85,47 @@ void UDanceMenuWidget::Choose(int32 Row)
 	{
 		Dancer->ShuffleDance();   // "Surprise me": the old F
 	}
-	else
+	else if (!IsFilmRow(Row))
 	{
-		Dancer->PlayDance(Row - 1);
+		Dancer->PlayDance(Row - 1 - NumFilms());
 	}
+	// A film row is only highlighted here. PlayFilm starts it.
 	Selected = Row;
 	RebuildRows();
+}
+
+int32 UDanceMenuWidget::NumFilms()
+{
+	return 1 + FilmCatalog::All().Num();   // "make a new one", then the written ones
+}
+
+void UDanceMenuWidget::PlayFilm(int32 Row)
+{
+	UDancerAgentComponent* Dancer = Agent.Get();
+	if (!Dancer || !IsFilmRow(Row))
+	{
+		return;
+	}
+	const bool bNewOne = Row == 1;
+	const FName FilmId = bNewOne ? NAME_None : FilmCatalog::All()[Row - 2].Id;
+
+	// The menu comes down first: it hands the keyboard back to the game, and the film's
+	// own screen then takes it. The other order would leave the film without Esc.
+	Close();
+	if (UWorld* World = Dancer->GetWorld())
+	{
+		if (UFilmDirectorSubsystem* Director = World->GetSubsystem<UFilmDirectorSubsystem>())
+		{
+			if (bNewOne)
+			{
+				Director->PlayGenerated(FString(), Dancer);
+			}
+			else
+			{
+				Director->Play(FilmId, Dancer);
+			}
+		}
+	}
 }
 
 TSharedRef<SWidget> UDanceMenuWidget::RebuildWidget()
@@ -131,7 +169,7 @@ TSharedRef<SWidget> UDanceMenuWidget::RebuildWidget()
 					+ SVerticalBox::Slot().AutoHeight().Padding(0, 12, 0, 0)
 					[
 						SNew(STextBlock)
-						.Text(NSLOCTEXT("Sibelius", "DanceMenuFooter", "[Up]/[Down] try a dance   [Enter], [F] or [Esc] done"))
+						.Text(NSLOCTEXT("Sibelius", "DanceMenuFooter", "[Up]/[Down] try a dance   [Enter] on a film plays it   [Enter], [F] or [Esc] done"))
 						.Font(Font("Regular", 13))
 						.ColorAndOpacity(Dim)
 						.AutoWrapText(true)
@@ -153,15 +191,21 @@ void UDanceMenuWidget::RebuildRows()
 	Rows.Reset();
 
 	const UDancerAgentComponent* Dancer = Agent.Get();
-	const int32 Count = Dancer ? Dancer->Dances.Num() : 0;
-	const int32 Playing = Dancer ? Dancer->GetCurrentDanceIndex() + 1 : INDEX_NONE;
+	const int32 Films = Dancer ? NumFilms() : 0;
+	const int32 Count = Dancer ? Films + Dancer->Dances.Num() : 0;
+	const int32 Playing = Dancer && Dancer->GetCurrentDanceIndex() != INDEX_NONE
+		? Dancer->GetCurrentDanceIndex() + 1 + Films : INDEX_NONE;
 	Selected = FMath::Clamp(Selected, 0, Count);
 
 	for (int32 Row = 0; Row <= Count; ++Row)
 	{
+		const bool bFilm = Row >= 1 && Row <= Films;
 		const FString Label = Row == 0
 			? FString(TEXT("Surprise me"))
-			: UDancerAgentComponent::DanceDisplayName(Dancer->Dances[Row - 1].Get());
+			: bFilm
+				? (Row == 1 ? FString(TEXT("FILM:  make a new one"))
+					: FString::Printf(TEXT("FILM:  %s"), *FilmCatalog::All()[Row - 2].Title))
+				: UDancerAgentComponent::DanceDisplayName(Dancer->Dances[Row - 1 - Films].Get());
 		const bool bPlaying = Row == Playing;
 		const bool bSelected = Row == Selected;
 
@@ -170,12 +214,23 @@ void UDanceMenuWidget::RebuildRows()
 			.IsFocusable(false)   // the keyboard stays with the menu, so the arrows always work
 			.ContentPadding(FMargin(12.0f, 6.0f))
 			.ButtonColorAndOpacity(bSelected ? FLinearColor(0.15f, 0.3f, 0.4f, 1.0f) : FLinearColor(0.0f, 0.0f, 0.0f, 0.0f))
-			.OnClicked_Lambda([this, Row]() { Choose(Row); return FReply::Handled(); })
+			.OnClicked_Lambda([this, Row, bFilm]()
+			{
+				if (bFilm)
+				{
+					PlayFilm(Row);
+				}
+				else
+				{
+					Choose(Row);
+				}
+				return FReply::Handled();
+			})
 			[
 				SNew(STextBlock)
 				.Text(FText::FromString(bPlaying ? FString::Printf(TEXT("%s   (dancing)"), *Label) : Label))
 				.Font(Font(bSelected ? "Bold" : "Regular", 18))
-				.ColorAndOpacity(bPlaying ? Chosen : Row == 0 ? Heading : Body)
+				.ColorAndOpacity(bPlaying ? Chosen : (Row == 0 || bFilm) ? Heading : Body)
 			];
 		Rows.Add(RowWidget);
 		List->AddSlot().Padding(0, 1)[ RowWidget ];
@@ -190,6 +245,14 @@ void UDanceMenuWidget::RebuildRows()
 FReply UDanceMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
 	const FKey Key = InKeyEvent.GetKey();
+	if ((Key == EKeys::Enter || Key == EKeys::SpaceBar) && IsFilmRow(Selected))
+	{
+		if (!InKeyEvent.IsRepeat())
+		{
+			PlayFilm(Selected);
+		}
+		return FReply::Handled();
+	}
 	if (Key == EKeys::Escape || Key == EKeys::F || Key == EKeys::Enter || Key == EKeys::SpaceBar)
 	{
 		/* NOT ON A REPEAT. The F that opened the menu is still held for a moment, and its
@@ -202,7 +265,7 @@ FReply UDanceMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKey
 	}
 
 	const UDancerAgentComponent* Dancer = Agent.Get();
-	const int32 Count = Dancer ? Dancer->Dances.Num() : 0;
+	const int32 Count = Dancer ? NumFilms() + Dancer->Dances.Num() : 0;
 	if (Key == EKeys::Down || Key == EKeys::S)
 	{
 		// Down from "Surprise me" lands on the first dance; past the last wraps to the top.

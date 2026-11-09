@@ -100,9 +100,17 @@ void UGrokEndingSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 	Super::OnWorldBeginPlay(InWorld);
 	if (UWorld::RemovePIEPrefix(InWorld.GetMapName()) == TEXT("L_Grok"))
 	{
-		const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this);
-		bHotelRequested = Progression && Progression->HasClaimedGrant(TEXT("Grok.HotelGenerated"));
-		PrepareHotel(); // Load invisibly during the speech; G is the visible reveal.
+		/* THE HOTEL IS THERE WHEN HE LANDS (Walt, 2026-11-09: "let us have sibelius hotel
+		   build instantly on arrival at grok without having to press G"). It used to load
+		   hidden and wait for G after Nyra had spoken; G is for films now, so it is asked
+		   for here and shows as soon as its level has streamed in. The memoir still waits
+		   for her to finish: see HotelShown and OfferEpilogue. */
+		bHotelRequested = true;
+		PrepareHotel();
+		if (!HotelLevel)
+		{
+			bHotelRequested = false;   // not installed: never "rising" for ever
+		}
 	}
 
 	/* SUBSCRIBE IN EVERY WORLD, and let the event never come in most of them. The
@@ -166,11 +174,8 @@ FString UGrokEndingSubsystem::DoorsCard() const
 	/* DROP THE [G] LINE ONCE THERE IS NOTHING LEFT TO GENERATE. Offering a key that now
 	   only answers "already standing" is the kind of small lie a last screen should not
 	   tell. */
+	// No [G] line since 2026-11-09: the hotel builds itself on arrival, and G makes films.
 	FString Card;
-	if (!bHotelGenerated)
-	{
-		Card += TEXT("[G]   Generate the Sibelius Hotel\n");
-	}
 	Card += TEXT("[O]   the office, one more time\n");
 	Card += TEXT("[N] [N]   begin again");
 	return Card;
@@ -190,11 +195,16 @@ void UGrokEndingSubsystem::OfferEpilogue()
 		return;
 	}
 
+	/* THE HOTEL IS ALREADY STANDING, so there is nothing to wait for him to do. The long
+	   fallback was the time he was given to find and press G; with the hotel up, a few
+	   seconds for her last words to settle and the memoir rolls. If its level is somehow
+	   still streaming in, the old wait stands and HotelShown shortens it when it arrives. */
+	const float Wait = bHotelGenerated ? 8.0f : EpilogueFallbackSeconds;
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0))
 	{
 		if (ASibeliusHUD* HUD = Cast<ASibeliusHUD>(PC->GetHUD()))
 		{
-			HUD->ShowBanner(DoorsCard(), EpilogueFallbackSeconds);
+			HUD->ShowBanner(DoorsCard(), Wait);
 		}
 	}
 
@@ -203,11 +213,10 @@ void UGrokEndingSubsystem::OfferEpilogue()
 	   at the sky never saw a word of it. PlayEnding early-outs on bRunning, so whichever
 	   of the two paths arrives first wins and the other does nothing. */
 	World->GetTimerManager().SetTimer(OfferTimer, this,
-		&UGrokEndingSubsystem::PlayEnding, EpilogueFallbackSeconds, /*bLoop=*/false);
+		&UGrokEndingSubsystem::PlayEnding, Wait, /*bLoop=*/false);
 
 	UE_LOG(LogSibeliusGame, Display,
-		TEXT("[GrokEnding] Offered the hotel. The memoir follows it, or follows %.0fs of silence."),
-		EpilogueFallbackSeconds);
+		TEXT("[GrokEnding] She has finished. The memoir follows in %.0fs."), Wait);
 }
 
 bool UGrokEndingSubsystem::TryGenerateHotel()
@@ -334,7 +343,14 @@ void UGrokEndingSubsystem::HotelShown()
 	   preamble. Held until the hotel's own banner has cleared so the two do not share the
 	   screen — ShowBanner and ShowMemoir are different channels drawn 90 px apart, and the
 	   memoir roll starts with a banner of its own. */
-	if (UWorld* World = GetWorld())
+	/* BUT NOT BEFORE SHE HAS SPOKEN. The hotel now shows on arrival, which is before Nyra
+	   has said a word, and a memoir rolling over her apology is the collision this file
+	   has avoided twice already. Until he has heard her out the hotel simply stands;
+	   OfferEpilogue starts the roll when she finishes. On a return visit he has already
+	   heard her, and this behaves as it always did. */
+	const UProgressionSubsystem* Heard = UProgressionSubsystem::Get(this);
+	const bool bHeardHer = Heard && Heard->HasClaimedGrant(UDancerAgentComponent::GrokTalkedGrant);
+	if (UWorld* World = bHeardHer ? GetWorld() : nullptr)
 	{
 		World->GetTimerManager().ClearTimer(OfferTimer);   // the fallback is no longer needed
 		if (!bRunning)

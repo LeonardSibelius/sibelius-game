@@ -1,4 +1,5 @@
 #include "ProteinMachine.h"
+#include "GenerateComponent.h"   // enhancement builds the spaceport
 #include "ProgressionSubsystem.h"
 #include "SibeliusHUD.h"
 #include "Components/SceneComponent.h"
@@ -173,7 +174,14 @@ void AProteinMachine::Interact_Implementation(AActor* Interactor)
 	{
 		if (Progress->ClaimOneTimeGrant(EnhancementGrant))
 		{
-			ASibeliusHUD::Toast(this,TEXT("ENHANCEMENT COMPLETE. Your body is adapted for space travel. Proceed to the spaceport."),7,SibeliusToast::Good);
+			/* AND THE SPACEPORT BUILDS ITSELF (Walt, 2026-11-09). He used to walk to the lawn
+			   and type the word; being able to survive the trip was the only real condition,
+			   and it has just come true. See UGenerateComponent::BuildSpaceportOnLawn. */
+			UGenerateComponent* Generate = Interactor->FindComponentByClass<UGenerateComponent>();
+			const bool bPort = Generate && Generate->BuildSpaceportOnLawn();
+			ASibeliusHUD::Toast(this, bPort
+				? TEXT("ENHANCEMENT COMPLETE. Your body is adapted for space travel. A spaceport is rising on the empty lawn.")
+				: TEXT("ENHANCEMENT COMPLETE. Your body is adapted for space travel. Proceed to the spaceport."),7,SibeliusToast::Good);
 			RefreshDisplay();
 		}
 	}

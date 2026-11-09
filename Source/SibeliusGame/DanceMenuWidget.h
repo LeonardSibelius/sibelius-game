@@ -41,8 +41,17 @@ protected:
 	virtual bool NativeSupportsKeyboardFocus() const override { return true; }
 
 private:
-	/** Row 0 is "Surprise me"; row N is her Dances[N - 1]. */
+	/* Row 0 is "Surprise me". Then the film rows - row 1 has [G]'s generator write a new
+	   one (FilmGenerator.h), rows 2.. are the written films (FilmCatalog, 2026-11-09) -
+	   then her dances: row N is her Dances[N - 1 - NumFilms()]. NumFilms counts row 1.
+
+	   A FILM ROW DOES NOT AUDITION. Arrowing onto a dance plays it at once, which is the
+	   point of the menu; arrowing onto a film only highlights it, because a film takes
+	   the screen for a minute. Enter or a click plays it, with her as its star. */
 	void Choose(int32 Row);
+	void PlayFilm(int32 Row);
+	static int32 NumFilms();
+	bool IsFilmRow(int32 Row) const { return Row >= 1 && Row <= NumFilms(); }
 	void RebuildRows();
 
 	TWeakObjectPtr<UDancerAgentComponent> Agent;
