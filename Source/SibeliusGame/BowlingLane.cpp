@@ -40,6 +40,10 @@ namespace BowlingLaneDetail
 	constexpr double ShapeSize = 100.0;        // the engine's basic shapes
 	constexpr double GutterDrop = 5.0;         // cm a gutter ball rides below the lane
 	constexpr double PinTipDegreesPerSecond = 420.0;
+
+	constexpr float SlowMoHoldSeconds = 0.5f;   // real seconds held slow
+	constexpr float SlowMoEaseSeconds = 0.3f;   // and then eased back to full speed
+	constexpr double SlowMoHitSpeed = 320.0;    // cm/s into the first pin: softer than this is not worth slowing for
 }
 
 ABowlingLane::ABowlingLane()
@@ -137,6 +141,25 @@ ABowlingLane::ABowlingLane()
 	DeckLight = MakeLight(TEXT("DeckLight"), FVector(L.HeadPinX + 20.0, 0.0, 130.0), 250.0f, 420.0f);   // 2500 whited the rack out
 	ApproachLight = MakeLight(TEXT("ApproachLight"), FVector(-60.0, 0.0, 180.0), 120.0f, 320.0f);
 
+	// THE SHOW.
+	BallGlow = MakeLight(TEXT("BallGlow"), FVector(0.0, 0.0, 30.0), 0.0f, 170.0f);
+	BallGlow->SetLightColor(FLinearColor(0.35f, 0.75f, 1.0f));
+	BallGlow->SetCastShadows(false);
+
+	LaneCamera->PostProcessBlendWeight = 1.0f;
+	LaneCamera->PostProcessSettings.bOverride_BloomIntensity = true;
+	LaneCamera->PostProcessSettings.BloomIntensity = 1.0f;
+	LaneCamera->PostProcessSettings.bOverride_VignetteIntensity = true;
+	LaneCamera->PostProcessSettings.VignetteIntensity = 0.6f;
+	LaneCamera->PostProcessSettings.bOverride_MotionBlurAmount = true;   // a shaken camera with motion blur smears the whole table
+	LaneCamera->PostProcessSettings.MotionBlurAmount = 0.0f;
+
+	SparkPool.Build(this, SceneRoot, TEXT("Spark"), 40, false);
+	SparkPool.Gravity = 600.0f;
+	ConfettiPool.Build(this, SceneRoot, TEXT("Confetti"), 64, true);
+	ConfettiPool.Gravity = 170.0f;
+	ConfettiPool.Drag = 1.5f;
+
 	FitMeshes();
 	SyncPins();
 	SyncBall(0.0f);
@@ -199,6 +222,23 @@ void ABowlingLane::BeginPlay()
 	FitMeshes();
 	SyncPins();
 	SyncBall(0.0f);
+
+	SparkPool.Begin();
+	ConfettiPool.Begin();
+	Kick.Reset();
+	SlowMoSeconds = 0.0f;
+	PartySeconds = 0.0f;
+	DeckFlash = 0.0f;
+	if (DeckLight)
+	{
+		// However the deck was lit in the editor is how it rests; the show works from there.
+		DeckRestLumens = DeckLight->Intensity;
+		DeckRestColor = DeckLight->GetLightColor();
+	}
+	if (LaneCamera)
+	{
+		CameraRestFov = LaneCamera->FieldOfView;
+	}
 	SyncCamera(0.0f, true);
 }
 
@@ -238,7 +278,7 @@ void ABowlingLane::Tick(float DeltaSeconds)
 		{
 			ChargeSeconds += DeltaSeconds;
 		}
-		Sim.Advance(DeltaSeconds);
+		Sim.Advance(DeltaSeconds * SimTimeScale());
 		HandleEvents();
 		if (ASibeliusHUD* Hud = GetHud())
 		{
@@ -246,9 +286,10 @@ void ABowlingLane::Tick(float DeltaSeconds)
 		}
 	}
 
-	SyncBall(DeltaSeconds);
+	SyncBall(DeltaSeconds * SimTimeScale());   // the ball turns as slowly as it rolls
 	SyncPins();
 	SyncAimLine();
+	SyncShow(DeltaSeconds);   // before the camera: it reads this frame's knocks
 	SyncCamera(DeltaSeconds, false);
 	RefreshPanel();
 }
@@ -596,21 +637,106 @@ void ABowlingLane::SyncCamera(float DeltaSeconds, bool bSnap)
 		Target = FVector(L.HeadPinX, 0.0, 15.0);
 	}
 	const FRotator Rot = (Target - Loc).Rotation();
+	// The smooth camera is kept apart from the knocks (see the pool table's SyncCamera).
 	if (bSnap || DeltaSeconds <= 0.0f)
 	{
-		LaneCamera->SetRelativeLocationAndRotation(Loc, Rot);
-		return;
+		CameraLocation = Loc;
+		CameraRotation = Rot;
 	}
-	const float Speed = Sim.Phase() == EBowlingPhase::Rolling ? 6.0f : 3.0f;
-	LaneCamera->SetRelativeLocationAndRotation(
-		FMath::VInterpTo(LaneCamera->GetRelativeLocation(), Loc, DeltaSeconds, Speed),
-		FMath::RInterpTo(LaneCamera->GetRelativeRotation(), Rot, DeltaSeconds, Speed));
+	else
+	{
+		const float Speed = Sim.Phase() == EBowlingPhase::Rolling ? 6.0f : 3.0f;
+		CameraLocation = FMath::VInterpTo(CameraLocation, Loc, DeltaSeconds, Speed);
+		CameraRotation = FMath::RInterpTo(CameraRotation, Rot, DeltaSeconds, Speed);
+	}
+	LaneCamera->SetRelativeLocationAndRotation(CameraLocation + Kick.Offset(1.8f), CameraRotation + Kick.Turn(0.6f));
+	if (!bSnap)
+	{
+		LaneCamera->SetFieldOfView(CameraRestFov + Kick.Fov());
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+// The show
+
+FVector ABowlingLane::LaneToWorld(FBowlingVec2 P, double Height) const
+{
+	return Lane ? Lane->GetComponentTransform().TransformPosition(SimToLocal(P, Height)) : GetActorLocation();
+}
+
+float ABowlingLane::SimTimeScale() const
+{
+	if (SlowMoSeconds <= 0.0f)
+	{
+		return 1.0f;
+	}
+	// Held slow, then eased back up over the last part.
+	const float Ease = FMath::Clamp(SlowMoSeconds / BowlingLaneDetail::SlowMoEaseSeconds, 0.0f, 1.0f);
+	return FMath::Lerp(1.0f, ImpactSlowMotion, Ease);
+}
+
+void ABowlingLane::Party(float Seconds)
+{
+	PartySeconds = FMath::Max(PartySeconds, Seconds);
+	PartyBurstIn = 0.0f;
+}
+
+void ABowlingLane::SyncShow(float DeltaSeconds)
+{
+	ShowClock += DeltaSeconds;
+	Kick.Tick(DeltaSeconds);
+	SlowMoSeconds = FMath::Max(0.0f, SlowMoSeconds - DeltaSeconds);
+	const FBowlingLaneLayout& L = Sim.Layout();
+
+	// Confetti let go from above the deck, every colour, for as long as the party lasts.
+	if (PartySeconds > 0.0f)
+	{
+		PartySeconds = FMath::Max(0.0f, PartySeconds - DeltaSeconds);
+		PartyBurstIn -= DeltaSeconds;
+		if (PartyBurstIn <= 0.0f)
+		{
+			PartyBurstIn = 0.14f;
+			FTableBurst B;
+			// In front of the pins and under the masking unit, or it falls where nobody can see it.
+			B.Origin = LaneToWorld(FBowlingVec2(L.HeadPinX + FMath::FRandRange(-160.0, 20.0), FMath::FRandRange(-1.0, 1.0) * L.LaneHalfWidth), 80.0);
+			B.Count = 8;
+			B.Speed = 140.0f;
+			B.Life = 2.6f;
+			B.Size = 7.0f;
+			B.Scatter = 25.0f;
+			B.Color = TableJuice::Rainbow(ShowClock, 1.3f);
+			B.Glow = 4.0f;
+			ConfettiPool.Burst(B);
+		}
+	}
+	SparkPool.Tick(DeltaSeconds);
+	ConfettiPool.Tick(DeltaSeconds);
+
+	// The deck lamps jump when the ball goes in, and turn every colour for a strike.
+	if (DeckLight)
+	{
+		DeckFlash = FMath::Max(0.0f, DeckFlash - DeltaSeconds * 2.5f);
+		const bool bParty = PartySeconds > 0.0f;
+		DeckLight->SetLightColor(bParty ? FMath::Lerp(DeckRestColor, TableJuice::Rainbow(ShowClock, 1.1f), 0.75f) : DeckRestColor);
+		DeckLight->SetIntensity(DeckRestLumens * (1.0f + 0.6f * DeckFlash + (bParty ? 0.4f : 0.0f)));   // more than this whites the deck out
+	}
+
+	if (BallGlow)
+	{
+		const bool bRolling = Sim.IsBallOnLane();
+		if (bRolling)
+		{
+			BallGlow->SetRelativeLocation(SimToLocal(Sim.BallPosition(), L.BallRadius * 2.0 + 12.0));
+		}
+		BallGlow->SetIntensity(bRolling ? BallGlowLumens : 0.0f);
+	}
 }
 
 void ABowlingLane::HandleEvents()
 {
 	// A strike is a dozen contacts in a few frames: sound only the loudest few.
 	TArray<float, TInlineAllocator<32>> Clatter;
+	int32 PinSparks = 0;   // and the same for the eye
 	for (const FBowlingEvent& Event : Sim.TakeEvents())
 	{
 		switch (Event.Type)
@@ -619,20 +745,52 @@ void ABowlingLane::HandleEvents()
 			TableSounds::Play(this, ETableSound::BowlRelease, 0.8f);
 			TableSounds::Play(this, ETableSound::BowlRoll, FMath::Clamp(static_cast<float>(Event.Value) / 1000.0f, 0.4f, 0.9f));
 			BallRotation = FQuat::Identity;
+			bSlowMoSpent = false;
+			Kick.Punch(3.0f);   // the lane seems to open out as the ball leaves his hand
 			break;
 		case EBowlingEvent::BallHitPin:
+			// The first solid hit of a ball is the moment worth a closer look.
+			if (!bSlowMoSpent && Event.Value > BowlingLaneDetail::SlowMoHitSpeed && ImpactSlowMotion < 0.99f)
+			{
+				bSlowMoSpent = true;
+				SlowMoSeconds = BowlingLaneDetail::SlowMoHoldSeconds + BowlingLaneDetail::SlowMoEaseSeconds;
+				Kick.Punch(-4.0f);
+			}
+			DeckFlash = 1.0f;
+			Kick.Shake(FMath::Clamp(static_cast<float>(Event.Value) / 900.0f, 0.15f, 0.6f));
+			[[fallthrough]];
 		case EBowlingEvent::PinHitPin:
 		case EBowlingEvent::PinHitKickback:
 			Clatter.Add(FMath::Clamp(static_cast<float>(Event.Value) / 400.0f, 0.15f, 1.0f));
+			if (PinSparks < 6 && Event.Value > 180.0 && Event.Index >= 0 && Event.Index < FBowlingSim::PinCount)
+			{
+				++PinSparks;
+				FTableBurst B;
+				B.Origin = LaneToWorld(Sim.PinPosition(Event.Index), 18.0);
+				B.Count = FMath::Clamp(FMath::RoundToInt(static_cast<float>(Event.Value) / 110.0f), 3, 9);
+				B.Speed = FMath::Clamp(static_cast<float>(Event.Value) * 0.5f, 120.0f, 330.0f);
+				B.Life = 0.6f;
+				B.Size = 3.0f;   // four metres from the camera, but the slow motion comes in close
+				B.Color = FLinearColor(1.0f, 0.8f, 0.45f);
+				B.Glow = 12.0f;
+				SparkPool.Burst(B);
+			}
 			break;
 		case EBowlingEvent::Strike:
 			TableSounds::Play(this, ETableSound::Chime100, 0.6f);
+			Party(3.5f);
+			Kick.Shake(0.45f);
 			UE_LOG(LogSibeliusGame, Display, TEXT("[Bowling] STRIKE, frame %d."), Event.Index + 1);
 			break;
 		case EBowlingEvent::Spare:
 			TableSounds::Play(this, ETableSound::Chime10, 0.6f);
+			Party(1.3f);
 			break;
 		case EBowlingEvent::GameOver:
+			if (Event.Index > BestScore && Event.Index > 0)
+			{
+				Party(5.0f);   // a new best on this lane
+			}
 			BestScore = FMath::Max(BestScore, Event.Index);
 			// The session's best is the lane's; the lifetime best is kept for the agents (ChatDeeds.h).
 			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))

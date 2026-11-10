@@ -53,6 +53,7 @@ class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class UPointLightComponent;
 class UPostProcessComponent;
+class USpotLightComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 
@@ -69,6 +70,13 @@ public:
 	static constexpr int32 ShellCount = 3;
 	static constexpr int32 DomeLayerCount = 7;
 	static constexpr int32 PadCount = 2;
+
+	/** THE PREMIERE (Walt, 2026-11-10: flying is the fun part, so the flight gets somewhere to
+	    go). The far pad is an open-air stage under the star: a screen's frame of light, the five
+	    agents waiting on their marks, and a film (FilmDirectorSubsystem.h) that starts when he
+	    lands. The cast is spawned on landing and struck when he flies off, because the city
+	    turns under every flight and nothing that is not part of it would turn with it. */
+	static constexpr int32 PremierePad = 1;
 
 	/** On the way in, or across: the city's camera has him. */
 	bool IsFlying() const { return Flight != EFlight::None; }
@@ -126,6 +134,19 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "AI City")
 	TObjectPtr<UInstancedStaticMeshComponent> PadLegs;
+
+	/** THE STAGE LIGHTS at the premiere (Walt, 2026-11-10: under the star alone the agents
+	    "look like dead zombies - their skin is a weird gray green"). The star is straight
+	    overhead, cold and shadowless, and the only other light is blue: no skin survives that.
+	    Two warm keys from where he stands, a rim from behind the screen, and a soft fill at eye
+	    height from the audience (the close-ups' dark eye sockets), on him and the cast only,
+	    never the dome. */
+	UPROPERTY(VisibleAnywhere, Category = "AI City")
+	TArray<TObjectPtr<USpotLightComponent>> StageLights;
+
+	/** A stage key's light on the cast, lux. The star gives DomeLux; this should beat it. */
+	UPROPERTY(EditAnywhere, Category = "AI City", meta = (ClampMin = "0"))
+	float StageLux = 12.0f;
 
 	/** The camera that flies him: in the city's frame, so it turns with it. */
 	UPROPERTY(VisibleAnywhere, Category = "AI City")
@@ -210,6 +231,18 @@ private:
 	void HoldPawn(APawn* Pawn, bool bHold);
 	/** The sun's disc turned to face the eye. */
 	void FaceSun();
+
+	void RaiseCast();    // the five agents on their marks at the premiere
+	void StrikeCast();   // the film stopped, the cast gone
+	bool ShowNextFilm(); // the next film in the catalogue, the next agent as its star
+	void TickPremiere(float DeltaSeconds, APlayerController* PC);
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<AActor>> PremiereCast;
+
+	float PremiereWait = 0.0f;     // seconds from landing to the first film
+	bool bPremiereOpened = false;  // this landing's first film has started
+	int32 PremiereNext = 0;        // which film is next, this visit
 
 	float Age = 0.0f;
 	bool bDomeUp = false;

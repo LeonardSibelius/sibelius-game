@@ -35,12 +35,15 @@
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
 #include "BilliardsSim.h"
+#include "TableJuice.h"
 #include "BilliardsTable.generated.h"
 
 class ASibeliusHUD;
 class APlayerController;
 class UBoxComponent;
 class UCameraComponent;
+class UPointLightComponent;
+class USpotLightComponent;
 class UStaticMeshComponent;
 
 UCLASS()
@@ -98,10 +101,26 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Billiards")
 	TObjectPtr<UCameraComponent> TableCamera;
 
+	/** The lamp over the table. It comes up when he steps to the table and goes down when he
+	    leaves, so the room is as he lit it the rest of the time. */
+	UPROPERTY(VisibleAnywhere, Category = "Billiards")
+	TObjectPtr<USpotLightComponent> Lamp;
+
+	/** One in each pocket: it flashes the colour of the ball that drops. */
+	UPROPERTY(VisibleAnywhere, Category = "Billiards")
+	TArray<TObjectPtr<UPointLightComponent>> PocketLights;
+
 	// --- tuning -------------------------------------------------------------------------
 
 	UPROPERTY(EditAnywhere, Category = "Billiards")
 	bool bDrawPhysicsLayoutInEditor = true;
+
+	/** The lamp fully up, in candelas. 0 leaves the table to the room's own light. */
+	UPROPERTY(EditAnywhere, Category = "Billiards|Show", meta = (ClampMin = "0.0"))
+	float LampIntensity = 40.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Billiards|Show", meta = (ClampMin = "0.0"))
+	float PocketFlashIntensity = 7.0f;   // candelas
 
 	/** Holding the shot key this long is full power; hold on and it falls back again. */
 	UPROPERTY(EditAnywhere, Category = "Billiards", meta = (ClampMin = "0.2"))
@@ -167,6 +186,24 @@ private:
 	static FVector SimToLocal(FBilliardsVec2 P, double Height);
 
 	ASibeliusHUD* GetHud() const;
+
+	// The show (TableJuice.h): sparks, lamp, pocket lights, the camera's knocks. None of it
+	// touches the sim.
+	void SyncShow(float DeltaSeconds);
+	FVector ClothToWorld(FBilliardsVec2 P, double Height) const;
+
+	FTableSparks SparkPool;
+	FTableSparks ConfettiPool;
+	FTableCameraKick Kick;
+	FVector CameraLocation = FVector::ZeroVector;      // where the camera is before the knocks
+	FRotator CameraRotation = FRotator::ZeroRotator;
+	float CameraRestFov = 75.0f;
+	float LampLevel = 0.0f;
+	TArray<float> PocketFlash;
+	TArray<FLinearColor> PocketColor;
+	float VictorySeconds = 0.0f;    // the show after the last ball drops
+	float VictoryBurstIn = 0.0f;
+	double ShowClock = 0.0;
 
 	FBilliardsSim Sim;
 

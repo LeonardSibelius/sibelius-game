@@ -14,6 +14,7 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Components/PointLightComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
@@ -30,6 +31,15 @@ namespace FilmDirectorNS
 
 	/** The camera never comes closer to her than this, whatever is in the way. */
 	const float MinCameraDistance = 70.0f;
+
+	/* THE EYE LIGHT (Walt, 2026-11-10: in close-ups at the premiere the faces looked malevolent,
+	   "the eye sockets are dark"). A small, weak lamp riding just above the lens, as an operator's
+	   would: whatever the level's lights do from above, a face the camera is near gets a little
+	   light from the front and a glint in the eyes. Close and medium shots only, lighting channel
+	   0 only (the cast's), and it goes with the camera. Lux on her face, at any distance: at 2
+	   the premiere's close-ups went flat, and with none a little of the brow's shadow came back. */
+	const float EyeLux = 1.0f;
+	const float EyeLightLift = 12.0f;   // cm above the lens
 
 	struct FLens
 	{
@@ -189,6 +199,21 @@ bool UFilmDirectorSubsystem::PlayFilm(const FFilm& InFilm, UDancerAgentComponent
 	{
 		// The letterbox is drawn by the screen widget; the camera must not add its own bars.
 		Lens->bConstrainAspectRatio = false;
+	}
+	// The eye light (FilmDirectorNS::EyeLux): on the camera, so it lives and dies with it.
+	// UpdateCamera turns it on for close and medium shots.
+	if (UPointLightComponent* Eye = NewObject<UPointLightComponent>(Camera, TEXT("EyeLight")))
+	{
+		Eye->SetupAttachment(Camera->GetRootComponent());
+		Eye->SetRelativeLocation(FVector(0.0f, 0.0f, FilmDirectorNS::EyeLightLift));
+		Eye->SetMobility(EComponentMobility::Movable);
+		Eye->SetCastShadows(false);
+		Eye->SetLightingChannels(true, false, false);
+		Eye->SetIntensityUnits(ELightUnits::Candelas);
+		Eye->SetSourceRadius(2.0f);
+		Eye->SetLightColor(FLinearColor(1.0f, 0.94f, 0.88f));
+		Eye->SetVisibility(false);
+		Eye->RegisterComponent();
 	}
 
 	SavedViewTarget = PC->GetViewTarget();
@@ -519,6 +544,20 @@ void UFilmDirectorSubsystem::UpdateCamera(float DeltaTime)
 	if (UCameraComponent* Glass = Camera->GetCameraComponent())
 	{
 		Glass->SetFieldOfView(Lens.Fov);
+	}
+
+	// The eye light, by the inverse square so her face gets EyeLux however close the shot is,
+	// and reaching no further than a little past her.
+	if (UPointLightComponent* Eye = Camera->FindComponentByClass<UPointLightComponent>())
+	{
+		const bool bNear = Shot->Framing == EFilmFraming::CloseUp || Shot->Framing == EFilmFraming::Medium;
+		Eye->SetVisibility(bNear);
+		if (bNear)
+		{
+			const float Reach = FVector::Dist(CameraAt, SmoothedTarget);
+			Eye->SetIntensity(EyeLux * FMath::Square(Reach / 100.0f));
+			Eye->SetAttenuationRadius(Reach * 2.0f);
+		}
 	}
 }
 

@@ -5,6 +5,7 @@
 //
 // WHAT IT TAKES OVER, AND HANDS BACK ON EVERY EXIT (end of film, Esc, level teardown):
 //   - the view            a spawned ACameraActor, cut per shot; his own view returns on a blend
+//                         (it carries a small eye light, on in close and medium shots only)
 //   - the cast's dances   played straight onto the dance mesh, NOT through PlayDance, so a
 //                         film never overwrites the dance he chose for her (PlayDance saves)
 //   - his pawn            hidden, so a wide shot does not find him standing in it

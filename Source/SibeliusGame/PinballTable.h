@@ -39,6 +39,7 @@
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
 #include "PinballSim.h"
+#include "TableJuice.h"
 #include "TableSounds.h"
 #include "PinballTable.generated.h"
 
@@ -106,6 +107,11 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Pinball")
 	TArray<TObjectPtr<UPointLightComponent>> BumperLights;
 
+	/** A lamp over the playfield that the game colours: gold for a bumper, red for a drain,
+	    every colour at once for the bonus. Dark until something happens. */
+	UPROPERTY(VisibleAnywhere, Category = "Pinball")
+	TObjectPtr<UPointLightComponent> WashLight;
+
 	/** Score, ball and game-over, on the backglass. Place it on the glass in the editor. */
 	UPROPERTY(VisibleAnywhere, Category = "Pinball")
 	TObjectPtr<UTextRenderComponent> ScoreText;
@@ -143,6 +149,18 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Pinball", meta = (ClampMin = "0.0"))
 	float BumperFlashIntensity = 8.0f;   // candelas: the lights sit a few cm under the caps
+
+	/** The playfield lamp at full flash, in candelas. */
+	UPROPERTY(EditAnywhere, Category = "Pinball|Show", meta = (ClampMin = "0.0"))
+	float WashFlashIntensity = 10.0f;
+
+	/** The bumper lamps' slow chase while nobody is playing, as a share of a full flash. */
+	UPROPERTY(EditAnywhere, Category = "Pinball|Show", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float AttractGlow = 0.22f;
+
+	/** How far the camera leans after the ball: 0 holds it still. */
+	UPROPERTY(EditAnywhere, Category = "Pinball|Show", meta = (ClampMin = "0.0", ClampMax = "2.0"))
+	float CameraLean = 1.0f;
 
 	/** Draw our own simple bumper caps. Off for the Singalong, whose mesh has its own
 	    modelled caps; the flash lights stay either way. */
@@ -191,6 +209,25 @@ private:
 	static FVector TableToLocal(FPinVec2 P, double Height);
 
 	ASibeliusHUD* GetHud() const;
+
+	// The show (TableJuice.h): sparks, the lamp, the camera. None of it touches the sim.
+	void SyncShow(float DeltaSeconds);
+	void Flash(const FLinearColor& Color, float Amount);
+	void Sparks(FPinVec2 At, int32 Count, float Speed, const FLinearColor& Color, float Life = 0.35f);
+	FVector TableToWorld(FPinVec2 P, double Height) const;
+
+	FTableSparks SparkPool;
+	FTableCameraKick Kick;
+	FVector CameraRestLocation = FVector::ZeroVector;
+	FRotator CameraRestRotation = FRotator::ZeroRotator;
+	float CameraRestFov = 60.0f;
+	FVector2D Lean = FVector2D::ZeroVector;   // where the camera is leaning, -1..1 across and up
+	FLinearColor WashColor = FLinearColor::White;
+	float WashFlash = 0.0f;
+	float BonusSeconds = 0.0f;    // the every-colour show after the rollover set or a new best
+	float BonusBurstIn = 0.0f;
+	float TrailIn = 0.0f;
+	double ShowClock = 0.0;
 
 	FPinballSim Sim;
 

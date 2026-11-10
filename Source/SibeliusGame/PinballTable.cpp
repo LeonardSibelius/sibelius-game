@@ -197,6 +197,29 @@ APinballTable::APinballTable()
 	{
 		HiddenFlipperMaterial = HiddenMaterial.Object;
 	}
+
+	// THE SHOW. A lamp a hand's width over the middle of the playfield, dark until the game
+	// lights it; a little more bloom and a darker corner at the table than in the room, so the
+	// lamps and sparks read as light; and the sparks themselves.
+	WashLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("WashLight"));
+	WashLight->SetupAttachment(Playfield);
+	WashLight->SetMobility(EComponentMobility::Movable);
+	WashLight->SetRelativeLocation(TableToLocal(FPinVec2(Layout.ShooterLaneMinX * 0.5, Layout.Length * 0.55), 22.0));
+	WashLight->SetIntensityUnits(ELightUnits::Candelas);
+	WashLight->SetIntensity(0.0f);
+	WashLight->SetAttenuationRadius(90.0f);
+	WashLight->SetCastShadows(false);
+
+	TableCamera->PostProcessBlendWeight = 1.0f;
+	TableCamera->PostProcessSettings.bOverride_BloomIntensity = true;
+	TableCamera->PostProcessSettings.BloomIntensity = 1.1f;
+	TableCamera->PostProcessSettings.bOverride_VignetteIntensity = true;
+	TableCamera->PostProcessSettings.VignetteIntensity = 0.55f;
+	TableCamera->PostProcessSettings.bOverride_MotionBlurAmount = true;   // a shaken camera with motion blur smears the whole table
+	TableCamera->PostProcessSettings.MotionBlurAmount = 0.0f;
+
+	SparkPool.Build(this, SceneRoot, TEXT("Spark"), 40, false);
+	SparkPool.Gravity = 260.0f;   // small and close: real gravity would have them gone in a blink
 }
 
 FVector APinballTable::TableToLocal(FPinVec2 P, double Height)
@@ -232,6 +255,16 @@ void APinballTable::BeginPlay()
 	Sim = FPinballSim();
 	ApplyHiddenFlipperMaterial();
 	BumperFlash.Init(0.0f, BumperLights.Num());
+
+	// Wherever the camera was left in the editor is where it rests; the show moves it from there.
+	SparkPool.Begin();
+	Kick.Reset();
+	if (TableCamera)
+	{
+		CameraRestLocation = TableCamera->GetRelativeLocation();
+		CameraRestRotation = TableCamera->GetRelativeRotation();
+		CameraRestFov = TableCamera->FieldOfView;
+	}
 	bScoreTextValid = false;
 	RefreshScoreText();
 	SyncVisuals(0.0f);
@@ -288,6 +321,7 @@ void APinballTable::Tick(float DeltaSeconds)
 
 	PlayQueuedSounds();   // outside bPlaying: a score still rings out after he steps away
 	SyncVisuals(DeltaSeconds);
+	SyncShow(DeltaSeconds);
 	RefreshScoreText();
 
 	if (bDrawPhysicsLayoutInGame)
@@ -472,7 +506,16 @@ void APinballTable::SyncVisuals(float DeltaSeconds)
 			continue;
 		}
 		BumperFlash[Index] = FMath::Max(0.0f, BumperFlash[Index] - DeltaSeconds * PinballTableDetail::FlashDecayPerSecond);
-		BumperLights[Index]->SetIntensity(BumperFlash[Index] * BumperFlashIntensity);
+		// With no ball in play the lamps chase one another slowly, the way a machine waiting
+		// for a coin does: it is what catches the eye from across the room.
+		float Level = BumperFlash[Index];
+		if (Sim.Phase() != EPinballPhase::InPlay || BonusSeconds > 0.0f)
+		{
+			const float Rate = BonusSeconds > 0.0f ? 14.0f : 2.4f;
+			const float Chase = 0.5f + 0.5f * FMath::Sin(static_cast<float>(ShowClock) * Rate - Index * 2.1f);
+			Level = FMath::Max(Level, (BonusSeconds > 0.0f ? 1.0f : AttractGlow) * Chase * Chase);
+		}
+		BumperLights[Index]->SetIntensity(Level * BumperFlashIntensity);
 	}
 }
 
@@ -494,9 +537,13 @@ void APinballTable::HandleEvents()
 			break;
 		case EPinballEvent::BallLaunched:
 			TableSounds::Play(this, ETableSound::Plunger, 0.8f);
+			Sparks(Sim.Layout().PlungerRest, 8, 110.0f, FLinearColor(1.0f, 0.85f, 0.5f));
+			Kick.Punch(2.5f);
+			Kick.Shake(0.2f);
 			break;
 		case EPinballEvent::FlipperUp:
 			TableSounds::Play(this, ETableSound::FlipperUp, 0.7f, FMath::FRandRange(0.97f, 1.03f));
+			Kick.Shake(0.07f);
 			break;
 		case EPinballEvent::FlipperDown:
 			TableSounds::Play(this, ETableSound::FlipperDown, 0.35f);
@@ -508,27 +555,56 @@ void APinballTable::HandleEvents()
 			}
 			TableSounds::Play(this, ETableSound::Bumper, 0.9f, FMath::FRandRange(0.96f, 1.04f));
 			QueueScoreChimes(Event.Points);
+			if (Event.Index >= 0 && Event.Index < static_cast<int32>(Sim.Layout().Bumpers.size()))
+			{
+				Sparks(Sim.Layout().Bumpers[static_cast<size_t>(Event.Index)].Center, 12, 130.0f, FLinearColor(1.0f, 0.7f, 0.2f));
+			}
+			Flash(FLinearColor(1.0f, 0.72f, 0.3f), 0.8f);
+			Kick.Shake(0.32f);
+			Kick.Punch(-0.9f);
 			break;
 		case EPinballEvent::SlingshotHit:
 			TableSounds::Play(this, ETableSound::Slingshot, 0.8f, FMath::FRandRange(0.96f, 1.04f));
 			QueueScoreChimes(Event.Points);
+			Sparks(Sim.BallPosition(), 8, 110.0f, FLinearColor(0.6f, 0.85f, 1.0f), 0.28f);
+			Flash(FLinearColor(0.55f, 0.8f, 1.0f), 0.45f);
+			Kick.Shake(0.2f);
 			break;
 		case EPinballEvent::RolloverLit:
+			QueueScoreChimes(Event.Points);
+			Sparks(Sim.BallPosition(), 7, 90.0f, FLinearColor(1.0f, 0.3f, 0.75f));
+			Flash(FLinearColor(1.0f, 0.35f, 0.8f), 0.5f);
+			break;
 		case EPinballEvent::RolloversComplete:
 			QueueScoreChimes(Event.Points);
+			BonusSeconds = 2.6f;
+			BonusBurstIn = 0.0f;
+			Kick.Shake(0.5f);
+			Kick.Punch(-2.0f);
 			break;
 		case EPinballEvent::KickoutCaptured:
 			TableSounds::Play(this, ETableSound::KickoutIn, 0.8f);
 			QueueScoreChimes(Event.Points);
+			Sparks(Sim.BallPosition(), 10, 80.0f, FLinearColor(0.25f, 1.0f, 0.9f), 0.5f);
+			Flash(FLinearColor(0.3f, 1.0f, 0.9f), 0.7f);
 			break;
 		case EPinballEvent::KickoutEjected:
 			TableSounds::Play(this, ETableSound::Bumper, 0.8f, 0.75f);
+			Sparks(Sim.BallPosition(), 8, 120.0f, FLinearColor(0.25f, 1.0f, 0.9f), 0.3f);
+			Kick.Shake(0.22f);
 			break;
 		case EPinballEvent::BallDrained:
 			TableSounds::Play(this, ETableSound::Drain, 0.8f);
+			Flash(FLinearColor(1.0f, 0.08f, 0.05f), 1.0f);
+			Kick.Shake(0.15f);
 			UE_LOG(LogSibeliusGame, Display, TEXT("[Pinball] ball %d drained at %d."), Event.Index, Sim.Score());
 			break;
 		case EPinballEvent::GameOver:
+			if (Event.Points > HighScore && Event.Points > 0)
+			{
+				BonusSeconds = 3.5f;   // a new best on this table: the whole show
+				BonusBurstIn = 0.0f;
+			}
 			HighScore = FMath::Max(HighScore, Event.Points);
 			// The session's best is the table's; the lifetime best is kept for the agents (ChatDeeds.h).
 			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
@@ -541,6 +617,104 @@ void APinballTable::HandleEvents()
 		default:
 			break;
 		}
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+// The show
+
+FVector APinballTable::TableToWorld(FPinVec2 P, double Height) const
+{
+	return Playfield ? Playfield->GetComponentTransform().TransformPosition(TableToLocal(P, Height)) : GetActorLocation();
+}
+
+void APinballTable::Flash(const FLinearColor& Color, float Amount)
+{
+	WashColor = Color;
+	WashFlash = FMath::Max(WashFlash, Amount);
+}
+
+void APinballTable::Sparks(FPinVec2 At, int32 Count, float Speed, const FLinearColor& Color, float Life)
+{
+	FTableBurst B;
+	B.Origin = TableToWorld(At, Sim.Layout().BallRadius + 0.5);
+	B.Bias = Playfield ? Playfield->GetUpVector() : FVector::UpVector;
+	B.Count = Count;
+	B.Speed = Speed;
+	B.Life = Life;
+	B.Size = 0.75f;   // seen from 70 cm: anything under half a centimetre is a scratch on the glass
+	B.Color = Color;
+	B.Glow = 26.0f;
+	SparkPool.Burst(B);
+}
+
+void APinballTable::SyncShow(float DeltaSeconds)
+{
+	ShowClock += DeltaSeconds;
+	Kick.Tick(DeltaSeconds);
+	const FPinballTableLayout& Layout = Sim.Layout();
+	const bool bInPlay = Sim.Phase() == EPinballPhase::InPlay;
+
+	// The bonus show: sparks off every bumper in turn and every colour in the lamp.
+	if (BonusSeconds > 0.0f)
+	{
+		BonusSeconds -= DeltaSeconds;
+		BonusBurstIn -= DeltaSeconds;
+		if (BonusBurstIn <= 0.0f && !Layout.Bumpers.empty())
+		{
+			BonusBurstIn = 0.12f;
+			const size_t Which = static_cast<size_t>(FMath::RandHelper(static_cast<int32>(Layout.Bumpers.size())));
+			Sparks(Layout.Bumpers[Which].Center, 9, 150.0f, TableJuice::Rainbow(ShowClock, 1.7f), 0.5f);
+		}
+		WashColor = TableJuice::Rainbow(ShowClock, 1.2f);
+		WashFlash = 1.0f;
+	}
+
+	// A fast ball leaves a short tail of light behind it.
+	if (bInPlay)
+	{
+		const FPinVec2 V = Sim.BallVelocity();
+		const double Speed = FMath::Sqrt(V.X * V.X + V.Y * V.Y);
+		TrailIn -= DeltaSeconds;
+		if (Speed > 220.0 && TrailIn <= 0.0f)
+		{
+			TrailIn = 0.03f;
+			FTableBurst B;
+			B.Origin = TableToWorld(Sim.BallPosition(), Layout.BallRadius);
+			B.Count = 1;
+			B.Speed = 4.0f;
+			B.Life = 0.2f;
+			B.Size = 0.8f;
+			B.Color = FLinearColor(1.0f, 0.9f, 0.7f);
+			B.Glow = 10.0f;
+			SparkPool.Burst(B);
+		}
+	}
+	SparkPool.Tick(DeltaSeconds);
+
+	if (WashLight)
+	{
+		WashFlash = FMath::Max(0.0f, WashFlash - DeltaSeconds * 3.0f);
+		WashLight->SetLightColor(WashColor);
+		WashLight->SetIntensity(WashFlash * WashFlashIntensity);
+	}
+
+	// The camera leans a little after the ball, and takes the knocks. Only while he is at
+	// the table: nobody else is looking through it.
+	if (TableCamera && bPlaying)
+	{
+		FVector2D Want = FVector2D::ZeroVector;
+		if (bInPlay)
+		{
+			const FPinVec2 BallAt = Sim.BallPosition();
+			Want.X = FMath::Clamp(BallAt.X / Layout.ShooterLaneMinX * 2.0 - 1.0, -1.0, 1.0);
+			Want.Y = FMath::Clamp(BallAt.Y / Layout.Length * 2.0 - 0.8, -1.0, 1.0);
+		}
+		Lean = FMath::Vector2DInterpTo(Lean, Want, DeltaSeconds, 2.5f);
+		const FVector Location = CameraRestLocation + FVector(Lean.Y * 1.0, Lean.X * 1.5, 0.0) * CameraLean + Kick.Offset(0.25f);
+		const FRotator Rotation = CameraRestRotation + FRotator(Lean.Y * 0.5, Lean.X * 1.0, 0.0) * CameraLean + Kick.Turn(0.25f);
+		TableCamera->SetRelativeLocationAndRotation(Location, Rotation);
+		TableCamera->SetFieldOfView(CameraRestFov + Kick.Fov());
 	}
 }
 

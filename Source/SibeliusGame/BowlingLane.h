@@ -48,6 +48,7 @@
 #include "GameFramework/Actor.h"
 #include "Interactable.h"
 #include "BowlingSim.h"
+#include "TableJuice.h"
 #include "BowlingLane.generated.h"
 
 class ASibeliusHUD;
@@ -111,8 +112,19 @@ public:
 
 	// --- tuning -------------------------------------------------------------------------
 
+	/** A cool light that rides down the lane with the ball, for the shine it puts on the boards. */
+	UPROPERTY(VisibleAnywhere, Category = "Bowling")
+	TObjectPtr<UPointLightComponent> BallGlow;
+
 	UPROPERTY(EditAnywhere, Category = "Bowling")
 	bool bDrawLaneInEditor = true;
+
+	/** A solid hit on the pins plays at this share of full speed for a moment. 1 = never slow. */
+	UPROPERTY(EditAnywhere, Category = "Bowling|Show", meta = (ClampMin = "0.1", ClampMax = "1.0"))
+	float ImpactSlowMotion = 0.3f;
+
+	UPROPERTY(EditAnywhere, Category = "Bowling|Show", meta = (ClampMin = "0.0"))
+	float BallGlowLumens = 60.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Bowling", meta = (ClampMin = "0.2"))
 	float PowerChargeSeconds = 1.3f;
@@ -174,6 +186,29 @@ private:
 	static FVector SimToLocal(FBowlingVec2 P, double Height);
 
 	ASibeliusHUD* GetHud() const;
+
+	// The show (TableJuice.h): sparks off the pins, confetti for a strike, the deck lights, the
+	// camera's knocks, and a moment of slow motion when the ball goes in. The slow motion is
+	// the one thing here the sim feels, and only as time passing more slowly.
+	void SyncShow(float DeltaSeconds);
+	void Party(float Seconds);
+	float SimTimeScale() const;
+	FVector LaneToWorld(FBowlingVec2 P, double Height) const;
+
+	FTableSparks SparkPool;
+	FTableSparks ConfettiPool;
+	FTableCameraKick Kick;
+	FVector CameraLocation = FVector::ZeroVector;      // where the camera is before the knocks
+	FRotator CameraRotation = FRotator::ZeroRotator;
+	float CameraRestFov = 55.0f;
+	float DeckRestLumens = 250.0f;
+	FLinearColor DeckRestColor = FLinearColor::White;
+	float DeckFlash = 0.0f;
+	float SlowMoSeconds = 0.0f;     // real seconds of slow motion left
+	bool bSlowMoSpent = false;      // once a ball
+	float PartySeconds = 0.0f;      // a strike, a spare, a new best
+	float PartyBurstIn = 0.0f;
+	double ShowClock = 0.0;
 
 	FBowlingSim Sim;
 

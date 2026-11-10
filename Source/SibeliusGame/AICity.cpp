@@ -2,6 +2,9 @@
 
 #include "AICity.h"
 
+#include "DancerAgentComponent.h"
+#include "FilmDirectorSubsystem.h"
+#include "FilmTypes.h"
 #include "SibeliusHUD.h"
 
 #include "Camera/CameraComponent.h"
@@ -13,6 +16,9 @@
 #include "Components/PointLightComponent.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/SpotLightComponent.h"
+#include "Animation/AnimSequence.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -275,6 +281,43 @@ namespace AICityDetail
 	constexpr double SkyRadius = 20000000.0;             // the far stars: 200 km, well beyond that
 }
 
+// The premiere's stage, in the pad's frame: X along the ridge (the way he faces when set down),
+// Z toward the star, the pad's centre at the origin. Centimetres.
+namespace AICityStage
+{
+	constexpr double ScreenX = 980.0;        // inside the rail, at the far side from where he lands
+	constexpr double ScreenWide = 1400.0;
+	constexpr double ScreenHigh = 560.0;
+	constexpr double ScreenBottom = 260.0;      // over their heads: at 150 its lower beam ran behind their faces
+	constexpr double Beam = 16.0;
+	constexpr double StageX = 560.0;         // the cast's marks
+	constexpr double MarkSpacing = 320.0;     // at 190 a close-up of one was shot through the back of the next
+	constexpr int32 Footlights = 9;
+	constexpr float OpeningWait = 3.0f;      // from landing to the first film: time to look round
+
+	// The stage lights' heights. At 420 the keys and the overhead star lit them only from above,
+	// and in close-up the brows hooded the eyes (Walt, 2026-11-10: "the eye sockets are dark").
+	constexpr double KeyHigh = 250.0;        // a little over their heads: still models a face
+	constexpr double FaceHigh = 150.0;       // their eyes, near enough, standing on the pad
+	constexpr double FillX = -200.0;         // the fill stands behind where he lands, facing them
+
+	struct FPlayer
+	{
+		const TCHAR* Name;
+		const TCHAR* Class;
+	};
+	// Loaded by path, as the dome is: the MetaHumans are not in the public repo, and a clone
+	// without them gets the stage and the screen and no cast. They reach a cooked build
+	// through the levels each of them already stands in.
+	const FPlayer Company[] = {
+		{ TEXT("Kaia"),    TEXT("/Game/MetaHumans/MHC_Kaia/BP_Dancer_Kaia.BP_Dancer_Kaia_C") },
+		{ TEXT("Nyra"),    TEXT("/Game/MetaHumans/MHC_NyraSolmere/BP_MHC_NyraSolmere.BP_MHC_NyraSolmere_C") },
+		{ TEXT("Isla"),    TEXT("/Game/MetaHumans/MHC_IslaRowan/BP_MHC_IslaRowan.BP_MHC_IslaRowan_C") },
+		{ TEXT("Aisling"), TEXT("/Game/MetaHumans/MHC_Aisling/BP_MHC_Aisling.BP_MHC_Aisling_C") },
+		{ TEXT("Elise"),   TEXT("/Game/MetaHumans/MHC_Elise/BP_MHC_Elise.BP_MHC_Elise_C") },
+	};
+}
+
 AAICity::AAICity()
 {
 	using namespace AICityDetail;
@@ -353,6 +396,19 @@ AAICity::AAICity()
 	FillLight->SetLightingChannels(true, true, false);
 	// Travelling +X and a little down: it lights what faces away from the star.
 	FillLight->SetRelativeRotation(FRotator(-20.0, 0.0, 0.0));
+
+	for (int32 K = 0; K < 4; ++K)
+	{
+		USpotLightComponent* Lamp = CreateDefaultSubobject<USpotLightComponent>(*FString::Printf(TEXT("StageLight_%d"), K));
+		Lamp->SetupAttachment(SceneRoot);
+		Lamp->SetMobility(EComponentMobility::Movable);
+		Lamp->SetCastShadows(false);
+		Lamp->SetLightingChannels(true, false, false);   // him and the cast; the dome has its star
+		Lamp->SetIntensityUnits(ELightUnits::Candelas);
+		Lamp->SetInnerConeAngle(30.0f);
+		Lamp->SetOuterConeAngle(50.0f);
+		StageLights.Add(Lamp);
+	}
 
 	Look = CreateDefaultSubobject<UPostProcessComponent>(TEXT("Look"));
 	Look->SetupAttachment(SceneRoot);
@@ -553,6 +609,55 @@ void AAICity::Build()
 				Lines.Add(Place(Bar(FQuat(FVector::UpVector, A + PI * 0.5), FVector(FMath::Cos(A), FMath::Sin(A), 0.0) * InlayR + FVector(0.0, 0.0, 0.5),
 					FVector(2.0 * PI * InlayR / Inlay, 6.0, 2.0))));
 			}
+			if (P == PremierePad)
+			{
+				// THE SCREEN: a frame of light and a sheet of glass across the far side of
+				// the pad, the city and its star behind it. He is set down facing it. And a
+				// line of footlights where the stage begins.
+				using namespace AICityStage;
+				// The stage lights: two warm keys from either side of where he stands, just above
+				// their heads to model a face, a rose rim from up behind the screen, and a soft
+				// fill from the audience at the height of their eyes. Everything else here lights
+				// them from above - the star straight overhead, the keys - and with nothing level
+				// with their faces the sockets went black in close-up (Walt, 2026-11-10). A large
+				// source radius is what makes a lamp soft: the keys a little, the fill a lot.
+				const FVector Aim(StageX, 0.0, 130.0);
+				const FVector LampAt[4] = { FVector(-250.0, -620.0, KeyHigh), FVector(-250.0, 620.0, KeyHigh), FVector(ScreenX + 150.0, 0.0, 700.0), FVector(FillX, 0.0, FaceHigh) };
+				const FVector LampAim[4] = { Aim, Aim, Aim, FVector(StageX - 100.0, 0.0, FaceHigh) };
+				const FLinearColor LampColor[4] = { FLinearColor(1.0f, 0.80f, 0.62f), FLinearColor(1.0f, 0.86f, 0.74f), FLinearColor(1.0f, 0.55f, 0.65f), FLinearColor(1.0f, 0.90f, 0.82f) };
+				// The fill at half a key washed the faces flat and pale in PIE; at 0.3 they keep their shape.
+				const float LampShare[4] = { 1.0f, 0.6f, 0.8f, 0.3f };
+				const float LampSoftness[4] = { 60.0f, 60.0f, 0.0f, 150.0f };   // source radius, cm
+				const float LampCone[4] = { 50.0f, 50.0f, 50.0f, 62.0f };        // outer; the fill spans the whole arc
+				for (int32 K = 0; K < StageLights.Num() && K < 4; ++K)
+				{
+					if (USpotLightComponent* Lamp = StageLights[K])
+					{
+						const FVector To = LampAim[K] - LampAt[K];
+						const double Metres = To.Size() / 100.0;
+						Lamp->SetRelativeTransform(Place(FTransform(FRotationMatrix::MakeFromX(To).ToQuat(), LampAt[K])));
+						Lamp->SetLightColor(LampColor[K]);
+						Lamp->SetIntensity(static_cast<float>(StageLux * LampShare[K] * Metres * Metres));
+						Lamp->SetAttenuationRadius(static_cast<float>(To.Size() * 2.2));
+						Lamp->SetSourceRadius(LampSoftness[K]);
+						Lamp->SetOuterConeAngle(LampCone[K]);
+						Lamp->SetInnerConeAngle(LampCone[K] - 20.0f);
+					}
+				}
+				const FVector Middle(ScreenX, 0.0, ScreenBottom + ScreenHigh * 0.5);
+				Rail.Add(Place(Bar(FQuat::Identity, Middle, FVector(6.0, ScreenWide, ScreenHigh))));
+				Lines.Add(Place(Bar(FQuat::Identity, Middle + FVector(0.0, 0.0, ScreenHigh * 0.5), FVector(Beam, ScreenWide + Beam, Beam))));
+				Lines.Add(Place(Bar(FQuat::Identity, Middle - FVector(0.0, 0.0, ScreenHigh * 0.5), FVector(Beam, ScreenWide + Beam, Beam))));
+				Lines.Add(Place(Bar(FQuat::Identity, Middle + FVector(0.0, ScreenWide * 0.5, 0.0), FVector(Beam, Beam, ScreenHigh))));
+				Lines.Add(Place(Bar(FQuat::Identity, Middle - FVector(0.0, ScreenWide * 0.5, 0.0), FVector(Beam, Beam, ScreenHigh))));
+				Lines.Add(Place(Bar(FQuat::Identity, FVector(ScreenX, ScreenWide * 0.5, ScreenBottom * 0.5), FVector(Beam, Beam, ScreenBottom))));
+				Lines.Add(Place(Bar(FQuat::Identity, FVector(ScreenX, -ScreenWide * 0.5, ScreenBottom * 0.5), FVector(Beam, Beam, ScreenBottom))));
+				for (int32 K = 0; K < Footlights; ++K)
+				{
+					const double Y = (K + 0.5) / Footlights * 2.0 - 1.0;
+					Lines.Add(Place(Bar(FQuat::Identity, FVector(StageX - 220.0, Y * ScreenWide * 0.45, 2.0), FVector(26.0, 26.0, 5.0))));
+				}
+			}
 			// Three legs down through the relief into the ridge.
 			const double LegLength = PadLift + 400.0;
 			for (int32 K = 0; K < 3; ++K)
@@ -716,6 +821,7 @@ void AAICity::StartFlight(EFlight Kind, int32 ToPad)
 	{
 		return;
 	}
+	StrikeCast();   // the city is about to turn: nothing stays on a stage that is leaving
 	const double R = DomeRadius;
 	const FTransform To = PadFrame(ToPad);
 	const FVector ToUp = To.GetRotation().GetAxisZ();
@@ -856,11 +962,139 @@ void AAICity::StartFlight(EFlight Kind, int32 ToPad)
 	UE_LOG(LogTemp, Display, TEXT("[AICity] %s to pad %d, %.0f s."), Kind == EFlight::Intro ? TEXT("flying in") : TEXT("flying across"), ToPad, FlightLength);
 }
 
+// ---------------------------------------------------------------------------------------------
+// The premiere
+
+void AAICity::RaiseCast()
+{
+	using namespace AICityStage;
+	UWorld* World = GetWorld();
+	if (!World || PremiereCast.Num() > 0)
+	{
+		return;
+	}
+	const FTransform Pad = PadFrame(PremierePad) * GetActorTransform();
+	const FRotator FacingHim(0.0, Pad.Rotator().Yaw + 180.0, 0.0);
+	const int32 Count = UE_ARRAY_COUNT(Company);
+	for (int32 I = 0; I < Count; ++I)
+	{
+		UClass* Class = LoadClass<AActor>(nullptr, Company[I].Class, nullptr, LOAD_NoWarn | LOAD_Quiet);
+		if (!Class)
+		{
+			continue;
+		}
+		// In a shallow arc, the middle of it nearest the screen.
+		const double Across = (I - (Count - 1) * 0.5) * MarkSpacing;
+		const FVector Mark = Pad.TransformPosition(FVector(StageX - FMath::Abs(Across) * 0.35, Across, 2.0));
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AActor* Player = World->SpawnActor<AActor>(Class, Mark, FacingHim, Params);
+		if (!Player)
+		{
+			continue;
+		}
+		PremiereCast.Add(Player);
+
+		// An agent is whoever carries this component (DancerAgentComponent.h). Kaia's blueprint
+		// dances and the scan would find her in its own time; the others stand still until
+		// told, so all five are made agents here, now, by name.
+		UDancerAgentComponent* Agent = Player->FindComponentByClass<UDancerAgentComponent>();
+		if (!Agent)
+		{
+			Agent = NewObject<UDancerAgentComponent>(Player);
+			Agent->AgentName = Company[I].Name;
+			Agent->RegisterComponent();
+		}
+		// Something to do while they wait: each her own dance, straight onto the mesh (PlayDance
+		// would save it as her choice, and this is a stage, not her home).
+		USkeletalMeshComponent* Mesh = Agent->FindDanceMesh();
+		if (Mesh && Agent->Dances.Num() > 0)
+		{
+			if (UAnimSequence* Dance = Agent->Dances[(I * 7 + 3) % Agent->Dances.Num()])
+			{
+				Mesh->PlayAnimation(Dance, /*bLooping=*/true);
+			}
+		}
+	}
+	UE_LOG(LogTemp, Display, TEXT("[AICity] the premiere: %d of %d on stage."), PremiereCast.Num(), Count);
+}
+
+void AAICity::StrikeCast()
+{
+	if (UWorld* World = GetWorld())
+	{
+		if (UFilmDirectorSubsystem* Director = World->GetSubsystem<UFilmDirectorSubsystem>())
+		{
+			if (Director->IsPlaying())
+			{
+				Director->Stop();
+			}
+		}
+	}
+	for (AActor* Player : PremiereCast)
+	{
+		if (Player)
+		{
+			Player->Destroy();
+		}
+	}
+	PremiereCast.Reset();
+	bPremiereOpened = false;
+}
+
+bool AAICity::ShowNextFilm()
+{
+	UWorld* World = GetWorld();
+	UFilmDirectorSubsystem* Director = World ? World->GetSubsystem<UFilmDirectorSubsystem>() : nullptr;
+	const TArray<FFilm>& Films = FilmCatalog::All();
+	if (!Director || Director->IsPlaying() || Films.Num() == 0 || PremiereCast.Num() == 0)
+	{
+		return false;
+	}
+	// Each film in turn, and each of the company in turn as its star.
+	AActor* Lead = PremiereCast[PremiereNext % PremiereCast.Num()];
+	UDancerAgentComponent* LeadAgent = Lead ? Lead->FindComponentByClass<UDancerAgentComponent>() : nullptr;
+	const bool bStarted = Director->PlayFilm(Films[PremiereNext % Films.Num()], LeadAgent);
+	if (bStarted)
+	{
+		++PremiereNext;
+	}
+	return bStarted;
+}
+
+void AAICity::TickPremiere(float DeltaSeconds, APlayerController* PC)
+{
+	if (PremiereCast.Num() == 0)
+	{
+		return;
+	}
+	if (!bPremiereOpened)
+	{
+		PremiereWait -= DeltaSeconds;
+		if (PremiereWait <= 0.0f)
+		{
+			bPremiereOpened = true;   // once a landing, whether or not it could start
+			ShowNextFilm();
+		}
+		return;
+	}
+	if (PC && PC->WasInputKeyJustPressed(EKeys::Enter))
+	{
+		ShowNextFilm();
+	}
+}
+
 void AAICity::EndFlight()
 {
 	SetActorRotation(TurnTo);
 	Flight = EFlight::None;
 	OnPad = FlightTo;
+	if (OnPad == PremierePad)
+	{
+		RaiseCast();
+		PremiereWait = AICityStage::OpeningWait;
+		bPremiereOpened = false;
+	}
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
 	HoldPawn(Pawn, false);
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
@@ -998,6 +1232,10 @@ void AAICity::Tick(float DeltaSeconds)
 	}
 	else if (OnPad >= 0)
 	{
+		if (OnPad == PremierePad)
+		{
+			TickPremiere(DeltaSeconds, PC);
+		}
 		if (PC && PC->WasInputKeyJustPressed(EKeys::F))
 		{
 			StartFlight(EFlight::Across, 1 - OnPad);
@@ -1034,9 +1272,13 @@ void AAICity::Tick(float DeltaSeconds)
 			{
 				Hud->ShowAwayHint(TEXT("Across the sphere, past its star\n[Space] Skip to the landing"));
 			}
+			else if (OnPad == PremierePad)
+			{
+				Hud->ShowAwayHint(TEXT("The premiere: the agents' films, under their star\n[Enter] The next film      [F] Fly back across the sphere"));
+			}
 			else if (OnPad >= 0)
 			{
-				Hud->ShowAwayHint(What + TEXT("\n[F] Fly across the sphere to the landing on the far side"));
+				Hud->ShowAwayHint(What + TEXT("\n[F] Fly across the sphere to the premiere on the far side"));
 			}
 		}
 	}

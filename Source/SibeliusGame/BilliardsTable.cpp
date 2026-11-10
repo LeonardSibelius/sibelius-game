@@ -10,6 +10,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/CollisionProfile.h"
@@ -46,6 +48,8 @@ namespace BilliardsTableDetail
 
 	// The engine's basic shapes are 100 cm across.
 	constexpr double ShapeSize = 100.0;
+
+	constexpr float VictoryShowSeconds = 6.0f;
 }
 
 ABilliardsTable::ABilliardsTable()
@@ -154,6 +158,46 @@ ABilliardsTable::ABilliardsTable()
 	TableCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TableCamera"));
 	TableCamera->SetupAttachment(SceneRoot);
 	TableCamera->SetFieldOfView(75.0f);   // the whole table from below the ceiling
+	TableCamera->PostProcessBlendWeight = 1.0f;
+	TableCamera->PostProcessSettings.bOverride_BloomIntensity = true;
+	TableCamera->PostProcessSettings.BloomIntensity = 1.0f;
+	TableCamera->PostProcessSettings.bOverride_VignetteIntensity = true;
+	TableCamera->PostProcessSettings.VignetteIntensity = 0.6f;
+	TableCamera->PostProcessSettings.bOverride_MotionBlurAmount = true;   // a shaken camera with motion blur smears the whole table
+	TableCamera->PostProcessSettings.MotionBlurAmount = 0.0f;
+
+	// THE SHOW. A lamp hung over the cloth, as over every pool table there ever was: dark
+	// until he steps up to play. A light in each pocket. Sparks, and confetti for a clearance.
+	Lamp = CreateDefaultSubobject<USpotLightComponent>(TEXT("Lamp"));
+	Lamp->SetupAttachment(Cloth);
+	Lamp->SetMobility(EComponentMobility::Movable);
+	Lamp->SetRelativeLocationAndRotation(FVector(0.0, 0.0, 115.0), FRotator(-90.0, 0.0, 0.0));
+	Lamp->SetIntensityUnits(ELightUnits::Candelas);
+	Lamp->SetIntensity(0.0f);
+	Lamp->SetInnerConeAngle(38.0f);
+	Lamp->SetOuterConeAngle(62.0f);
+	Lamp->SetAttenuationRadius(320.0f);
+	Lamp->SetLightColor(FLinearColor(1.0f, 0.9f, 0.72f));
+	Lamp->SetCastShadows(true);   // sixteen small shadows on the cloth are half of what a lamp is for
+
+	for (int32 I = 0; I < static_cast<int32>(Layout.Pockets.size()); ++I)
+	{
+		UPointLightComponent* Light = CreateDefaultSubobject<UPointLightComponent>(*FString::Printf(TEXT("PocketLight%d"), I));
+		Light->SetupAttachment(Cloth);
+		Light->SetMobility(EComponentMobility::Movable);
+		Light->SetRelativeLocation(SimToLocal(Layout.Pockets[static_cast<size_t>(I)].Center, 5.0));
+		Light->SetIntensityUnits(ELightUnits::Candelas);
+		Light->SetIntensity(0.0f);
+		Light->SetAttenuationRadius(55.0f);
+		Light->SetCastShadows(false);
+		PocketLights.Add(Light);
+	}
+
+	SparkPool.Build(this, SceneRoot, TEXT("Spark"), 48, false);
+	SparkPool.Gravity = 420.0f;
+	ConfettiPool.Build(this, SceneRoot, TEXT("Confetti"), 56, true);
+	ConfettiPool.Gravity = 200.0f;
+	ConfettiPool.Drag = 1.7f;
 
 	BallRotations.Init(FQuat::Identity, FBilliardsSim::BallCount);
 	SyncCamera(0.0f, true);
@@ -182,6 +226,18 @@ void ABilliardsTable::BeginPlay()
 	BallRotations.Init(FQuat::Identity, FBilliardsSim::BallCount);
 	AimAngle = 0.0;
 	Spin = 0.0;
+
+	SparkPool.Begin();
+	ConfettiPool.Begin();
+	Kick.Reset();
+	PocketFlash.Init(0.0f, PocketLights.Num());
+	PocketColor.Init(FLinearColor::White, PocketLights.Num());
+	LampLevel = 0.0f;
+	VictorySeconds = 0.0f;
+	if (TableCamera)
+	{
+		CameraRestFov = TableCamera->FieldOfView;
+	}
 	SyncBalls(0.0f);
 	SyncCueAndGuides();
 	SyncCamera(0.0f, true);
@@ -238,6 +294,7 @@ void ABilliardsTable::Tick(float DeltaSeconds)
 
 	SyncBalls(DeltaSeconds);
 	SyncCueAndGuides();
+	SyncShow(DeltaSeconds);   // before the camera: it reads this frame's knocks
 	SyncCamera(DeltaSeconds, false);
 	RefreshPanel();
 }
@@ -453,6 +510,7 @@ void ABilliardsTable::OnRack()
 	AimAngle = 0.0;   // the cue ball starts on the head spot, straight up the table at the 1
 	Spin = 0.0;
 	LastClearedStrokes = 0;
+	VictorySeconds = 0.0f;
 	UE_LOG(LogSibeliusGame, Display, TEXT("[Billiards] racked."));
 }
 
@@ -669,18 +727,99 @@ void ABilliardsTable::SyncCamera(float DeltaSeconds, bool bSnap)
 		// table on screen, its length across it.
 		const double Pitch = FMath::DegreesToRadians(static_cast<double>(OverheadPitchDegrees));
 		const FVector Center(0.0, 0.0, ClothZ);
-		TargetLoc = Center + FVector(0.0, -FMath::Cos(Pitch), FMath::Sin(Pitch)) * OverheadDistance;
-		TargetRot = FRotator(-OverheadPitchDegrees, 90.0, 0.0);
+		// After a clearance the camera comes in and swings a little way round the table and
+		// back. Only a little: this is a living room, and a full circle would go through a wall.
+		double Swing = 0.0;
+		double Distance = OverheadDistance;
+		if (VictorySeconds > 0.0f)
+		{
+			const double T = 1.0 - VictorySeconds / BilliardsTableDetail::VictoryShowSeconds;   // 0..1
+			Swing = FMath::DegreesToRadians(24.0) * FMath::Sin(T * 2.0 * UE_DOUBLE_PI);
+			Distance *= 1.0 - 0.18 * FMath::Sin(T * UE_DOUBLE_PI);
+		}
+		TargetLoc = Center + FVector(FMath::Cos(Pitch) * FMath::Sin(Swing), -FMath::Cos(Pitch) * FMath::Cos(Swing), FMath::Sin(Pitch)) * Distance;
+		TargetRot = FRotator(-OverheadPitchDegrees, 90.0 + FMath::RadiansToDegrees(Swing), 0.0);
 	}
 
+	// The smooth camera is kept apart from the knocks, or each knock would be chased by the
+	// next frame's easing and the shake would turn into a drift.
 	if (bSnap || DeltaSeconds <= 0.0f)
 	{
-		TableCamera->SetRelativeLocationAndRotation(TargetLoc, TargetRot);
-		return;
+		CameraLocation = TargetLoc;
+		CameraRotation = TargetRot;
 	}
-	const FVector Loc = FMath::VInterpTo(TableCamera->GetRelativeLocation(), TargetLoc, DeltaSeconds, 5.0f);
-	const FRotator Rot = FMath::RInterpTo(TableCamera->GetRelativeRotation(), TargetRot, DeltaSeconds, 5.0f);
-	TableCamera->SetRelativeLocationAndRotation(Loc, Rot);
+	else
+	{
+		CameraLocation = FMath::VInterpTo(CameraLocation, TargetLoc, DeltaSeconds, 5.0f);
+		CameraRotation = FMath::RInterpTo(CameraRotation, TargetRot, DeltaSeconds, 5.0f);
+	}
+	TableCamera->SetRelativeLocationAndRotation(CameraLocation + Kick.Offset(1.0f), CameraRotation + Kick.Turn(0.5f));
+	if (!bSnap)
+	{
+		TableCamera->SetFieldOfView(CameraRestFov + Kick.Fov());
+	}
+}
+
+// ---------------------------------------------------------------------------------------------
+// The show
+
+FVector ABilliardsTable::ClothToWorld(FBilliardsVec2 P, double Height) const
+{
+	return Cloth ? Cloth->GetComponentTransform().TransformPosition(SimToLocal(P, Height)) : GetActorLocation();
+}
+
+void ABilliardsTable::SyncShow(float DeltaSeconds)
+{
+	ShowClock += DeltaSeconds;
+	Kick.Tick(DeltaSeconds);
+	const FBilliardsTableLayout& Layout = Sim.Layout();
+
+	// The clearance: confetti thrown up off the cloth, and the pocket lights chasing round.
+	if (VictorySeconds > 0.0f)
+	{
+		VictorySeconds = FMath::Max(0.0f, VictorySeconds - DeltaSeconds);
+		VictoryBurstIn -= DeltaSeconds;
+		if (VictoryBurstIn <= 0.0f && VictorySeconds > 1.5f)
+		{
+			VictoryBurstIn = 0.22f;
+			FTableBurst B;
+			B.Origin = ClothToWorld(FBilliardsVec2(FMath::FRandRange(-0.8, 0.8) * Layout.HalfLength, FMath::FRandRange(-0.7, 0.7) * Layout.HalfWidth), 4.0);
+			B.Count = 9;
+			B.Speed = 300.0f;
+			B.Spread = 0.45f;
+			B.Life = 2.4f;
+			B.Size = 3.6f;
+			B.Color = TableJuice::Rainbow(ShowClock, 0.9f);
+			B.Glow = 5.0f;
+			ConfettiPool.Burst(B);
+		}
+		for (int32 I = 0; I < PocketFlash.Num(); ++I)
+		{
+			const float Chase = 0.5f + 0.5f * FMath::Sin(static_cast<float>(ShowClock) * 9.0f - I * 1.05f);
+			PocketFlash[I] = FMath::Max(PocketFlash[I], Chase * Chase);
+			PocketColor[I] = TableJuice::Rainbow(ShowClock + I * 0.3, 0.8f);
+		}
+	}
+
+	SparkPool.Tick(DeltaSeconds);
+	ConfettiPool.Tick(DeltaSeconds);
+
+	for (int32 I = 0; I < PocketLights.Num(); ++I)
+	{
+		if (!PocketLights[I] || !PocketFlash.IsValidIndex(I))
+		{
+			continue;
+		}
+		PocketFlash[I] = FMath::Max(0.0f, PocketFlash[I] - DeltaSeconds * 1.8f);
+		PocketLights[I]->SetLightColor(PocketColor[I]);
+		PocketLights[I]->SetIntensity(PocketFlash[I] * PocketFlashIntensity);
+	}
+
+	if (Lamp)
+	{
+		LampLevel = FMath::FInterpTo(LampLevel, bPlaying ? 1.0f : 0.0f, DeltaSeconds, 2.5f);
+		Lamp->SetIntensity(LampLevel * LampIntensity);
+	}
 }
 
 void ABilliardsTable::HandleEvents()
@@ -689,26 +828,91 @@ void ABilliardsTable::HandleEvents()
 	// more than that is mush, and the loud ones are what the ear picks out anyway.
 	TArray<float, TInlineAllocator<32>> Clicks;
 	TArray<float, TInlineAllocator<16>> Thuds;
+	int32 HitSparks = 0;   // and the same for the eye: only the first few hard contacts spark
+	const double R = Sim.Layout().BallRadius;
+
+	// A pocket lights up the colour of what fell into it, and throws that colour up.
+	auto PocketShow = [this](int32 Pocket, const FLinearColor& Color, int32 Count)
+	{
+		const std::vector<FBilliardsPocket>& Pockets = Sim.Layout().Pockets;
+		if (Pocket < 0 || Pocket >= static_cast<int32>(Pockets.size()))
+		{
+			return;
+		}
+		if (PocketFlash.IsValidIndex(Pocket))
+		{
+			PocketFlash[Pocket] = 1.0f;
+			PocketColor[Pocket] = Color;
+		}
+		FTableBurst B;
+		B.Origin = ClothToWorld(Pockets[static_cast<size_t>(Pocket)].Center, 2.0);
+		B.Count = Count;
+		B.Speed = 190.0f;
+		B.Spread = 0.4f;
+		B.Life = 0.8f;
+		B.Size = 2.2f;   // the camera is two metres off: sparks are sized for that
+		B.Color = Color;
+		B.Glow = 35.0f;
+		SparkPool.Burst(B);
+	};
 
 	for (const FBilliardsEvent& Event : Sim.TakeEvents())
 	{
 		switch (Event.Type)
 		{
 		case EBilliardsEvent::ShotTaken:
+		{
 			TableSounds::Play(this, ETableSound::CueStrike, FMath::Clamp(0.25f + static_cast<float>(Event.Value) / 900.0f, 0.25f, 1.0f));
+			// A puff of chalk off the tip, back the way the cue came; a hard break rocks the view.
+			const float Hard = FMath::Clamp(static_cast<float>(Event.Value) / 1400.0f, 0.0f, 1.0f);
+			const FVector Back = Cloth ? Cloth->GetComponentTransform().TransformVectorNoScale(FVector(-FMath::Cos(AimAngle), -FMath::Sin(AimAngle), 0.35)) : FVector::UpVector;
+			FTableBurst B;
+			B.Origin = ClothToWorld(Sim.BallPosition(FBilliardsSim::CueBall), R) + Back.GetSafeNormal() * R;
+			B.Bias = Back;
+			B.Count = 5 + FMath::RoundToInt(Hard * 9.0f);
+			B.Speed = 60.0f + Hard * 140.0f;
+			B.Spread = 0.5f;
+			B.Life = 0.5f;
+			B.Size = 1.0f;
+			B.Color = FLinearColor(0.45f, 0.75f, 1.0f);   // chalk blue
+			B.Glow = 12.0f;
+			SparkPool.Burst(B);
+			Kick.Shake(0.05f + Hard * 0.5f);
+			Kick.Punch(-Hard * 2.5f);
 			break;
+		}
 		case EBilliardsEvent::BallHitBall:
 			Clicks.Add(FMath::Clamp(static_cast<float>(Event.Value) / 350.0f, 0.04f, 1.0f));
+			if (Event.Value > 140.0 && HitSparks < 5 && Event.Index >= 0 && Event.Other >= 0
+				&& Event.Index < FBilliardsSim::BallCount && Event.Other < FBilliardsSim::BallCount)
+			{
+				++HitSparks;
+				const FBilliardsVec2 A = Sim.BallPosition(Event.Index);
+				const FBilliardsVec2 C = Sim.BallPosition(Event.Other);
+				FTableBurst B;
+				B.Origin = ClothToWorld(FBilliardsVec2((A.X + C.X) * 0.5, (A.Y + C.Y) * 0.5), R);
+				B.Count = FMath::Clamp(FMath::RoundToInt(static_cast<float>(Event.Value) / 90.0f), 2, 8);
+				B.Speed = FMath::Clamp(static_cast<float>(Event.Value) * 0.35f, 50.0f, 170.0f);
+				B.Life = 0.4f;
+				B.Size = 1.3f;
+				B.Color = FLinearColor(1.0f, 0.95f, 0.8f);
+				B.Glow = 28.0f;
+				SparkPool.Burst(B);
+			}
 			break;
 		case EBilliardsEvent::BallHitCushion:
 			Thuds.Add(FMath::Clamp(static_cast<float>(Event.Value) / 300.0f, 0.05f, 0.9f));
 			break;
 		case EBilliardsEvent::BallPocketed:
 			TableSounds::Play(this, ETableSound::PocketDrop, 0.8f, FMath::FRandRange(0.95f, 1.05f));
+			PocketShow(Event.Other, TableJuice::PoolBallColor(Event.Index), 14);
+			Kick.Shake(0.14f);
+			Kick.Punch(-1.4f);
 			UE_LOG(LogSibeliusGame, Verbose, TEXT("[Billiards] the %d ball, pocket %d."), Event.Index, Event.Other);
 			break;
 		case EBilliardsEvent::CueBallScratched:
 			TableSounds::Play(this, ETableSound::PocketDrop, 0.8f, 0.9f);
+			PocketShow(Event.Other, FLinearColor(1.0f, 0.06f, 0.04f), 5);   // red: that one cost a stroke
 			UE_LOG(LogSibeliusGame, Verbose, TEXT("[Billiards] scratch, pocket %d."), Event.Other);
 			break;
 		case EBilliardsEvent::CueBallRespotted:
@@ -729,6 +933,9 @@ void ABilliardsTable::HandleEvents()
 			}
 			// The pinball's 100 chime, across the room: the house's "well done".
 			TableSounds::Play(this, ETableSound::Chime100, 0.6f);
+			VictorySeconds = BilliardsTableDetail::VictoryShowSeconds;
+			VictoryBurstIn = 0.0f;
+			Kick.Shake(0.4f);
 			UE_LOG(LogSibeliusGame, Display, TEXT("[Billiards] table cleared in %d strokes (best %d)."), Event.Index, BestStrokes);
 			break;
 		default:
