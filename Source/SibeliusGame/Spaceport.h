@@ -753,6 +753,21 @@ private:
 	/** Assembled relative transform of SM_Rocket, captured at ignition so climb is a delta. */
 	FTransform RocketRestRelative = FTransform::Identity;
 
+	// Hard references carry the particle systems and their flipbook materials into the cook.
+	UPROPERTY()
+	TObjectPtr<class UParticleSystem> LaunchFire;
+	UPROPERTY()
+	TObjectPtr<class UParticleSystem> LaunchSmoke;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UParticleSystemComponent>> EngineFlames;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UParticleSystemComponent>> PadClouds;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UParticleSystemComponent>> TrailClouds;
+	FVector PadOrigin = FVector::ZeroVector;
+	FVector LastTrailOrigin = FVector::ZeroVector;
+	float LastTrailTime = 0.0f;
+
 	UPROPERTY(Transient)
 	TObjectPtr<class UNiagaraComponent> Plume;
 

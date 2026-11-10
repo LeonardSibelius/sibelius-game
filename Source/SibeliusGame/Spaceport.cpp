@@ -30,6 +30,8 @@
 #include "InputCoreTypes.h"
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
+#include "Particles/ParticleSystem.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "UObject/ConstructorHelpers.h"       // hard-ref the plume so it cooks
 
 #include "Components/StaticMeshComponent.h"
@@ -44,6 +46,8 @@
 
 namespace
 {
+	constexpr int32 LaunchParticleLayers = 5;
+
 	/* THE VENDOR MESHES, BY PATH — and the cook rule they depend on.
 
 	   Rocket Launch Pad & Interior (PackDev, bought 2026-09-01) is gitignored like every
@@ -166,6 +170,11 @@ ASpaceport::ASpaceport()
 	{
 		GrokPortalSystem = PortalFinder.Object;
 	}
+
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> Fire(TEXT("/Game/Dragon_Rise/Demo/Particles/P_Fire.P_Fire"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> Smoke(TEXT("/Game/Dragon_Rise/Demo/Particles/P_Smoke.P_Smoke"));
+	LaunchFire = Fire.Object;
+	LaunchSmoke = Smoke.Object;
 
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> PlumeFinder(
 		TEXT("/NiagaraFluids/Templates/Gas/3D/Systems/Grid3D_Gas_ColoredSmoke.Grid3D_Gas_ColoredSmoke"));
@@ -1451,31 +1460,63 @@ void ASpaceport::AttachPlume()
 	{
 		Sys = PlumeSystem.LoadSynchronous();
 	}
-	if (!Sys)
+	if (Sys)
 	{
-		UE_LOG(LogSibeliusGame, Warning,
-			TEXT("[Spaceport] no Niagara plume - launch will be a silent climb. ")
-			TEXT("Is NiagaraFluids enabled?"));
-		return;
+		if (!Plume)
+		{
+			Plume = NewObject<UNiagaraComponent>(this, TEXT("RocketPlume"));
+			Plume->SetupAttachment(Rocket);
+			Plume->SetAutoActivate(false);
+			Plume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Plume->SetCastShadow(false);
+			Plume->SetMobility(EComponentMobility::Movable);
+			Plume->RegisterComponent();
+		}
+
+		Plume->SetAsset(Sys);
+		Plume->SetRelativeLocation(PlumeRelativeOffset);
+		Plume->SetRelativeRotation(PlumeRelativeRotation);
+		Plume->SetRelativeScale3D(FVector(PlumeScale));
+		TintNiagara(Plume, PlumeColor);
+		Plume->Activate(true);
 	}
 
-	if (!Plume)
+	// Overlap one long hot core and four shorter jets across the engine bell cluster.
+	if (LaunchFire)
 	{
-		Plume = NewObject<UNiagaraComponent>(this, TEXT("RocketPlume"));
-		Plume->SetupAttachment(Rocket);
-		Plume->SetAutoActivate(false);
-		Plume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Plume->SetCastShadow(false);
-		Plume->SetMobility(EComponentMobility::Movable);
-		Plume->RegisterComponent();
+		auto Jet = [this, Rocket](FVector Offset, FVector Scale)
+		{
+			for (int32 Layer = 0; Layer < LaunchParticleLayers; ++Layer)
+			{
+				const float Angle = 2.f * PI * Layer / LaunchParticleLayers;
+				const FVector Spread(40 * FMath::Cos(Angle), 40 * FMath::Sin(Angle), 0);
+				EngineFlames.Add(UGameplayStatics::SpawnEmitterAttached(LaunchFire, Rocket, NAME_None,
+					PlumeRelativeOffset + Offset + Spread, FRotator(180, 0, 0), Scale,
+					EAttachLocation::KeepRelativeOffset, false));
+			}
+		};
+		Jet(FVector(0, 0, -480), FVector(5, 5, 17));
+		for (int32 Index = 0; Index < 4; ++Index)
+		{
+			const float Angle = Index * HALF_PI + PI / 4;
+			Jet(FVector(210 * FMath::Cos(Angle), 210 * FMath::Sin(Angle), -100), FVector(4, 4, 10));
+		}
 	}
 
-	Plume->SetAsset(Sys);
-	Plume->SetRelativeLocation(PlumeRelativeOffset);
-	Plume->SetRelativeRotation(PlumeRelativeRotation);
-	Plume->SetRelativeScale3D(FVector(PlumeScale));
-	TintNiagara(Plume, PlumeColor);
-	Plume->Activate(true);
+	LastTrailOrigin = Rocket->GetComponentTransform().TransformPosition(PlumeRelativeOffset);
+	PadOrigin = LastTrailOrigin - FVector(0, 0, 600);
+	LastTrailTime = 0;
+	if (LaunchSmoke)
+	{
+		constexpr int32 PadEmitterCount = 8 * LaunchParticleLayers;
+		for (int32 Index = 0; Index < PadEmitterCount; ++Index)
+		{
+			const float Angle = Index * 2.f * PI / PadEmitterCount;
+			const FVector Direction(FMath::Cos(Angle), FMath::Sin(Angle), 0);
+			PadClouds.Add(UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaunchSmoke,
+				FTransform(Direction.Rotation(), PadOrigin + Direction * 300, FVector(9)), false));
+		}
+	}
 
 	if (!PlumeLight)
 	{
@@ -1541,6 +1582,14 @@ void ASpaceport::SpawnLaunchCameras()
 
 void ASpaceport::DestroyLaunchRig()
 {
+	for (auto* Group : { &EngineFlames, &PadClouds, &TrailClouds })
+	{
+		for (UParticleSystemComponent* Effect : *Group)
+		{
+			if (IsValid(Effect)) { Effect->DestroyComponent(); }
+		}
+		Group->Reset();
+	}
 	if (Plume)
 	{
 		Plume->Deactivate();
@@ -1706,6 +1755,36 @@ void ASpaceport::TickLaunch(float DeltaSeconds)
 		const float TurnAlpha = FMath::Clamp((Raw - 0.12f) / 0.55f, 0.0f, 1.0f);
 		Rot.Pitch += GravityTurnDegrees * TurnAlpha;
 		Rocket->SetRelativeLocationAndRotation(Loc, Rot);
+
+		const FVector Nozzle = Rocket->GetComponentTransform().TransformPosition(PlumeRelativeOffset);
+		// Leave short puffs in world space as the vehicle accelerates out of the wide shot.
+		if (LaunchSmoke && FVector::DistSquared(Nozzle, LastTrailOrigin) > FMath::Square(1150.f)
+			&& LaunchElapsed - LastTrailTime >= 0.32f)
+		{
+			const int32 PreviousBatch = FMath::Max(0, TrailClouds.Num() - LaunchParticleLayers);
+			for (int32 Index = PreviousBatch; Index < TrailClouds.Num(); ++Index)
+			{
+				if (IsValid(TrailClouds[Index])) { TrailClouds[Index]->DeactivateSystem(); }
+			}
+			TrailClouds.RemoveAll([](const auto& Cloud) { return !IsValid(Cloud.Get()); });
+			for (int32 Layer = 0; Layer < LaunchParticleLayers; ++Layer)
+			{
+				const float Angle = 2.f * PI * Layer / LaunchParticleLayers;
+				const FVector Offset = Rocket->GetComponentQuat().RotateVector(
+					FVector(110 * FMath::Cos(Angle), 110 * FMath::Sin(Angle), -900));
+				TrailClouds.Add(UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaunchSmoke,
+					FTransform(FQuat::Identity, Nozzle + Offset, FVector(7)), true));
+			}
+			LastTrailOrigin = Nozzle;
+			LastTrailTime = LaunchElapsed;
+		}
+		for (UParticleSystemComponent* Cloud : PadClouds)
+		{
+			if (!IsValid(Cloud)) { continue; }
+			const float Spread = 1.f - FMath::Exp(-LaunchElapsed * 0.36f);
+			Cloud->SetWorldLocation(PadOrigin + Cloud->GetForwardVector() * (300 + 3300 * Spread));
+			if (LaunchElapsed >= Hold + 4 && Cloud->IsActive()) { Cloud->DeactivateSystem(); }
+		}
 	}
 
 	// Camera cuts: cabin, wide, track, sky. Hold the wide view through ignition;
@@ -1713,7 +1792,7 @@ void ASpaceport::TickLaunch(float DeltaSeconds)
 	int32 Wanted = 0;
 	if (LaunchElapsed >= 16.0f)      { Wanted = 4; }
 	else if (LaunchElapsed >= 10.0f) { Wanted = 3; }
-	else if (LaunchElapsed >= 2.5f)  { Wanted = 1; }
+	else if (LaunchElapsed >= 0.85f) { Wanted = 1; }
 
 	if (Wanted != LaunchShot)
 	{
