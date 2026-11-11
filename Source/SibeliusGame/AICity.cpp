@@ -5,6 +5,7 @@
 #include "DancerAgentComponent.h"
 #include "FilmDirectorSubsystem.h"
 #include "FilmTypes.h"
+#include "InteractorComponent.h"   // whose F it is: the focus that puts her prompt on screen
 #include "SibeliusHUD.h"
 
 #include "Camera/CameraComponent.h"
@@ -267,8 +268,9 @@ namespace AICityDetail
 	   ridge 60-100 m high with a flat top 25-32 m wide - the landing ground. Each is the ridge's
 	   top a little short of halfway along its frame, at DomeRadius 345000: the direction out to it
 	   from the star, the ridge's direction there, and the top's radius. The two are on opposite
-	   sides of the sphere. The way in is through the cell beside B (EntryCell), so the flight in
-	   crosses the whole sphere and lands at A. */
+	   sides of the sphere. The way in was through the cell beside B (EntryCell), so the flight in
+	   crossed the whole sphere and landed at A; since 2026-11-10 it lands at B, the premiere,
+	   through the cell beside A (StartFlight). */
 	struct FLanding { FVector Dir; FVector Along; double RidgeRadius; };
 	const FLanding Landings[AAICity::PadCount] = {
 		{ FVector(-0.048082, -0.100174, -0.993807), FVector(0.948025, -0.317896, -0.013824), 329179.0 },   // A
@@ -279,6 +281,22 @@ namespace AICityDetail
 	constexpr double EyeHeight = 165.0;                  // the first-person camera, above the floor
 	constexpr double StartDistance = 2500000.0;          // the flight in starts 25 km out
 	constexpr double SkyRadius = 20000000.0;             // the far stars: 200 km, well beyond that
+
+	/* IS F SOMEONE ELSE'S? (Walt, 2026-11-10: "If you want to change the dance or film when you
+	   approach the dancer, you get launched instead".) F on an agent opens her dances and films -
+	   USlapComponent, in the same frame the city sees the key - so the flight takes F only when
+	   no agent is in his sights. Asked of the interactor's focus, the one that puts "[F] choose
+	   her dance" on screen, so F does what the prompt says. And never in the middle of a film. */
+	bool IsFTakenHere(const UWorld* World, const APawn* Pawn)
+	{
+		const UFilmDirectorSubsystem* Director = World ? World->GetSubsystem<UFilmDirectorSubsystem>() : nullptr;
+		if (Director && Director->IsPlaying())
+		{
+			return true;
+		}
+		const UInteractorComponent* Interactor = Pawn ? Pawn->FindComponentByClass<UInteractorComponent>() : nullptr;
+		return Interactor && UDancerAgentComponent::FindFor(Interactor->GetFocusedActor()) != nullptr;
+	}
 }
 
 // The premiere's stage, in the pad's frame: X along the ridge (the way he faces when set down),
@@ -849,11 +867,15 @@ void AAICity::StartFlight(EFlight Kind, int32 ToPad)
 	if (Kind == EFlight::Intro)
 	{
 		/* THE WAY IN. From 25 km out the dome is a dark ball among the stars, the star blazing
-		   through its cells; he drifts, then closes on the cell beside B, the star dead ahead
-		   through it; through it, past the star a little over a kilometre off, and down onto the
-		   pad at A on the far side, turning to look along its ridge. The city does not turn: it
-		   is already as it will be when he lands. */
-		const FVector In = EntryCell.GetSafeNormal();
+		   through its cells; he drifts, then closes on the cell beside the pad he is NOT landing
+		   on, the star dead ahead through it; through it, past the star a little over a kilometre
+		   off, and down onto the pad on the far side, turning to look along its ridge. The city
+		   does not turn: it is already as it will be when he lands.
+		   The pads face each other through the star and the sphere is symmetric through it, so the
+		   cell beside A is EntryCell turned inside out. Landing at B - the premiere, where the
+		   first visit now ends (Walt, 2026-11-10: "Why can't the first trip into the city just
+		   take you straight to the premier") - comes in through that one. */
+		const FVector In = (ToPad == PremierePad ? -EntryCell : EntryCell).GetSafeNormal();
 		const FVector Side = (ToAlong - In * FVector::DotProduct(ToAlong, In)).GetSafeNormal();
 		const FQuat AtStar = Facing(-In, Side);
 		Key(0.0f, In * StartDistance, AtStar);
@@ -1196,20 +1218,23 @@ void AAICity::Tick(float DeltaSeconds)
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
 
 	// The visit begins as soon as there is someone to take: the city turned for the landing at
-	// A, and the flight in.
+	// the premiere, and the flight in. It used to land at A and leave the premiere a second
+	// flight away; F still flies across to A and back.
 	if (!bVisitStarted && PC && Pawn)
 	{
 		bVisitStarted = true;
-		SetActorRotation(PadBelow(0));
-		StartFlight(EFlight::Intro, 0);
+		SetActorRotation(PadBelow(PremierePad));
+		StartFlight(EFlight::Intro, PremierePad);
 	}
 
 	if (IsFlying())
 	{
 		FlightAge += DeltaSeconds;
-		if (PC && PC->WasInputKeyJustPressed(EKeys::SpaceBar))
+		// [Space]: straight to the landing - but only across. The flight in is watched to the end
+		// (Walt, 2026-11-10: "i love watching the flight in and i want to make the player watch it").
+		if (Flight == EFlight::Across && PC && PC->WasInputKeyJustPressed(EKeys::SpaceBar))
 		{
-			FlightAge = FlightLength;       // [Space]: straight to the landing
+			FlightAge = FlightLength;
 		}
 		const float T = FMath::Min(FlightAge, FlightLength);
 		if (TurnEnd > TurnStart)
@@ -1236,7 +1261,7 @@ void AAICity::Tick(float DeltaSeconds)
 		{
 			TickPremiere(DeltaSeconds, PC);
 		}
-		if (PC && PC->WasInputKeyJustPressed(EKeys::F))
+		if (PC && PC->WasInputKeyJustPressed(EKeys::F) && !IsFTakenHere(GetWorld(), Pawn))
 		{
 			StartFlight(EFlight::Across, 1 - OnPad);
 		}
@@ -1266,7 +1291,7 @@ void AAICity::Tick(float DeltaSeconds)
 			const FString What = TEXT("The AI city: a sphere the AIs built round a star");
 			if (Flight == EFlight::Intro)
 			{
-				Hud->ShowAwayHint(What + TEXT("\n[Space] Skip the flight in"));
+				Hud->ShowAwayHint(What);
 			}
 			else if (Flight == EFlight::Across)
 			{
@@ -1274,7 +1299,9 @@ void AAICity::Tick(float DeltaSeconds)
 			}
 			else if (OnPad == PremierePad)
 			{
-				Hud->ShowAwayHint(TEXT("The premiere: the agents' films, under their star\n[Enter] The next film      [F] Fly back across the sphere"));
+				Hud->ShowAwayHint(IsFTakenHere(GetWorld(), Pawn)
+					? TEXT("The premiere: the agents' films, under their star\n[Enter] The next film      [F] Her dances and films")
+					: TEXT("The premiere: the agents' films, under their star\n[Enter] The next film      [F] Fly across the sphere"));
 			}
 			else if (OnPad >= 0)
 			{

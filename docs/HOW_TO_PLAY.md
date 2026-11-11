@@ -125,10 +125,9 @@ brings you back to the office.
   - Isla's keep — through the attic. The Dragon's Wager: steal the
     crown above the stairs while two dragons watch the hall.
   - THE AI CITY — the portal upstairs at the end of the hall. You fly
-    in (Space skips a flight) and land on a pad on a turning sphere.
-    F flies you across to the premiere on the far side: the five
-    agents on an open-air stage, and a film when you land. Enter
-    shows the next one.
+    in through a cell of a turning sphere and land at the premiere:
+    the five agents on an open-air stage, and a film when you land.
+    Enter shows the next one. F flies you across the sphere and back.
 
 
 ## THE CITY
