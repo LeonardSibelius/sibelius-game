@@ -90,7 +90,8 @@ power at the cauldron.
 
 Kaia, Nyra, Isla, Aisling and Elise dance wherever you find them.
 
-  E — talk to her. She answers, and she remembers you.
+  E — talk to her. She answers, and she remembers you. {chat}
+  E — talk to her. {nochat}
   F — choose her dance, or watch a film: Up and Down try the dances,
       Enter on a film plays it (the first one makes a brand-new film).
   R — make her someone else (see REFACTOR).

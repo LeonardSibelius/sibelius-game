@@ -88,6 +88,10 @@ lane, because it was packaged without a fresh cook.)
 This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.5.1**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
+**Since 2026-11-11 the game launches first with the chat switched off: see
+`STEAM_LAUNCH_2.5.1.md`.** This file becomes the chat **update** for a released game. Its step 6
+(Release) then no longer applies, and its store text replaces the launch text.
+
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
 On 2026-10-06 Valve (Ed) resubmitted the app for a re-review of the chat and said the AI section
 would be updated when the review is done. Until that reply comes, change nothing on Steam.

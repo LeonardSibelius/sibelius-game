@@ -10,11 +10,45 @@
 #include "Components/TextBlock.h"
 #include "Styling/CoreStyle.h"
 
+#include "HAL/IConsoleManager.h"   // sib.Chat.Enable, for the {chat} lines
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "ProgressionSubsystem.h"
 #include "SibeliusControls.h"   // the player's earned memoir record
 #include "ChatEasterEggs.h"    // the Pigeon Ledger, once found
+
+namespace
+{
+	/* ONE GUIDE, TWO BUILDS (Walt, 2026-11-11: launch on Steam with chat off while Valve
+	   reviews it). A line of HOW_TO_PLAY.md ending in {chat} is shown only when E can open a
+	   typed conversation, and one ending in {nochat} only when it cannot - so the Steam build
+	   never promises an agent who answers, and the itch build keeps saying she does.
+	   Decided by sib.Chat.Enable, the same variable that gives E to the chat (looked up by
+	   name, as the council's door does: it is defined in InteractorComponent.cpp). */
+	FString KeepLinesForChat(const FString& Raw)
+	{
+		const IConsoleVariable* Enable = IConsoleManager::Get().FindConsoleVariable(TEXT("sib.Chat.Enable"));
+		const bool bChat = Enable && Enable->GetInt() != 0;
+		const TCHAR* Keep = bChat ? TEXT("{chat}") : TEXT("{nochat}");
+		const TCHAR* Drop = bChat ? TEXT("{nochat}") : TEXT("{chat}");
+
+		TArray<FString> Lines;
+		Raw.ParseIntoArray(Lines, TEXT("\n"), /*InCullEmpty=*/false);
+		FString Out;
+		for (FString& Line : Lines)
+		{
+			if (Line.Contains(Drop))
+			{
+				continue;
+			}
+			Line.ReplaceInline(*FString::Printf(TEXT(" %s"), Keep), TEXT(""));
+			Line.ReplaceInline(Keep, TEXT(""));
+			Out += Line;
+			Out += TEXT("\n");
+		}
+		return Out;
+	}
+}
 
 UJournalWidget::UJournalWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -86,7 +120,7 @@ void UJournalWidget::RefreshFromNarrative()
 	FString Raw;
 	if (FFileHelper::LoadFileToString(Raw, *FullPath))
 	{
-		JournalText = CleanMarkdown(Raw);
+		JournalText = CleanMarkdown(KeepLinesForChat(Raw));
 		UE_LOG(LogTemp, Display, TEXT("[Journal] loaded %d chars from %s"), JournalText.Len(), *FullPath);
 	}
 	else

@@ -22,11 +22,21 @@
 # plants alive and slappable): pass -Version, and -Baseline for the build to measure against.
 # A second build on the same day needs -OutDir (2.1.3, 2026-10-05, Isla's home: 2.1.2 was that
 # morning's, in the folder the date names) - and an existing folder is refused, never overwritten.
+#
+# -ChatOff (2026-11-11, Walt: launch on Steam now, chat to follow when Valve accepts it): the
+# STEAM LAUNCH build. Nothing is flipped - the repo's Shipping defaults are already 0 - and the
+# script proves they still read 0 before it builds. The default folder is
+# sibelius-shipping-steam-<date>. Every package now leaves BUILD_INFO.txt beside its Windows
+# folder (chat=on or chat=off), which steam_upload_launch.ps1 insists on reading.
 param(
   [string] $Version  = "2.1.0",
   [string] $Baseline = "C:\Users\wpark\builds\sibelius-shipping-chat-20260928",
-  [string] $OutDir   = "C:\Users\wpark\builds\sibelius-shipping-chat-$(Get-Date -Format yyyyMMdd)"
+  [string] $OutDir   = "C:\Users\wpark\builds\sibelius-shipping-chat-$(Get-Date -Format yyyyMMdd)",
+  [switch] $ChatOff
 )
+if ($ChatOff -and -not $PSBoundParameters.ContainsKey('OutDir')) {
+  $OutDir = "C:\Users\wpark\builds\sibelius-shipping-steam-$(Get-Date -Format yyyyMMdd)-v$Version"
+}
 $root    = "C:\Users\wpark\projects\sibelius-game"
 $outDir  = $OutDir
 if (Test-Path $outDir) {
@@ -55,8 +65,20 @@ function Set-ChatDefault($flip, $from, $to) {
 if (Test-Path $log) { Remove-Item $log -Force }
 $code = 1
 try {
-  foreach ($f in $flips) { Set-ChatDefault $f $f.Off $f.On }
-  Write-Output "CHAT ON for this package: sib.Chat.Enable=1, sib.Chat.Mode=2 (Shipping defaults)"
+  if ($ChatOff) {
+    # Prove both read 0, writing nothing: throws if a Shipping default is anything else.
+    foreach ($f in $flips) {
+      $text = [IO.File]::ReadAllText($f.File)
+      $pattern = '(' + [regex]::Escape($f.Cvar) + ',\s*\r?\n#if UE_BUILD_SHIPPING\r?\n\s*)' + $f.Off + ','
+      if ([regex]::Matches($text, $pattern).Count -ne 1) {
+        throw "CHAT-OFF REFUSED: the Shipping default of $($f.Cvar) is not $($f.Off) in $($f.File)"
+      }
+    }
+    Write-Output "CHAT OFF for this package: sib.Chat.Enable=0, sib.Chat.Mode=0 (Shipping defaults, as committed)"
+  } else {
+    foreach ($f in $flips) { Set-ChatDefault $f $f.Off $f.On }
+    Write-Output "CHAT ON for this package: sib.Chat.Enable=1, sib.Chat.Mode=2 (Shipping defaults)"
+  }
 
   $uatArgs = @(
     "BuildCookRun",
@@ -73,8 +95,10 @@ try {
 }
 finally {
   # ALWAYS put them back, then prove it: the two files must match the commit again.
-  foreach ($f in $flips) {
-    try { Set-ChatDefault $f $f.On $f.Off } catch { Write-Output "RESTORE: $($_.Exception.Message)" }
+  if (-not $ChatOff) {
+    foreach ($f in $flips) {
+      try { Set-ChatDefault $f $f.On $f.Off } catch { Write-Output "RESTORE: $($_.Exception.Message)" }
+    }
   }
   Push-Location $root
   git diff --quiet -- Source/SibeliusGame/InteractorComponent.cpp Source/SibeliusGame/NpcChatSubsystem.cpp
@@ -323,5 +347,24 @@ if ($old -and $new) { Write-Output ("growth : {0} GB" -f [math]::Round($new - $o
 Write-Output ("whole archive      : {0} GB" -f $archive)
 Write-Output "--------------------------------------"
 
+# ---- what kind of build this is, for the upload scripts ----------------------
+# Beside the Windows folder, so it never uploads (steamcmd and butler send Windows\ only).
+Push-Location $root
+$commit = (git rev-parse --short HEAD)
+$dirty  = (git status --porcelain -- Source Config Content/Journal) -ne $null
+Pop-Location
+$info = @(
+  "chat=$(if ($ChatOff) { 'off' } else { 'on' })",
+  "version=$Version",
+  "commit=$commit$(if ($dirty) { ' (plus uncommitted changes)' })",
+  "packaged=$(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+)
+[IO.File]::WriteAllLines("$outDir\BUILD_INFO.txt", $info, (New-Object Text.UTF8Encoding($false)))
+Write-Output "BUILD_INFO.txt: $($info -join ', ')"
+
 Write-Output "COOK VERIFIED. Archive: $outDir"
-Write-Output "NOT FOR STEAM until Valve accepts the chat amendment."
+if ($ChatOff) {
+  Write-Output "STEAM LAUNCH BUILD - chat off. Upload it with Tools\Steam\recovery-kit\steam_upload_launch.ps1."
+} else {
+  Write-Output "NOT FOR STEAM until Valve accepts the chat amendment."
+}

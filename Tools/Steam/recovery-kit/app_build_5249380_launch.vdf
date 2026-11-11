@@ -1,0 +1,32 @@
+// SteamPipe app build script - Leonard Sibelius (5249380) - THE STEAM LAUNCH BUILD, CHAT OFF
+//
+// Do not run steamcmd on this directly. Run steam_upload_launch.ps1 beside it: it writes a
+// RESOLVED COPY of this file into its buildoutput folder, with this machine's paths in the
+// two SET-BY-SCRIPT lines and "preview" set, and runs steamcmd on the copy. This file is
+// never modified. It refuses any build whose BUILD_INFO.txt does not say chat=off.
+//
+// Walt, 2026-11-11: launch now with the chat switched off, and keep Valve's review of the chat
+// going (ticket HT-65HH-2V43-8C45); the chat build follows as an update once they accept it,
+// through steam_upload_chat.ps1 and app_build_5249380.vdf.
+//
+// "preview" is "1" here so that anyone who does run steamcmd on it directly gets a dry run.
+//
+// "setlive" IS DELIBERATELY EMPTY. The upload lands attached to no branch; you set it
+// live on default yourself in Steamworks > SteamPipe > Builds.
+
+"appbuild"
+{
+	"appid"			"5249380"
+	"desc"			"v2.5.1 STEAM LAUNCH, chat off - four agents' homes, the dance menu, the chess coach, the Grand Prix, Go, the not-human laptop, Freakbook, R on the agents, the three-point contest, the AI city, the slot cabinets, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager, films and the AI City premiere"
+
+	"buildoutput"	"SET-BY-SCRIPT"
+	"contentroot"	"SET-BY-SCRIPT"
+
+	"setlive"		""
+	"preview"		"1"
+
+	"depots"
+	{
+		"5249381"	"depot_build_5249381.vdf"
+	}
+}
