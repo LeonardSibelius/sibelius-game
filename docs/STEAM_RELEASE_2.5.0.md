@@ -1,4 +1,4 @@
-# STEAM_RELEASE_2.4.5 — the store page and the steps, for the day Valve accepts chat
+# STEAM_RELEASE_2.5.0 — the store page and the steps, for the day Valve accepts chat
 
 **Prepared 2026-10-11 for 2.1.9; moved to 2.2.0 on 2026-10-13** (Walt: "no new Gemini chat is
 in, so why can't Steam get 2.2.0 when they approve the chat?" - right: 2.2.0 adds Freakbook,
@@ -69,10 +69,19 @@ bank the treasure or wager it all on a harder round. No new chat, and no model f
 no match, Mrs. Hall builds the gist of the words from simple shapes (a giant flying toaster,
 three angry robots), by fixed rules in the game's code; and Generate is paid in sauce, like
 Refactor. No new chat, and no model: the same words always build the same toy.
-2.4.5 is the build that goes to Steam's `default` branch, and
-`E:\builds\sibelius-shipping-chat-20261029-v2.4.5\` is the copy the upload script sends.
+**And to 2.5.0 on 2026-11-10** (Walt: "we have done enough on this game to make it the first
+Steam version and 2.5.0 is the number i want"): FILMS - chosen from an agent's F menu, or
+written from the player's words when he presses G, and performed live by the agents in the
+level with a camera and silent-film title cards; G makes films only, so the gist is gone from
+it; the AI City premiere on the far side of the sphere; effects for pool, bowling and pinball;
+denser rocket flames; and a rewritten journal. No new chat, and no model: a film is either
+written into the game or written by its fixed rules from the words typed.
+2.5.0 is the build that goes to Steam's `default` branch, and
+`E:\builds\sibelius-shipping-chat-20261110-v2.5.0\` is the copy the upload script sends.
+(2.4.6-2.4.10 were itch-only and never went into the kit; 2.4.9 crashed on loading the bowling
+lane, because it was packaged without a fresh cook.)
 
-This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.4.5**. That file's history (§5–§6:
+This file supersedes `STEAM_STORE_COPY.md` §1–§4 **for 2.5.0**. That file's history (§5–§6:
 why the copy reads as it does, the capsules) still stands.
 
 **Nothing here happens before Valve accepts the chat amendment on ticket HT-65HH-2V43-8C45.**
@@ -97,7 +106,7 @@ app's **Content Survey** and read the **Live-Generated** answer.
 
 The **Pre-Generated** answer doesn't change.
 
-### 3. Upload 2.4.5 from the stick
+### 3. Upload 2.5.0 from the stick
 
 Plug in E:. In PowerShell, run the preview first:
 
@@ -105,7 +114,7 @@ Plug in E:. In PowerShell, run the preview first:
 powershell -ExecutionPolicy Bypass -File E:\builds\steam-upload\steam_upload_chat.ps1 -SteamUser wparkman676 -SdkPath C:\steamworks_sdk -AmendmentAccepted -Preview
 ```
 
-The banner should read **"v2.4.5 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager, THE GIST"**. If it
+The banner should read **"v2.5.0 - AI CHAT COMPILED IN ... Freakbook, R on the agents, the three-point contest, the AI city's dome, the slot cabinets, the welcome back and his deeds, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager, films and the AI City premiere"**. If it
 looks right, run the same line again without `-Preview`. steamcmd asks for your password and
 the **Steam Guard code** itself, so have your phone with you. Note the **BuildID** it prints at
 the end.
@@ -125,7 +134,7 @@ Steamworks → **Edit Store Page**:
   - paste **Part B §1** into the short description;
   - paste **Part B §2** into *About This Game*, in the **source view**, so the `[b]` tags
     render instead of showing as text.
-- **System requirements:** change **Storage** to **10 GB** in both rows (Part B §4).
+- **System requirements:** change **Storage** to **12 GB** in both rows (Part B §4).
 - **Tags** (optional): add the ones in Part B §5.
 - **Screenshots** (optional, recommended): add the new ones listed in Part B §6.
 
@@ -233,7 +242,8 @@ into any AI you like, save the game it gives you, and it plays on the TV beside 
 Upstairs, at the end of the hall, a portal opens onto [b]the AI city[/b]: a sphere the
 machines built round a star, a honeycomb of hexagons thick with city. You fly in from among
 the stars, through one of its cells and past its sun, and land on the far side with the star
-straight overhead. Then you can fly across it.
+straight overhead. Then you can fly across it, to a premiere: an open-air stage under the
+star, the five agents on their marks, and a film that starts when you land.
 
 Behind a wall only the fully-merged can drop sits [b]Celestial Fortune[/b]: a complete
 slot machine with a real par sheet. I spent 2007 building the data systems behind
@@ -243,15 +253,16 @@ finally built it myself.
 [b]Then you get out of the office.[/b]
 
 Downtown West is a city with a deli in it, and an AI agent outside the deli who dances
-and will not stop dancing. She sends you down the block for supplies. Then you stand on
-a lawn, type the word [b]spaceport[/b], and watch a launch complex assemble itself out of
-the air in front of you — pad, gantry, fuel tanks, and a rocket a hundred and twenty
-metres tall. That is the Generate power. You typed a word and the city grew a
-cosmodrome.
+and will not stop dancing. She sends you down the block for supplies. Get your body
+enhanced for space travel, and a launch complex assembles itself out of the air on the
+empty lawn — pad, gantry, fuel tanks, and a rocket a hundred and twenty metres tall.
 
-And then you can launch it. Type something the shop doesn't stock and Mrs. Hall builds the
-gist of it anyway: a giant flying toaster, three angry robots, a dragon made of cake, googly
-eyes and all.
+And then you can launch it.
+
+That is not the Generate power. Generate makes [b]films[/b]: press G, type what a film
+should be about — your old boss, the night shift, a dragon made of cake — and the agents
+around you perform it, a silent film with title cards, written on the spot by the game's
+own rules.
 
 [b]And there are the Architects.[/b]
 
@@ -407,10 +418,17 @@ Guardrails:
   - 2.4.5: THE GIST is ordinary code, not generative AI. Fixed rules turn the words a player
     types into a toy built from the engine's basic shapes - the same toy for the same words -
     with no model, no network and nothing learned; its clay is a material made in the editor.
+    (Since 2.5.0 G no longer builds gists; the code stays only so toys in older saves return.)
+  - 2.5.0: the films are ordinary code, not generative AI. The films in an agent's menu are
+    written into the game as data. When a player presses G, fixed rules (FilmGenRules) write a
+    short film around the words he types - the same words and take always give the same film -
+    with no model, no network and nothing learned, and the agents perform it with the dances
+    already in the game. The words pass Mrs. Hall's blocklist first. The premiere in the AI
+    City plays those same films.
 
 ### §4. System requirements
 
-The 2.4.5 package measures **10.4 GB** (10,381,980,107 bytes; 2.4.4 was 10,381,159,558 - THE GIST adds under a megabyte; 2.4.3 was 10,380,727,834 - the Dragon's Wager adds under half a megabyte; 2.4.2 was 10,379,879,085 - Lantern Burst is built of engine shapes too and adds under a megabyte; 2.4.1 was 10,392,852,913 - 2.4.2's two new games are built of engine shapes and add nothing to speak of; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
+The 2.5.0 package measures **10.4 GB** (10,382,934,682 bytes; 2.4.5 was 10,381,980,107 - the films, the premiere and the table effects add under a megabyte; 2.4.4 was 10,381,159,558 - THE GIST adds under a megabyte; 2.4.3 was 10,380,727,834 - the Dragon's Wager adds under half a megabyte; 2.4.2 was 10,379,879,085 - Lantern Burst is built of engine shapes too and adds under a megabyte; 2.4.1 was 10,392,852,913 - 2.4.2's two new games are built of engine shapes and add nothing to speak of; 2.4.0 was 9,749,821,658 - Isla's keep is a bigger pack than her station; 2.2.0 was 8.3 GB), over the 8 GB
 the page says now. Change **Storage** in both rows to **12 GB**, rounded up for patches. Everything else stays as in
 `STEAM_STORE_COPY.md` §4.
 

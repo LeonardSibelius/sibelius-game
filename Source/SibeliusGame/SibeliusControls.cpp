@@ -28,14 +28,14 @@ TArray<FControlRow> BuildRows(const UObject* WorldContext)
 	return {
 		{ TEXT("W A S D / mouse"), TEXT("move / look"), true },
 		{ TEXT("E"), TEXT("interact — collect, doors, the cauldron, talk to an AI Agent"), true },
-		{ TEXT("F"), TEXT("fight a Refuser / change an AI Agent's dance"), true },
+		{ TEXT("F"), TEXT("fight a Refuser / an AI Agent's dances and films"), true },
 
 		{ TEXT("V (hold)"), TEXT("Code Vision"), Owned(EPowerVerb::CodeVision) },
 		{ TEXT("R"), TEXT("Refactor what you're looking at / an AI Agent into someone else"), Owned(EPowerVerb::Refactor) },
-		{ TEXT("C"), TEXT("Compile — a build site, the sauce pot, the spaceport pre-flight"), Owned(EPowerVerb::Compile) },
+		{ TEXT("C"), TEXT("Compile — through a portal, a build site, the sauce pot, the spaceport"), Owned(EPowerVerb::Compile) },
 		{ TEXT("6 / 7 / 8"), TEXT("Test-Drive: branch / merge / discard"), Owned(EPowerVerb::TestDrive) },
 		{ TEXT("0"), TEXT("Deploy (persist your edits)"), Owned(EPowerVerb::Deploy) },
-		{ TEXT("G"), TEXT("Generate — type a request"), Owned(EPowerVerb::Generate) },
+		{ TEXT("G"), TEXT("Generate — type what a film is about"), Owned(EPowerVerb::Generate) },
 
 		{ TEXT("M"), TEXT("this menu"), true },
 		{ TEXT("J"), TEXT("how to play"), true },
