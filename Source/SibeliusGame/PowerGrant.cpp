@@ -24,6 +24,29 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 
+namespace
+{
+	/* KAIA'S POWER IS A GIFT (Walt, 2026-11-12: "Yes, make it free").
+
+	   Refactor is the first power the game sends a new player for ("Kaia is upstairs, with
+	   the first power to give you"), and until now it came through the same slot trial as
+	   the rest: 2,100 credits, bet 150, claim at 2,200. A port of the real par sheet puts
+	   that at 64% won, 36% bust - a third of new players lost the first thing the game asked
+	   of them, a few minutes in, on a fresh save with no sauce to buy the power instead,
+	   and the reels just stop answering Space when the credits run out. The first day on
+	   Steam showed a third of players gone inside ten minutes.
+
+	   So the first power is handed over, not won. Keyed on the VERB rather than on Kaia's
+	   actor, so no level edit is needed and it holds wherever Refactor's grant stands. The
+	   other four agents keep the trial: by the time a player asks them, the cauldron's
+	   150-sauce fallback is within reach. No trial also means no hall alarm - the
+	   Refusers are not waiting when he turns round from her. */
+	bool IsGivenFree(bool bGrantsPower, EPowerVerb Power)
+	{
+		return bGrantsPower && Power == EPowerVerb::Refactor;
+	}
+}
+
 APowerGrant::APowerGrant()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -178,8 +201,9 @@ void APowerGrant::OnTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 	}
 
 	// Walt's trial: a POWER must be won at the machine, not collected like
-	// loose change. Sauce-only markers keep the instant walk-in grant.
-	if (bSlotTrial && bGrantsPower)
+	// loose change. Sauce-only markers keep the instant walk-in grant, and so
+	// does the first power (IsGivenFree).
+	if (bSlotTrial && bGrantsPower && !IsGivenFree(bGrantsPower, Power))
 	{
 		if (APlayerController* PC = Cast<APlayerController>(Pawn->GetController()))
 		{
@@ -278,6 +302,17 @@ void APowerGrant::RequestTrial(APlayerController* PC)
 {
 	if (bConsumed || bTrialOpen || !PC)
 	{
+		return;
+	}
+
+	// The first power is given, not won (IsGivenFree): the same claim a won trial ends
+	// in, minus the machine. The pawn goes along so a ClaimBanner, if one is ever set,
+	// has a HUD to land on.
+	if (IsGivenFree(bGrantsPower, Power))
+	{
+		UE_LOG(LogSibeliusGame, Display, TEXT("[PowerGrant] %s given free by %s - no trial."),
+			*PowerVerbDisplayName(Power), GrantedByAgent ? *GrantedByAgent->GetName() : TEXT("NONE"));
+		ClaimNow(PC->GetPawn());
 		return;
 	}
 	OpenTrial(PC);

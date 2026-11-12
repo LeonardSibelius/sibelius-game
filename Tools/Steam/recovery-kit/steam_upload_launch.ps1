@@ -17,7 +17,10 @@
 #
 #   powershell -ExecutionPolicy Bypass -File C:\Users\wpark\projects\sibelius-game\Tools\Steam\recovery-kit\steam_upload_launch.ps1 `
 #       -SteamUser wparkman676 -SdkPath C:\steamworks_sdk `
-#       -ContentRoot C:\Users\wpark\builds\sibelius-shipping-steam-20261111-v2.5.1\Windows -Preview
+#       -ContentRoot C:\Users\wpark\builds\sibelius-shipping-steam-20261112-v2.5.2\Windows -Preview
+#
+# 2.5.2 (2026-11-12) is the first update after the launch: Kaia's power is a gift, no slot trial.
+# The launch build itself was sibelius-shipping-steam-20261111-v2.5.1 (BuildID 26597490).
 #
 # ---------------------------------------------------------------------------
 # THIS SCRIPT NEVER SEES YOUR PASSWORD, AND IT MUST STAY THAT WAY.
@@ -47,7 +50,7 @@ param(
     # Folder containing sdk\tools\ContentBuilder\builder\steamcmd.exe
     [string] $SdkPath = 'C:\steamworks_sdk',
 
-    # The packaged build's Windows folder. Default: the 2.5.1 launch build one folder up from
+    # The packaged build's Windows folder. Default: the 2.5.2 chat-off build one folder up from
     # this kit (where it sits if it is copied to the stick beside steam-upload\).
     [string] $ContentRoot,
 
@@ -63,7 +66,7 @@ $ErrorActionPreference = 'Stop'
 $Kit      = $PSScriptRoot
 $AppVdf   = Join-Path $Kit 'app_build_5249380_launch.vdf'
 $DepotVdf = Join-Path $Kit 'depot_build_5249381.vdf'
-if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-steam-20261111-v2.5.1\Windows' }
+if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-steam-20261112-v2.5.2\Windows' }
 if (-not $BuildOutput) { $BuildOutput = Join-Path $Kit 'buildoutput' }
 
 # ---------------------------------------------------------------------------
