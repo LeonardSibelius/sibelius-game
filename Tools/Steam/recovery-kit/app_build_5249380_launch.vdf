@@ -17,7 +17,7 @@
 "appbuild"
 {
 	"appid"			"5249380"
-	"desc"			"v2.5.2, chat off - Kaia's power is a gift (no slot trial for the first power); the 2.5.1 launch content: four agents' homes, the dance menu, the chess coach, the Grand Prix, Go, the not-human laptop, Freakbook, R on the agents, the three-point contest, the AI city, the slot cabinets, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager, films and the AI City premiere"
+	"desc"			"v2.5.3, chat off - graphics settings (M > GRAPHICS) and first-launch auto-detect; Kaia's power is a gift (2.5.2); the 2.5.1 launch content: four agents' homes, the dance menu, the chess coach, the Grand Prix, Go, the not-human laptop, Freakbook, R on the agents, the three-point contest, the AI city, the slot cabinets, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager, films and the AI City premiere"
 
 	"buildoutput"	"SET-BY-SCRIPT"
 	"contentroot"	"SET-BY-SCRIPT"

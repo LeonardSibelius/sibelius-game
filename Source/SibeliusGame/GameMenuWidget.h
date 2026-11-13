@@ -6,6 +6,7 @@
 //   STATUS   : sauce, the six powers (earned vs not), inventory, generate budget
 //   RECORDS  : lifetime stats — counters that only go up (APPEAL-5)
 //   CONTROLS : the key reference, with unearned verbs greyed out
+//   GRAPHICS : overall quality and four groups, applied at once, plus AUTO-DETECT (2.5.3)
 // This replaces the dev overlay as the player's window into the game state; the
 // dev overlay remains on H for Walt (now default OFF — see SibeliusHUD).
 //
@@ -36,7 +37,7 @@ protected:
 	virtual void NativeConstruct() override;
 
 private:
-	enum class ETab : uint8 { Status, Records, Controls };
+	enum class ETab : uint8 { Status, Records, Controls, Graphics };
 
 	void SetTab(ETab NewTab);
 	void RefreshContent();
@@ -44,6 +45,7 @@ private:
 	void BuildStatusTab(TSharedRef<SVerticalBox> Box);
 	void BuildRecordsTab(TSharedRef<SVerticalBox> Box);
 	void BuildControlsTab(TSharedRef<SVerticalBox> Box);
+	void BuildGraphicsTab(TSharedRef<SVerticalBox> Box);
 
 	ETab ActiveTab = ETab::Status;
 	TSharedPtr<SVerticalBox> ContentBox;

@@ -17,9 +17,10 @@
 #
 #   powershell -ExecutionPolicy Bypass -File C:\Users\wpark\projects\sibelius-game\Tools\Steam\recovery-kit\steam_upload_launch.ps1 `
 #       -SteamUser wparkman676 -SdkPath C:\steamworks_sdk `
-#       -ContentRoot C:\Users\wpark\builds\sibelius-shipping-steam-20261112-v2.5.2\Windows -Preview
+#       -ContentRoot C:\Users\wpark\builds\sibelius-shipping-steam-20261112-v2.5.3\Windows -Preview
 #
-# 2.5.2 (2026-11-12) is the first update after the launch: Kaia's power is a gift, no slot trial.
+# 2.5.3 (2026-11-12): graphics settings in the M menu and a first-launch auto-detect.
+# 2.5.2 (2026-11-12, BuildID 26627349) was the first update after the launch: Kaia's power is a gift.
 # The launch build itself was sibelius-shipping-steam-20261111-v2.5.1 (BuildID 26597490).
 #
 # ---------------------------------------------------------------------------
@@ -50,7 +51,7 @@ param(
     # Folder containing sdk\tools\ContentBuilder\builder\steamcmd.exe
     [string] $SdkPath = 'C:\steamworks_sdk',
 
-    # The packaged build's Windows folder. Default: the 2.5.2 chat-off build one folder up from
+    # The packaged build's Windows folder. Default: the 2.5.3 chat-off build one folder up from
     # this kit (where it sits if it is copied to the stick beside steam-upload\).
     [string] $ContentRoot,
 
@@ -66,7 +67,7 @@ $ErrorActionPreference = 'Stop'
 $Kit      = $PSScriptRoot
 $AppVdf   = Join-Path $Kit 'app_build_5249380_launch.vdf'
 $DepotVdf = Join-Path $Kit 'depot_build_5249381.vdf'
-if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-steam-20261112-v2.5.2\Windows' }
+if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-steam-20261112-v2.5.3\Windows' }
 if (-not $BuildOutput) { $BuildOutput = Join-Path $Kit 'buildoutput' }
 
 # ---------------------------------------------------------------------------
@@ -140,7 +141,10 @@ Write-Host  '  depot     5249381  Leonard Sibelius Content'
 Write-Host ("  content   {0}" -f $ContentRoot)
 Write-Host ("  on disk   {0:N2} GB, less {1:N2} GB of .pdb excluded = ~{2:N2} GB uploading" -f $sizeGB, $pdbGB, ($sizeGB - $pdbGB))
 Write-Host ("  build     {0}" -f ($Info -join ', '))
-Write-Host  '  build     v2.5.1 STEAM LAUNCH - CHAT OFF - the agents'' homes, the dance menu, the chess coach, the Grand Prix, Go, the not-human laptop, Freakbook, the three-point contest, the AI city, the slot cabinets, the Archaic Language Temple, Leonard''s Arcade, Isla''s keep, 4D billiards, orbital golf, Lantern Burst, the Dragon''s Wager, films and the AI City premiere'
+# The description Steam will show, read from the .vdf itself: this line was hardcoded to the
+# 2.5.1 launch text and printed it unchanged for the 2.5.2 upload.
+$Desc = [regex]::Match($vdf, '(?m)^\s*"desc"\s*"([^"]*)"').Groups[1].Value
+Write-Host ("  desc      {0}" -f $Desc)
 Write-Host  '  setlive   (none - you set it live on default yourself in Steamworks afterwards)'
 if ($Preview) {
     Write-Host '  MODE      PREVIEW - nothing will be uploaded' -ForegroundColor Yellow
@@ -169,8 +173,8 @@ if ($Preview) {
     Write-Host ("UPLOAD OK in {0:N0}s" -f $elapsed.TotalSeconds) -ForegroundColor Green
     Write-Host ''
     Write-Host 'NOT DONE YET. The build is uploaded but attached to nothing:'
-    Write-Host '  1. Steamworks > SteamPipe > Builds  - set the new BuildID live on default'
-    Write-Host '  2. Steam library                    - play it for 5 minutes (ticks the release checklist)'
-    Write-Host '  3. App landing page                 - Release App, when you choose'
-    Write-Host 'The steps and the store text are in docs\STEAM_LAUNCH_2.5.1.md.'
+    Write-Host '  Steamworks > SteamPipe > Builds - the new BuildID, "default" in its dropdown, Preview Change,'
+    Write-Host '  Set Build Live Now, OK on the browser box, then type the code Steam TEXTS to your phone.'
+    Write-Host '  (The game is released, so that is all an update needs. The first launch steps are in'
+    Write-Host '  docs\STEAM_LAUNCH_2.5.1.md.)'
 }

@@ -9,6 +9,8 @@
 #include "NpcCouncilSession.h"         // the COUNCIL button, and whether to show it
 #include "ChatEasterEggs.h"            // FOUND, on RECORDS
 #include "SibeliusGameCharacter.h"     // OpenCouncil
+#include "GraphicsAutoDetectSubsystem.h"   // GRAPHICS: AUTO-DETECT
+#include "GameFramework/GameUserSettings.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Widgets/SBoxPanel.h"
@@ -87,6 +89,8 @@ TSharedRef<SWidget> UGameMenuWidget::RebuildWidget()
 						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabRecords", "RECORDS"), ETab::Records) ]
 						+ SHorizontalBox::Slot().AutoWidth().Padding(10, 0, 0, 0)
 						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabControls", "CONTROLS"), ETab::Controls) ]
+						+ SHorizontalBox::Slot().AutoWidth().Padding(10, 0, 0, 0)
+						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabGraphics", "GRAPHICS"), ETab::Graphics) ]
 						+ SHorizontalBox::Slot().FillWidth(1.0f)
 						[ SNullWidget::NullWidget ]
 						/* THE COUNCIL is not a tab: it leaves the menu for the meeting panel, so it
@@ -163,6 +167,7 @@ void UGameMenuWidget::RefreshContent()
 	case ETab::Status:   BuildStatusTab(ContentBox.ToSharedRef());   break;
 	case ETab::Records:  BuildRecordsTab(ContentBox.ToSharedRef());  break;
 	case ETab::Controls: BuildControlsTab(ContentBox.ToSharedRef()); break;
+	case ETab::Graphics: BuildGraphicsTab(ContentBox.ToSharedRef()); break;
 	}
 }
 
@@ -384,6 +389,156 @@ void UGameMenuWidget::BuildControlsTab(TSharedRef<SVerticalBox> Box)
 			]
 		];
 	}
+}
+
+/* GRAPHICS (2.5.3). The first Steam review: "It would be fine if I could lower the shadows,
+   lighting, and turn off any unnecessary effects, but there is no list of settings to mess
+   with." This is that list, in the words the reviewer used.
+
+   EVERY PRESS APPLIES AT ONCE AND IS SAVED - no Apply button to forget. Non-resolution
+   settings only: the window and its resolution are never touched from here, so a click can
+   never blank the screen or throw the game out of fullscreen.
+
+   THE HIGHLIGHT IS READ LIVE from UGameUserSettings (a lambda per button), so the row lights
+   whichever level is really in force - after AUTO-DETECT, after the overall row moved all the
+   groups, and when OVERALL itself reads -1 because the groups are mixed (nothing lit there). */
+void UGameMenuWidget::BuildGraphicsTab(TSharedRef<SVerticalBox> Box)
+{
+	using namespace GameMenuNS;
+
+	if (!UGameUserSettings::GetGameUserSettings())
+	{
+		Box->AddSlot().AutoHeight()
+		[
+			SNew(STextBlock)
+			.Text(NSLOCTEXT("Sibelius", "GfxNone", "Graphics settings are not available here."))
+			.Font(Font("Regular", 18))
+			.ColorAndOpacity(Body)
+		];
+		return;
+	}
+
+	auto Note = [&Box](const FText& Text, int32 Size = 15, float Top = 2.0f)
+	{
+		Box->AddSlot().AutoHeight().Padding(0, Top, 0, 2)
+		[
+			SNew(STextBlock)
+			.Text(Text)
+			.Font(Font("Regular", Size))
+			.ColorAndOpacity(Dim)
+			.AutoWrapText(true)
+		];
+	};
+
+	// One row: a label and LOW / MEDIUM / HIGH / EPIC. Get and Set talk to the settings
+	// object fresh every time rather than holding a pointer across the menu's lifetime.
+	auto LevelRow = [&Box](const FText& Label, TFunction<int32(const UGameUserSettings&)> Get,
+		TFunction<void(UGameUserSettings&, int32)> Set)
+	{
+		static const TCHAR* const LevelNames[] = { TEXT("LOW"), TEXT("MEDIUM"), TEXT("HIGH"), TEXT("EPIC") };
+
+		TSharedRef<SHorizontalBox> Buttons = SNew(SHorizontalBox);
+		for (int32 Level = 0; Level < 4; ++Level)
+		{
+			Buttons->AddSlot().AutoWidth().Padding(Level == 0 ? 0.0f : 8.0f, 0.0f, 0.0f, 0.0f)
+			[
+				SNew(SButton)
+				.ContentPadding(FMargin(14.0f, 5.0f))
+				.OnClicked_Lambda([Set, Level]()
+				{
+					if (UGameUserSettings* S = UGameUserSettings::GetGameUserSettings())
+					{
+						Set(*S, Level);
+						S->ApplyNonResolutionSettings();
+						S->SaveSettings();
+					}
+					return FReply::Handled();
+				})
+				[
+					SNew(STextBlock)
+					.Text(FText::FromString(LevelNames[Level]))
+					.Font(Font("Bold", 16))
+					.ColorAndOpacity_Lambda([Get, Level]()
+					{
+						const UGameUserSettings* S = UGameUserSettings::GetGameUserSettings();
+						return (S && Get(*S) == Level) ? SauceGreen : Dim;
+					})
+				]
+			];
+		}
+
+		Box->AddSlot().AutoHeight().Padding(0, 6)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+			[
+				SNew(SBox).WidthOverride(200.0f)
+				[
+					SNew(STextBlock)
+					.Text(Label)
+					.Font(Font("Bold", 18))
+					.ColorAndOpacity(Heading)
+				]
+			]
+			+ SHorizontalBox::Slot().AutoWidth()
+			[
+				Buttons
+			]
+		];
+	};
+
+	Note(NSLOCTEXT("Sibelius", "GfxIntro",
+		"The game chose these for your computer the first time it started. If it runs slowly, "
+		"pick something lower - every change takes effect at once and is saved."), 16, 0.0f);
+
+	LevelRow(NSLOCTEXT("Sibelius", "GfxOverall", "OVERALL"),
+		[](const UGameUserSettings& S) { return S.GetOverallScalabilityLevel(); },
+		[](UGameUserSettings& S, int32 L) { S.SetOverallScalabilityLevel(L); });
+	Note(NSLOCTEXT("Sibelius", "GfxOverallNote", "Sets everything below at once. Nothing lit here means the rows below are mixed."), 14);
+
+	LevelRow(NSLOCTEXT("Sibelius", "GfxShadows", "SHADOWS"),
+		[](const UGameUserSettings& S) { return S.GetShadowQuality(); },
+		[](UGameUserSettings& S, int32 L) { S.SetShadowQuality(L); });
+	LevelRow(NSLOCTEXT("Sibelius", "GfxLighting", "LIGHTING"),
+		[](const UGameUserSettings& S) { return S.GetGlobalIlluminationQuality(); },
+		[](UGameUserSettings& S, int32 L) { S.SetGlobalIlluminationQuality(L); });
+	Note(NSLOCTEXT("Sibelius", "GfxLightingNote",
+		"LOW and MEDIUM turn off the light that bounces around a room: much faster, but rooms look flatter and darker."), 14);
+	LevelRow(NSLOCTEXT("Sibelius", "GfxReflections", "REFLECTIONS"),
+		[](const UGameUserSettings& S) { return S.GetReflectionQuality(); },
+		[](UGameUserSettings& S, int32 L) { S.SetReflectionQuality(L); });
+	LevelRow(NSLOCTEXT("Sibelius", "GfxEffects", "EFFECTS"),
+		[](const UGameUserSettings& S) { return S.GetVisualEffectQuality(); },
+		[](UGameUserSettings& S, int32 L) { S.SetVisualEffectQuality(L); });
+
+	Box->AddSlot().AutoHeight().Padding(0, 16, 0, 2)
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot().AutoWidth()
+		[
+			SNew(SButton)
+			.ContentPadding(FMargin(18.0f, 6.0f))
+			.OnClicked_Lambda([]()
+			{
+				UGraphicsAutoDetectSubsystem::DetectAndApply();
+				return FReply::Handled();
+			})
+			[
+				SNew(STextBlock)
+				.Text(NSLOCTEXT("Sibelius", "GfxAuto", "AUTO-DETECT"))
+				.Font(Font("Bold", 16))
+				.ColorAndOpacity(Heading)
+			]
+		]
+		+ SHorizontalBox::Slot().FillWidth(1.0f).VAlign(VAlign_Center).Padding(14, 0, 0, 0)
+		[
+			SNew(STextBlock)
+			.Text(NSLOCTEXT("Sibelius", "GfxAutoNote", "Measures this computer again and picks for it. The picture pauses for a moment."))
+			.Font(Font("Regular", 14))
+			.ColorAndOpacity(Dim)
+			.AutoWrapText(true)
+		]
+	];
 }
 
 FReply UGameMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)

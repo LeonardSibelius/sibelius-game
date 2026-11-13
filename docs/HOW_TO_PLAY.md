@@ -11,6 +11,9 @@ all of them.
 Your goal: earn every power, blend what you need at the cauldron, and
 carry all six verbs to the cathedral for the Three-Part Synthesis.
 
+Running slowly? Press M and open GRAPHICS. The game chose its settings
+for your computer the first time it started; turn them down there.
+
 
 ## THE LOOP
 

@@ -37,7 +37,7 @@ TArray<FControlRow> BuildRows(const UObject* WorldContext)
 		{ TEXT("0"), TEXT("Deploy (persist your edits)"), Owned(EPowerVerb::Deploy) },
 		{ TEXT("G"), TEXT("Generate — type what a film is about"), Owned(EPowerVerb::Generate) },
 
-		{ TEXT("M"), TEXT("this menu"), true },
+		{ TEXT("M"), TEXT("this menu - status, records, controls, graphics"), true },
 		{ TEXT("J"), TEXT("how to play"), true },
 		// H (developer overlay) is DELIBERATELY ABSENT. Walt, 2026-08-31: "take H out of
 		// both." It is a debug toggle, and unifying the two lists had just promoted it
