@@ -23,6 +23,8 @@
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnSauceChanged, int32 /*NewTotal*/, int32 /*Delta*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnPowerUnlocked, EPowerVerb);
+struct FChallengeTier;
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnChallengeCleared, const FChallengeTier&);
 
 UCLASS()
 class SIBELIUSGAME_API UProgressionSubsystem : public UGameInstanceSubsystem
@@ -84,6 +86,14 @@ public:
 	int32 GetStat(FName Key) const { return State.GetStat(Key); }
 	void BumpStat(FName Key, int32 Delta = 1);   // saves on change
 	void RaiseStat(FName Key, int32 Value);      // record semantics; saves only on a new record
+	void LowerStat(FName Key, int32 Value);      // "fewest" record (strokes); saves only on a new record
+
+	/* THE AGENTS' CHALLENGES (ChallengeTypes.h). Every record above that changes asks this
+	   whether a challenge tier is now met; a newly met tier is claimed once, pays its sauce,
+	   and is announced (the HUD's banner; phase 2, a Steam achievement). On load it runs
+	   quietly, so a record set before the challenges existed is paid without a parade. */
+	void EvaluateChallenges(bool bAnnounce);
+	FOnChallengeCleared OnChallengeCleared;
 
 	// Read-only view of the pure state (FSauceShop::BuildOffers takes the state
 	// directly so the catalog logic stays headless-testable).

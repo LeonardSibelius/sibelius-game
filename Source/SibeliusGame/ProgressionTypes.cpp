@@ -251,6 +251,16 @@ void FProgressionState::RaiseStat(FName Key, int32 Value)
 	}
 }
 
+void FProgressionState::LowerStat(FName Key, int32 Value)
+{
+	// Strokes and the like: fewer is better, and 0 is "never done", not a perfect score.
+	const int32 Current = GetStat(Key);
+	if (!Key.IsNone() && Value > 0 && (Current <= 0 || Value < Current))
+	{
+		LifetimeStats.FindOrAdd(Key) = Value;
+	}
+}
+
 bool RunProgressionSelfTest(FString& OutError)
 {
 	FProgressionState S;

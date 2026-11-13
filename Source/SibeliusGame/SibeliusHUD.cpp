@@ -1,6 +1,7 @@
 // SibeliusHUD.cpp — center reticle + developer overlay (SIB-39).
 
 #include "SibeliusHUD.h"
+#include "ChallengeTypes.h"                   // the agents' challenges: a banner when a tier falls
 #include "ProteinMachine.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"                   // GetSmallFont
@@ -78,6 +79,7 @@ void ASibeliusHUD::BeginPlay()
 	{
 		SauceChangedHandle = Progression->OnSauceChanged.AddUObject(this, &ASibeliusHUD::HandleSauceChanged);
 		PowerUnlockedHandle = Progression->OnPowerUnlocked.AddUObject(this, &ASibeliusHUD::HandlePowerUnlocked);
+		ChallengeClearedHandle = Progression->OnChallengeCleared.AddUObject(this, &ASibeliusHUD::HandleChallengeCleared);
 	}
 }
 
@@ -87,6 +89,7 @@ void ASibeliusHUD::EndPlay(const EEndPlayReason::Type Reason)
 	{
 		Progression->OnSauceChanged.Remove(SauceChangedHandle);
 		Progression->OnPowerUnlocked.Remove(PowerUnlockedHandle);
+		Progression->OnChallengeCleared.Remove(ChallengeClearedHandle);
 	}
 	Super::EndPlay(Reason);
 }
@@ -104,6 +107,14 @@ void ASibeliusHUD::HandlePowerUnlocked(EPowerVerb Verb)
 {
 	ShowBanner(FString::Printf(TEXT("%s  IS  YOURS"), *PowerVerbDisplayName(Verb)));
 	ShowMemoir(PowerVerbMemoir(Verb));
+}
+
+void ASibeliusHUD::HandleChallengeCleared(const FChallengeTier& Tier)
+{
+	// The power ceremony's banner, so a tier reads as the same kind of moment. The goal goes
+	// under it as a toast, so he knows which of the three it was.
+	ShowBanner(SibeliusChallenges::BannerText(Tier), 5.0f);
+	Toast(this, FString::Printf(TEXT("%s: %s.  [M] CHALLENGES for the next one"), Tier.Game, Tier.Goal), 6.0f, SibeliusToast::Good);
 }
 
 void ASibeliusHUD::ShowMemoir(const FString& Text, float Seconds)

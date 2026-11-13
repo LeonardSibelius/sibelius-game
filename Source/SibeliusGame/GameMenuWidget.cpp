@@ -10,6 +10,8 @@
 #include "ChatEasterEggs.h"            // FOUND, on RECORDS
 #include "SibeliusGameCharacter.h"     // OpenCouncil
 #include "GraphicsAutoDetectSubsystem.h"   // GRAPHICS: AUTO-DETECT
+#include "ChallengeTypes.h"                // CHALLENGES
+#include "Widgets/Layout/SScrollBox.h"
 #include "GameFramework/GameUserSettings.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
@@ -39,8 +41,9 @@ TSharedRef<SWidget> UGameMenuWidget::RebuildWidget()
 
 	auto TabButton = [this](const FText& Label, ETab Tab) -> TSharedRef<SWidget>
 	{
+		// 16 across, not 22: five tabs and the COUNCIL button have to share 860 pixels.
 		return SNew(SButton)
-			.ContentPadding(FMargin(22.0f, 8.0f))
+			.ContentPadding(FMargin(16.0f, 8.0f))
 			.OnClicked_Lambda([this, Tab]() { SetTab(Tab); return FReply::Handled(); })
 			[
 				SNew(STextBlock)
@@ -91,6 +94,8 @@ TSharedRef<SWidget> UGameMenuWidget::RebuildWidget()
 						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabControls", "CONTROLS"), ETab::Controls) ]
 						+ SHorizontalBox::Slot().AutoWidth().Padding(10, 0, 0, 0)
 						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabGraphics", "GRAPHICS"), ETab::Graphics) ]
+						+ SHorizontalBox::Slot().AutoWidth().Padding(10, 0, 0, 0)
+						[ TabButton(NSLOCTEXT("Sibelius", "MenuTabChallenges", "CHALLENGES"), ETab::Challenges) ]
 						+ SHorizontalBox::Slot().FillWidth(1.0f)
 						[ SNullWidget::NullWidget ]
 						/* THE COUNCIL is not a tab: it leaves the menu for the meeting panel, so it
@@ -168,6 +173,7 @@ void UGameMenuWidget::RefreshContent()
 	case ETab::Records:  BuildRecordsTab(ContentBox.ToSharedRef());  break;
 	case ETab::Controls: BuildControlsTab(ContentBox.ToSharedRef()); break;
 	case ETab::Graphics: BuildGraphicsTab(ContentBox.ToSharedRef()); break;
+	case ETab::Challenges: BuildChallengesTab(ContentBox.ToSharedRef()); break;
 	}
 }
 
@@ -537,6 +543,104 @@ void UGameMenuWidget::BuildGraphicsTab(TSharedRef<SVerticalBox> Box)
 			.Font(Font("Regular", 14))
 			.ColorAndOpacity(Dim)
 			.AutoWrapText(true)
+		]
+	];
+}
+
+/* CHALLENGES (docs/AGENT_CHALLENGES_PLAN.md, phase 1). Every challenge, met or not, grouped by
+   who sets it, with how close he is and where to go. For a new player it is also a map: every
+   agent's home and every living-room game, in one list, which the opening never gives him. */
+void UGameMenuWidget::BuildChallengesTab(TSharedRef<SVerticalBox> Box)
+{
+	using namespace GameMenuNS;
+
+	const UProgressionSubsystem* P = UProgressionSubsystem::Get(this);
+	const FProgressionState Empty;
+	const FProgressionState& State = P ? P->GetStateForRead() : Empty;
+	const TArray<FChallengeTier>& All = SibeliusChallenges::All();
+
+	int32 Met = 0;
+	for (const FChallengeTier& Tier : All)
+	{
+		Met += State.HasClaimed(SibeliusChallenges::ClaimKey(Tier)) ? 1 : 0;
+	}
+
+	Box->AddSlot().AutoHeight().Padding(0, 0, 0, 8)
+	[
+		SNew(STextBlock)
+		.Text(FText::FromString(FString::Printf(
+			TEXT("%d of %d met.  Each one pays sauce once: Bronze 50, Silver 100, Gold 150, a house record 100."),
+			Met, All.Num())))
+		.Font(Font("Regular", 15))
+		.ColorAndOpacity(Dim)
+		.AutoWrapText(true)
+	];
+
+	TSharedRef<SVerticalBox> List = SNew(SVerticalBox);
+	const TCHAR* LastWho = nullptr;
+	const TCHAR* LastGame = nullptr;
+	for (const FChallengeTier& Tier : All)
+	{
+		// A heading each time the agent or the game changes: "KAIA - LANTERN BURST", then where.
+		if (!LastWho || FCString::Strcmp(LastWho, Tier.Who) != 0 || FCString::Strcmp(LastGame, Tier.Game) != 0)
+		{
+			LastWho = Tier.Who;
+			LastGame = Tier.Game;
+			const bool bHouse = FCString::Strcmp(Tier.Who, TEXT("House")) == 0;
+			List->AddSlot().AutoHeight().Padding(0, 12, 0, 2)
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(bHouse
+					? FString::Printf(TEXT("HOUSE RECORD - %s"), *FString(Tier.Game).ToUpper())
+					: FString::Printf(TEXT("%s - %s"), *FString(Tier.Who).ToUpper(), *FString(Tier.Game).ToUpper())))
+				.Font(Font("Bold", 18))
+				.ColorAndOpacity(Heading)
+			];
+			List->AddSlot().AutoHeight().Padding(0, 0, 0, 2)
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(Tier.Where))
+				.Font(Font("Regular", 13))
+				.ColorAndOpacity(Dim)
+			];
+		}
+
+		const bool bMet = State.HasClaimed(SibeliusChallenges::ClaimKey(Tier));
+		const FString Best = bMet ? FString() : SibeliusChallenges::BestText(State, Tier);
+		List->AddSlot().AutoHeight().Padding(0, 1)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth()
+			[
+				SNew(SBox).WidthOverride(130.0f)
+				[
+					SNew(STextBlock)
+					.Text(FText::FromString(FString::Printf(TEXT("%s %s"), bMet ? TEXT("◆") : TEXT("◇"),
+						SibeliusChallenges::TierName(Tier.Tier))))
+					.Font(Font("Bold", 16))
+					.ColorAndOpacity(bMet ? SauceGreen : Body)
+				]
+			]
+			+ SHorizontalBox::Slot().FillWidth(1.0f)
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(Best.IsEmpty() ? FString(Tier.Goal) : FString::Printf(TEXT("%s   (%s)"), Tier.Goal, *Best)))
+				.Font(Font("Regular", 16))
+				.ColorAndOpacity(bMet ? Dim : Body)
+			]
+		];
+	}
+
+	Box->AddSlot().AutoHeight()
+	[
+		SNew(SBox)
+		.MaxDesiredHeight(500.0f)
+		[
+			SNew(SScrollBox)
+			+ SScrollBox::Slot()
+			[
+				List
+			]
 		]
 	];
 }

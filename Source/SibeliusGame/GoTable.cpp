@@ -503,6 +503,12 @@ void AGoTable::AfterMove(int32 CapturedBefore)
 			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 			{
 				Progression->BumpStat(SibeliusStats::GoWins);
+				// The house record counts full games only: first capture is the two-minute
+				// beginners' game, and a Master beaten at it is not a Master beaten.
+				if (!bFirstCaptureWins)
+				{
+					Progression->RaiseStat(SibeliusStats::GoBestLevel, static_cast<int32>(GhostLevel) + 1);
+				}
 			}
 		}
 		return;

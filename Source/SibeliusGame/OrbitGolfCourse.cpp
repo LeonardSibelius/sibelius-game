@@ -2,6 +2,7 @@
 
 #include "OrbitGolfCourse.h"
 
+#include "ProgressionSubsystem.h"   // Elise's challenge: rounds finished, the fewest strokes
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "TableSounds.h"
@@ -730,6 +731,19 @@ void AOrbitGolfCourse::HandleEvents()
 			if (!bPractice && !bUsedUndo && (BestRound == 0 || Event.Index < BestRound))
 			{
 				BestRound = Event.Index;
+			}
+			/* KEPT NOW, NOT JUST FOR THE SESSION (docs/AGENT_CHALLENGES_PLAN.md): Elise's
+			   challenge. The lessons and an undone shot do not count, as for the best above. */
+			if (!bPractice)
+			{
+				if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+				{
+					Progression->BumpStat(SibeliusStats::OrbitGolfRounds);
+					if (!bUsedUndo)
+					{
+						Progression->LowerStat(SibeliusStats::OrbitGolfBest, Event.Index);
+					}
+				}
 			}
 			UE_LOG(LogSibeliusGame, Display, TEXT("[OrbitGolf] round of %d (par %d), best %d."), Event.Index, static_cast<int32>(Event.Value), BestRound);
 			break;

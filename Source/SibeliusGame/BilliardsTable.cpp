@@ -926,6 +926,7 @@ void ABilliardsTable::HandleEvents()
 			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 			{
 				Progression->BumpStat(SibeliusStats::PoolTablesCleared);
+				Progression->LowerStat(SibeliusStats::PoolBestStrokes, Event.Index);   // the house record
 			}
 			if (BestStrokes == 0 || Event.Index < BestStrokes)
 			{

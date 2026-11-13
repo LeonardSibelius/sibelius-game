@@ -809,6 +809,12 @@ void ABasketballCourt::ShowResults()
 			{
 				Progression->BumpStat(SibeliusStats::ThreePointWins);
 			}
+			// Nyra's Silver and Gold are his score (the player shoots last: Order's last slot).
+			const int32 Mine = Order.Num() - 1;
+			if (Scores.IsValidIndex(Mine) && Scores[Mine] > 0)
+			{
+				Progression->RaiseStat(SibeliusStats::ThreePointBest, Scores[Mine]);
+			}
 		}
 	}
 	AimCamera(false);

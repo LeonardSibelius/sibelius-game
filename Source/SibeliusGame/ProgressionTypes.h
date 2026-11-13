@@ -86,6 +86,24 @@ namespace SibeliusStats
 	inline const FName PinballBest(TEXT("PinballBest"));               // max, not sum
 	inline const FName BowlingBest(TEXT("BowlingBest"));               // max, not sum
 	inline const FName PoolTablesCleared(TEXT("PoolTablesCleared"));
+
+	/* THE AGENTS' CHALLENGES (docs/AGENT_CHALLENGES_PLAN.md, 2026-11-13). The records the
+	   challenge tiers are measured against - several of these games kept their best for the
+	   session only until now. "fewest" keys are LowerStat records: 0 means none yet.
+	   Written into saves - never rename. */
+	inline const FName LanternStagesCleared(TEXT("LanternStagesCleared"));   // max stage cleared
+	inline const FName LanternBurstBest(TEXT("LanternBurstBest"));           // max score
+	inline const FName OrbitGolfRounds(TEXT("OrbitGolfRounds"));             // full rounds finished
+	inline const FName OrbitGolfBest(TEXT("OrbitGolfBest"));                 // fewest strokes, a round
+	inline const FName HyperTablesCleared(TEXT("HyperTablesCleared"));       // 4D billiards
+	inline const FName HyperBilliardsBest(TEXT("HyperBilliardsBest"));       // fewest strokes
+	inline const FName PoolBestStrokes(TEXT("PoolBestStrokes"));             // fewest strokes
+	inline const FName DragonsWagerBest(TEXT("DragonsWagerBest"));           // max treasure banked
+	inline const FName ThreePointBest(TEXT("ThreePointBest"));               // max score
+	inline const FName GrandPrixFierceWins(TEXT("GrandPrixFierceWins"));     // won against Fierce agents
+	inline const FName ChessBestLevel(TEXT("ChessBestLevel"));               // 1 beginner .. 3 master
+	inline const FName GoBestLevel(TEXT("GoBestLevel"));                     // 1 beginner .. 3 master
+	inline const FName PokerBestHand(TEXT("PokerBestHand"));                 // EPokerHandRank as int
 }
 
 // Parse a loose name ("refactor", "TestDrive", "test-drive") — for the exec
@@ -223,6 +241,7 @@ struct SIBELIUSGAME_API FProgressionState
 	int32 GetStat(FName Key) const;          // 0 for unknown keys
 	void BumpStat(FName Key, int32 Delta = 1);   // Delta <= 0 or NAME_None ignored
 	void RaiseStat(FName Key, int32 Value);      // record semantics: only ever raises
+	void LowerStat(FName Key, int32 Value);      // "fewest" record: Value <= 0 ignored, 0 = none yet
 
 	/* THE DANCE HE CHOSE FOR EACH AGENT from her F menu (UDanceMenuWidget), by her chat id
 	   ("kaia") -> the animation's name ("Anim_Slow_Rhythm_Dance_12_MH"). She starts on it in

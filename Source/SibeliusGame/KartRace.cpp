@@ -1191,6 +1191,11 @@ void AKartRace::HandleEvents()
 					if (FinishedPlace == 1)
 					{
 						Progression->BumpStat(SibeliusStats::GrandPrixWins);
+						// The Grand Prix Gold: a win with the agents at their fastest.
+						if (AgentPace == EKartAgentPace::Fierce)
+						{
+							Progression->BumpStat(SibeliusStats::GrandPrixFierceWins);
+						}
 					}
 				}
 			}

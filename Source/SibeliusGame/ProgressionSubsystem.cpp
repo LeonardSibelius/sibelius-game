@@ -4,6 +4,7 @@
 #include "ProgressionSaveGame.h"
 #include "SaveSubsystem.h"
 #include "NpcChatSubsystem.h"   // step 5: a new playthrough is a fresh memory
+#include "ChallengeTypes.h"     // the agents' challenges, checked on every new record
 #include "SibeliusGame.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -43,6 +44,51 @@ void UProgressionSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	UE_LOG(LogSibeliusGame, Display, TEXT("Progression: %d/%d powers, %d sauce"),
 		State.NumUnlocked(), static_cast<int32>(EPowerVerb::Count), State.Sauce);
+
+	// Records set before the challenges existed are paid now, quietly (no banners at boot).
+	EvaluateChallenges(/*bAnnounce=*/false);
+}
+
+void UProgressionSubsystem::EvaluateChallenges(bool bAnnounce)
+{
+	TArray<const FChallengeTier*> Cleared;
+	int32 Sauce = 0;
+	for (const FChallengeTier& Tier : SibeliusChallenges::All())
+	{
+		const FName Key = SibeliusChallenges::ClaimKey(Tier);
+		if (!State.HasClaimed(Key) && SibeliusChallenges::IsMet(State, Tier))
+		{
+			State.Claim(Key);
+			Sauce += SibeliusChallenges::SauceFor(Tier);
+			Cleared.Add(&Tier);
+		}
+	}
+	if (Cleared.Num() == 0)
+	{
+		return;
+	}
+
+	/* THE STATE DIRECTLY, NOT GrantSauce / BumpStat: those come back here, and one pass is all
+	   a set of records needs. SauceEarned still rides the grant, as GrantSauce would book it. */
+	if (Sauce > 0)
+	{
+		State.AddSauce(Sauce);
+		State.BumpStat(SibeliusStats::SauceEarned, Sauce);
+	}
+	SaveNow();
+	if (Sauce > 0)
+	{
+		OnSauceChanged.Broadcast(State.Sauce, Sauce);
+	}
+	for (const FChallengeTier* Tier : Cleared)
+	{
+		UE_LOG(LogSibeliusGame, Display, TEXT("[Challenge] %s met (%s), +%d sauce%s"),
+			*Tier->Id.ToString(), Tier->Goal, SibeliusChallenges::SauceFor(*Tier), bAnnounce ? TEXT("") : TEXT(" (on load)"));
+		if (bAnnounce)
+		{
+			OnChallengeCleared.Broadcast(*Tier);
+		}
+	}
 }
 
 bool UProgressionSubsystem::UnlockPower(EPowerVerb Verb)
@@ -122,6 +168,18 @@ void UProgressionSubsystem::BumpStat(FName Key, int32 Delta)
 	if (State.GetStat(Key) != Before)
 	{
 		SaveNow();
+		EvaluateChallenges(/*bAnnounce=*/true);
+	}
+}
+
+void UProgressionSubsystem::LowerStat(FName Key, int32 Value)
+{
+	const int32 Before = State.GetStat(Key);
+	State.LowerStat(Key, Value);
+	if (State.GetStat(Key) != Before)
+	{
+		SaveNow();
+		EvaluateChallenges(/*bAnnounce=*/true);
 	}
 }
 
@@ -184,6 +242,7 @@ void UProgressionSubsystem::RaiseStat(FName Key, int32 Value)
 	if (State.GetStat(Key) != Before)
 	{
 		SaveNow();
+		EvaluateChallenges(/*bAnnounce=*/true);
 	}
 }
 

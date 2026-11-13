@@ -6,6 +6,7 @@
 #include "ProgressionSmokeTestCommandlet.h"
 #include "ProteinMachine.h"
 #include "ProgressionTypes.h"
+#include "ChallengeTypes.h"
 #include "ProgressionSaveGame.h"
 #include "SauceShop.h"
 #include "SibeliusSaveIO.h"
@@ -59,6 +60,15 @@ int32 UProgressionSmokeTestCommandlet::Main(const FString& Params)
 		const bool bSelfTest = RunProgressionSelfTest(SelfTestError);
 		R.Check(bSelfTest, FString::Printf(TEXT("FProgressionState self-test (%s)"),
 			bSelfTest ? TEXT("ok") : *SelfTestError));
+	}
+
+	// --- 1b) The agents' challenges: the table is whole, and the two tests read records right
+	//         (a 0 "fewest" record never counts; a worse round never replaces the best).
+	{
+		FString ChallengeError;
+		const bool bChallenges = SibeliusChallenges::SelfTest(ChallengeError);
+		R.Check(bChallenges, FString::Printf(TEXT("challenges self-test, %d tiers (%s)"),
+			SibeliusChallenges::All().Num(), bChallenges ? TEXT("ok") : *ChallengeError));
 	}
 
 	// --- 2) The exec-cheat name parser accepts loose forms and rejects junk.

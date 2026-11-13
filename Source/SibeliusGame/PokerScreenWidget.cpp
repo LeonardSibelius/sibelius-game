@@ -344,6 +344,8 @@ void UPokerScreenWidget::DoDraw()
 		if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 		{
 			Progression->GrantSauce(Win);
+			// The house record: the best hand he has held (four of a kind and up).
+			Progression->RaiseStat(SibeliusStats::PokerBestHand, static_cast<int32>(Result.Rank));
 		}
 		if (ResultText)
 		{

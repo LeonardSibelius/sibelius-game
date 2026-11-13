@@ -2,6 +2,7 @@
 
 #include "HyperBilliardsTable.h"
 
+#include "ProgressionSubsystem.h"   // Aisling's challenge: tables cleared, the fewest strokes
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "TableSounds.h"
@@ -1019,6 +1020,18 @@ void AHyperBilliardsTable::HandleEvents()
 			if (!bPractice && !bUsedUndo && (BestStrokes == 0 || Event.Index < BestStrokes))
 			{
 				BestStrokes = Event.Index;
+			}
+			// Kept now (Aisling's challenge). Lessons and undone shots do not count.
+			if (!bPractice)
+			{
+				if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+				{
+					Progression->BumpStat(SibeliusStats::HyperTablesCleared);
+					if (!bUsedUndo)
+					{
+						Progression->LowerStat(SibeliusStats::HyperBilliardsBest, Event.Index);
+					}
+				}
 			}
 			TableSounds::Play(this, ETableSound::Chime100, 0.6f);
 			UE_LOG(LogSibeliusGame, Display, TEXT("[HyperBilliards] table cleared in %d strokes (best %d)."), Event.Index, BestStrokes);

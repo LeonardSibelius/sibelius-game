@@ -1,5 +1,6 @@
 #include "DragonsWager.h"
 #include "DragonsWagerSaveGame.h"
+#include "ProgressionSubsystem.h"   // Isla's challenge: the best wager banked
 #include "SibeliusGame.h"
 #include "SibeliusSaveIO.h"
 #include "SibeliusHUD.h"
@@ -299,6 +300,9 @@ void ADragonsWager::Bank()
     if (Score <= 0) return;
     BestScore = FMath::Max(BestScore,Score); BestRound = FMath::Max(BestRound,FinishedRound);
     SaveRecord();
+    // Isla's challenge is the treasure banked in one wager (ChallengeTypes.cpp).
+    if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+        Progression->RaiseStat(SibeliusStats::DragonsWagerBest,Score);
     Say(FString::Printf(TEXT("Isla: A wise choice. %d treasure banked.%s"),Score,
         bSaveFailed ? TEXT(" Record could not be saved to disk.") : TEXT("")));
     TableSounds::Play(this,ETableSound::KartFinish,0.5f);

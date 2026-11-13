@@ -3,6 +3,7 @@
 #include "LanternBurst.h"
 
 #include "LanternBurstSaveGame.h"
+#include "ProgressionSubsystem.h"   // Kaia's challenge: stages cleared and the best score
 #include "SibeliusGame.h"   // LogSibeliusGame
 #include "SibeliusHUD.h"
 #include "SibeliusSaveIO.h"
@@ -709,6 +710,11 @@ void ALanternBurst::HandleEvents()
 			if (bPlaying)
 			{
 				ASibeliusHUD::Toast(this, FString::Printf(TEXT("STAGE %d CLEAR!   +%s"), E.Index, *Grouped(E.Value)), 4.0f, SibeliusToast::Good);
+				// Kaia's challenge is measured in stages cleared (ChallengeTypes.cpp).
+				if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+				{
+					Progression->RaiseStat(SibeliusStats::LanternStagesCleared, E.Index);
+				}
 			}
 			break;
 		case ELanternEvent::GameOver:
@@ -1377,6 +1383,11 @@ void ALanternBurst::SaveBest()
 	if (!FSibeliusSaveIO::Commit(Save, SaveSlot))
 	{
 		UE_LOG(LogSibeliusGame, Warning, TEXT("[Lantern] could not write the best score"));
+	}
+	// The same best in the main save, for the CHALLENGES tab and (phase 3) the leaderboard.
+	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	{
+		Progression->RaiseStat(SibeliusStats::LanternBurstBest, static_cast<int32>(FMath::Min<int64>(BestScore, MAX_int32)));
 	}
 }
 

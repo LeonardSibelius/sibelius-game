@@ -265,9 +265,11 @@ private:
 	double PresenceUntil = 0.0;
 	void HandleSauceChanged(int32 NewTotal, int32 Delta);
 	void HandlePowerUnlocked(EPowerVerb Verb);
+	void HandleChallengeCleared(const struct FChallengeTier& Tier);
 
 	FDelegateHandle SauceChangedHandle;
 	FDelegateHandle PowerUnlockedHandle;
+	FDelegateHandle ChallengeClearedHandle;
 
 	int32 LastSauceDelta = 0;
 	double SauceFlashUntil = 0.0;   // world seconds; +N/-N floats until then

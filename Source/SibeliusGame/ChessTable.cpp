@@ -624,6 +624,8 @@ void AChessTable::AfterMove()
 			if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 			{
 				Progression->BumpStat(SibeliusStats::ChessWins);
+				// The house record: which ghost he has beaten (1 Beginner .. 3 Master).
+				Progression->RaiseStat(SibeliusStats::ChessBestLevel, static_cast<int32>(GhostLevel) + 1);
 			}
 		}
 		return;

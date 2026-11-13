@@ -7,6 +7,7 @@
 //   RECORDS  : lifetime stats — counters that only go up (APPEAL-5)
 //   CONTROLS : the key reference, with unearned verbs greyed out
 //   GRAPHICS : overall quality and four groups, applied at once, plus AUTO-DETECT (2.5.3)
+//   CHALLENGES: the agents' challenges and the house records, met or not, and where (2.6.0)
 // This replaces the dev overlay as the player's window into the game state; the
 // dev overlay remains on H for Walt (now default OFF — see SibeliusHUD).
 //
@@ -37,7 +38,7 @@ protected:
 	virtual void NativeConstruct() override;
 
 private:
-	enum class ETab : uint8 { Status, Records, Controls, Graphics };
+	enum class ETab : uint8 { Status, Records, Controls, Graphics, Challenges };
 
 	void SetTab(ETab NewTab);
 	void RefreshContent();
@@ -46,6 +47,7 @@ private:
 	void BuildRecordsTab(TSharedRef<SVerticalBox> Box);
 	void BuildControlsTab(TSharedRef<SVerticalBox> Box);
 	void BuildGraphicsTab(TSharedRef<SVerticalBox> Box);
+	void BuildChallengesTab(TSharedRef<SVerticalBox> Box);
 
 	ETab ActiveTab = ETab::Status;
 	TSharedPtr<SVerticalBox> ContentBox;
