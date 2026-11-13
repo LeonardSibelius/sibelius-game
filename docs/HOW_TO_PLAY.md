@@ -45,7 +45,8 @@ pots. Prices are honest: what you see is what you get. A power you have
 not earned yet can be bought there, 150 sauce each, if you'd rather pay
 than search. The stove SIMMERS with the sauce you hold; spend there and
 it boils. In the AI temple, [E] pours living sauce into the pot and [C]
-compiles it.
+compiles it; until Compile is yours, [E] again collects it. The temple is
+behind a hidden door upstairs, near Kaia: hold [V] to find it.
 
 
 ## THE SIX POWERS

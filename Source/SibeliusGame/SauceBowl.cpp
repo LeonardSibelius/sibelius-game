@@ -170,8 +170,33 @@ bool ASauceBowl::IsLadleReady() const
 	return World && (World->GetTimeSeconds() - LastClaimTime >= RechargeSeconds);
 }
 
-void ASauceBowl::Interact_Implementation(AActor* /*Interactor*/)
+namespace
 {
+	/* BEFORE COMPILE IS YOURS, E COLLECTS (Walt, 2026-11-12, choosing it for the slot
+	   screen's new clue: "(There is plenty of sauce and powers in the AI Temple)").
+
+	   The temple's door is the hidden one near Kaia, open to Code Vision from the first
+	   minute - but collecting a filled bowl was C, the Compile verb, which only Elise hands
+	   over. So a player sent here by the clue could fill the bowl, ring the alarm, and then
+	   be told Compile was not his. Now E fills AND collects until Compile is earned; after
+	   that the ritual is Walt's original one, E pours and C compiles.
+
+	   Fails OPEN, as HasPowerQuietly does: with no progression subsystem (a headless gate)
+	   the bowl behaves exactly as it always has. */
+	bool OwnsCompile(const UObject* WorldContext)
+	{
+		const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(WorldContext);
+		return !Progression || Progression->IsUnlocked(EPowerVerb::Compile);
+	}
+}
+
+void ASauceBowl::Interact_Implementation(AActor* Interactor)
+{
+	if (bFilled && !OwnsCompile(this))
+	{
+		TryClaim(Cast<APawn>(Interactor));
+		return;
+	}
 	TryStartPour();
 }
 
@@ -242,7 +267,8 @@ bool ASauceBowl::TryClaim(APawn* Claimer)
 	{
 		Progression->GrantSauce(SaucePerBowl);
 		ASibeliusHUD::Toast(this,
-			FString::Printf(TEXT("SAUCE COMPILED  +%d  (total %d)"),
+			FString::Printf(TEXT("SAUCE %s  +%d  (total %d)"),
+				OwnsCompile(this) ? TEXT("COMPILED") : TEXT("COLLECTED"),
 				SaucePerBowl, Progression->GetSauce()),
 			5.0f, SibeliusToast::Good);
 	}
@@ -311,7 +337,7 @@ FText ASauceBowl::GetInteractionPrompt_Implementation() const
 	}
 	if (bFilled)
 	{
-		return FText::FromString(TEXT("Compile the sauce [C]"));
+		return FText::FromString(OwnsCompile(this) ? TEXT("Compile the sauce [C]") : TEXT("Collect the sauce [E]"));
 	}
 	if (!IsLadleReady())
 	{

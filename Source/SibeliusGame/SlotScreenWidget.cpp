@@ -228,6 +228,20 @@ TSharedRef<SWidget> USlotScreenWidget::RebuildWidget()
 		HintText->SetJustification(ETextJustify::Center);
 		if (UVerticalBoxSlot* S = Box->AddChildToVerticalBox(HintText)) { S->SetHorizontalAlignment(HAlign_Fill); }
 
+		/* THE CLUE, under the hint, on an agent's trial only (Walt, 2026-11-12: "I want to give
+		   the player a clue"). A third of these trials bust, and on a fresh save there is no
+		   sauce to buy the power with instead - but the AI Temple, through the hidden door
+		   near Kaia, pays 100 sauce a bowl every 30 seconds and its cauldron sells powers.
+		   Before Compile is earned, E collects the bowl (SauceBowl.cpp), so this is true for
+		   every player who sees it. Sauce green, in Walt's words. */
+		ClueText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("SlotClue"));
+		ClueText->SetFont(FCoreStyle::GetDefaultFontStyle("Regular", 20));
+		ClueText->SetColorAndOpacity(FSlateColor(FLinearColor(0.45f, 0.95f, 0.55f, 1.0f)));
+		ClueText->SetJustification(ETextJustify::Center);
+		ClueText->SetText(FText::FromString(TEXT("(There is plenty of sauce and powers in the AI Temple)")));
+		ClueText->SetVisibility(TrialTarget > 0 ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+		if (UVerticalBoxSlot* S = Box->AddChildToVerticalBox(ClueText)) { S->SetHorizontalAlignment(HAlign_Fill); S->SetPadding(FMargin(0, 8, 0, 0)); }
+
 		// SC3: the proven stretch-anchor layout — never point-anchor + SetSize.
 		if (UCanvasPanelSlot* CSlot = Canvas->AddChildToCanvas(Gold))
 		{
@@ -419,6 +433,10 @@ void USlotScreenWidget::SetTrial(int64 StartCredits, int64 TargetCredits)
 	CreditsShown = static_cast<double>(StartCredits);
 	TrialTarget = TargetCredits;
 	bTrialWon = false;
+	if (ClueText)   // normally built after this call (AddToViewport); here if it was not
+	{
+		ClueText->SetVisibility(TrialTarget > 0 ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+	}
 }
 
 void USlotScreenWidget::SetArcade(int32 SauceForABigWin, int32 BigWinTimesBet)

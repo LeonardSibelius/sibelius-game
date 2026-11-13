@@ -146,6 +146,10 @@ private:
 	TObjectPtr<UTextBlock> LinesText;
 	UPROPERTY()
 	TObjectPtr<UTextBlock> HintText;
+	// The agents' trials only: where the sauce is (Walt, 2026-11-12). Its own line, so the
+	// hint's rewrites (out of credits, THE MACHINE YIELDS) never wipe it.
+	UPROPERTY()
+	TObjectPtr<UTextBlock> ClueText;
 
 	UPROPERTY()
 	TObjectPtr<UBorder> BannerBox;        // free-spins / machine-yields moment
