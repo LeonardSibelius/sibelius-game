@@ -280,6 +280,12 @@ void UFilmDirectorSubsystem::Stop()
 			}
 			Mesh->SetPlayRate(Member.SavedRate);
 		}
+		// A remixed dance (arms from one, legs from another, a speed, a mirror) goes back on
+		// top: what was saved above is only its legs, on the single-node player.
+		if (UDancerAgentComponent* Dancer = Member.Agent.Get())
+		{
+			Dancer->ReapplyDance();
+		}
 	}
 	Troupe.Reset();
 

@@ -672,12 +672,31 @@ public:
 	 */
 	bool OpenDanceMenu();
 
-	/** Play Dances[Index], looping, and remember it as his choice for her (saved). False if she cannot. */
+	/** Play Dances[Index], looping, and remember it as his choice for her (saved). False if she cannot.
+	    The whole dance: arms AND legs become this one. The speed and the mirror are kept. */
 	bool PlayDance(int32 Index);
+
+	/* THE REMIX (Walt, 2026-11-13: "Remix the dances live"). UDanceRemixAnimInstance stitches
+	   two dances at the waist - the upper body from one, the legs from the other - at a speed,
+	   mirrored or not. These change one part and keep the rest; each is saved as his choice. */
+	bool SetDanceArms(int32 Index);
+	bool SetDanceLegs(int32 Index);
+	bool SetDanceSpeed(float NewSpeed);
+	bool SetDanceMirror(bool bNewMirror);
+
+	/** Arms and legs from different dances. */
+	bool IsRemix() const { return RemixArms != INDEX_NONE && RemixArms != CurrentDanceIndex; }
+	int32 GetDanceArmsIndex() const { return RemixArms != INDEX_NONE ? RemixArms : CurrentDanceIndex; }
+	float GetDanceSpeed() const { return DanceSpeed; }
+	bool IsDanceMirrored() const { return bDanceMirror; }
+
+	/** Put the remix back on her body after something else played a plain dance on it (a film). */
+	void ReapplyDance();
 
 	/** The menu's name for a dance: "Anim_Slow_Rhythm_Dance_12_MH" -> "Slow Rhythm 12". */
 	static FString DanceDisplayName(const UAnimSequence* Dance);
 
+	/** Her dance - the LEGS of a remix, and the whole of a plain dance. */
 	int32 GetCurrentDanceIndex() const { return CurrentDanceIndex; }
 
 	/** The prompt shown while the player is looking at her. */
@@ -950,6 +969,26 @@ private:
 
 	/** In-flight chat request, or 0. Cancelled on every exit so a late reply is dropped. */
 	int32 ChatRequestId = 0;
+
+	/** The remix's upper body (Dances index), or INDEX_NONE when arms follow the legs. */
+	int32 RemixArms = INDEX_NONE;
+
+	/** 1 = the dance as animated. The F menu steps it from 0.5 to 2. */
+	float DanceSpeed = 1.0f;
+
+	/** Left becomes right. */
+	bool bDanceMirror = false;
+
+	/** Play the current arms/legs/speed/mirror on her body: the single-node player when the
+	    dance is plain, the remix player when it is not. Saves it as his choice when bSave. */
+	bool ApplyDance(bool bSave);
+
+	/** The remix player on this mesh, if that is what is posing her. */
+	static class UDanceRemixAnimInstance* RemixOn(USkeletalMeshComponent* Mesh);
+
+	/** The saved form of a non-plain dance, and back. Plain dances save their own name. */
+	FName EncodeDance() const;
+	bool DecodeDance(FName Saved);
 
 	/** The dance she was on when E was pressed, so resume is the same move. */
 	TObjectPtr<UAnimSequence> SavedDance;

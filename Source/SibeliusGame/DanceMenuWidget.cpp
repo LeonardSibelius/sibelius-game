@@ -27,6 +27,21 @@ namespace DanceMenuNS
 	{
 		return FCoreStyle::GetDefaultFontStyle(Style, Size);
 	}
+
+	/** "1x", "1.5x", "0.75x" - no trailing zeros. */
+	FString SpeedLabel(float Speed)
+	{
+		const int32 Hundredths = FMath::RoundToInt(Speed * 100.0f);
+		if (Hundredths % 100 == 0)
+		{
+			return FString::Printf(TEXT("%dx"), Hundredths / 100);
+		}
+		if (Hundredths % 10 == 0)
+		{
+			return FString::Printf(TEXT("%.1fx"), Hundredths / 100.0f);
+		}
+		return FString::Printf(TEXT("%.2fx"), Hundredths / 100.0f);
+	}
 }
 
 void UDanceMenuWidget::Open(UDancerAgentComponent* InAgent)
@@ -39,6 +54,7 @@ void UDanceMenuWidget::Open(UDancerAgentComponent* InAgent)
 	}
 
 	// Start on the dance she is doing, so the first arrow press moves away from it.
+	Part = EPart::Whole;
 	const int32 Current = InAgent->GetCurrentDanceIndex();
 	Selected = Current == INDEX_NONE ? 0 : Current + 1 + NumFilms();
 	if (!IsInViewport())
@@ -83,15 +99,72 @@ void UDanceMenuWidget::Choose(int32 Row)
 	}
 	if (Row == 0)
 	{
-		Dancer->ShuffleDance();   // "Surprise me": the old F
+		if (Part == EPart::Whole)
+		{
+			Dancer->ShuffleDance();   // "Surprise me": the old F
+		}
+		else if (Dancer->Dances.Num() >= 2)
+		{
+			// Surprise ARMS or surprise LEGS: a random different dance for that half only.
+			const int32 Now = Part == EPart::Arms ? Dancer->GetDanceArmsIndex() : Dancer->GetCurrentDanceIndex();
+			int32 Pick = FMath::RandRange(0, Dancer->Dances.Num() - 2);
+			if (Now != INDEX_NONE && Pick >= Now)
+			{
+				++Pick;
+			}
+			Part == EPart::Arms ? Dancer->SetDanceArms(Pick) : Dancer->SetDanceLegs(Pick);
+		}
 	}
 	else if (!IsFilmRow(Row))
 	{
-		Dancer->PlayDance(Row - 1 - NumFilms());
+		const int32 Dance = Row - 1 - NumFilms();
+		switch (Part)
+		{
+		case EPart::Arms: Dancer->SetDanceArms(Dance); break;
+		case EPart::Legs: Dancer->SetDanceLegs(Dance); break;
+		default:          Dancer->PlayDance(Dance);    break;
+		}
 	}
 	// A film row is only highlighted here. PlayFilm starts it.
 	Selected = Row;
 	RebuildRows();
+}
+
+int32 UDanceMenuWidget::RowOfDance(int32 DanceIndex) const
+{
+	return DanceIndex == INDEX_NONE ? INDEX_NONE : DanceIndex + 1 + NumFilms();
+}
+
+void UDanceMenuWidget::SetPart(EPart NewPart)
+{
+	Part = NewPart;
+
+	// The highlight goes to the dance that tab controls, so the next arrow press moves from it.
+	if (const UDancerAgentComponent* Dancer = Agent.Get())
+	{
+		const int32 Row = RowOfDance(Part == EPart::Arms ? Dancer->GetDanceArmsIndex() : Dancer->GetCurrentDanceIndex());
+		if (Row != INDEX_NONE)
+		{
+			Selected = Row;
+		}
+	}
+	RebuildRows();
+}
+
+void UDanceMenuWidget::StepSpeed(float Delta)
+{
+	if (UDancerAgentComponent* Dancer = Agent.Get())
+	{
+		Dancer->SetDanceSpeed(Dancer->GetDanceSpeed() + Delta);
+	}
+}
+
+void UDanceMenuWidget::ToggleMirror()
+{
+	if (UDancerAgentComponent* Dancer = Agent.Get())
+	{
+		Dancer->SetDanceMirror(!Dancer->IsDanceMirrored());
+	}
 }
 
 int32 UDanceMenuWidget::NumFilms()
@@ -134,6 +207,113 @@ TSharedRef<SWidget> UDanceMenuWidget::RebuildWidget()
 
 	SAssignNew(List, SScrollBox);
 
+	// A tab: lit when it is the one the dance rows answer to.
+	auto PartTab = [this](const TCHAR* Label, EPart Which) -> TSharedRef<SWidget>
+	{
+		return SNew(SButton)
+			.IsFocusable(false)
+			.ContentPadding(FMargin(10.0f, 5.0f))
+			.OnClicked_Lambda([this, Which]() { SetPart(Which); return FReply::Handled(); })
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(Label))
+				.Font(Font("Bold", 15))
+				.ColorAndOpacity_Lambda([this, Which]() { return Part == Which ? Chosen : Dim; })
+			];
+	};
+	// A small button with a fixed label.
+	auto SmallButton = [](const TCHAR* Label, TFunction<void()> OnClick) -> TSharedRef<SWidget>
+	{
+		return SNew(SButton)
+			.IsFocusable(false)
+			.ContentPadding(FMargin(10.0f, 3.0f))
+			.OnClicked_Lambda([OnClick]() { OnClick(); return FReply::Handled(); })
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(Label))
+				.Font(Font("Bold", 15))
+				.ColorAndOpacity(Body)
+			];
+	};
+
+	// The remix controls: which half the rows change, then speed and mirror.
+	TSharedRef<SWidget> Controls =
+		SNew(SVerticalBox)
+		+ SVerticalBox::Slot().AutoHeight()
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth()[ PartTab(TEXT("WHOLE DANCE"), EPart::Whole) ]
+			+ SHorizontalBox::Slot().AutoWidth().Padding(6, 0, 0, 0)[ PartTab(TEXT("ARMS"), EPart::Arms) ]
+			+ SHorizontalBox::Slot().AutoWidth().Padding(6, 0, 0, 0)[ PartTab(TEXT("LEGS"), EPart::Legs) ]
+		]
+		+ SVerticalBox::Slot().AutoHeight().Padding(0, 8, 0, 0)
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center)
+			[
+				SNew(STextBlock).Text(FText::FromString(TEXT("SPEED"))).Font(Font("Bold", 15)).ColorAndOpacity(Heading)
+			]
+			+ SHorizontalBox::Slot().AutoWidth().Padding(8, 0, 0, 0)[ SmallButton(TEXT("-"), [this]() { StepSpeed(-0.25f); }) ]
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(8, 0)
+			[
+				SNew(STextBlock)
+				.Text_Lambda([this]()
+				{
+					const UDancerAgentComponent* Dancer = Agent.Get();
+					return FText::FromString(DanceMenuNS::SpeedLabel(Dancer ? Dancer->GetDanceSpeed() : 1.0f));
+				})
+				.Font(Font("Bold", 16))
+				.ColorAndOpacity(Body)
+			]
+			+ SHorizontalBox::Slot().AutoWidth()[ SmallButton(TEXT("+"), [this]() { StepSpeed(0.25f); }) ]
+			+ SHorizontalBox::Slot().AutoWidth().VAlign(VAlign_Center).Padding(22, 0, 0, 0)
+			[
+				SNew(STextBlock).Text(FText::FromString(TEXT("MIRROR"))).Font(Font("Bold", 15)).ColorAndOpacity(Heading)
+			]
+			+ SHorizontalBox::Slot().AutoWidth().Padding(8, 0, 0, 0)
+			[
+				SNew(SButton)
+				.IsFocusable(false)
+				.ContentPadding(FMargin(10.0f, 3.0f))
+				.OnClicked_Lambda([this]() { ToggleMirror(); return FReply::Handled(); })
+				[
+					SNew(STextBlock)
+					.Text_Lambda([this]()
+					{
+						const UDancerAgentComponent* Dancer = Agent.Get();
+						return FText::FromString(Dancer && Dancer->IsDanceMirrored() ? TEXT("ON") : TEXT("OFF"));
+					})
+					.Font(Font("Bold", 15))
+					.ColorAndOpacity_Lambda([this]()
+					{
+						const UDancerAgentComponent* Dancer = Agent.Get();
+						return Dancer && Dancer->IsDanceMirrored() ? Chosen : Body;
+					})
+				]
+			]
+		]
+		+ SVerticalBox::Slot().AutoHeight().Padding(0, 6, 0, 0)
+		[
+			// What she is doing now, in words, once it is more than one dance.
+			SNew(STextBlock)
+			.Text_Lambda([this]()
+			{
+				const UDancerAgentComponent* Dancer = Agent.Get();
+				if (!Dancer || !Dancer->IsRemix())
+				{
+					return FText::GetEmpty();
+				}
+				const int32 Arms = Dancer->GetDanceArmsIndex();
+				const int32 Legs = Dancer->GetCurrentDanceIndex();
+				return FText::FromString(FString::Printf(TEXT("Arms: %s     Legs: %s"),
+					Dancer->Dances.IsValidIndex(Arms) ? *UDancerAgentComponent::DanceDisplayName(Dancer->Dances[Arms].Get()) : TEXT("?"),
+					Dancer->Dances.IsValidIndex(Legs) ? *UDancerAgentComponent::DanceDisplayName(Dancer->Dances[Legs].Get()) : TEXT("?")));
+			})
+			.Font(Font("Regular", 14))
+			.ColorAndOpacity(Chosen)
+			.AutoWrapText(true)
+		];
+
 	// The right-hand third of the screen; the rest stays clear so he can watch her dance.
 	return SNew(SBox)
 		.HAlign(HAlign_Right)
@@ -162,6 +342,10 @@ TSharedRef<SWidget> UDanceMenuWidget::RebuildWidget()
 						.Font(Font("Bold", 24))
 						.ColorAndOpacity(Heading)
 					]
+					+ SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 10)
+					[
+						Controls
+					]
 					+ SVerticalBox::Slot().FillHeight(1.0f)
 					[
 						List.ToSharedRef()
@@ -169,7 +353,7 @@ TSharedRef<SWidget> UDanceMenuWidget::RebuildWidget()
 					+ SVerticalBox::Slot().AutoHeight().Padding(0, 12, 0, 0)
 					[
 						SNew(STextBlock)
-						.Text(NSLOCTEXT("Sibelius", "DanceMenuFooter", "[Up]/[Down] try a dance   [Enter] on a film plays it   [Enter], [F] or [Esc] done"))
+						.Text(NSLOCTEXT("Sibelius", "DanceMenuFooter", "[Up]/[Down] try a dance   [Left]/[Right] whole, arms or legs   [-]/[+] speed   [M] mirror   [Enter] on a film plays it   [Enter], [F] or [Esc] done"))
 						.Font(Font("Regular", 13))
 						.ColorAndOpacity(Dim)
 						.AutoWrapText(true)
@@ -195,6 +379,9 @@ void UDanceMenuWidget::RebuildRows()
 	const int32 Count = Dancer ? Films + Dancer->Dances.Num() : 0;
 	const int32 Playing = Dancer && Dancer->GetCurrentDanceIndex() != INDEX_NONE
 		? Dancer->GetCurrentDanceIndex() + 1 + Films : INDEX_NONE;
+	// In a remix the legs row says "(legs)" and the arms dance gets its own "(arms)".
+	const bool bRemix = Dancer && Dancer->IsRemix();
+	const int32 ArmsRow = bRemix ? RowOfDance(Dancer->GetDanceArmsIndex()) : INDEX_NONE;
 	Selected = FMath::Clamp(Selected, 0, Count);
 
 	for (int32 Row = 0; Row <= Count; ++Row)
@@ -207,7 +394,17 @@ void UDanceMenuWidget::RebuildRows()
 					: FString::Printf(TEXT("FILM:  %s"), *FilmCatalog::All()[Row - 2].Title))
 				: UDancerAgentComponent::DanceDisplayName(Dancer->Dances[Row - 1 - Films].Get());
 		const bool bPlaying = Row == Playing;
+		const bool bArmsRow = Row == ArmsRow;
 		const bool bSelected = Row == Selected;
+		FString Shown = Label;
+		if (bPlaying)
+		{
+			Shown += bRemix ? TEXT("   (legs)") : TEXT("   (dancing)");
+		}
+		if (bArmsRow)
+		{
+			Shown += TEXT("   (arms)");
+		}
 
 		TSharedRef<SWidget> RowWidget =
 			SNew(SButton)
@@ -228,9 +425,9 @@ void UDanceMenuWidget::RebuildRows()
 			})
 			[
 				SNew(STextBlock)
-				.Text(FText::FromString(bPlaying ? FString::Printf(TEXT("%s   (dancing)"), *Label) : Label))
+				.Text(FText::FromString(Shown))
 				.Font(Font(bSelected ? "Bold" : "Regular", 18))
-				.ColorAndOpacity(bPlaying ? Chosen : (Row == 0 || bFilm) ? Heading : Body)
+				.ColorAndOpacity((bPlaying || bArmsRow) ? Chosen : (Row == 0 || bFilm) ? Heading : Body)
 			];
 		Rows.Add(RowWidget);
 		List->AddSlot().Padding(0, 1)[ RowWidget ];
@@ -260,6 +457,36 @@ FReply UDanceMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKey
 		if (!InKeyEvent.IsRepeat())
 		{
 			Close();
+		}
+		return FReply::Handled();
+	}
+
+	// The remix: which half the rows change, the speed, the mirror.
+	if (Key == EKeys::Left || Key == EKeys::A)
+	{
+		SetPart(Part == EPart::Whole ? EPart::Legs : Part == EPart::Arms ? EPart::Whole : EPart::Arms);
+		return FReply::Handled();
+	}
+	if (Key == EKeys::Right || Key == EKeys::D)
+	{
+		SetPart(Part == EPart::Whole ? EPart::Arms : Part == EPart::Arms ? EPart::Legs : EPart::Whole);
+		return FReply::Handled();
+	}
+	if (Key == EKeys::Hyphen || Key == EKeys::Subtract || Key == EKeys::LeftBracket)
+	{
+		StepSpeed(-0.25f);
+		return FReply::Handled();
+	}
+	if (Key == EKeys::Equals || Key == EKeys::Add || Key == EKeys::RightBracket)
+	{
+		StepSpeed(0.25f);
+		return FReply::Handled();
+	}
+	if (Key == EKeys::M)
+	{
+		if (!InKeyEvent.IsRepeat())
+		{
+			ToggleMirror();
 		}
 		return FReply::Handled();
 	}

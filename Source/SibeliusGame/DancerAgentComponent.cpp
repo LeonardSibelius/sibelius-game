@@ -17,6 +17,7 @@
 #include "ChatEasterEggs.h"                 // egg 1, the Pigeon Ledger
 #include "ChatDilemmas.h"                   // she asks him for advice
 #include "DanceMenuWidget.h"                // F: choose her dance
+#include "DanceRemixAnimInstance.h"         // F: her arms from one dance, her legs from another
 #include "SibeliusGameCharacter.h"          // OpenCouncil
 #include "NpcChatSubsystem.h"               // ...and the service behind it (mock for now)
 #include "NpcChatSaveGame.h"                // FNpcChatTurn — what she remembers
@@ -509,13 +510,20 @@ void UDancerAgentComponent::BeginPlay()
 		if (const UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
 		{
 			const FName Chosen = Progression->GetAgentDance(ResolveChatId());
-			const int32 ChosenIndex = Dances.IndexOfByPredicate([Chosen](const TObjectPtr<UAnimSequence>& Dance)
+			if (DecodeDance(Chosen))
 			{
-				return Dance && Dance->GetFName() == Chosen;
-			});
-			if (ChosenIndex != INDEX_NONE && ChosenIndex != CurrentDanceIndex)
+				ApplyDance(/*bSave=*/false);   // his remix, as he left it
+			}
+			else
 			{
-				PlayDance(ChosenIndex);
+				const int32 ChosenIndex = Dances.IndexOfByPredicate([Chosen](const TObjectPtr<UAnimSequence>& Dance)
+				{
+					return Dance && Dance->GetFName() == Chosen;
+				});
+				if (ChosenIndex != INDEX_NONE && ChosenIndex != CurrentDanceIndex)
+				{
+					PlayDance(ChosenIndex);
+				}
 			}
 		}
 	}
@@ -2594,7 +2602,16 @@ void UDancerAgentComponent::EnterTalkPose(bool bArmTimer)
 
 	// Talk is a close-up, not a celebration: the dance drops to TalkDanceSpeed so her
 	// head stays in frame. Not a hard freeze - see the property comment.
-	if (UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance())
+	if (UDanceRemixAnimInstance* Remix = RemixOn(Mesh))
+	{
+		/* A REMIX CRAWLS TOO, and is not "saved" to be replayed: the resume below replays a
+		   SavedDance on the single-node player, which would throw the remix away. With none
+		   saved, the resume leaves her on the remix player and CancelGreeting lifts the crawl. */
+		Remix->SetTalkRate(TalkDanceSpeed);
+		SavedDance = nullptr;
+		SavedDanceTime = 0.0f;
+	}
+	else if (UAnimSingleNodeInstance* Node = Mesh->GetSingleNodeInstance())
 	{
 		if (TalkDanceSpeed > 0.0f)
 		{
@@ -2718,6 +2735,10 @@ void UDancerAgentComponent::CancelGreeting(bool bResumeDance)
 	{
 		Node->SetPlayRate(1.0f);
 	}
+	if (UDanceRemixAnimInstance* Remix = RemixOn(Mesh))
+	{
+		Remix->SetTalkRate(1.0f);
+	}
 
 	if (!bWasGreeting)
 	{
@@ -2810,24 +2831,170 @@ bool UDancerAgentComponent::ShuffleDance()
 
 bool UDancerAgentComponent::PlayDance(int32 Index)
 {
-	UAnimSequence* Dance = Dances.IsValidIndex(Index) ? Dances[Index].Get() : nullptr;
-	USkeletalMeshComponent* Mesh = Dance ? FindDanceMesh() : nullptr;
+	if (!Dances.IsValidIndex(Index) || !Dances[Index] || !FindDanceMesh())
+	{
+		return false;
+	}
+	CurrentDanceIndex = Index;
+	RemixArms = INDEX_NONE;   // the whole dance: her arms follow her legs again
+	return ApplyDance(/*bSave=*/true);
+}
+
+bool UDancerAgentComponent::SetDanceArms(int32 Index)
+{
+	if (!Dances.IsValidIndex(Index) || !Dances[Index])
+	{
+		return false;
+	}
+	if (CurrentDanceIndex == INDEX_NONE)
+	{
+		return PlayDance(Index);   // no legs to put them on yet: the whole dance
+	}
+	RemixArms = Index == CurrentDanceIndex ? INDEX_NONE : Index;
+	return ApplyDance(/*bSave=*/true);
+}
+
+bool UDancerAgentComponent::SetDanceLegs(int32 Index)
+{
+	if (!Dances.IsValidIndex(Index) || !Dances[Index])
+	{
+		return false;
+	}
+	if (CurrentDanceIndex == INDEX_NONE)
+	{
+		return PlayDance(Index);
+	}
+	const int32 Arms = GetDanceArmsIndex();   // the arms she has now stay on
+	CurrentDanceIndex = Index;
+	RemixArms = Arms == Index ? INDEX_NONE : Arms;
+	return ApplyDance(/*bSave=*/true);
+}
+
+bool UDancerAgentComponent::SetDanceSpeed(float NewSpeed)
+{
+	DanceSpeed = FMath::Clamp(NewSpeed, 0.5f, 2.0f);
+	return ApplyDance(/*bSave=*/true);
+}
+
+bool UDancerAgentComponent::SetDanceMirror(bool bNewMirror)
+{
+	bDanceMirror = bNewMirror;
+	return ApplyDance(/*bSave=*/true);
+}
+
+void UDancerAgentComponent::ReapplyDance()
+{
+	// A plain dance is already back: whoever borrowed her body put the single-node one back.
+	if (IsRemix() || !FMath::IsNearlyEqual(DanceSpeed, 1.0f) || bDanceMirror)
+	{
+		ApplyDance(/*bSave=*/false);
+	}
+}
+
+UDanceRemixAnimInstance* UDancerAgentComponent::RemixOn(USkeletalMeshComponent* Mesh)
+{
+	return Mesh ? Cast<UDanceRemixAnimInstance>(Mesh->GetAnimInstance()) : nullptr;
+}
+
+bool UDancerAgentComponent::ApplyDance(bool bSave)
+{
+	UAnimSequence* Legs = Dances.IsValidIndex(CurrentDanceIndex) ? Dances[CurrentDanceIndex].Get() : nullptr;
+	USkeletalMeshComponent* Mesh = Legs ? FindDanceMesh() : nullptr;
 	if (!Mesh)
 	{
 		return false;
 	}
+	UAnimSequence* Arms = Dances.IsValidIndex(RemixArms) && Dances[RemixArms] ? Dances[RemixArms].Get() : Legs;
 
-	Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-	Mesh->PlayAnimation(Dance, /*bLooping=*/true);
-	CurrentDanceIndex = Index;
-
-	// His choice, kept: she starts on it in every level (ProgressionTypes.h, AgentDances).
-	if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+	/* PLAIN STAYS ON THE OLD PLAYER. One dance, normal speed, unmirrored is exactly what
+	   PlayDance always did, and the talk crawl, films and greetings were all written against
+	   the single-node player - so they keep it for every dance that does not need more. */
+	const bool bPlain = Arms == Legs && FMath::IsNearlyEqual(DanceSpeed, 1.0f) && !bDanceMirror;
+	if (bPlain)
 	{
-		Progression->SetAgentDance(ResolveChatId(), Dance->GetFName());
+		Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		Mesh->PlayAnimation(Legs, /*bLooping=*/true);
+	}
+	else
+	{
+		UDanceRemixAnimInstance* Remix = RemixOn(Mesh);
+		if (!Remix)
+		{
+			Mesh->SetAnimInstanceClass(UDanceRemixAnimInstance::StaticClass());
+			Remix = RemixOn(Mesh);
+		}
+		if (!Remix)
+		{
+			UE_LOG(LogSibeliusGame, Warning, TEXT("[Dancer] %s: no remix player on %s - playing %s whole."),
+				*AgentName, *Mesh->GetName(), *Legs->GetName());
+			Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+			Mesh->PlayAnimation(Legs, /*bLooping=*/true);
+			return true;
+		}
+		Remix->SetRemix(Arms, Legs, DanceSpeed, bDanceMirror);
+
+		/* STILL "PLAYING A DANCE WE KNOW". FindDanceMesh picks her body out of the face, hair and
+		   clothing by the dance in AnimationData, and a film saves that field to put her back -
+		   so it keeps naming the legs dance while the remix player is the one posing her. */
+		Mesh->AnimationData.AnimToPlay = Legs;
 	}
 
-	UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s -> %s"), *AgentName, *Dance->GetName());
+	// His choice, kept: she starts on it in every level (ProgressionTypes.h, AgentDances).
+	if (bSave)
+	{
+		if (UProgressionSubsystem* Progression = UProgressionSubsystem::Get(this))
+		{
+			Progression->SetAgentDance(ResolveChatId(), bPlain ? Legs->GetFName() : EncodeDance());
+		}
+	}
+
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Dancer] %s -> legs %s, arms %s, %.2fx%s"),
+		*AgentName, *Legs->GetName(), *Arms->GetName(), DanceSpeed, bDanceMirror ? TEXT(", mirrored") : TEXT(""));
+	return true;
+}
+
+/* THE SAVED FORM OF A REMIX: "Remix~<arms>~<legs>~<speed %>~<mirror 0/1>", in the same per-agent
+   slot a plain dance saves its own name in (FProgressionState::AgentDances), so the save format
+   does not change. A build that predates the remix finds no dance by that name and leaves her
+   on the one she arrived with - the same as a dance that has since been removed. */
+FName UDancerAgentComponent::EncodeDance() const
+{
+	const UAnimSequence* Legs = Dances.IsValidIndex(CurrentDanceIndex) ? Dances[CurrentDanceIndex].Get() : nullptr;
+	if (!Legs)
+	{
+		return NAME_None;
+	}
+	const UAnimSequence* Arms = Dances.IsValidIndex(RemixArms) && Dances[RemixArms] ? Dances[RemixArms].Get() : Legs;
+	return FName(*FString::Printf(TEXT("Remix~%s~%s~%d~%d"), *Arms->GetName(), *Legs->GetName(),
+		FMath::RoundToInt(DanceSpeed * 100.0f), bDanceMirror ? 1 : 0));
+}
+
+bool UDancerAgentComponent::DecodeDance(FName Saved)
+{
+	TArray<FString> Parts;
+	Saved.ToString().ParseIntoArray(Parts, TEXT("~"), /*CullEmpty=*/false);
+	if (Parts.Num() != 5 || Parts[0] != TEXT("Remix"))
+	{
+		return false;
+	}
+	auto IndexOf = [this](const FString& Name)
+	{
+		const FName Wanted(*Name);
+		return Dances.IndexOfByPredicate([Wanted](const TObjectPtr<UAnimSequence>& Dance)
+		{
+			return Dance && Dance->GetFName() == Wanted;
+		});
+	};
+	const int32 Arms = IndexOf(Parts[1]);
+	const int32 Legs = IndexOf(Parts[2]);
+	if (Legs == INDEX_NONE)
+	{
+		return false;
+	}
+	CurrentDanceIndex = Legs;
+	RemixArms = (Arms == INDEX_NONE || Arms == Legs) ? INDEX_NONE : Arms;
+	DanceSpeed = FMath::Clamp(FCString::Atoi(*Parts[3]) / 100.0f, 0.5f, 2.0f);
+	bDanceMirror = Parts[4] == TEXT("1");
 	return true;
 }
 

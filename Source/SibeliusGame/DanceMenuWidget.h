@@ -12,6 +12,11 @@
 //
 // Native (C++-built) like the Tab menu (GameMenuWidget.h). The list is her Dances array, so a
 // dance added there - Mixamo's, next - appears here with nothing else to change.
+//
+// THE REMIX (2026-11-13, Walt: "Remix the dances live"). Three tabs say what a dance row does:
+// WHOLE DANCE (as before), ARMS (only her upper body takes that dance) and LEGS (only her legs
+// do). Left/Right switch tabs, so auditioning arms on top of legs he likes is just arrowing down
+// the list. Under the tabs, SPEED (-/+) and MIRROR (M). The playing is UDanceRemixAnimInstance.
 
 #pragma once
 
@@ -53,6 +58,16 @@ private:
 	static int32 NumFilms();
 	bool IsFilmRow(int32 Row) const { return Row >= 1 && Row <= NumFilms(); }
 	void RebuildRows();
+
+	/** What a dance row does: the whole dance, or only her arms, or only her legs. */
+	enum class EPart : uint8 { Whole, Arms, Legs };
+	void SetPart(EPart NewPart);
+	void StepSpeed(float Delta);
+	void ToggleMirror();
+	/** The row a dance sits on, or INDEX_NONE. */
+	int32 RowOfDance(int32 DanceIndex) const;
+
+	EPart Part = EPart::Whole;
 
 	TWeakObjectPtr<UDancerAgentComponent> Agent;
 	int32 Selected = 0;
