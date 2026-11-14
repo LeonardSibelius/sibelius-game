@@ -78,6 +78,12 @@ public:
 	    turns under every flight and nothing that is not part of it would turn with it. */
 	static constexpr int32 PremierePad = 1;
 
+	/** THE WRESTLING (Walt, 2026-11-13: "agent wrestling matches, perhaps in AI City"). The other
+	    pad - where [F] takes him from the premiere - has a mat (WrestlingMat.h) in front of where he
+	    lands. Raised on landing and struck before every flight, like the cast: its wrestlers are
+	    physics, and physics does not turn with the city. */
+	static constexpr int32 MatPad = 1 - PremierePad;
+
 	/** On the way in, or across: the city's camera has him. */
 	bool IsFlying() const { return Flight != EFlight::None; }
 
@@ -239,6 +245,12 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AActor>> PremiereCast;
+
+	void RaiseMat();     // the wrestling mat in front of where he lands on MatPad
+	void StrikeMat();    // the match stopped, the mat gone
+
+	UPROPERTY(Transient)
+	TObjectPtr<class AWrestlingMat> WrestlingMat;
 
 	float PremiereWait = 0.0f;     // seconds from landing to the first film
 	bool bPremiereOpened = false;  // this landing's first film has started

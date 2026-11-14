@@ -17,7 +17,7 @@
 #
 #   powershell -ExecutionPolicy Bypass -File C:\Users\wpark\projects\sibelius-game\Tools\Steam\recovery-kit\steam_upload_launch.ps1 `
 #       -SteamUser wparkman676 -SdkPath C:\steamworks_sdk `
-#       -ContentRoot C:\Users\wpark\builds\sibelius-shipping-steam-20261113-v2.6.0\Windows -Preview
+#       -ContentRoot C:\Users\wpark\builds\sibelius-shipping-steam-20261113-v2.7.0\Windows -Preview
 #
 # 2.6.0 (2026-11-13): the agents' challenges - 28 tiers, the CHALLENGES tab, sauce per tier.
 # 2.5.5 (2026-11-13, BuildID 26650907): the dance remix - arms from one dance, legs from another, speed, mirror.
@@ -70,7 +70,7 @@ $ErrorActionPreference = 'Stop'
 $Kit      = $PSScriptRoot
 $AppVdf   = Join-Path $Kit 'app_build_5249380_launch.vdf'
 $DepotVdf = Join-Path $Kit 'depot_build_5249381.vdf'
-if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-steam-20261113-v2.6.0\Windows' }
+if (-not $ContentRoot) { $ContentRoot = Join-Path (Split-Path -Parent $Kit) 'sibelius-shipping-steam-20261113-v2.7.0\Windows' }
 if (-not $BuildOutput) { $BuildOutput = Join-Path $Kit 'buildoutput' }
 
 # ---------------------------------------------------------------------------

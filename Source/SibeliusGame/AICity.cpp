@@ -7,6 +7,7 @@
 #include "FilmTypes.h"
 #include "InteractorComponent.h"   // whose F it is: the focus that puts her prompt on screen
 #include "SibeliusHUD.h"
+#include "WrestlingMat.h"
 
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
@@ -312,6 +313,7 @@ namespace AICityStage
 	constexpr double MarkSpacing = 320.0;     // at 190 a close-up of one was shot through the back of the next
 	constexpr int32 Footlights = 9;
 	constexpr float OpeningWait = 3.0f;      // from landing to the first film: time to look round
+	constexpr double MatX = 550.0;           // the wrestling mat's centre on the other pad, ahead of where he lands
 
 	// The stage lights' heights. At 420 the keys and the overhead star lit them only from above,
 	// and in close-up the brows hooded the eyes (Walt, 2026-11-10: "the eye sockets are dark").
@@ -840,6 +842,7 @@ void AAICity::StartFlight(EFlight Kind, int32 ToPad)
 		return;
 	}
 	StrikeCast();   // the city is about to turn: nothing stays on a stage that is leaving
+	StrikeMat();
 	const double R = DomeRadius;
 	const FTransform To = PadFrame(ToPad);
 	const FVector ToUp = To.GetRotation().GetAxisZ();
@@ -1064,6 +1067,38 @@ void AAICity::StrikeCast()
 	bPremiereOpened = false;
 }
 
+void AAICity::RaiseMat()
+{
+	UWorld* World = GetWorld();
+	if (!World || WrestlingMat)
+	{
+		return;
+	}
+	// In front of where he lands, its near edge about a metre from his feet; level, because the
+	// city has turned so that this pad is below him.
+	const FTransform Pad = PadFrame(MatPad) * GetActorTransform();
+	const FVector At = Pad.TransformPosition(FVector(AICityStage::MatX, 0.0, 0.0));
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	WrestlingMat = World->SpawnActor<AWrestlingMat>(AWrestlingMat::StaticClass(), At, FRotator(0.0, Pad.Rotator().Yaw, 0.0), Params);
+	if (WrestlingMat)
+	{
+		WrestlingMat->StartSoon(AICityStage::OpeningWait);   // a match is on as he steps off: the city's welcome
+	}
+	UE_LOG(LogTemp, Display, TEXT("[AICity] the wrestling mat is %s."), WrestlingMat ? TEXT("up") : TEXT("missing"));
+}
+
+void AAICity::StrikeMat()
+{
+	if (WrestlingMat)
+	{
+		WrestlingMat->StopBout();
+		WrestlingMat->Destroy();
+		WrestlingMat = nullptr;
+	}
+}
+
 bool AAICity::ShowNextFilm()
 {
 	UWorld* World = GetWorld();
@@ -1116,6 +1151,10 @@ void AAICity::EndFlight()
 		RaiseCast();
 		PremiereWait = AICityStage::OpeningWait;
 		bPremiereOpened = false;
+	}
+	else if (OnPad == MatPad)
+	{
+		RaiseMat();
 	}
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
 	HoldPawn(Pawn, false);
@@ -1218,13 +1257,13 @@ void AAICity::Tick(float DeltaSeconds)
 	APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
 
 	// The visit begins as soon as there is someone to take: the city turned for the landing at
-	// the premiere, and the flight in. It used to land at A and leave the premiere a second
-	// flight away; F still flies across to A and back.
+	// the wrestling, and the flight in. Walt, 2026-11-13: "I want wrestling to be the first
+	// destination in the city, not the premier." [F] flies across to the premiere and back.
 	if (!bVisitStarted && PC && Pawn)
 	{
 		bVisitStarted = true;
-		SetActorRotation(PadBelow(PremierePad));
-		StartFlight(EFlight::Intro, PremierePad);
+		SetActorRotation(PadBelow(MatPad));
+		StartFlight(EFlight::Intro, MatPad);
 	}
 
 	if (IsFlying())
@@ -1301,7 +1340,13 @@ void AAICity::Tick(float DeltaSeconds)
 			{
 				Hud->ShowAwayHint(IsFTakenHere(GetWorld(), Pawn)
 					? TEXT("The premiere: the agents' films, under their star\n[Enter] The next film      [F] Her dances and films")
-					: TEXT("The premiere: the agents' films, under their star\n[Enter] The next film      [F] Fly across the sphere"));
+					: TEXT("The premiere: the agents' films, under their star\n[Enter] The next film      [F] Fly across the sphere to the wrestling"));
+			}
+			else if (OnPad == MatPad && WrestlingMat)
+			{
+				Hud->ShowAwayHint(WrestlingMat->IsBoutOn()
+					? TEXT("The wrestling: best of three falls, a pin is a count of three\n[F] Fly across the sphere to the premiere")
+					: TEXT("The wrestling: look at the mat and press [E] to start a match\n[F] Fly across the sphere to the premiere"));
 			}
 			else if (OnPad >= 0)
 			{

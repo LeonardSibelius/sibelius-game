@@ -17,7 +17,7 @@
 "appbuild"
 {
 	"appid"			"5249380"
-	"desc"			"v2.6.0, chat off - the agents' challenges (28 tiers, the M > CHALLENGES tab, sauce per tier); the dance remix (2.5.5); the temple clue (2.5.4); graphics settings + auto-detect (2.5.3); Kaia's power is a gift (2.5.2); the 2.5.1 launch content: four agents' homes, the dance menu, the chess coach, the Grand Prix, Go, the not-human laptop, Freakbook, R on the agents, the three-point contest, the AI city, the slot cabinets, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager, films and the AI City premiere"
+	"desc"			"v2.7.0, chat off - wrestling in the AI City (the flight in lands at the mat, two agents grapple, a banner in the living room); Kaia without the pink dress; the agents' challenges (2.6.0); the dance remix (2.5.5); the temple clue (2.5.4); graphics settings + auto-detect (2.5.3); Kaia's power is a gift (2.5.2); the 2.5.1 launch content: four agents' homes, the dance menu, the chess coach, the Grand Prix, Go, the not-human laptop, Freakbook, R on the agents, the three-point contest, the AI city, the slot cabinets, the Archaic Language Temple, Leonard's Arcade, Isla's keep, 4D billiards, orbital golf, Lantern Burst, the Dragon's Wager, films and the AI City premiere"
 
 	"buildoutput"	"SET-BY-SCRIPT"
 	"contentroot"	"SET-BY-SCRIPT"

@@ -485,3 +485,7 @@ Content/UltimateFarmAnimalsCollection/
 Content/__ExternalActors__/Scene_Banquet/
 Content/__ExternalObjects__/Scene_Banquet/
 Content/5_10_scaleman.uasset
+
+# The wrestling lab (2026-11-13): a test level with the mat set to auto-start. Play it in the
+# editor to watch matches without the AI city flight. Local only.
+Content/Developers/wpark/WrestleLab/
