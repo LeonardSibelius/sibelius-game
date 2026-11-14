@@ -6,10 +6,12 @@
 #include "SibeliusHUD.h"
 
 #include "AnimationRuntime.h"
+#include "Animation/AnimSequence.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/SpotLightComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/SkinnedAsset.h"
 #include "Engine/StaticMesh.h"
@@ -194,6 +196,18 @@ AWrestlingMat::AWrestlingMat()
 		Lamp->IntensityUnits = ELightUnits::Candelas;   // set from lux at the mat, as the premiere's are
 		Lamps.Add(Lamp);
 	}
+
+	// Over the middle of the mat, turned to face where he lands (the mat's -X).
+	Sign = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Sign"));
+	Sign->SetupAttachment(SceneRoot);
+	Sign->SetRelativeLocationAndRotation(FVector(0.0, 0.0, 330.0), FRotator(0.0, 180.0, 0.0));
+	Sign->SetText(FText::FromString(TEXT("WRESTLING\nCOMING SOON")));
+	Sign->SetHorizontalAlignment(EHTA_Center);
+	Sign->SetVerticalAlignment(EVRTA_TextCenter);
+	Sign->SetWorldSize(60.0f);
+	Sign->SetTextRenderColor(FColor(255, 196, 80));
+	Sign->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Sign->SetCastShadow(false);
 }
 
 void AWrestlingMat::OnConstruction(const FTransform& Transform)
@@ -307,6 +321,10 @@ void AWrestlingMat::PaintMat()
 
 void AWrestlingMat::Interact_Implementation(AActor* Interactor)
 {
+	if (bComingSoon)
+	{
+		return;   // nothing to start yet
+	}
 	if (Phase == EPhase::Idle)
 	{
 		StartBout();
@@ -319,6 +337,10 @@ void AWrestlingMat::Interact_Implementation(AActor* Interactor)
 
 FText AWrestlingMat::GetInteractionPrompt_Implementation() const
 {
+	if (bComingSoon)
+	{
+		return FText::GetEmpty();
+	}
 	return Phase == EPhase::Idle
 		? FText::FromString(FString::Printf(TEXT("Wrestle: %s [E]"), *NextPairText()))
 		: FText::FromString(TEXT("Stop the match [E]"));
@@ -338,6 +360,11 @@ void AWrestlingMat::StartBout()
 	using namespace WrestlingMatDetail;
 	if (Phase != EPhase::Idle)
 	{
+		return;
+	}
+	if (bComingSoon)
+	{
+		StartShow();
 		return;
 	}
 	if (!SpawnPair())
@@ -1573,6 +1600,90 @@ void AWrestlingMat::Push(FWrestler& Wr, FName Bone, const FVector& Accel)
 
 // --- the referee ----------------------------------------------------------------------------
 
+// --- COMING SOON ---------------------------------------------------------------------------
+
+void AWrestlingMat::StartShow()
+{
+	using namespace WrestlingMatDetail;
+	if (!SpawnPair())
+	{
+		ClearPair();
+		return;
+	}
+	PairIndex = (PairIndex + 1) % PairCount;
+
+	// A wrestler's gestures for the crowd, from the MorroMotion pack the dances come from: a bow
+	// first, then flexing, cracking the knuckles, a hand to the ear, a celebration.
+	if (Gestures.Num() == 0)
+	{
+		for (const TCHAR* Path : {
+			TEXT("/Game/MorroMotion/Animations/Gestures_MoCap_02/Anim_bow.Anim_bow"),
+			TEXT("/Game/MorroMotion/Animations/Gestures_MoCap_02/Anim_mr_universe.Anim_mr_universe"),
+			TEXT("/Game/MorroMotion/Animations/Gestures_MoCap_02/Anim_knuckle_taunt.Anim_knuckle_taunt"),
+			TEXT("/Game/MorroMotion/Animations/Gestures_MoCap_02/Anim_i_Cant_Hear_You.Anim_i_Cant_Hear_You"),
+			TEXT("/Game/MorroMotion/Animations/Gestures_MoCap_02/Anim_celebration_1.Anim_celebration_1") })
+		{
+			if (UAnimSequence* Anim = LoadObject<UAnimSequence>(nullptr, Path))
+			{
+				Gestures.Add(Anim);
+			}
+		}
+	}
+
+	// Side by side on the near half of the mat, each turned to face him.
+	const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	for (int32 S = 0; S < 2; ++S)
+	{
+		FWrestler& Wr = W[S];
+		if (!Wr.Body || !Wr.Actor)
+		{
+			continue;
+		}
+		const FVector Spot = GetActorTransform().TransformPosition(FVector(-120.0, S == 0 ? -110.0 : 110.0, MatThick));
+		const FVector Toward = Pawn ? Pawn->GetActorLocation() : GetActorTransform().TransformPosition(FVector(-550.0, 0.0, 0.0));
+		const double FaceYaw = FMath::RadiansToDegrees(FMath::Atan2(Toward.Y - Spot.Y, Toward.X - Spot.X));
+		const double MeshYaw = Wr.BodyRelative.Rotator().Yaw;
+		Wr.Actor->SetActorLocationAndRotation(Spot, FRotator(0.0, FaceYaw - 90.0 - MeshYaw, 0.0), false, nullptr, ETeleportType::ResetPhysics);
+		Wr.Body->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		GestureNext[S] = 0;
+		GestureIn[S] = S * 0.8f;   // not in step with each other
+	}
+	Phase = EPhase::Show;
+	PhaseAge = 0.0f;
+	UE_LOG(LogSibeliusGame, Display, TEXT("[Wrestle] coming soon: %s and %s on the mat, %d gestures."), *W[0].Name, *W[1].Name, Gestures.Num());
+}
+
+void AWrestlingMat::TickShow(float Dt)
+{
+	PhaseAge += Dt;
+	if (Gestures.Num() == 0)
+	{
+		return;
+	}
+	for (int32 S = 0; S < 2; ++S)
+	{
+		FWrestler& Wr = W[S];
+		if (!Wr.Body)
+		{
+			continue;
+		}
+		GestureIn[S] -= Dt;
+		if (GestureIn[S] > 0.0f)
+		{
+			continue;
+		}
+		// The bow once, then the rest in turn, each wrestler starting at a different one.
+		const int32 Total = Gestures.Num();
+		const int32 Pick = GestureNext[S] == 0 ? 0 : 1 + (GestureNext[S] - 1 + S * 2) % FMath::Max(1, Total - 1);
+		if (UAnimSequence* Anim = Gestures[FMath::Clamp(Pick, 0, Total - 1)])
+		{
+			Wr.Body->PlayAnimation(Anim, /*bLooping=*/false);
+			GestureIn[S] = Anim->GetPlayLength() + Rng.FRandRange(0.4f, 1.2f);
+		}
+		++GestureNext[S];
+	}
+}
+
 void AWrestlingMat::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -1586,6 +1697,12 @@ void AWrestlingMat::Tick(float DeltaSeconds)
 	}
 	if (Phase == EPhase::Idle)
 	{
+		return;
+	}
+	if (Phase == EPhase::Show)
+	{
+		TickShow(DeltaSeconds);
+		TickLabShots(DeltaSeconds);
 		return;
 	}
 	TickBout(FMath::Min(DeltaSeconds, 0.05f));

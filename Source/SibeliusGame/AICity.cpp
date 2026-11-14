@@ -1344,9 +1344,7 @@ void AAICity::Tick(float DeltaSeconds)
 			}
 			else if (OnPad == MatPad && WrestlingMat)
 			{
-				Hud->ShowAwayHint(WrestlingMat->IsBoutOn()
-					? TEXT("The wrestling: best of three falls, a pin is a count of three\n[F] Fly across the sphere to the premiere")
-					: TEXT("The wrestling: look at the mat and press [E] to start a match\n[F] Fly across the sphere to the premiere"));
+				Hud->ShowAwayHint(TEXT("Wrestling in the AI City: coming soon\n[F] Fly across the sphere to the premiere"));
 			}
 			else if (OnPad >= 0)
 			{

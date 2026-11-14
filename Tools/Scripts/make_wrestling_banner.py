@@ -104,12 +104,11 @@ def write_banner():
     glow_text(img, (left - box[0], y - box[1]), "IN THE AI CITY", font, GOLD, (255, 170, 60, 200), 10)
     y += box[3] - box[1] + 70
 
+    # COMING SOON (Walt, 2026-11-14): the match is being redone, so the banner promises it.
+    font, box = fit(draw, "COMING SOON", ("impact.ttf", "ariblk.ttf"), 130, width)
+    glow_text(img, (left - box[0], y - box[1]), "COMING SOON", font, CREAM, (255, 200, 90, 255), 12)
+    y += box[3] - box[1] + 70
     small = ("arialbd.ttf", "segoeuib.ttf")
-    for line in ("Two agents. One mat.", "Best of three falls."):
-        font, box = fit(draw, line, small, 64, width)
-        draw.text((left - box[0], y - box[1]), line, font=font, fill=CREAM)
-        y += box[3] - box[1] + 26
-    y += 40
     for line in ("Upstairs, at the end of the hall:", "through the AI City portal [C]"):
         font, box = fit(draw, line, small, 50, width)
         draw.text((left - box[0], y - box[1]), line, font=font, fill=(200, 210, 235, 255))

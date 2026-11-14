@@ -97,6 +97,10 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Wrestling")
 	TArray<TObjectPtr<USpotLightComponent>> Lamps;
 
+	/** "WRESTLING / COMING SOON", over the mat while bComingSoon. */
+	UPROPERTY(VisibleAnywhere, Category = "Wrestling")
+	TObjectPtr<class UTextRenderComponent> Sign;
+
 	// --- tuning -------------------------------------------------------------------------
 
 	UPROPERTY(EditAnywhere, Category = "Wrestling|Mat", meta = (ClampMin = "200"))
@@ -111,6 +115,12 @@ public:
 	/** The lamps' light on the wrestlers, lux. */
 	UPROPERTY(EditAnywhere, Category = "Wrestling|Mat", meta = (ClampMin = "0"))
 	float LampLux = 12.0f;
+
+	/** COMING SOON (Walt, 2026-11-14, after 2.7.0's matches read as fondling): no match - two agents
+	    stand on the mat facing him and do a wrestler's gestures under a COMING SOON sign. The match
+	    code stays, switched off, for the day it is redone. */
+	UPROPERTY(EditAnywhere, Category = "Wrestling|Match")
+	bool bComingSoon = true;
 
 	/** Start a match as soon as play begins, and the next when one ends (a test level). */
 	UPROPERTY(EditAnywhere, Category = "Wrestling|Match")
@@ -182,7 +192,7 @@ protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 private:
-	enum class EPhase : uint8 { Idle, Settle, Wrestle, Fall, Won };
+	enum class EPhase : uint8 { Idle, Settle, Wrestle, Fall, Won, Show };
 	/** What the pair is doing: see the top of the file. Over is after a fall, or the bell. */
 	enum class EBeat : uint8 { Tie, Shot, Ground, Ride, KickOut, Rise, Over };
 	/** What one wrestler's body is doing in that beat: her posture, and her line in the log. */
@@ -298,6 +308,14 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AActor>> Actors;
+
+	// The COMING SOON stage.
+	void StartShow();
+	void TickShow(float Dt);
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UAnimSequence>> Gestures;
+	float GestureIn[2] = { 0.0f, 0.0f };
+	int32 GestureNext[2] = { 0, 0 };
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<class UPhysicsConstraintComponent>> Joints;
