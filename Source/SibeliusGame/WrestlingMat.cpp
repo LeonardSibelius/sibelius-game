@@ -200,11 +200,11 @@ AWrestlingMat::AWrestlingMat()
 	// Over the middle of the mat, turned to face where he lands (the mat's -X).
 	Sign = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Sign"));
 	Sign->SetupAttachment(SceneRoot);
-	Sign->SetRelativeLocationAndRotation(FVector(0.0, 0.0, 330.0), FRotator(0.0, 180.0, 0.0));
+	Sign->SetRelativeLocationAndRotation(FVector(0.0, 0.0, 255.0), FRotator(0.0, 180.0, 0.0));   // at 330 the HUD's top line sat across it
 	Sign->SetText(FText::FromString(TEXT("WRESTLING\nCOMING SOON")));
 	Sign->SetHorizontalAlignment(EHTA_Center);
 	Sign->SetVerticalAlignment(EVRTA_TextCenter);
-	Sign->SetWorldSize(60.0f);
+	Sign->SetWorldSize(48.0f);
 	Sign->SetTextRenderColor(FColor(255, 196, 80));
 	Sign->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Sign->SetCastShadow(false);

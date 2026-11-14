@@ -262,6 +262,10 @@ foreach ($name in "SM_Gem_01","SM_Gem_02","SM_Gem_03") {
 foreach ($name in "MI_Gem_Blue","MI_Gem_Green","MI_Gem_Mixed","MI_Gem_Pink","MI_Gem_Red","MI_Gem_White") {
   $checks["gem colour $name"] = "$cooked\GemShader\Materials\$name.uasset"
 }
+# --- 2.7.2: THE WRESTLING STAGE'S GESTURES - loaded by path; 2.7.1 shipped without them -----
+foreach ($name in "Anim_bow","Anim_mr_universe","Anim_knuckle_taunt","Anim_i_Cant_Hear_You","Anim_celebration_1") {
+  $checks["wrestling gesture $name"] = "$cooked\MorroMotion\Animations\Gestures_MoCap_02\$name.uasset"
+}
 foreach ($name in "SM_Chalice_01a","SM_Chalice_02b") {
   $checks["treasure $name"] = "$cooked\AncientTreasures\Meshes\$name.uasset"
 }
