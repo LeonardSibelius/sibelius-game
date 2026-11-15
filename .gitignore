@@ -160,6 +160,7 @@ Content/FarmKeepers/
 #     mocap onto another skeleton does not make it ours, and this repo is public.
 #     Never build a tracked asset that references a path in here.
 Content/MorroMotion/
+Content/Wrestler_Finishers_Volume2/
 Content/XenoMocap/
 # Retargeted output — vendor motion on our skeleton. Local only; re-export from
 # RTG_Mannequin_to_MetaHuman after re-downloading the source pack.

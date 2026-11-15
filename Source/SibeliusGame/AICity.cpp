@@ -313,7 +313,9 @@ namespace AICityStage
 	constexpr double MarkSpacing = 320.0;     // at 190 a close-up of one was shot through the back of the next
 	constexpr int32 Footlights = 9;
 	constexpr float OpeningWait = 3.0f;      // from landing to the first film: time to look round
-	constexpr double MatX = 550.0;           // the wrestling mat's centre on the other pad, ahead of where he lands
+	constexpr double MatX = 280.0;           // the wrestling mat's centre, ahead of where he lands: inside the
+	                                         // ring (radius 350) so he watches from ringside (Walt, 2026-11-15:
+	                                         // 550, then 200, then "a little bit back")
 
 	// The stage lights' heights. At 420 the keys and the overhead star lit them only from above,
 	// and in close-up the brows hooded the eyes (Walt, 2026-11-10: "the eye sockets are dark").
@@ -1344,7 +1346,7 @@ void AAICity::Tick(float DeltaSeconds)
 			}
 			else if (OnPad == MatPad && WrestlingMat)
 			{
-				Hud->ShowAwayHint(TEXT("Wrestling in the AI City: coming soon\n[F] Fly across the sphere to the premiere"));
+				Hud->ShowAwayHint(TEXT("Wrestling in the AI City: look at a wrestler or the referee and press [E] to bring on another agent\n[F] Fly across the sphere to the premiere"));
 			}
 			else if (OnPad >= 0)
 			{

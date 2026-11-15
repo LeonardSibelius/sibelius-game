@@ -266,6 +266,12 @@ foreach ($name in "MI_Gem_Blue","MI_Gem_Green","MI_Gem_Mixed","MI_Gem_Pink","MI_
 foreach ($name in "Anim_bow","Anim_mr_universe","Anim_knuckle_taunt","Anim_i_Cant_Hear_You","Anim_celebration_1") {
   $checks["wrestling gesture $name"] = "$cooked\MorroMotion\Animations\Gestures_MoCap_02\$name.uasset"
 }
+# The wrestling match (2.8.0): the pack's clips are loaded by path, so they must be cooked.
+foreach ($rel in "Wrestling_Paired\Wrestling_Paired_TestOfStrength_Loop_Att","Wrestling_Paired\Wrestling_Paired_HipThrow_Vic",
+                 "Wrestling_Pin\Wrestling_Pin_Start_Attacker","Wrestling_Pin\Wrestling_Pin_Referee_Tap01",
+                 "Wrestling_LayOnBack\Wrestling_LayOnBack_GetUp02","Wrestling_Idle\Wrestling_Idle01") {
+  $checks["wrestling clip $rel"] = "$cooked\Wrestler_Finishers_Volume2\Anim_Seq\$rel.uasset"
+}
 foreach ($name in "SM_Chalice_01a","SM_Chalice_02b") {
   $checks["treasure $name"] = "$cooked\AncientTreasures\Meshes\$name.uasset"
 }

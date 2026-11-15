@@ -122,6 +122,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Wrestling|Match")
 	bool bComingSoon = true;
 
+	/** THE MATCH, from the pack (2026-11-15): Walt bought RamsterZ's "Wrestler Finishers Volume 2"
+	    after the physics matches read as convulsions and fondling. Its moves are hand-animated in
+	    PAIRS, so two agents play the two halves together and grips land where they should; a third
+	    agent referees the pins. No strikes. Takes precedence over Coming Soon. WrestlingMatch.cpp. */
+	UPROPERTY(EditAnywhere, Category = "Wrestling|Match")
+	bool bScriptedMatch = true;
+
 	/** Start a match as soon as play begins, and the next when one ends (a test level). */
 	UPROPERTY(EditAnywhere, Category = "Wrestling|Match")
 	bool bAutoStart = false;
@@ -192,7 +199,7 @@ protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 private:
-	enum class EPhase : uint8 { Idle, Settle, Wrestle, Fall, Won, Show };
+	enum class EPhase : uint8 { Idle, Settle, Wrestle, Fall, Won, Show, Match };
 	/** What the pair is doing: see the top of the file. Over is after a fall, or the bell. */
 	enum class EBeat : uint8 { Tie, Shot, Ground, Ride, KickOut, Rise, Over };
 	/** What one wrestler's body is doing in that beat: her posture, and her line in the log. */
@@ -316,6 +323,84 @@ private:
 	TArray<TObjectPtr<class UAnimSequence>> Gestures;
 	float GestureIn[2] = { 0.0f, 0.0f };
 	int32 GestureNext[2] = { 0, 0 };
+
+	// THE MATCH (WrestlingMatch.cpp). Slots 0 and 1 are the wrestlers, 2 the referee.
+	enum class EAct : uint8 { None, Once, Loop, Walk, Still };   // Still: the clip's last frame, held
+	struct FAct
+	{
+		EAct Kind = EAct::None;
+		class UAnimSequence* Anim = nullptr;   // alive through MatchAnims
+		FTransform Feet;                       // Walk: where her root bone ends, in the world
+		float Speed = 110.0f;                  // Walk: cm/s
+	};
+	struct FStep
+	{
+		FAct Act[3];
+		int32 Pairing = -1;     // a paired move: its row in the table of how the pack places the two
+		int32 Att = 0;          // who plays the attacker's half of it
+		int32 Anchor = 0;       // who stays where she is; the other is placed against her
+		bool bPinSetup = false; // walk the attacker and the referee to the pin
+		bool bFaceView = false; // turn everyone to face him
+		bool bNextMatch = false;
+		FString Say;            // the sign, from this step on
+		float Hold = 0.0f;      // a pause: seconds
+	};
+	struct FPlaying
+	{
+		class UAnimSequence* Anim = nullptr;
+		float Age = 0.0f;
+		float Length = 0.0f;
+		bool bLoop = false;
+		bool bWalk = false;
+		FTransform From, To;
+		float WalkYaw = 0.0f;
+		float WalkFor = 0.0f;
+		float TurnFor = 0.0f;
+	};
+	void StartMatch();
+	void TickMatch(float Dt);
+	void PlanExchange();
+	void PlanFinish(int32 Winner);
+	void BeginStep();
+	bool StepDone() const;
+	void TickWalk(int32 Who, float Dt);
+	void PlayOn(int32 Who, class UAnimSequence* Anim, bool bLoop);
+	class USkeletalMeshComponent* MatchBody(int32 Who) const;
+	AActor* MatchActor(int32 Who) const;
+	FTransform FeetNow(int32 Who) const;
+	void PutBody(int32 Who, const FTransform& BodyWorld);
+	FTransform PairedBody(int32 Pairing, bool bVictim, const FTransform& OtherBody) const;
+	FVector ViewDir() const;
+	class UAnimSequence* Clip(const TCHAR* Folder, const FString& Name);
+	bool SpawnReferee(int32 Who);
+	int32 AimedAt() const;           // which of the three he is looking at: 0, 1, the referee 2, or -1
+	void SwapAgent(int32 Who);       // [E] on one of them: the next agent takes her place
+	int32 Lineup[3] = { 0, 1, 2 };     // the agents (rows of the agent table) in the match
+	bool bChosen = false;            // he picked them: rematches keep them
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class USphereComponent>> Pickers;   // what his [E] ray hits: one on each of the three
+	static void AgentInfo(int32 Who, FString& OutName, FString& OutClass);
+	static void PairOf(int32 Pair, int32& OutA, int32& OutB);
+	static int32 NumAgents();
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UAnimSequence>> MatchAnims;
+	TMap<FString, class UAnimSequence*> ClipCache;
+	class USkeletalMeshComponent* RefBody = nullptr;
+	AActor* RefActor = nullptr;               // alive through Actors
+	FString RefName;
+	FTransform BodyInActor[3];
+	FTransform RefPost;
+	float GroundLift[3] = { 0.0f, 0.0f, 0.0f };   // how far each body is raised so no part sinks into the mat
+	void TickGround(int32 Who, float Dt);   // where the referee waits between pins: across the mat from him
+	TArray<FStep> Steps;
+	FStep Current;
+	FPlaying Play[3];
+	float StepAge = 0.0f;
+	bool bStepLive = false;
+	int32 Exchange = 0;
+	int32 Pins = 0;
+	int32 MatchWinner = -1;
+	double MatZ = 0.0;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<class UPhysicsConstraintComponent>> Joints;

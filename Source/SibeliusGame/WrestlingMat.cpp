@@ -201,7 +201,7 @@ AWrestlingMat::AWrestlingMat()
 	Sign = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Sign"));
 	Sign->SetupAttachment(SceneRoot);
 	Sign->SetRelativeLocationAndRotation(FVector(0.0, 0.0, 255.0), FRotator(0.0, 180.0, 0.0));   // at 330 the HUD's top line sat across it
-	Sign->SetText(FText::FromString(TEXT("WRESTLING\nCOMING SOON")));
+	Sign->SetText(FText::FromString(TEXT("WRESTLING")));
 	Sign->SetHorizontalAlignment(EHTA_Center);
 	Sign->SetVerticalAlignment(EVRTA_TextCenter);
 	Sign->SetWorldSize(48.0f);
@@ -222,6 +222,10 @@ void AWrestlingMat::BeginPlay()
 	Super::BeginPlay();
 	BuildMat();
 	PaintMat();
+	if (Sign && bScriptedMatch)
+	{
+		Sign->SetText(FText::FromString(TEXT("WRESTLING")));   // not COMING SOON any more (Walt, 2026-11-15)
+	}
 	Rng.Initialize(static_cast<int32>(FPlatformTime::Cycles() & 0x7fffffff));
 	for (float& Phase0 : Sway)
 	{
@@ -321,6 +325,16 @@ void AWrestlingMat::PaintMat()
 
 void AWrestlingMat::Interact_Implementation(AActor* Interactor)
 {
+	if (bScriptedMatch)
+	{
+		// He picks the cast: [E] on a wrestler or the referee brings on the next agent in her place.
+		const int32 Who = Phase == EPhase::Match ? AimedAt() : -1;
+		if (Who >= 0)
+		{
+			SwapAgent(Who);
+		}
+		return;
+	}
 	if (bComingSoon)
 	{
 		return;   // nothing to start yet
@@ -337,6 +351,16 @@ void AWrestlingMat::Interact_Implementation(AActor* Interactor)
 
 FText AWrestlingMat::GetInteractionPrompt_Implementation() const
 {
+	if (bScriptedMatch)
+	{
+		const int32 Who = Phase == EPhase::Match ? AimedAt() : -1;
+		if (Who < 0)
+		{
+			return FText::GetEmpty();
+		}
+		return FText::FromString(FString::Printf(TEXT("%s %s: bring on another [E]"),
+			Who == 2 ? TEXT("Referee") : TEXT("Wrestler"), Who == 2 ? *RefName : *W[Who].Name));
+	}
 	if (bComingSoon)
 	{
 		return FText::GetEmpty();
@@ -344,6 +368,27 @@ FText AWrestlingMat::GetInteractionPrompt_Implementation() const
 	return Phase == EPhase::Idle
 		? FText::FromString(FString::Printf(TEXT("Wrestle: %s [E]"), *NextPairText()))
 		: FText::FromString(TEXT("Stop the match [E]"));
+}
+
+void AWrestlingMat::AgentInfo(int32 Who, FString& OutName, FString& OutClass)
+{
+	using namespace WrestlingMatDetail;
+	const FAgent& A = Agents[FMath::Clamp(Who, 0, (int32)UE_ARRAY_COUNT(Agents) - 1)];
+	OutName = A.Name;
+	OutClass = A.Class;
+}
+
+void AWrestlingMat::PairOf(int32 Pair, int32& OutA, int32& OutB)
+{
+	using namespace WrestlingMatDetail;
+	const int32* P = Pairs[FMath::Max(0, Pair) % PairCount];
+	OutA = P[0];
+	OutB = P[1];
+}
+
+int32 AWrestlingMat::NumAgents()
+{
+	return UE_ARRAY_COUNT(WrestlingMatDetail::Agents);
 }
 
 FString AWrestlingMat::NextPairText() const
@@ -360,6 +405,11 @@ void AWrestlingMat::StartBout()
 	using namespace WrestlingMatDetail;
 	if (Phase != EPhase::Idle)
 	{
+		return;
+	}
+	if (bScriptedMatch)
+	{
+		StartMatch();
 		return;
 	}
 	if (bComingSoon)
@@ -1702,6 +1752,12 @@ void AWrestlingMat::Tick(float DeltaSeconds)
 	if (Phase == EPhase::Show)
 	{
 		TickShow(DeltaSeconds);
+		TickLabShots(DeltaSeconds);
+		return;
+	}
+	if (Phase == EPhase::Match)
+	{
+		TickMatch(DeltaSeconds);
 		TickLabShots(DeltaSeconds);
 		return;
 	}

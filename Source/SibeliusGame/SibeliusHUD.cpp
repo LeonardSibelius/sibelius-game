@@ -451,8 +451,11 @@ void ASibeliusHUD::DrawInteractPrompt()
 
 	// Just under the reticle and ABOVE the machine hint's band (0.66), so when both are
 	// up near the cabinet they read as two lines rather than one overlapping smear.
+	// The wrestling mat's "bring on another" is up the whole time he watches, over the wrestlers:
+	// it sits low, out of the way (Walt, 2026-11-15: "it is blocking the player view").
+	const bool bLow = InteractPromptText.Contains(TEXT("bring on another"));
 	const float X = (Canvas->ClipX - W) * 0.5f;
-	const float Y = Canvas->ClipY * 0.60f;
+	const float Y = Canvas->ClipY * (bLow ? 0.88f : 0.60f);
 
 	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.72f), X - 20.f, Y - 9.f, W + 40.f, H + 18.f);
 	DrawText(InteractPromptText, FLinearColor(1.0f, 1.0f, 1.0f, 0.97f), X, Y, nullptr, Scale);
