@@ -26,6 +26,7 @@
 #include "SibeliusGame.h"   // LogSibeliusGame
 
 #include "Animation/AnimSequence.h"
+#include "Animation/Skeleton.h"
 #include "Camera/CameraActor.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -63,12 +64,49 @@ namespace WrestlingMatchDetail
 		{ TEXT("HipThrow"),              88.4, -90.0 },
 		{ TEXT("LowScoopSlam"),          88.4, -90.0 },
 		{ TEXT("Underarm_FlipToss"),     90.0, -90.0 },
+		{ TEXT("LegsToHeadThrow"),      198.8, -90.0 },
+		{ TEXT("GrabHeadFlipThrow"),    147.2, -90.0 },
 		{ TEXT("BostonCrab_Start"),     133.6, -90.0 },
 		{ TEXT("BostonCrab_Loop"),      132.6, -90.0 },
 		{ TEXT("BostonCrab_End"),       133.6, -90.0 },
 		{ TEXT("Pin"),                  104.1, 180.0 },   // every pin clip: she lies across his line
 	};
-	enum : int32 { TosStart, TosLoop, TosEnd, HlStart, HlLoop, HlEnd, HlFlip, Hip, Scoop, Toss, CrabStart, CrabLoop, CrabEnd, PinRow };
+	enum : int32 { TosStart, TosLoop, TosEnd, HlStart, HlLoop, HlEnd, HlFlip, Hip, Scoop, Toss, Headscissors, FlipThrow, CrabStart, CrabLoop, CrabEnd, PinRow };
+
+	// Clips join at the root, so compare the two poses in that same frame. The counter can
+	// finish differently for its two participants. Each should recover from her own landing.
+	double RecoveryDistance(const UAnimSequence* Landing, const UAnimSequence* Candidate)
+	{
+		if (!Landing || !Candidate || !Landing->GetSkeleton() || Landing->GetSkeleton() != Candidate->GetSkeleton())
+		{
+			return TNumericLimits<double>::Max();
+		}
+		const FReferenceSkeleton& Skeleton = Landing->GetSkeleton()->GetReferenceSkeleton();
+		const FAnimExtractContext End(static_cast<double>(Landing->GetPlayLength()));
+		const FAnimExtractContext Start(0.0);
+		static const FName Joints[] = { TEXT("pelvis"), TEXT("head"), TEXT("hand_l"), TEXT("hand_r"), TEXT("foot_l"), TEXT("foot_r") };
+		double Total = 0.0;
+		for (FName Joint : Joints)
+		{
+			const int32 Index = Skeleton.FindBoneIndex(Joint);
+			if (Index == INDEX_NONE)
+			{
+				continue;
+			}
+			FTransform From = FTransform::Identity;
+			FTransform To = FTransform::Identity;
+			for (int32 Bone = Index; Bone > 0; Bone = Skeleton.GetParentIndex(Bone))
+			{
+				FTransform Local;
+				Landing->GetBoneTransform(Local, FSkeletonPoseBoneIndex(Bone), End, false);
+				From *= Local;
+				Candidate->GetBoneTransform(Local, FSkeletonPoseBoneIndex(Bone), Start, false);
+				To *= Local;
+			}
+			Total += FVector::DistSquared(From.GetLocation(), To.GetLocation());
+		}
+		return Total;
+	}
 
 	constexpr float GapCm = 12.0f;     // further than this from where the move wants her: she walks
 	constexpr float GapDeg = 12.0f;
@@ -326,7 +364,7 @@ void AWrestlingMat::StartMatch()
 	Steps.Reset();
 	Current = FStep();
 	Exchange = 0;
-	Pins = 0;
+	NextAttacker = Rng.RandRange(0, 1);
 	MatchWinner = -1;
 	MatZ = MatTop().Z;
 	GroundLift[0] = GroundLift[1] = GroundLift[2] = 0.0f;
@@ -378,59 +416,100 @@ void AWrestlingMat::StartMatch()
 void AWrestlingMat::PlanExchange()
 {
 	using namespace WrestlingMatchDetail;
-	++Exchange;
-	const int32 A = Rng.RandRange(0, 1);
-	const int32 D = 1 - A;
+	const int32 Lead = NextAttacker;
 	const FString Names = FString::Printf(TEXT("%s  vs  %s"), *W[0].Name.ToUpper(), *W[1].Name.ToUpper());
 
-	auto Paired = [this, A](int32 Row, const FString& Clips, int32 Anchor, const FString& Say)
+	auto Paired = [this](int32 Row, const FString& Clips, int32 Attacker, const FString& Say)
 	{
 		FStep S;
 		S.Pairing = Row;
-		S.Att = A;
-		S.Anchor = Anchor;
-		S.Act[A] = { EAct::Once, Clip(TEXT("Wrestling_Paired"), TEXT("Wrestling_Paired_") + Clips + TEXT("_Att")) };
-		S.Act[1 - A] = { EAct::Once, Clip(TEXT("Wrestling_Paired"), TEXT("Wrestling_Paired_") + Clips + TEXT("_Vic")) };
+		S.Att = S.Anchor = Attacker;
+		S.Act[Attacker] = { EAct::Once, Clip(TEXT("Wrestling_Paired"), TEXT("Wrestling_Paired_") + Clips + TEXT("_Att")) };
+		S.Act[1 - Attacker] = { EAct::Once, Clip(TEXT("Wrestling_Paired"), TEXT("Wrestling_Paired_") + Clips + TEXT("_Vic")) };
 		S.Say = Say;
 		Steps.Add(S);
 	};
-	auto Solo = [this](UAnimSequence* Zero, UAnimSequence* One)
+	// Keep the draw across rematches. On a refill draw from the other moves first.
+	int32 Eligible = RemainingThrows.Num();
+	if (Eligible == 0)
 	{
-		FStep S;
-		S.Act[0] = { Zero ? EAct::Once : EAct::None, Zero };
-		S.Act[1] = { One ? EAct::Once : EAct::None, One };
-		Steps.Add(S);
-	};
-	auto Taunt = [this]() { return Clip(TEXT("Wrestling_Taunt"), FString::Printf(TEXT("Wrestling_Taunt_%02d"), Rng.RandRange(1, 5))); };
-
-	// THE MATCH IS ON THE MAT (Walt, 2026-11-15: "more grappling on the ground and less throwing").
-	// A short tie-up, one takedown to get there, then a long ground game: a pin, a struggle and a
-	// kick-out, a Boston crab before she can rise, and only then up again.
-
-	// 1. The tie-up: a test of strength, or a headlock.
-	if (Rng.FRand() < 0.5f)
-	{
-		Paired(TosStart, TEXT("TestOfStrength_Start"), A, Names);
-		Paired(TosLoop, TEXT("TestOfStrength_Loop"), A, FString());
-		Paired(TosEnd, TEXT("TestOfStrength_End"), A, FString());
+		RemainingThrows = { Hip, Scoop, Toss };
+		for (int32 Row : { Headscissors, FlipThrow })
+		{
+			const FString Prefix = FString(TEXT("Wrestling_Paired_")) + Pairings[Row].Move;
+			if (Clip(TEXT("Wrestling_Paired"), Prefix + TEXT("_Att"))
+				&& Clip(TEXT("Wrestling_Paired"), Prefix + TEXT("_Vic")))
+			{
+				RemainingThrows.Add(Row);
+			}
+		}
+		const int32 Previous = RemainingThrows.Find(LastThrow);
+		Eligible = RemainingThrows.Num();
+		if (Previous != INDEX_NONE)
+		{
+			RemainingThrows.Swap(Previous, --Eligible);
+		}
 	}
-	else
+	const int32 Draw = Rng.RandRange(0, Eligible - 1);
+	LastThrow = RemainingThrows[Draw];
+	RemainingThrows.RemoveAtSwap(Draw);
+	// In the counter combination the opening grip releases before the other wrestler
+	// takes the headlock. The wrestler who wins that second grip owns the throw and cover.
+	const bool bGripReversal = LastThrow == Hip && Rng.RandRange(0, 1) == 0;
+	const int32 A = bGripReversal ? 1 - Lead : Lead;
+	const int32 D = 1 - A;
+	const bool bStrength = bGripReversal || Rng.FRand() < 0.5f;
+	if (bStrength)
 	{
-		Paired(HlStart, TEXT("HeadLock_Start"), A, Names);
-		Paired(HlLoop, TEXT("HeadLock_Loop"), A, FString());
-		Paired(HlEnd, TEXT("HeadLock_End"), A, FString());
+		Paired(TosStart, Pairings[TosStart].Move, Lead, Names);
+		Paired(TosLoop, Pairings[TosLoop].Move, Lead, FString());
+		Paired(TosEnd, Pairings[TosEnd].Move, Lead, FString());
+	}
+	if (!bStrength || bGripReversal)
+	{
+		Paired(HlStart, Pairings[HlStart].Move, A, bGripReversal ? Names + TEXT("\nGRIP REVERSAL") : Names);
+		Paired(HlLoop, Pairings[HlLoop].Move, A, FString());
+		Paired(HlEnd, Pairings[HlEnd].Move, A, FString());
+	}
+	const bool bCounter = LastThrow == Headscissors;
+	const FString MoveCall = bCounter ? Names + TEXT("\nHEADSCISSORS COUNTER")
+		: bGripReversal ? Names + TEXT("\nCOUNTER HIP THROW")
+		: LastThrow == FlipThrow ? Names + TEXT("\nFLIP THROW") : FString();
+	Paired(LastThrow, Pairings[LastThrow].Move, bCounter ? D : A, MoveCall);
+	if (bCounter || LastThrow == FlipThrow)
+	{
+		const FStep& Throw = Steps.Last();
+		UAnimSequence* Idle = Clip(TEXT("Wrestling_Idle"), TEXT("Wrestling_Idle01"));
+		UAnimSequence* Back = Clip(TEXT("Wrestling_LayOnBack"), TEXT("Wrestling_LayOnBack_GetUp02"));
+		UAnimSequence* Front = Clip(TEXT("Wrestling_LayOnStomach"), TEXT("Wrestling_LayOnStomach_GetUp02"));
+		FStep Reset;
+		for (int32 Who = 0; Who < 2; ++Who)
+		{
+			UAnimSequence* Best = Idle;
+			double BestDistance = RecoveryDistance(Throw.Act[Who].Anim, Idle);
+			for (UAnimSequence* GetUp : { Back, Front })
+			{
+				const double Distance = RecoveryDistance(Throw.Act[Who].Anim, GetUp);
+				if (Distance < BestDistance)
+				{
+					Best = GetUp;
+					BestDistance = Distance;
+				}
+			}
+			Reset.Act[Who] = { Best == Idle ? EAct::Loop : EAct::Once, Best };
+		}
+		// A standing attacker can cover a defender who finished on her back.
+		// On any other landing, use the recoveries that matched their individual poses.
+		if (bCounter || !Idle || !Back || !Front || Reset.Act[A].Anim != Idle || Reset.Act[D].Anim != Back)
+		{
+			Steps.Add(Reset);
+			NextAttacker = D;
+			return;
+		}
 	}
 
-	// 2. One takedown, landing her on her back. (Not the flip-over: it lands her face down, and
-	// that is the end of the ground game.)
-	static const TCHAR* const Throws[] = { TEXT("HipThrow"), TEXT("LowScoopSlam"), TEXT("Underarm_FlipToss") };
-	const int32 Which = Rng.RandRange(0, 2);
-	Paired(Hip + Which, Throws[Which], A, FString());
-
-	// 3. Two pins, back to back, while she is down (Walt, 2026-11-15: "still too much throwing" -
-	// so each throw buys more time on the mat). The first is always kicked out; the second wins
-	// from the second exchange on, sometimes, and from the third always.
-	++Pins;
+	// One continuous cover per takedown. Let the defender work against it before the count.
+	++Exchange;
 	const bool bWin = Exchange >= 3 || (Exchange >= 2 && Rng.FRand() < 0.5f);
 	auto PinStep = [this, A, D](const TCHAR* Part, const TCHAR* Ref, const FString& Say)
 	{
@@ -453,29 +532,45 @@ void AWrestlingMat::PlanExchange()
 	Setup.Act[D] = { EAct::Loop, Clip(TEXT("Wrestling_LayOnBack"), TEXT("Wrestling_LayOnBack_Idle")) };
 	Steps.Add(Setup);
 	PinStep(TEXT("Start"), TEXT("Start"), Names);
-	PinStep(TEXT("Loop01"), TEXT("Tap01"), Names + TEXT("\n1"));
-	PinStep(TEXT("Resist"), TEXT("Tap01"), Names + TEXT("\n2"));
-	PinStep(TEXT("Failure"), TEXT("End"), TEXT("KICK OUT!"));
-	// She is still on her back: covered again at once.
-	Steps.Add(Setup);
-	PinStep(TEXT("Start"), TEXT("Start"), Names);
-	PinStep(TEXT("Loop02"), TEXT("Tap01"), Names + TEXT("\n1"));
+	const int32 LastCount = bWin ? 3 : (Exchange == 1 ? Rng.RandRange(0, 2) : 2);
+	// A flash cover can draw a one-count immediately. The longer covers settle into a struggle.
+	if (LastCount > 1)
+	{
+		PinStep(TEXT("Resist"), nullptr, FString());
+		Steps.Last().Act[2] = { EAct::Loop, Clip(TEXT("Wrestling_Pin"), TEXT("Wrestling_Pin_Referee_Loop")) };
+	}
+	for (int32 Number = 1; Number <= LastCount; ++Number)
+	{
+		const bool bFinalTap = Number == 3;
+		PinStep(Number == 2 ? TEXT("Loop02") : TEXT("Loop01"), bFinalTap ? TEXT("Tap02") : TEXT("Tap01"),
+			FString::Printf(TEXT("%s\n%d"), *Names, Number));
+		Steps.Last().bCountOnTap = true;
+	}
 	if (bWin)
 	{
-		PinStep(TEXT("Loop02"), TEXT("Tap01"), Names + TEXT("\n2"));
-		PinStep(TEXT("Loop01"), TEXT("Tap02"), Names + TEXT("\n3"));
 		PinStep(TEXT("End"), TEXT("End"), FString::Printf(TEXT("%s WINS"), *W[A].Name.ToUpper()));
 		PlanFinish(A);
 		return;
 	}
-	PinStep(TEXT("Resist"), TEXT("Tap01"), Names + TEXT("\n2"));
-	PinStep(TEXT("Failure"), TEXT("End"), TEXT("KICK OUT!"));
+	PinStep(TEXT("Failure"), TEXT("End"), LastCount == 0 ? TEXT("ESCAPE BEFORE ONE!") : TEXT("KICK OUT!"));
 
-	// 4. Up she gets, while the other plays to the crowd; the referee back to her post. (A Boston
-	// crab stood here until Walt saw it: "this move is too violent i don't like it", 2026-11-15.)
-	Solo(A == 0 ? Taunt() : Clip(TEXT("Wrestling_LayOnBack"), TEXT("Wrestling_LayOnBack_GetUp02")),
-		 A == 1 ? Taunt() : Clip(TEXT("Wrestling_LayOnBack"), TEXT("Wrestling_LayOnBack_GetUp02")));
-	Steps.Last().Act[2] = { EAct::Walk, nullptr, RefPost, 140.0f };
+	// After an escape, the wrestler who got out takes the initiative at the next tie-up.
+	NextAttacker = D;
+	FStep Recovery;
+	UAnimSequence* Rise = Clip(TEXT("Wrestling_LayOnBack"), TEXT("Wrestling_LayOnBack_GetUp02"));
+	if (LastCount == 0)
+	{
+		UAnimSequence* Alternate = Clip(TEXT("Wrestling_LayOnBack"), TEXT("Wrestling_LayOnBack_GetUp03"));
+		const UAnimSequence* Escape = Steps.Last().Act[D].Anim;
+		if (Alternate && (!Rise || RecoveryDistance(Escape, Alternate) <= RecoveryDistance(Escape, Rise)))
+		{
+			Rise = Alternate;
+		}
+	}
+	Recovery.Act[D] = { EAct::Once, Rise };
+	Recovery.Act[A] = { EAct::Loop, Clip(TEXT("Wrestling_Idle"), TEXT("Wrestling_Idle01")) };
+	Recovery.Act[2] = { EAct::Walk, nullptr, RefPost, 140.0f };
+	Steps.Add(Recovery);
 }
 
 void AWrestlingMat::PlanFinish(int32 Winner)
@@ -516,6 +611,7 @@ void AWrestlingMat::BeginStep()
 	Steps.RemoveAt(0);
 	StepAge = 0.0f;
 	bStepLive = true;
+	PeakHandHeight[0] = PeakHandHeight[1] = 0.0f;
 
 	FTransform Feet[3];
 	for (int32 Who = 0; Who < 3; ++Who)
@@ -575,48 +671,67 @@ void AWrestlingMat::BeginStep()
 		FTransform AnchorFeet = Feet[Anchor];
 		AnchorBody = RootAt(AnchorAnim, 0.0).Inverse() * AnchorFeet;
 
-		// Before a new move on their feet (never in the middle of a hold), the pair is brought back to
-		// the middle of the mat and turned side-on to him, so he sees both of them and the grips.
 		const int32 Row = Current.Pairing;
-		const bool bFresh = Row == TosStart || Row == HlStart || Row == HlFlip || Row == Hip || Row == Scoop || Row == Toss;
+		const bool bFresh = Row == TosStart || Row == HlStart || Row == HlFlip || (Row >= Hip && Row <= FlipThrow);
 		bool bMoveAnchor = false;
-		// The middle of the move: both starts and both ends - a throw carries her a metre or two,
-		// and the pin happens where she lands.
-		UAnimSequence* OtherAnim = Current.Act[Other].Anim;
-		auto MoveMiddle = [&](const FTransform& ABody, const FTransform& OBody)
-		{
-			const FVector Sum = ABody.GetLocation() + OBody.GetLocation()
-				+ (RootAt(AnchorAnim, AnchorAnim ? AnchorAnim->GetPlayLength() : 0.0) * ABody).GetLocation()
-				+ (RootAt(OtherAnim, OtherAnim ? OtherAnim->GetPlayLength() : 0.0) * OBody).GetLocation();
-			return Sum * 0.25;
-		};
 		if (bFresh && !bDown)
 		{
-			const FVector Side = FVector::CrossProduct(FVector::UpVector, ViewDir()).GetSafeNormal();
-			const FVector Fwd = AnchorFeet.TransformVectorNoScale(FVector(0.0, 1.0, 0.0)).GetSafeNormal2D();
-			const FVector WantFwd = FVector::DotProduct(Fwd, Side) >= 0.0 ? Side : -Side;
-			const double TurnBy = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(FVector::DotProduct(Fwd, WantFwd), -1.0, 1.0)));
-			const FTransform OtherNow = PairedBody(Row, Other != Current.Att, AnchorBody);
-			const double OffCentre = FlatDist(MoveMiddle(AnchorBody, OtherNow), MatTop());
-			if (TurnBy > 35.0 || OffCentre > 60.0)
+			// Fit the next grip to where the wrestlers ended the previous move. Match the line
+			// between their feet, then split the spacing correction equally between them.
+			UAnimSequence* OtherAnim = Current.Act[Other].Anim;
+			const FTransform AnchorStart = RootAt(AnchorAnim, 0.0);
+			const FTransform OtherStart = RootAt(OtherAnim, 0.0);
+			FTransform Partner = PairedBody(Row, Other != Current.Att, AnchorBody);
+			const FVector Stance = (OtherStart * Partner).GetLocation() - AnchorFeet.GetLocation();
+			const FVector Between = Feet[Other].GetLocation() - Feet[Anchor].GetLocation();
+			if (Between.SizeSquared2D() > FMath::Square(20.0) && Stance.SizeSquared2D() > 1.0)
 			{
-				FTransform Turned = FeetFacing(AnchorFeet.GetLocation(), WantFwd);
-				const FTransform TurnedBody = RootAt(AnchorAnim, 0.0).Inverse() * Turned;
-				const FTransform OtherTurned = PairedBody(Row, Other != Current.Att, TurnedBody);
-				FVector Shift = MatTop() - MoveMiddle(TurnedBody, OtherTurned);
-				Shift.Z = 0.0;
-				Turned.AddToTranslation(Shift);
-				AnchorFeet = Turned;
-				AnchorBody = RootAt(AnchorAnim, 0.0).Inverse() * AnchorFeet;
-				bMoveAnchor = true;
+				const double Delta = FMath::FindDeltaAngleDegrees(Stance.Rotation().Yaw, Between.Rotation().Yaw);
+				AnchorFeet.SetRotation(FQuat(FVector::UpVector, FMath::DegreesToRadians(Delta)) * AnchorFeet.GetRotation());
+				AnchorBody = AnchorStart.Inverse() * AnchorFeet;
+				Partner = PairedBody(Row, Other != Current.Att, AnchorBody);
 			}
+			FVector Shift = (Feet[Other].GetLocation() - (OtherStart * Partner).GetLocation()) * 0.5;
+			Shift.Z = 0.0;
+
+			// Leave room at the edge for the landing. Work in mat coordinates because the AI City
+			// pad can face any direction. Keep the preferred placement when the clip already fits.
+			const FTransform MatFrame = GetActorTransform();
+			FBox Travel(ForceInit);
+			auto IncludePath = [&](const UAnimSequence* Anim, const FTransform& BodyWorld)
+			{
+				const double Length = Anim ? Anim->GetPlayLength() : 0.0;
+				const int32 Intervals = FMath::Max(1, FMath::CeilToInt(Length * 6.0));
+				for (int32 I = 0; I <= Intervals; ++I)
+				{
+					const FVector At = (RootAt(Anim, Length * I / Intervals) * BodyWorld).GetLocation() + Shift;
+					Travel += MatFrame.InverseTransformPosition(At);
+				}
+			};
+			IncludePath(AnchorAnim, AnchorBody);
+			IncludePath(OtherAnim, Partner);
+			const double Limit = FMath::Max(0.0, static_cast<double>(MatHalf) - 65.0);
+			auto EdgeShift = [Limit](double Min, double Max)
+			{
+				const double Low = -Limit - Min;
+				const double High = Limit - Max;
+				return Low <= High ? FMath::Clamp(0.0, Low, High) : (Low + High) * 0.5;
+			};
+			Shift += MatFrame.TransformVector(FVector(EdgeShift(Travel.Min.X, Travel.Max.X),
+				EdgeShift(Travel.Min.Y, Travel.Max.Y), 0.0));
+			AnchorFeet.AddToTranslation(Shift);
+			AnchorBody = AnchorStart.Inverse() * AnchorFeet;
+			bMoveAnchor = Shift.SizeSquared2D() > FMath::Square(GapCm)
+				|| FMath::Abs(FMath::FindDeltaAngleDegrees(YawOf(Feet[Anchor]), YawOf(AnchorFeet))) > GapDeg;
 		}
 
 		const FTransform OtherBody = PairedBody(Row, Other != Current.Att, AnchorBody);
 		const FTransform Want = RootAt(Current.Act[Other].Anim, 0.0) * OtherBody;
 		const double Gap = FlatDist(Want.GetLocation(), Feet[Other].GetLocation());
 		const double Turn = FMath::Abs(FMath::FindDeltaAngleDegrees(YawOf(Feet[Other]), YawOf(Want)));
-		if (bMoveAnchor || Gap > GapCm || Turn > GapDeg)
+		// Loop and release clips are already in contact. Inserting a standing reset here
+		// breaks the hold for a frame (or for an entire walk when walking is enabled).
+		if (bFresh && CVarWalkTo.GetValueOnGameThread() && (bMoveAnchor || Gap > GapCm || Turn > GapDeg))
 		{
 			// Walk there first, and come back to this move. The anchor waits (standing, she idles;
 			// on the mat, she stays as she lies) unless she is the one being brought to the middle.
@@ -647,7 +762,7 @@ void AWrestlingMat::BeginStep()
 		}
 	}
 
-	if (!Current.Say.IsEmpty() && Sign)
+	if (!Current.bCountOnTap && !Current.Say.IsEmpty() && Sign)
 	{
 		Sign->SetText(FText::FromString(Current.Say));
 	}
@@ -903,6 +1018,25 @@ void AWrestlingMat::TickMatch(float Dt)
 			{
 				Pickers[Who]->SetWorldLocation(MatchBody(Who)->GetBoneLocation(TEXT("spine_03")));
 			}
+		}
+	}
+	if (bStepLive && Current.bCountOnTap && Sign)
+	{
+		// Either hand can slap. A planted supporting hand never makes the downward stroke.
+		bool bTap = false;
+		static const FName Hands[] = { TEXT("hand_l"), TEXT("hand_r") };
+		for (int32 Hand = 0; RefBody && Hand < 2; ++Hand)
+		{
+			const float AboveMat = static_cast<float>(RefBody->GetBoneLocation(Hands[Hand]).Z - MatZ);
+			PeakHandHeight[Hand] = FMath::Max(PeakHandHeight[Hand], AboveMat);
+			bTap |= AboveMat < 12.0f && PeakHandHeight[Hand] - AboveMat > 18.0f;
+		}
+		// Keep the count legible if the referee is absent or a particular rig misses the threshold.
+		const float Fallback = RefBody && Current.Act[2].Anim ? Play[2].Length * 0.85f : 0.45f;
+		if (bTap || StepAge >= Fallback)
+		{
+			Sign->SetText(FText::FromString(Current.Say));
+			Current.bCountOnTap = false;
 		}
 	}
 	if (bStepLive && !StepDone())

@@ -269,7 +269,11 @@ foreach ($name in "Anim_bow","Anim_mr_universe","Anim_knuckle_taunt","Anim_i_Can
 # The wrestling match (2.8.0): the pack's clips are loaded by path, so they must be cooked.
 foreach ($rel in "Wrestling_Paired\Wrestling_Paired_TestOfStrength_Loop_Att","Wrestling_Paired\Wrestling_Paired_HipThrow_Vic",
                  "Wrestling_Pin\Wrestling_Pin_Start_Attacker","Wrestling_Pin\Wrestling_Pin_Referee_Tap01",
-                 "Wrestling_LayOnBack\Wrestling_LayOnBack_GetUp02","Wrestling_Idle\Wrestling_Idle01") {
+                 "Wrestling_LayOnBack\Wrestling_LayOnBack_GetUp02","Wrestling_Idle\Wrestling_Idle01",
+                 # 2.8.1 (Astra): the headscissors counter, the flip throw, the escape get-up
+                 "Wrestling_Paired\Wrestling_Paired_LegsToHeadThrow_Att","Wrestling_Paired\Wrestling_Paired_GrabHeadFlipThrow_Vic",
+                 "Wrestling_LayOnBack\Wrestling_LayOnBack_GetUp03","Wrestling_LayOnStomach\Wrestling_LayOnStomach_GetUp02",
+                 "Wrestling_Pin\Wrestling_Pin_Referee_Loop") {
   $checks["wrestling clip $rel"] = "$cooked\Wrestler_Finishers_Volume2\Anim_Seq\$rel.uasset"
 }
 foreach ($name in "SM_Chalice_01a","SM_Chalice_02b") {

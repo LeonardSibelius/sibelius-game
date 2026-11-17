@@ -343,6 +343,7 @@ private:
 		bool bFaceView = false; // turn everyone to face him
 		bool bNextMatch = false;
 		FString Say;            // the sign, from this step on
+		bool bCountOnTap = false;
 		float Hold = 0.0f;      // a pause: seconds
 	};
 	struct FPlaying
@@ -396,9 +397,12 @@ private:
 	FStep Current;
 	FPlaying Play[3];
 	float StepAge = 0.0f;
+	float PeakHandHeight[2] = {};
 	bool bStepLive = false;
 	int32 Exchange = 0;
-	int32 Pins = 0;
+	int32 NextAttacker = 0;
+	TArray<int32, TInlineAllocator<5>> RemainingThrows;
+	int32 LastThrow = INDEX_NONE;
 	int32 MatchWinner = -1;
 	double MatZ = 0.0;
 
