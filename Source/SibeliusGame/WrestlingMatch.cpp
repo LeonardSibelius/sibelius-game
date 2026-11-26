@@ -24,6 +24,7 @@
 #include "WrestlingMat.h"
 
 #include "SibeliusGame.h"   // LogSibeliusGame
+#include "WrestleAnimInstance.h"
 
 #include "Animation/AnimSequence.h"
 #include "Animation/Skeleton.h"
@@ -114,6 +115,29 @@ namespace WrestlingMatchDetail
 	// Walk to the next move's spot; off, they appear there (BeginStep). A console variable, not a
 	// constant, so the walk code below it is not "unreachable" to the compiler.
 	TAutoConsoleVariable<bool> CVarWalkTo(TEXT("sib.Wrestle.Walk"), false, TEXT("Wrestlers walk to the next move instead of appearing there."));
+
+	// WHO SEES WHOM, AND HANDS THAT MEET (Walt, 2026-11-26). Both on; each can be switched off
+	// to compare in the lab.
+	TAutoConsoleVariable<bool> CVarLookAt(TEXT("sib.Wrestle.LookAt"), true, TEXT("Wrestlers turn their heads to each other; the referee watches the pair."));
+	TAutoConsoleVariable<bool> CVarGrip(TEXT("sib.Wrestle.Grip"), true, TEXT("In the test of strength each hand reaches the other wrestler's hand."));
+	constexpr double GripGapCm = 12.0;     // wrist to wrist when two hands press together, palm to palm
+	constexpr double GripNearCm = 25.0;    // the clip's hands this close: the reach is full
+	constexpr double GripFarCm = 45.0;     // this far apart: no reach (still coming in, or letting go)
+
+	/** The wrestling player on this body, or null while some other player drives it. */
+	UWrestleAnimInstance* WrestlePlayer(USkeletalMeshComponent* Body)
+	{
+		return Body ? Cast<UWrestleAnimInstance>(Body->GetAnimInstance()) : nullptr;
+	}
+
+	/** Make the wrestling player the body's player: the single-node player plus look and reach. */
+	void UseWrestlePlayer(USkeletalMeshComponent* Body)
+	{
+		if (Body && !WrestlePlayer(Body))
+		{
+			Body->SetAnimInstanceClass(UWrestleAnimInstance::StaticClass());
+		}
+	}
 
 	FTransform RootAt(const UAnimSequence* Anim, double Time)
 	{
@@ -252,11 +276,16 @@ void AWrestlingMat::PlayOn(int32 Who, UAnimSequence* Anim, bool bLoop)
 	{
 		return;
 	}
-	if (Body->GetAnimationMode() != EAnimationMode::AnimationSingleNode)
+	WrestlingMatchDetail::UseWrestlePlayer(Body);
+	if (WrestlingMatchDetail::WrestlePlayer(Body))
 	{
-		Body->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		Body->SetAnimation(Anim);   // what PlayAnimation does, without switching back to the plain player
+		Body->Play(bLoop);
 	}
-	Body->PlayAnimation(Anim, bLoop);
+	else
+	{
+		Body->PlayAnimation(Anim, bLoop);
+	}
 	FPlaying& P = Play[Who];
 	P = FPlaying();
 	P.Anim = Anim;
@@ -389,7 +418,7 @@ void AWrestlingMat::StartMatch()
 		{
 			continue;
 		}
-		Body->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		UseWrestlePlayer(Body);
 		Body->AddTickPrerequisiteActor(this);   // she is placed first, then posed: the walk predicts her pose
 		BodyInActor[Who] = Body->GetComponentTransform().GetRelativeTransform(Actor->GetActorTransform());
 		PutBody(Who, RootAt(Idle, 0.0).Inverse() * Start[Who]);
@@ -866,7 +895,8 @@ void AWrestlingMat::TickWalk(int32 Who, float Dt)
 		UAnimSequence* Idle = Clip(TEXT("Wrestling_Idle"), TEXT("Wrestling_Idle01"));
 		if (P.Anim != Idle && Idle)
 		{
-			Body->PlayAnimation(Idle, true);
+			Body->SetAnimation(Idle);
+			Body->Play(true);
 			P.Anim = Idle;
 			P.Length = static_cast<float>(Idle->GetPlayLength());
 		}
@@ -1003,6 +1033,90 @@ bool AWrestlingMat::StepDone() const
 	return true;
 }
 
+void AWrestlingMat::TickAttention()
+{
+	using namespace WrestlingMatchDetail;
+	USkeletalMeshComponent* Body[3] = { MatchBody(0), MatchBody(1), MatchBody(2) };
+	UWrestleAnimInstance* Player[3] = { WrestlePlayer(Body[0]), WrestlePlayer(Body[1]), WrestlePlayer(Body[2]) };
+	const int32 Row = bStepLive ? Current.Pairing : INDEX_NONE;
+	const bool bTos = Row == TosStart || Row == TosLoop || Row == TosEnd;
+	const bool bFace = bStepLive && Current.bFaceView;
+	const bool bLook = CVarLookAt.GetValueOnGameThread();
+	auto Standing = [this, &Body](int32 Who)
+	{
+		return Body[Who] && Body[Who]->GetBoneLocation(TEXT("pelvis")).Z - MatZ >= DownHeight;
+	};
+
+	// WHO LOOKS AT WHOM. Standing between moves and in the test of strength, each wrestler watches
+	// the other's face. In a hold or a throw the clip's own head is the move, so it is left alone.
+	const bool bWatch = bLook && !bFace && (Row == INDEX_NONE || bTos) && Standing(0) && Standing(1);
+	for (int32 Who = 0; Who < 2; ++Who)
+	{
+		const int32 Other = 1 - Who;
+		if (Player[Who])
+		{
+			const FVector Face = Body[Other] ? Body[Other]->GetBoneLocation(TEXT("head")) : FVector::ZeroVector;
+			Player[Who]->SetLook(Face, bWatch && Body[Other] ? 1.0f : 0.0f);
+		}
+	}
+	// The referee watches the pair - and the shoulders she is counting - except when all face him.
+	if (Player[2] && Body[0] && Body[1])
+	{
+		const FVector Pair = 0.5 * (Body[0]->GetBoneLocation(TEXT("spine_03")) + Body[1]->GetBoneLocation(TEXT("spine_03")));
+		Player[2]->SetLook(Pair, bLook && !bFace ? 1.0f : 0.0f);
+	}
+
+	// HANDS THAT MEET. In the test of strength each wrestler's hand reaches to just short of the
+	// other's, palm to palm. It is judged from where the clip itself puts the hands, so the reach
+	// comes in as the clip's hands close and lets go when the clip lets go.
+	for (int32 Who = 0; Who < 2; ++Who)
+	{
+		UWrestleAnimInstance* Mine = Player[Who];
+		UWrestleAnimInstance* Theirs = Player[1 - Who];
+		if (!Mine)
+		{
+			continue;
+		}
+		if (!bTos || !Theirs || !CVarGrip.GetValueOnGameThread() || !Mine->HasClipHands() || !Theirs->HasClipHands())
+		{
+			Mine->SetReach(0, FVector::ZeroVector, 0.0f);
+			Mine->SetReach(1, FVector::ZeroVector, 0.0f);
+			continue;
+		}
+		const FVector A[2] = { Mine->GetClipHand(0), Mine->GetClipHand(1) };
+		const FVector B[2] = { Theirs->GetClipHand(0), Theirs->GetClipHand(1) };
+		// Face to face a left hand meets a right one - unless the clip crosses them.
+		const bool bSameSide = FVector::Dist(A[0], B[0]) + FVector::Dist(A[1], B[1])
+			< FVector::Dist(A[0], B[1]) + FVector::Dist(A[1], B[0]);
+		for (int32 Side = 0; Side < 2; ++Side)
+		{
+			const FVector& Hand = A[Side];
+			const FVector& Partner = B[bSameSide ? Side : 1 - Side];
+			const double Weight = 1.0 - FMath::SmoothStep(GripNearCm, GripFarCm, FVector::Dist(Hand, Partner));
+			const FVector Target = 0.5 * (Hand + Partner) + (Hand - Partner).GetSafeNormal() * (0.5 * GripGapCm);
+			Mine->SetReach(Side, Target, static_cast<float>(Weight));
+		}
+
+		// The lab's proof (-WrestleLog): wrist to wrist as the clip has it, and as drawn.
+		static double NextLog = 0.0;
+		const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+		if (bLog && Who == 0 && Body[0] && Body[1] && (Now >= NextLog || Now < NextLog - 10.0))
+		{
+			NextLog = Now + 0.5;
+			static const FName Hands[] = { TEXT("hand_l"), TEXT("hand_r") };
+			FString Line;
+			for (int32 Side = 0; Side < 2; ++Side)
+			{
+				const int32 Other = bSameSide ? Side : 1 - Side;
+				Line += FString::Printf(TEXT(" %s: clip %.0f cm, drawn %.0f cm;"), *Hands[Side].ToString(),
+					FVector::Dist(A[Side], B[Other]),
+					FVector::Dist(Body[0]->GetBoneLocation(Hands[Side]), Body[1]->GetBoneLocation(Hands[Other])));
+			}
+			UE_LOG(LogSibeliusGame, Display, TEXT("[Wrestle] grip%s"), *Line);
+		}
+	}
+}
+
 void AWrestlingMat::TickMatch(float Dt)
 {
 	PhaseAge += Dt;
@@ -1020,6 +1134,7 @@ void AWrestlingMat::TickMatch(float Dt)
 			}
 		}
 	}
+	TickAttention();
 	if (bStepLive && Current.bCountOnTap && Sign)
 	{
 		// Either hand can slap. A planted supporting hand never makes the downward stroke.

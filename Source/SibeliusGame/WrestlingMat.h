@@ -393,6 +393,7 @@ private:
 	FTransform RefPost;
 	float GroundLift[3] = { 0.0f, 0.0f, 0.0f };   // how far each body is raised so no part sinks into the mat
 	void TickGround(int32 Who, float Dt);   // where the referee waits between pins: across the mat from him
+	void TickAttention();                   // heads turn to each other; in the test of strength, hands meet
 	TArray<FStep> Steps;
 	FStep Current;
 	FPlaying Play[3];

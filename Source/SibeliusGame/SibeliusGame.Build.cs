@@ -21,6 +21,7 @@ public class SibeliusGame : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
+			"AnimationCore",   // the two-bone reach in UWrestleAnimInstance
 			"InputCore",
 			"EnhancedInput",
 			"AIModule",
